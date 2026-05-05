@@ -72,8 +72,8 @@ namespace TuProyecto.Data
         {
             MessageBox.Show("¡Hola desde WPF!");
             AppLoader.ConectarProductos();
-            var uf = SqlData.Instance.ArticulosObj.ObtenerItem("descripcion","1");
-            MessageBox.Show($"Se agregaron {uf}");
+            var valor = SqlData.Instance.ArticulosObj.ObtenerItem("descripcion","1");
+            MessageBox.Show($"Se agregaron {valor}");
             DatabaseConnection.CerrarConexion();
         }
 
