@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace TuProyecto.Data
 {
@@ -67,6 +68,16 @@ namespace TuProyecto.Data
             Sql.TraspasosObj.Actualizar();
         }
 
+        public static void IniciarApp() 
+        {
+            MessageBox.Show("¡Hola desde WPF!");
+            AppLoader.ConectarProductos();
+            var uf = SqlData.Instance.ArticulosObj.ObtenerItem("descripcion","1");
+            MessageBox.Show($"Se agregaron {uf}");
+            DatabaseConnection.CerrarConexion();
+        }
+
+  
 
         // ─── ACTUALIZAR BASE (cálculo de apertura y periodo) ─────────────────
 
