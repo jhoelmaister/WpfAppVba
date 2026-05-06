@@ -1,4 +1,4 @@
-namespace TuProyecto.Data
+namespace WpfAppVba.Data
 {
     /// <summary>
     /// Equivalente a Conectar_Data.cls

@@ -1,7 +1,7 @@
 using System;
 using Microsoft.Data.SqlClient;
 
-namespace TuProyecto.Data
+namespace WpfAppVba.Data
 {
     /// <summary>
     /// Equivalente a Conectar_Datos.bas

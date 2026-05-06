@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace TuProyecto.Data
+namespace WpfAppVba.Data
 {
     /// <summary>
     /// Equivalente a Cargar_General.bas

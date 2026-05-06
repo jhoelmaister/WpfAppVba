@@ -1,6 +1,6 @@
 using System;
 
-namespace TuProyecto.Data
+namespace WpfAppVba.Data
 {
     /// <summary>
     /// Equivalente a Módulo4.bas

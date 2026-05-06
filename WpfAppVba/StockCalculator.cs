@@ -1,7 +1,7 @@
 using System;
 using System.Windows;
 
-namespace TuProyecto.Data
+namespace WpfAppVba.Data
 {
     /// <summary>
     /// Equivalente a Funciones_Dedicadas.bas
