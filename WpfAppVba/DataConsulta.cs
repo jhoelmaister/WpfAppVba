@@ -1,33 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using Microsoft.Data.SqlClient;
 
 namespace WpfAppVba.Data
 {
-    /// <summary>
-    /// Equivalente a Data_Consultas.cls
-    ///
-    /// Arquitectura de caché en memoria:
-    ///   _mData  = object[columnas, filas]   → datos reales (equivalente a mData1)
-    ///   _mCols  = object[1, columnas]       → nombres de columnas (equivalente a mData2)
-    ///   _mFilas = Dictionary&lt;id, índice&gt;   → acceso O(1) por ID
-    ///   _mCols  = Dictionary&lt;nombre, índice&gt; → acceso O(1) por nombre de columna
-    /// </summary>
     public class DataConsulta
     {
-        // ─── Almacenamiento interno ───────────────────────────────────────────
-        private object[,]? _mData;                         // [col, fila]
-        private string[]   _colNames = Array.Empty<string>(); // nombres de columnas
-        private Dictionary<string, int> _mFilas   = new(); // id   → índice fila
-        private Dictionary<string, int> _mColumnas = new(); // nombre → índice columna
+        private DataTable _tabla = new();
+        private Dictionary<string, DataRow> _indiceId = new(); // id → DataRow, O(1)
         private string _nombreTabla = "";
         private string _consulta    = "";
 
         // ─── CONECTAR / CARGAR ────────────────────────────────────────────────
-        /// <summary>
-        /// Equivalente a: sqlData.obj.conectar(consulta) = tabla
-        /// </summary>
+
         public void Conectar(string tabla, string consulta = "")
         {
             _nombreTabla = tabla;
@@ -37,87 +24,72 @@ namespace WpfAppVba.Data
             ObtenerDatos(_consulta);
         }
 
-        /// <summary>Vuelve a ejecutar la última consulta (refresca la caché).</summary>
         public void Actualizar() => ObtenerDatos(_consulta);
 
         // ─── LECTURA DE DATOS ─────────────────────────────────────────────────
 
-        /// <summary>Equivalente a items(columna, id) get → devuelve el valor de la celda.</summary>
         public object? ObtenerItem(string columna, string id)
         {
-            if (_mData == null) return null;
-            if (!_mColumnas.TryGetValue(columna.ToLower(), out int col)) return null;
-            if (!_mFilas.TryGetValue(id.ToLower(),         out int row)) return null;
-            var val = _mData[col, row];
+            if (!_indiceId.TryGetValue(id.ToLower(), out var row)) return null;
+            if (!_tabla.Columns.Contains(columna)) return null;
+            var val = row[columna];
             return val is DBNull ? null : val;
         }
 
-        /// <summary>Equivalente a items(columna, id) let → modifica la celda y marca la fila como "editado".</summary>
         public void EstablecerItem(string columna, string id, object? valor)
         {
-            if (_mData == null) return;
-            if (!_mColumnas.TryGetValue(columna.ToLower(),   out int col))    return;
-            if (!_mColumnas.TryGetValue("estadof",           out int colEst)) return;
-            if (!_mFilas.TryGetValue(id.ToLower(),           out int row))    return;
+            if (!_indiceId.TryGetValue(id.ToLower(), out var row)) return;
+            if (!_tabla.Columns.Contains(columna))  return;
+            if (!_tabla.Columns.Contains("estadof")) return;
 
-            _mData[col, row] = valor ?? DBNull.Value;
+            row[columna] = valor ?? DBNull.Value;
 
-            var estadoActual = _mData[colEst, row]?.ToString() ?? "";
+            var estadoActual = row["estadof"]?.ToString() ?? "";
             if (estadoActual != "nuevo")
-                _mData[colEst, row] = "editado";
+                row["estadof"] = "editado";
         }
 
-        /// <summary>
-        /// Equivalente a buscar(columna, valor, columnaDevuelta).
-        /// Busca la primera fila donde columna == valor y devuelve columnaDevuelta.
-        /// </summary>
         public object? Buscar(string columna, string valor, string columnaDevuelta)
         {
-            if (_mData == null) return null;
-            if (!_mColumnas.TryGetValue(columna.ToLower(),         out int col))  return null;
-            if (!_mColumnas.TryGetValue(columnaDevuelta.ToLower(), out int col2)) return null;
+            if (!_tabla.Columns.Contains(columna) || !_tabla.Columns.Contains(columnaDevuelta)) return null;
 
-            int filas = _mData.GetLength(1);
-            for (int i = 0; i < filas; i++)
+            foreach (DataRow row in _tabla.Rows)
             {
-                var celda = _mData[col, i]?.ToString() ?? "";
-                if (string.Equals(celda, valor, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(row[columna]?.ToString(), valor, StringComparison.OrdinalIgnoreCase))
                 {
-                    var res = _mData[col2, i];
+                    var res = row[columnaDevuelta];
                     return res is DBNull ? null : res;
                 }
             }
             return null;
         }
 
-        /// <summary>Busca la primera fila donde columna == valor y devuelve el ID.</summary>
         public long BuscarIdentificador(string columna, string valor)
         {
             var res = Buscar(columna, valor, "id");
             return res != null ? Convert.ToInt64(res) : 0;
         }
 
-        /// <summary>Equivalente a mover(fila) → devuelve el ID de la fila por índice (base 1).</summary>
+        /// <summary>Devuelve el ID de la fila por índice (base 1).</summary>
         public object? Mover(int fila)
         {
-            if (_mData == null) return null;
-            if (!_mColumnas.TryGetValue("id", out int col)) return null;
             int row = fila - 1;
-            if (row < 0 || row >= _mData.GetLength(1)) return null;
-            var val = _mData[col, row];
+            if (row < 0 || row >= _tabla.Rows.Count) return null;
+            if (!_tabla.Columns.Contains("id")) return null;
+            var val = _tabla.Rows[row]["id"];
             return val is DBNull ? null : val;
         }
 
-        /// <summary>Cantidad de filas cargadas en la caché.</summary>
-        public int ContarFilas => _mData?.GetLength(1) ?? 0;
+        public int ContarFilas => _tabla.Rows.Count;
 
-        /// <summary>Devuelve el índice de columna por nombre.</summary>
-        public int IndiceColumna(string nombre) =>
-            _mColumnas.TryGetValue(nombre.ToLower(), out int idx) ? idx : -1;
+        public int IndiceColumna(string nombre)
+        {
+            if (!_tabla.Columns.Contains(nombre)) return -1;
+            return _tabla.Columns[nombre]!.Ordinal;
+        }
 
         // ─── MÁXIMO / VERIFICAR ───────────────────────────────────────────────
 
-        /// <summary>Equivalente a maximo(columna) → ejecuta MAX() directo en SQL.</summary>
         public object? Maximo(string columna)
         {
             var conn = DatabaseConnection.ObtenerConexion();
@@ -126,7 +98,6 @@ namespace WpfAppVba.Data
             return result is DBNull ? null : result;
         }
 
-        /// <summary>Equivalente a verificarId → devuelve true si el valor NO existe en la columna.</summary>
         public bool VerificarId(string valor, string columna)
         {
             var conn = DatabaseConnection.ObtenerConexion();
@@ -139,172 +110,101 @@ namespace WpfAppVba.Data
 
         // ─── CRUD EN MEMORIA ──────────────────────────────────────────────────
 
-        /// <summary>Agrega una nueva fila en memoria con estado "nuevo".</summary>
         public void Nuevo(string id)
         {
-            if (!_mColumnas.TryGetValue("id",      out int colId))  return;
-            if (!_mColumnas.TryGetValue("estadof", out int colEst)) return;
+            if (!_tabla.Columns.Contains("id") || !_tabla.Columns.Contains("estadof")) return;
 
-            int numCols = _colNames.Length;
-
-            if (_mData == null)
-            {
-                _mData = new object[numCols, 1];
-                _mData[colId,  0] = id;
-                _mData[colEst, 0] = "nuevo";
-                _mFilas[id.ToLower()] = 0;
-            }
-            else
-            {
-                int filas   = _mData.GetLength(1);
-                var nueva   = new object[numCols, filas + 1];
-                // Copiar datos existentes
-                for (int c = 0; c < numCols; c++)
-                    for (int r = 0; r < filas; r++)
-                        nueva[c, r] = _mData[c, r];
-                // Nueva fila
-                nueva[colId,  filas] = id;
-                nueva[colEst, filas] = "nuevo";
-                _mData = nueva;
-                _mFilas[id.ToLower()] = filas;
-            }
+            var row = _tabla.NewRow();
+            row["id"]      = id;
+            row["estadof"] = "nuevo";
+            _tabla.Rows.Add(row);
+            _indiceId[id.ToLower()] = row;
         }
 
-        /// <summary>Marca la fila como "ocultado" y la elimina del índice de filas.</summary>
         public void Ocultar(string id)
         {
-            if (_mData == null) return;
-            if (!_mColumnas.TryGetValue("estadof", out int col)) return;
-            if (!_mFilas.TryGetValue(id.ToLower(), out int row)) return;
-            _mData[col, row] = "ocultado";
-            _mFilas.Remove(id.ToLower());
+            if (!_indiceId.TryGetValue(id.ToLower(), out var row)) return;
+            if (!_tabla.Columns.Contains("estadof")) return;
+            row["estadof"] = "ocultado";
+            _indiceId.Remove(id.ToLower());
         }
 
-        /// <summary>Marca la fila como "eliminado" y la elimina del índice de filas.</summary>
         public void Eliminar(string id)
         {
-            if (_mData == null) return;
-            if (!_mColumnas.TryGetValue("estadof", out int col)) return;
-            if (!_mFilas.TryGetValue(id.ToLower(), out int row)) return;
-            _mData[col, row] = "eliminado";
-            _mFilas.Remove(id.ToLower());
+            if (!_indiceId.TryGetValue(id.ToLower(), out var row)) return;
+            if (!_tabla.Columns.Contains("estadof")) return;
+            row["estadof"] = "eliminado";
+            _indiceId.Remove(id.ToLower());
         }
 
         // ─── ORDENAR ──────────────────────────────────────────────────────────
 
-        /// <summary>
-        /// Equivalente a ordenarData(columna1, desc1, columna2, desc2, ...)
-        /// Primero exporta cambios pendientes, elimina filas marcadas,
-        /// ordena en memoria y recarga el diccionario.
-        /// </summary>
         public void OrdenarData(params (string columna, bool descendente)[] condiciones)
         {
             ExportarItems();
             EliminarItems();
 
-            if (_mData == null || condiciones.Length == 0) return;
+            if (_tabla.Rows.Count == 0 || condiciones.Length == 0) return;
 
-            int filas = _mData.GetLength(1);
-            int cols  = _mData.GetLength(0);
+            string sortExpr = string.Join(", ",
+                condiciones.Select(c => $"[{c.columna}] {(c.descendente ? "DESC" : "ASC")}"));
 
-            // Convertir a lista de arrays para poder ordenarla
-            var lista = new List<object[]>(filas);
-            for (int r = 0; r < filas; r++)
+            _tabla.DefaultView.Sort = sortExpr;
+            _tabla = _tabla.DefaultView.ToTable();
+
+            _indiceId.Clear();
+            foreach (DataRow row in _tabla.Rows)
             {
-                var fila = new object[cols];
-                for (int c = 0; c < cols; c++)
-                    fila[c] = _mData[c, r];
-                lista.Add(fila);
+                var key = row["id"]?.ToString()?.ToLower() ?? "";
+                if (!string.IsNullOrEmpty(key))
+                    _indiceId[key] = row;
             }
-
-            // Ordenar multi-columna
-            lista.Sort((a, b) =>
-            {
-                foreach (var (columna, desc) in condiciones)
-                {
-                    if (!_mColumnas.TryGetValue(columna.ToLower(), out int ci)) continue;
-                    int cmp = Comparar(a[ci], b[ci]);
-                    if (cmp != 0) return desc ? -cmp : cmp;
-                }
-                return 0;
-            });
-
-            // Volver al array 2D
-            for (int r = 0; r < filas; r++)
-                for (int c = 0; c < cols; c++)
-                    _mData[c, r] = lista[r][c];
-
-            CargarDiccionario();
-        }
-
-        private static int Comparar(object? a, object? b)
-        {
-            if (a == null || a is DBNull) return b == null || b is DBNull ? 0 : -1;
-            if (b == null || b is DBNull) return 1;
-            if (a is IComparable ca) return ca.CompareTo(b);
-            return string.Compare(a.ToString(), b.ToString(), StringComparison.OrdinalIgnoreCase);
         }
 
         // ─── EXPORTAR A SQL SERVER ────────────────────────────────────────────
 
-        /// <summary>
-        /// Equivalente a exportarItems().
-        /// Envía a SQL Server todas las filas con estado "eliminado", "nuevo" o "editado"/"ocultado"
-        /// usando operaciones batch de hasta 1000 registros.
-        /// </summary>
         public void ExportarItems()
         {
-            if (_mData == null) return;
-            if (!_mColumnas.TryGetValue("estadof", out int colEst)) return;
+            if (!_tabla.Columns.Contains("estadof")) return;
 
-            int filas    = _mData.GetLength(1);
-            int numCols  = _mData.GetLength(0);
-            var conn     = DatabaseConnection.ObtenerConexion();
-
+            var conn       = DatabaseConnection.ObtenerConexion();
             var deleteIds  = new List<string>();
-            var insertRows = new List<int>();
-            var updateRows = new List<int>();
+            var insertRows = new List<DataRow>();
+            var updateRows = new List<DataRow>();
 
-            for (int i = 0; i < filas; i++)
+            foreach (DataRow row in _tabla.Rows)
             {
-                var estado = _mData[colEst, i]?.ToString() ?? "";
-                switch (estado)
+                switch (row["estadof"]?.ToString() ?? "")
                 {
-                    case "eliminado": deleteIds.Add(i.ToString());  break;   // usaremos el ID real abajo
-                    case "nuevo":     insertRows.Add(i);            break;
+                    case "eliminado": deleteIds.Add(row["id"]?.ToString() ?? ""); break;
+                    case "nuevo":     insertRows.Add(row);                        break;
                     case "editado":
-                    case "ocultado":  updateRows.Add(i);            break;
+                    case "ocultado":  updateRows.Add(row);                        break;
                 }
             }
 
             // ── ELIMINACIONES ────────────────────────────────────────────────
-            if (deleteIds.Count > 0 && _mColumnas.TryGetValue("id", out int colId))
+            foreach (var bloque in Chunks(deleteIds, 1000))
             {
-                var ids = new List<string>();
-                for (int i = 0; i < filas; i++)
-                    if ((_mData[colEst, i]?.ToString() ?? "") == "eliminado")
-                        ids.Add(_mData[colId, i]?.ToString() ?? "");
-
-                foreach (var bloque in Chunks(ids, 1000))
-                {
-                    string lista = string.Join(",", bloque);
-                    using var cmd = new SqlCommand(
-                        $"DELETE FROM {_nombreTabla} WHERE id IN ({lista})", conn);
-                    cmd.ExecuteNonQuery();
-                }
+                string lista = string.Join(",", bloque);
+                using var cmd = new SqlCommand(
+                    $"DELETE FROM {_nombreTabla} WHERE id IN ({lista})", conn);
+                cmd.ExecuteNonQuery();
             }
 
             // ── INSERCIONES ──────────────────────────────────────────────────
             if (insertRows.Count > 0)
             {
-                string colsStr = string.Join(",", _colNames);
+                string colsStr = string.Join(",",
+                    _tabla.Columns.Cast<DataColumn>().Select(c => c.ColumnName));
+
                 foreach (var bloque in Chunks(insertRows, 1000))
                 {
                     var values = new List<string>();
-                    foreach (int r in bloque)
+                    foreach (var row in bloque)
                     {
-                        _mData[colEst, r] = "normal";
-                        values.Add("(" + FormatearFila(r, numCols) + ")");
+                        row["estadof"] = "normal";
+                        values.Add("(" + FormatearFila(row) + ")");
                     }
                     string sql = $"INSERT INTO {_nombreTabla} ({colsStr}) VALUES {string.Join(",", values)}";
                     using var cmd = new SqlCommand(sql, conn);
@@ -312,46 +212,66 @@ namespace WpfAppVba.Data
                 }
             }
 
-            // ── ACTUALIZACIONES (UPDATE con VALUES trick) ────────────────────
-            if (updateRows.Count > 0 && _mColumnas.TryGetValue("id", out colId))
+            // ── ACTUALIZACIONES ──────────────────────────────────────────────
+            if (updateRows.Count > 0)
             {
-                foreach (var bloque in Chunks(updateRows, 1000))
+                var cols = _tabla.Columns.Cast<DataColumn>().Skip(1).ToList(); // saltar id
+                string setParts  = string.Join(", ", cols.Select((c, i) => $"{c.ColumnName} = @p{i}"));
+                string sqlUpdate = $"UPDATE {_nombreTabla} SET {setParts} WHERE id = @id";
+
+                foreach (var row in updateRows)
                 {
-                    foreach (int r in bloque)
-                    {
-                        if ((_mData[colEst, r]?.ToString() ?? "") == "editado")
-                            _mData[colEst, r] = "normal";
-                    }
+                    if (row["estadof"]?.ToString() == "editado")
+                        row["estadof"] = "normal";
 
-                    // Construir SET dinámico
-                    var setClauses = new List<string>();
-                    for (int c = 1; c < numCols; c++)          // saltar columna id (col 0)
-                        setClauses.Add($"{_colNames[c]} = @c{c}_{"{r}"}");
-
-                    // UPDATE individual por fila (más limpio en C# que el VALUES trick de VBA)
-                    foreach (int r in bloque)
-                    {
-                        var sqlParts = new List<string>();
-                        for (int c = 1; c < numCols; c++)
-                            sqlParts.Add($"{_colNames[c]} = @p{c}");
-
-                        string sql = $"UPDATE {_nombreTabla} SET {string.Join(", ", sqlParts)} WHERE id = @id";
-                        using var cmd = new SqlCommand(sql, conn);
-                        cmd.Parameters.AddWithValue("@id", _mData[colId, r] ?? DBNull.Value);
-                        for (int c = 1; c < numCols; c++)
-                            cmd.Parameters.AddWithValue($"@p{c}", _mData[c, r] ?? DBNull.Value);
-                        cmd.ExecuteNonQuery();
-                    }
+                    using var cmd = new SqlCommand(sqlUpdate, conn);
+                    cmd.Parameters.AddWithValue("@id", row["id"] ?? DBNull.Value);
+                    for (int i = 0; i < cols.Count; i++)
+                        cmd.Parameters.AddWithValue($"@p{i}", row[cols[i]] ?? DBNull.Value);
+                    cmd.ExecuteNonQuery();
                 }
             }
         }
 
-        private string FormatearFila(int row, int numCols)
+        // ─── ELIMINAR FILAS OCULTAS/ELIMINADAS DE LA CACHÉ ───────────────────
+
+        private void EliminarItems()
+        {
+            if (!_tabla.Columns.Contains("estadof")) return;
+
+            var aEliminar = _tabla.Rows.Cast<DataRow>()
+                .Where(r => r["estadof"]?.ToString() is "eliminado" or "ocultado")
+                .ToList();
+
+            foreach (var row in aEliminar)
+                _tabla.Rows.Remove(row);
+        }
+
+        // ─── CARGA DESDE SQL SERVER ───────────────────────────────────────────
+
+        private void ObtenerDatos(string consulta)
+        {
+            _tabla.Clear();
+            _indiceId.Clear();
+
+            var conn = DatabaseConnection.ObtenerConexion();
+            using var adapter = new SqlDataAdapter(consulta, conn);
+            adapter.Fill(_tabla);
+
+            foreach (DataRow row in _tabla.Rows)
+            {
+                var key = row["id"]?.ToString()?.ToLower() ?? "";
+                if (!string.IsNullOrEmpty(key))
+                    _indiceId[key] = row;
+            }
+        }
+
+        private string FormatearFila(DataRow row)
         {
             var partes = new List<string>();
-            for (int c = 0; c < numCols; c++)
+            foreach (DataColumn col in _tabla.Columns)
             {
-                var val = _mData![c, row];
+                var val = row[col];
                 if (val == null || val is DBNull || val.ToString() == "")
                     partes.Add("NULL");
                 else if (val is DateTime dt)
@@ -361,108 +281,6 @@ namespace WpfAppVba.Data
             }
             return string.Join(",", partes);
         }
-
-        // ─── ELIMINAR FILAS OCULTAS/ELIMINADAS DE LA CACHÉ ───────────────────
-
-        private void EliminarItems()
-        {
-            if (_mData == null) return;
-            if (!_mColumnas.TryGetValue("estadof", out int colEst)) return;
-
-            int filas   = _mData.GetLength(1);
-            int numCols = _mData.GetLength(0);
-
-            var filasValidas = new List<int>();
-            for (int i = 0; i < filas; i++)
-            {
-                var estado = _mData[colEst, i]?.ToString() ?? "";
-                if (estado != "eliminado" && estado != "ocultado")
-                    filasValidas.Add(i);
-            }
-
-            if (filasValidas.Count == 0)
-            {
-                _mData = null;
-                return;
-            }
-
-            if (filasValidas.Count == filas) return; // nada que hacer
-
-            var nueva = new object[numCols, filasValidas.Count];
-            for (int k = 0; k < filasValidas.Count; k++)
-            {
-                int orig = filasValidas[k];
-                for (int c = 0; c < numCols; c++)
-                    nueva[c, k] = _mData[c, orig];
-            }
-            _mData = nueva;
-        }
-
-        // ─── CARGA DESDE SQL SERVER ───────────────────────────────────────────
-
-        private void ObtenerDatos(string consulta)
-        {
-            var conn = DatabaseConnection.ObtenerConexion();
-            using var cmd    = new SqlCommand(consulta, conn);
-            using var reader = cmd.ExecuteReader();
-
-            // Leer nombres de columnas
-            int numCols = reader.FieldCount;
-            if (numCols == 0) throw new Exception($"La tabla/consulta no devolvió columnas: {consulta}");
-
-            _colNames = new string[numCols];
-            for (int c = 0; c < numCols; c++)
-                _colNames[c] = reader.GetName(c);
-
-            // Leer todas las filas en una lista primero
-            var rows = new List<object[]>();
-            while (reader.Read())
-            {
-                var row = new object[numCols];
-                reader.GetValues(row);
-                rows.Add(row);
-            }
-            reader.Close();
-
-            // Convertir a array 2D [col, fila] (mismo layout que VBA mData1)
-            if (rows.Count > 0)
-            {
-                _mData = new object[numCols, rows.Count];
-                for (int r = 0; r < rows.Count; r++)
-                    for (int c = 0; c < numCols; c++)
-                        _mData[c, r] = rows[r][c];
-            }
-            else
-            {
-                _mData = null;
-            }
-
-            CargarDiccionario();
-        }
-
-        private void CargarDiccionario()
-        {
-            _mFilas    = new Dictionary<string, int>();
-            _mColumnas = new Dictionary<string, int>();
-
-            // Columnas
-            for (int c = 0; c < _colNames.Length; c++)
-                _mColumnas[_colNames[c].ToLower()] = c;
-
-            // Filas (indexadas por el valor de la columna 0, que es el ID)
-            if (_mData != null)
-            {
-                int filas = _mData.GetLength(1);
-                for (int r = 0; r < filas; r++)
-                {
-                    var key = _mData[0, r]?.ToString() ?? "";
-                    if (!string.IsNullOrEmpty(key))
-                        _mFilas[key.ToLower()] = r;
-                }
-            }
-        }
-
-        // ─── HELPERS ─────────────────────────────────────────────────────────
 
         private static IEnumerable<List<T>> Chunks<T>(List<T> source, int size)
         {
