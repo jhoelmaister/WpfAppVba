@@ -7,7 +7,7 @@ namespace WpfAppVba.Data
 {
     /// <summary>
     /// Equivalente a Data_Consultas.cls
-    ///
+    /// jhoel cpo
     /// Arquitectura de caché en memoria:
     ///   _mData  = object[columnas, filas]   → datos reales (equivalente a mData1)
     ///   _mCols  = object[1, columnas]       → nombres de columnas (equivalente a mData2)
