@@ -7,8 +7,10 @@
         Background="#F0F2F5">
 
     <Grid>
-        <Border Background="White" CornerRadius="8" Margin="30,30,30,30"
-                Effect="{DynamicResource {x:Static SystemParameters.DropShadowKey}}">
+        <Border Background="White" CornerRadius="8" Margin="30,30,30,30">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.15" Color="Black"/>
+            </Border.Effect>
             <StackPanel Margin="30,25,30,25" VerticalAlignment="Center">
 
                 <!-- Título -->
