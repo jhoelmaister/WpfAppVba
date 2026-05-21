@@ -14,7 +14,7 @@ namespace WpfAppVba
         /// <summary>
         /// Cuando se abre en modo selector, aquí queda el ID de la familia elegida.
         /// </summary>
-        public static string? FamiliaSeleccionada { get; private set; }
+        public static string? FamiliaSeleccionada { get; set; }
 
         public FamiliasGeneral(bool modoSelector = false)
         {
