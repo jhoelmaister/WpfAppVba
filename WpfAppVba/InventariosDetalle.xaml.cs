@@ -55,7 +55,7 @@ namespace WpfAppVba
             var fechaObj = Sql.DocumentosIObj.ObtenerItem("fecha", _idEditar);
             DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : DateTime.Now;
             Box_Fecha.SelectedDate = fecha;
-            Box_Hora.Text          = fecha.ToString("HH:mm");
+            Box_Hora.Text          = fecha.ToString("HH:mm:ss");
             Box_Observacion.Text   = Sql.DocumentosIObj.ObtenerItem("observacion", _idEditar)?.ToString() ?? "";
 
             // Cargar ítems del inventario
@@ -93,7 +93,7 @@ namespace WpfAppVba
             long siguiente = Convert.ToInt64(Sql.DocumentosIObj.Maximo("id") ?? 0) + 1;
             Box_DocumentoI.Text    = siguiente.ToString();
             Box_Fecha.SelectedDate = DateTime.Today;
-            Box_Hora.Text          = DateTime.Now.ToString("HH:mm");
+            Box_Hora.Text          = DateTime.Now.ToString("HH:mm:ss");
             _items.Clear();
             RefrescarGrid();
         }

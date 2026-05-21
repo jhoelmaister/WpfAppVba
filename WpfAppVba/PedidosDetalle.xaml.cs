@@ -52,7 +52,7 @@ namespace WpfAppVba
             var fechaObj = Sql.DocumentosPObj.ObtenerItem("fecha", _idEditar);
             DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : DateTime.Now;
             Box_Fecha.SelectedDate = fecha.Date;
-            Box_Hora.Text = fecha.ToString("HH:mm");
+            Box_Hora.Text = fecha.ToString("HH:mm:ss");
 
             string terceroId = Sql.DocumentosPObj.ObtenerItem("tercero", _idEditar)?.ToString() ?? "";
             Box_Tercero_Identificador.Text = terceroId;
@@ -101,7 +101,7 @@ namespace WpfAppVba
             long siguiente = Convert.ToInt64(Sql.DocumentosPObj.Maximo("id") ?? 0) + 1;
             Box_DocumentoP.Text = siguiente.ToString();
             Box_Fecha.SelectedDate = DateTime.Today;
-            Box_Hora.Text = DateTime.Now.ToString("HH:mm");
+            Box_Hora.Text = DateTime.Now.ToString("HH:mm:ss");
             SeleccionarEstado("pendiente");
             _items.Clear();
             RefrescarGrid();

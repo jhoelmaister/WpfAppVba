@@ -48,7 +48,7 @@
                 <ColumnDefinition Width="130"/>
                 <ColumnDefinition Width="16"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="70"/>
+                <ColumnDefinition Width="95"/>
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Column="0" Text="Doc. Inventario:" Style="{StaticResource Lbl}"
@@ -63,7 +63,7 @@
             <DatePicker x:Name="Box_Fecha" Grid.Column="4" Height="28" FontSize="12"
                         SelectedDateChanged="Campo_DateChanged"/>
 
-            <TextBlock Grid.Column="6" Text="Hora:" Style="{StaticResource Lbl}"
+            <TextBlock Grid.Column="6" Text="Hora (HH:mm:ss):" Style="{StaticResource Lbl}"
                        VerticalAlignment="Center" Margin="0,0,6,0"/>
             <TextBox x:Name="Box_Hora" Grid.Column="7" Height="28" FontSize="12"
                      Padding="6,4" BorderBrush="#CCC"
