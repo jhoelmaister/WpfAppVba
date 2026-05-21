@@ -79,6 +79,57 @@ namespace WpfAppVba.Data
 
   
 
+        // ─── ACTUALIZAR STOCKS ────────────────────────────────────────────────
+
+        /// <summary>
+        /// Equivalente a actualizarStocks().
+        /// Elimina todos los stocks, luego genera uno por artículo
+        /// para la sucursal activa. El ID = sucursalId + índice (3 dígitos).
+        /// Ej: sucursal=1, artículo#5 → id=1005
+        /// </summary>
+        public static void ActualizarStocks()
+        {
+            // 1. Marcar todos los stocks actuales como eliminados
+            int uf = Sql.StocksObj.ContarFilas;
+            for (int ciclo = 1; ciclo <= uf; ciclo++)
+            {
+                var idObj = Sql.StocksObj.Mover(ciclo);
+                if (idObj == null) continue;
+                Sql.StocksObj.Eliminar(idObj.ToString()!);
+            }
+
+            // 2. Crear un stock por artículo para la sucursal activa
+            int ufSuc = Sql.SucursalesObj.ContarFilas;
+            for (int ciclo = 1; ciclo <= ufSuc; ciclo++)
+            {
+                var idSucObj = Sql.SucursalesObj.Mover(ciclo);
+                if (idSucObj == null) continue;
+                long idSuc = Convert.ToInt64(idSucObj);
+
+                if (idSuc != SucursalActiva) continue;
+
+                int indice  = 0;
+                int ufArt   = Sql.ArticulosObj.ContarFilas;
+                for (int ciclo2 = 1; ciclo2 <= ufArt; ciclo2++)
+                {
+                    var id2Obj = Sql.ArticulosObj.Mover(ciclo2);
+                    if (id2Obj == null) continue;
+                    string id2 = id2Obj.ToString()!;
+
+                    indice++;
+                    string nuevoId = $"{idSuc}{indice:D3}";
+
+                    Sql.StocksObj.Nuevo(nuevoId);
+                    Sql.StocksObj.EstablecerItem("sucursal", nuevoId, idSuc);
+                    Sql.StocksObj.EstablecerItem("articulo", nuevoId, id2);
+                    Sql.StocksObj.EstablecerItem("indice",   nuevoId, indice);
+                }
+            }
+
+            // 3. Guarda en SQL y ordena
+            Sql.StocksObj.OrdenarData(("id", false));
+        }
+
         // ─── ACTUALIZAR BASE (cálculo de apertura y periodo) ─────────────────
 
         /// <summary>
