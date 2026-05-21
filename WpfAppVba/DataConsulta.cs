@@ -19,7 +19,7 @@ namespace WpfAppVba.Data
         {
             _nombreTabla = tabla;
             _consulta    = string.IsNullOrEmpty(consulta)
-                           ? $"SELECT * FROM {tabla}"
+                           ? $"SELECT * FROM {tabla} WHERE estadof = 'normal'"
                            : consulta;
             ObtenerDatos(_consulta);
         }
@@ -261,8 +261,16 @@ namespace WpfAppVba.Data
             foreach (DataRow row in _tabla.Rows)
             {
                 var key = row["id"]?.ToString()?.ToLower() ?? "";
-                if (!string.IsNullOrEmpty(key))
-                    _indiceId[key] = row;
+                if (string.IsNullOrEmpty(key)) continue;
+
+                // Omitir filas que no estén en estado normal
+                if (_tabla.Columns.Contains("estadof"))
+                {
+                    var estado = row["estadof"]?.ToString() ?? "normal";
+                    if (estado != "normal" && estado != "") continue;
+                }
+
+                _indiceId[key] = row;
             }
         }
 
