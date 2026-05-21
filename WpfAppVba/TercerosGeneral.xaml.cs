@@ -9,11 +9,25 @@ namespace WpfAppVba
     public partial class TercerosGeneral : Window
     {
         private static SqlData Sql => SqlData.Instance;
+        private readonly bool _modoSelector;
 
-        public TercerosGeneral()
+        /// <summary>ID del tercero elegido cuando se abre en modo selector.</summary>
+        public static string? TerceroSeleccionado { get; set; }
+
+        public TercerosGeneral(bool modoSelector = false)
         {
             InitializeComponent();
-            Loaded += (_, _) => CargarTerceros();
+            _modoSelector = modoSelector;
+            Loaded += (_, _) =>
+            {
+                if (_modoSelector)
+                {
+                    Title                     = "Seleccionar Tercero";
+                    PanelAdmin.Visibility     = Visibility.Collapsed;
+                    BtnSeleccionar.Visibility = Visibility.Visible;
+                }
+                CargarTerceros();
+            };
         }
 
         // ─── Carga la lista (equivalente a cargarTerceros) ────────────────────
@@ -55,9 +69,23 @@ namespace WpfAppVba
         private void TxtBuscar_TextChanged(object sender, TextChangedEventArgs e)
             => CargarTerceros();
 
-        // ─── Doble clic = editar ──────────────────────────────────────────────
+        // ─── Doble clic ───────────────────────────────────────────────────────
         private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-            => AbrirEditar();
+        {
+            if (_modoSelector) Seleccionar();
+            else               AbrirEditar();
+        }
+
+        // ─── Modo selector ────────────────────────────────────────────────────
+        private void Seleccionar()
+        {
+            if (Grid1.SelectedItem is not TerceroFila fila) return;
+            TerceroSeleccionado = fila.Id;
+            Close();
+        }
+
+        private void BtnSeleccionar_Click(object sender, RoutedEventArgs e)
+            => Seleccionar();
 
         // ─── Botones ──────────────────────────────────────────────────────────
 

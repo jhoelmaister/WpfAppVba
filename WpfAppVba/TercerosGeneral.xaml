@@ -53,12 +53,23 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <!-- Botones -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+        <!-- Botones admin -->
+        <StackPanel x:Name="PanelAdmin" Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
             <Button Content="Nuevo"      Margin="0,0,6,0" Background="#1A73E8" Foreground="White" Click="BtnNuevo_Click"      Style="{StaticResource Btn}"/>
             <Button Content="Editar"     Margin="0,0,6,0" Background="#E8EDF5" Foreground="#1A1A2E" Click="BtnEditar_Click"   Style="{StaticResource Btn}"/>
             <Button Content="Eliminar"   Margin="0,0,6,0" Background="#D93025" Foreground="White" Click="BtnEliminar_Click"  Style="{StaticResource Btn}"/>
             <Button Content="Actualizar" Margin="0,0,0,0" Background="#E8EDF5" Foreground="#1A1A2E" Click="BtnActualizar_Click" Style="{StaticResource Btn}"/>
         </StackPanel>
+
+        <!-- Botón modo selector -->
+        <Button x:Name="BtnSeleccionar" Grid.Row="2"
+                Content="✔ Seleccionar"
+                HorizontalAlignment="Right" Margin="0,8,0,0"
+                Visibility="Collapsed"
+                Height="30" Padding="16,0" FontSize="12"
+                Background="#1A73E8" Foreground="White"
+                BorderThickness="0" Cursor="Hand"
+                Click="BtnSeleccionar_Click"
+                Style="{StaticResource Btn}"/>
     </Grid>
 </Window>

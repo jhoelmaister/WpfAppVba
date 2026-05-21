@@ -197,10 +197,12 @@ namespace WpfAppVba
         // ─── Buscar tercero ───────────────────────────────────────────────────
         private void BtnBuscarTercero_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new TercerosGeneral();
-            dlg.ShowDialog();
-            // TercerosGeneral no tiene modo selector aún; el usuario puede cerrar
-            // y tipear el código manualmente. Extensible si se añade modo selector.
+            TercerosGeneral.TerceroSeleccionado = null;
+            new TercerosGeneral(modoSelector: true).ShowDialog();
+
+            if (!string.IsNullOrEmpty(TercerosGeneral.TerceroSeleccionado))
+                Box_Tercero_Identificador.Text = TercerosGeneral.TerceroSeleccionado;
+                // El TextChanged de Box_Tercero_Identificador llama ActualizarDescripcionTercero()
         }
 
         // ─── Importar artículos ───────────────────────────────────────────────
