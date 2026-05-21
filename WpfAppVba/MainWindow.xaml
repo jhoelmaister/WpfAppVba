@@ -1,13 +1,96 @@
-﻿<Window x:Class="WpfAppVba.MainWindow"
+<Window x:Class="WpfAppVba.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:WpfAppVba"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        <Button Content="Button" HorizontalAlignment="Left" Height="81" Margin="211,232,0,0" VerticalAlignment="Top" Width="364" Click="Button_Click"/>
+        Title="Consola de Movimientos" Height="480" Width="780"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="#F0F2F5">
 
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Encabezado -->
+        <Border Grid.Row="0" Background="White" CornerRadius="6" Padding="16,10" Margin="0,0,0,12">
+            <Grid>
+                <TextBlock Text="Consola de Movimientos" FontSize="16" FontWeight="Bold" Foreground="#1A1A2E"/>
+                <TextBlock x:Name="LblUsuario" FontSize="12" Foreground="#777"
+                           HorizontalAlignment="Right" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- Botones agrupados -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Columna 1: Ventas y Compras -->
+            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                <TextBlock Text="VENTAS / COMPRAS" FontSize="10" FontWeight="Bold"
+                           Foreground="#888" Margin="0,0,0,6"/>
+                <Button Content="Venta Rápida"        Height="44" Margin="0,0,0,6" Click="BtnVentaRapida_Click"      Style="{StaticResource BtnPrimario}"/>
+                <Button Content="Registros de Ventas" Height="44" Margin="0,0,0,6" Click="BtnVentas_Click"           Style="{StaticResource BtnSecundario}"/>
+                <Button Content="Registros de Compras" Height="44" Margin="0,0,0,6" Click="BtnCompras_Click"         Style="{StaticResource BtnSecundario}"/>
+            </StackPanel>
+
+            <!-- Columna 2: Traspasos -->
+            <StackPanel Grid.Column="1" Margin="4,0,4,0">
+                <TextBlock Text="TRASPASOS" FontSize="10" FontWeight="Bold"
+                           Foreground="#888" Margin="0,0,0,6"/>
+                <Button Content="Entrada Rápida"       Height="44" Margin="0,0,0,6" Click="BtnEntradaRapida_Click"   Style="{StaticResource BtnPrimario}"/>
+                <Button Content="Salida Rápida"        Height="44" Margin="0,0,0,6" Click="BtnSalidaRapida_Click"    Style="{StaticResource BtnPrimario}"/>
+                <Button Content="Registros de Entradas" Height="44" Margin="0,0,0,6" Click="BtnEntradas_Click"       Style="{StaticResource BtnSecundario}"/>
+                <Button Content="Registros de Salidas" Height="44" Margin="0,0,0,6" Click="BtnSalidas_Click"         Style="{StaticResource BtnSecundario}"/>
+            </StackPanel>
+
+            <!-- Columna 3: Catálogos -->
+            <StackPanel Grid.Column="2" Margin="8,0,0,0">
+                <TextBlock Text="CATÁLOGOS" FontSize="10" FontWeight="Bold"
+                           Foreground="#888" Margin="0,0,0,6"/>
+                <Button Content="Registros de Artículos"   Height="44" Margin="0,0,0,6" Click="BtnArticulos_Click"   Style="{StaticResource BtnSecundario}"/>
+                <Button Content="Registros de Terceros"    Height="44" Margin="0,0,0,6" Click="BtnTerceros_Click"    Style="{StaticResource BtnSecundario}"/>
+                <Button Content="Registro de Inventarios"  Height="44" Margin="0,0,0,6" Click="BtnInventarios_Click" Style="{StaticResource BtnSecundario}"/>
+                <Button Content="Datos de Usuario"         Height="44" Margin="0,0,0,6" Click="BtnUsuario_Click"     Style="{StaticResource BtnSecundario}"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Pie: Cerrar sesión -->
+        <Button Grid.Row="2" Content="Cerrar Sesión" Height="36" Margin="0,12,0,0"
+                HorizontalAlignment="Right" Width="140"
+                Click="BtnCerrarSesion_Click"
+                Style="{StaticResource BtnPeligro}"/>
     </Grid>
+
+    <Window.Resources>
+        <Style x:Key="BtnBase" TargetType="Button">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="12,0"/>
+        </Style>
+        <Style x:Key="BtnPrimario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="#1A73E8"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style x:Key="BtnSecundario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="#E8EDF5"/>
+            <Setter Property="Foreground" Value="#1A1A2E"/>
+        </Style>
+        <Style x:Key="BtnPeligro" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="#D93025"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
 </Window>
