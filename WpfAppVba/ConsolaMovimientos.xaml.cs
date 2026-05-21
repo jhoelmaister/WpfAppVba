@@ -78,8 +78,7 @@ namespace WpfAppVba
 
         private void BtnTerceros_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: new TercerosGeneral().Show();
-            MessageBox.Show("Registros de Terceros — próximamente");
+            new TercerosGeneral().Show();
         }
 
         private void BtnInventarios_Click(object sender, RoutedEventArgs e)

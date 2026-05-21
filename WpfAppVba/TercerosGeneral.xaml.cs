@@ -1,0 +1,115 @@
+using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using WpfAppVba.Data;
+
+namespace WpfAppVba
+{
+    public partial class TercerosGeneral : Window
+    {
+        private static SqlData Sql => SqlData.Instance;
+
+        public TercerosGeneral()
+        {
+            InitializeComponent();
+            Loaded += (_, _) => CargarTerceros();
+        }
+
+        // ─── Carga la lista (equivalente a cargarTerceros) ────────────────────
+        public void CargarTerceros()
+        {
+            string busqueda = TxtBuscar.Text.Trim().ToLower();
+            var filas = new List<TerceroFila>();
+            int linea = 1;
+
+            int uf = Sql.TercerosObj.ContarFilas;
+            for (int ciclo = 1; ciclo <= uf; ciclo++)
+            {
+                var idObj = Sql.TercerosObj.Mover(ciclo);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+
+                string desc = Sql.TercerosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                string nit  = Sql.TercerosObj.ObtenerItem("nit",         id)?.ToString() ?? "";
+
+                if (busqueda == "" ||
+                    desc.ToLower().Contains(busqueda) ||
+                    nit.ToLower().Contains(busqueda))
+                {
+                    filas.Add(new TerceroFila
+                    {
+                        Linea       = linea++,
+                        Id          = id,
+                        Nit         = nit,
+                        Descripcion = desc,
+                        Telefono    = Sql.TercerosObj.ObtenerItem("telefono", id)?.ToString() ?? ""
+                    });
+                }
+            }
+
+            Grid1.ItemsSource = filas;
+        }
+
+        // ─── Búsqueda en tiempo real ──────────────────────────────────────────
+        private void TxtBuscar_TextChanged(object sender, TextChangedEventArgs e)
+            => CargarTerceros();
+
+        // ─── Doble clic = editar ──────────────────────────────────────────────
+        private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+            => AbrirEditar();
+
+        // ─── Botones ──────────────────────────────────────────────────────────
+
+        private void BtnNuevo_Click(object sender, RoutedEventArgs e)
+        {
+            AppState.EventoFormularioL = "nuevo";
+            var detalle = new TercerosDetalle(this);
+            detalle.ShowDialog();
+            CargarTerceros();
+        }
+
+        private void BtnEditar_Click(object sender, RoutedEventArgs e)
+            => AbrirEditar();
+
+        private void BtnEliminar_Click(object sender, RoutedEventArgs e)
+        {
+            if (Grid1.SelectedItem is not TerceroFila fila) return;
+
+            var res = MessageBox.Show("¿Eliminar este tercero?", "Consola",
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (res == MessageBoxResult.Yes)
+            {
+                Sql.TercerosObj.Ocultar(fila.Id);
+                Sql.TercerosObj.OrdenarData(("id", false));
+                CargarTerceros();
+            }
+        }
+
+        private void BtnActualizar_Click(object sender, RoutedEventArgs e)
+        {
+            Sql.TercerosObj.Actualizar();
+            CargarTerceros();
+        }
+
+        private void AbrirEditar()
+        {
+            if (Grid1.SelectedItem is not TerceroFila fila) return;
+            AppState.EventoFormularioL = "modificar";
+            var detalle = new TercerosDetalle(this, fila.Id);
+            detalle.ShowDialog();
+            CargarTerceros();
+        }
+    }
+
+    // ─── Modelo de fila para el DataGrid ─────────────────────────────────────
+    public class TerceroFila
+    {
+        public int    Linea       { get; set; }
+        public string Id          { get; set; } = "";
+        public string Nit         { get; set; } = "";
+        public string Descripcion { get; set; } = "";
+        public string Telefono    { get; set; } = "";
+    }
+}
