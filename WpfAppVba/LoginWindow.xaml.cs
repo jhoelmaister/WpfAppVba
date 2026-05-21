@@ -111,7 +111,7 @@ namespace WpfAppVba
                 MostrarEstado("¡Conexión exitosa!", Colors.Green);
 
                 // ── Abrir ventana principal ───────────────────────────────────
-                var main = new MainWindow();
+                var main = new ConsolaMovimientos();
                 main.Show();
                 Close();
             }

@@ -1,4 +1,4 @@
-<Window x:Class="WpfAppVba.MainWindow"
+<Window x:Class="WpfAppVba.ConsolaMovimientos"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -80,10 +80,10 @@
             <StackPanel Grid.Column="2" Margin="8,0,0,0">
                 <TextBlock Text="CATÁLOGOS" FontSize="10" FontWeight="Bold"
                            Foreground="#888" Margin="0,0,0,6"/>
-                <Button Content="Registros de Artículos"  Height="44" Margin="0,0,0,6" Click="BtnArticulos_Click"  Style="{StaticResource BtnSecundario}"/>
-                <Button Content="Registros de Terceros"   Height="44" Margin="0,0,0,6" Click="BtnTerceros_Click"   Style="{StaticResource BtnSecundario}"/>
+                <Button Content="Registros de Artículos"  Height="44" Margin="0,0,0,6" Click="BtnArticulos_Click"   Style="{StaticResource BtnSecundario}"/>
+                <Button Content="Registros de Terceros"   Height="44" Margin="0,0,0,6" Click="BtnTerceros_Click"    Style="{StaticResource BtnSecundario}"/>
                 <Button Content="Registro de Inventarios" Height="44" Margin="0,0,0,6" Click="BtnInventarios_Click" Style="{StaticResource BtnSecundario}"/>
-                <Button Content="Datos de Usuario"        Height="44" Margin="0,0,0,6" Click="BtnUsuario_Click"    Style="{StaticResource BtnSecundario}"/>
+                <Button Content="Datos de Usuario"        Height="44" Margin="0,0,0,6" Click="BtnUsuario_Click"     Style="{StaticResource BtnSecundario}"/>
             </StackPanel>
         </Grid>
 

@@ -3,9 +3,9 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class MainWindow : Window
+    public partial class ConsolaMovimientos : Window
     {
-        public MainWindow()
+        public ConsolaMovimientos()
         {
             InitializeComponent();
             LblUsuario.Text = $"Usuario: {AppState.UsuarioActivo}  |  Período: {AppState.PeriodoActivo}";
