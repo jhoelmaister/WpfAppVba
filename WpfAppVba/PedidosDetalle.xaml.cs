@@ -259,8 +259,67 @@ namespace WpfAppVba
         private void GridItems_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
         {
             _hayCambios = true;
+
+            // Cuando se confirma la edición de la columna Código → buscar artículo
+            if (e.EditAction == DataGridEditAction.Commit &&
+                e.Column.Header?.ToString() == "Código" &&
+                e.Row.Item is PedidoItemFila fila &&
+                e.EditingElement is TextBox tb)
+            {
+                string codigo = tb.Text.Trim();
+                long artIdNum = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
+                if (artIdNum > 0)
+                {
+                    string artId     = artIdNum.ToString();
+                    fila.ArticuloId  = artId;
+                    fila.Codigo      = codigo;
+                    fila.Descripcion = ObtenerDescripcionArticulo(artId);
+                    fila.Precio      = ObtenerPrecioArticulo(artId);
+                }
+                else
+                {
+                    fila.ArticuloId  = "";
+                    fila.Codigo      = codigo;
+                    fila.Descripcion = string.IsNullOrEmpty(codigo) ? "" : "⚠ Artículo no encontrado";
+                    fila.Precio      = 0;
+                }
+            }
+
             Dispatcher.BeginInvoke(new Action(RefrescarGrid),
                 System.Windows.Threading.DispatcherPriority.Background);
+        }
+
+        // ─── Seleccionar todo al entrar al campo Código ───────────────────────
+        private void GridItems_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
+        {
+            if (e.Column.Header?.ToString() == "Código" && e.EditingElement is TextBox tb)
+            {
+                tb.SelectAll();
+                tb.Focus();
+            }
+        }
+
+        // ─── Insertar línea en la posición seleccionada ───────────────────────
+        private void BtnInsertar_Click(object sender, RoutedEventArgs e)
+        {
+            int idx = GridItems.SelectedItem is PedidoItemFila sel
+                      ? _items.IndexOf(sel)
+                      : _items.Count;
+            if (idx < 0) idx = _items.Count;
+
+            var nueva = new PedidoItemFila
+            {
+                PedidoId = "", ArticuloId = "", Codigo = "",
+                Descripcion = "", Cantidad = 1, Precio = 0
+            };
+            _items.Insert(idx, nueva);
+            _hayCambios = true;
+            RefrescarGrid();
+            if (idx < GridItems.Items.Count)
+            {
+                GridItems.SelectedIndex = idx;
+                GridItems.ScrollIntoView(GridItems.SelectedItem);
+            }
         }
 
         // ─── Guardar ──────────────────────────────────────────────────────────

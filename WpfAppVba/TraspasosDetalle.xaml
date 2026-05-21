@@ -152,6 +152,8 @@
             <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,6">
                 <Button Content="Importar Artículos" Style="{StaticResource BtnPrimario}"
                         Margin="0,0,6,0" Click="BtnImportarArticulos_Click"/>
+                <Button Content="Insertar" Style="{StaticResource BtnSecundario}"
+                        Margin="0,0,6,0" Click="BtnInsertar_Click"/>
                 <Button Content="Nueva Línea" Style="{StaticResource BtnSecundario}"
                         Margin="0,0,6,0" Click="BtnNuevaLinea_Click"/>
                 <Button Content="Eliminar Línea" Style="{StaticResource BtnPeligro}"
@@ -167,10 +169,11 @@
                       GridLinesVisibility="Horizontal"
                       BorderBrush="#DDD" BorderThickness="1"
                       FontSize="12"
-                      CellEditEnding="GridItems_CellEditEnding">
+                      CellEditEnding="GridItems_CellEditEnding"
+                      PreparingCellForEdit="GridItems_PreparingCellForEdit">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Línea"       Binding="{Binding Linea}"       Width="50"  IsReadOnly="True"/>
-                    <DataGridTextColumn Header="Código"      Binding="{Binding Codigo}"      Width="70"  IsReadOnly="True"/>
+                    <DataGridTextColumn Header="Código"      Binding="{Binding Codigo}"      Width="80"/>
                     <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"   IsReadOnly="True"/>
                     <DataGridTextColumn Header="Cantidad"    Binding="{Binding Cantidad}"    Width="80"/>
                 </DataGrid.Columns>

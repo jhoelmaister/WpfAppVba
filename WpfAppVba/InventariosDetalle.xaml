@@ -107,6 +107,10 @@
                         Background="#1A73E8" Foreground="White"
                         Style="{StaticResource Btn}"
                         Click="BtnBuscarArticulos_Click"/>
+                <Button Content="Insertar" Margin="0,0,6,0"
+                        Background="#E8EDF5" Foreground="#5F6368"
+                        Style="{StaticResource Btn}"
+                        Click="BtnInsertar_Click"/>
                 <Button Content="Nueva Línea" Margin="0,0,6,0"
                         Background="#E8EDF5" Foreground="#5F6368"
                         Style="{StaticResource Btn}"
@@ -128,10 +132,11 @@
                   GridLinesVisibility="Horizontal"
                   BorderBrush="#DDD" BorderThickness="1"
                   FontSize="12"
-                  CellEditEnding="GridItems_CellEditEnding">
+                  CellEditEnding="GridItems_CellEditEnding"
+                  PreparingCellForEdit="GridItems_PreparingCellForEdit">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Línea"       Binding="{Binding Linea}"       Width="50"  IsReadOnly="True"/>
-                <DataGridTextColumn Header="Artículo ID" Binding="{Binding ArticuloId}"  Width="80"  IsReadOnly="True"/>
+                <DataGridTextColumn Header="Código"      Binding="{Binding Codigo}"      Width="80"/>
                 <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"   IsReadOnly="True"/>
                 <DataGridTemplateColumn Header="Cantidad" Width="80">
                     <DataGridTemplateColumn.CellTemplate>

@@ -71,6 +71,7 @@ namespace WpfAppVba
                 if (Sql.InventariosObj.ObtenerItem("documentoI", id)?.ToString() != _idEditar) continue;
 
                 string articuloId = Sql.InventariosObj.ObtenerItem("articulo", id)?.ToString() ?? "";
+                string codigo     = Sql.ArticulosObj.ObtenerItem("codigo", articuloId)?.ToString() ?? "";
                 string desc       = ObtenerDescripcionArticulo(articuloId);
                 double cantidad   = Convert.ToDouble(Sql.InventariosObj.ObtenerItem("cantidad", id) ?? 0);
 
@@ -79,6 +80,7 @@ namespace WpfAppVba
                     InventarioId = id,
                     Linea        = linea++,
                     ArticuloId   = articuloId,
+                    Codigo       = codigo,
                     Descripcion  = desc,
                     Cantidad     = cantidad
                 });
@@ -150,6 +152,7 @@ namespace WpfAppVba
                         InventarioId = "",
                         Linea        = _items.Count + 1,
                         ArticuloId   = art.Id,
+                        Codigo       = art.Codigo,
                         Descripcion  = art.Descripcion,
                         Cantidad     = 1
                     });
@@ -168,6 +171,7 @@ namespace WpfAppVba
                 InventarioId = "",
                 Linea        = _items.Count + 1,
                 ArticuloId   = "",
+                Codigo       = "",
                 Descripcion  = "",
                 Cantidad     = 1
             });
@@ -195,11 +199,65 @@ namespace WpfAppVba
         private void GridItems_CellEditEnding(object? sender, DataGridCellEditEndingEventArgs e)
         {
             _hayCambios = true;
-            // Actualizar total al terminar la edición
-            Dispatcher.BeginInvoke(new Action(() =>
+
+            // Cuando se confirma la edición de la columna Código → buscar artículo
+            if (e.EditAction == DataGridEditAction.Commit &&
+                e.Column.Header?.ToString() == "Código" &&
+                e.Row.Item is InventarioItemFila fila &&
+                e.EditingElement is TextBox tb)
             {
-                TxtTotalUnidades.Text = _items.Sum(x => x.Cantidad).ToString("F2");
-            }));
+                string codigo = tb.Text.Trim();
+                long artIdNum = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
+                if (artIdNum > 0)
+                {
+                    string artId     = artIdNum.ToString();
+                    fila.ArticuloId  = artId;
+                    fila.Codigo      = codigo;
+                    fila.Descripcion = ObtenerDescripcionArticulo(artId);
+                }
+                else
+                {
+                    fila.ArticuloId  = "";
+                    fila.Codigo      = codigo;
+                    fila.Descripcion = string.IsNullOrEmpty(codigo) ? "" : "⚠ Artículo no encontrado";
+                }
+            }
+
+            Dispatcher.BeginInvoke(new Action(RefrescarGrid),
+                System.Windows.Threading.DispatcherPriority.Background);
+        }
+
+        // ─── Seleccionar todo al entrar al campo Código ───────────────────────
+        private void GridItems_PreparingCellForEdit(object? sender, DataGridPreparingCellForEditEventArgs e)
+        {
+            if (e.Column.Header?.ToString() == "Código" && e.EditingElement is TextBox tb)
+            {
+                tb.SelectAll();
+                tb.Focus();
+            }
+        }
+
+        // ─── Insertar línea en la posición seleccionada ───────────────────────
+        private void BtnInsertar_Click(object sender, RoutedEventArgs e)
+        {
+            int idx = GridItems.SelectedItem is InventarioItemFila sel
+                      ? _items.IndexOf(sel)
+                      : _items.Count;
+            if (idx < 0) idx = _items.Count;
+
+            var nueva = new InventarioItemFila
+            {
+                InventarioId = "", ArticuloId = "", Codigo = "",
+                Descripcion = "", Cantidad = 1
+            };
+            _items.Insert(idx, nueva);
+            _hayCambios = true;
+            RefrescarGrid();
+            if (idx < GridItems.Items.Count)
+            {
+                GridItems.SelectedIndex = idx;
+                GridItems.ScrollIntoView(GridItems.SelectedItem);
+            }
         }
 
         // ─── Botón Guardar ────────────────────────────────────────────────────
@@ -368,6 +426,7 @@ namespace WpfAppVba
         public string InventarioId { get; set; } = ""; // vacío = nuevo sin guardar
         public int    Linea        { get; set; }
         public string ArticuloId   { get; set; } = "";
+        public string Codigo       { get; set; } = "";
         public string Descripcion  { get; set; } = "";
         public double Cantidad     { get; set; }
     }
