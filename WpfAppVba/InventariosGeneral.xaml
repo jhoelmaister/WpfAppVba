@@ -1,0 +1,65 @@
+<Window x:Class="WpfAppVba.InventariosGeneral"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Inventarios" Height="460" Width="680"
+        WindowStartupLocation="CenterScreen"
+        Background="#F0F2F5">
+
+    <Window.Resources>
+        <Style x:Key="Btn" TargetType="Button">
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Título -->
+        <TextBlock Grid.Row="0" Text="Inventarios de Apertura" FontSize="16" FontWeight="Bold"
+                   Foreground="#1A1A2E" Margin="0,0,0,10"/>
+
+        <!-- DataGrid -->
+        <DataGrid x:Name="Grid1" Grid.Row="1"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  SelectionMode="Single"
+                  HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal"
+                  BorderBrush="#DDD" BorderThickness="1"
+                  FontSize="12"
+                  MouseDoubleClick="Grid1_MouseDoubleClick">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Línea"       Binding="{Binding Linea}"        Width="60"/>
+                <DataGridTextColumn Header="Código"      Binding="{Binding Id}"           Width="80"/>
+                <DataGridTextColumn Header="Fecha"       Binding="{Binding FechaStr}"     Width="150"/>
+                <DataGridTextColumn Header="Cant. Total" Binding="{Binding CantidadTotal}" Width="100">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Nota -->
+        <TextBlock Grid.Row="2" Margin="0,6,0,0" FontSize="11" Foreground="#888"
+                   Text="Solo se puede editar/eliminar la apertura más reciente."/>
+
+        <!-- Botones -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button Content="Nuevo"    Margin="0,0,6,0" Background="#1A73E8" Foreground="White"   Click="BtnNuevo_Click"    Style="{StaticResource Btn}"/>
+            <Button Content="Editar"   Margin="0,0,6,0" Background="#E8EDF5" Foreground="#1A1A2E" Click="BtnEditar_Click"   Style="{StaticResource Btn}"/>
+            <Button Content="Eliminar" Margin="0,0,0,0" Background="#D93025" Foreground="White"   Click="BtnEliminar_Click" Style="{StaticResource Btn}"/>
+        </StackPanel>
+    </Grid>
+</Window>

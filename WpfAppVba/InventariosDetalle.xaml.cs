@@ -1,0 +1,374 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using WpfAppVba.Data;
+
+namespace WpfAppVba
+{
+    public partial class InventariosDetalle : Window
+    {
+        private static SqlData Sql => SqlData.Instance;
+
+        private readonly InventariosGeneral? _padre;
+        private readonly string _idEditar;
+        private bool _hayCambios = false;
+        private bool _cargando   = true;
+        private List<InventarioItemFila> _items = new();
+
+        public InventariosDetalle(InventariosGeneral? padre = null, string idEditar = "")
+        {
+            InitializeComponent();
+            _padre    = padre;
+            _idEditar = idEditar;
+            Loaded   += (_, _) => CargarUserform();
+        }
+
+        // ─── Carga inicial ────────────────────────────────────────────────────
+        private void CargarUserform()
+        {
+            _cargando = true;
+
+            if (AppState.EventoFormularioI == "editar")
+            {
+                LblTitulo.Text = "Editar Inventario";
+                CargarParaEditar();
+            }
+            else
+            {
+                LblTitulo.Text = "Nuevo Inventario";
+                CargarParaNuevo();
+            }
+
+            _cargando   = false;
+            _hayCambios = false;
+        }
+
+        private void CargarParaEditar()
+        {
+            Box_DocumentoI.IsEnabled = false;
+            Box_DocumentoI.Text      = _idEditar;
+
+            var fechaObj = Sql.DocumentosIObj.ObtenerItem("fecha", _idEditar);
+            DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : DateTime.Now;
+            Box_Fecha.SelectedDate = fecha;
+            Box_Hora.Text          = fecha.ToString("HH:mm");
+            Box_Observacion.Text   = Sql.DocumentosIObj.ObtenerItem("observacion", _idEditar)?.ToString() ?? "";
+
+            // Cargar ítems del inventario
+            _items.Clear();
+            int linea = 1;
+            int uf    = Sql.InventariosObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.InventariosObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+
+                if (Sql.InventariosObj.ObtenerItem("documentoI", id)?.ToString() != _idEditar) continue;
+
+                string articuloId = Sql.InventariosObj.ObtenerItem("articulo", id)?.ToString() ?? "";
+                string desc       = ObtenerDescripcionArticulo(articuloId);
+                double cantidad   = Convert.ToDouble(Sql.InventariosObj.ObtenerItem("cantidad", id) ?? 0);
+
+                _items.Add(new InventarioItemFila
+                {
+                    InventarioId = id,
+                    Linea        = linea++,
+                    ArticuloId   = articuloId,
+                    Descripcion  = desc,
+                    Cantidad     = cantidad
+                });
+            }
+
+            RefrescarGrid();
+        }
+
+        private void CargarParaNuevo()
+        {
+            Box_DocumentoI.IsEnabled = true;
+            long siguiente = Convert.ToInt64(Sql.DocumentosIObj.Maximo("id") ?? 0) + 1;
+            Box_DocumentoI.Text    = siguiente.ToString();
+            Box_Fecha.SelectedDate = DateTime.Today;
+            Box_Hora.Text          = DateTime.Now.ToString("HH:mm");
+            _items.Clear();
+            RefrescarGrid();
+        }
+
+        // ─── Descripción de artículo ──────────────────────────────────────────
+        private string ObtenerDescripcionArticulo(string artId)
+        {
+            if (string.IsNullOrEmpty(artId)) return "";
+            string desc    = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString() ?? "";
+            string famId   = Sql.ArticulosObj.ObtenerItem("familia",     artId)?.ToString() ?? "";
+            string famDesc = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString() ?? "";
+            string modelo  = Sql.ArticulosObj.ObtenerItem("modelo",      artId)?.ToString() ?? "";
+            return FuncionesComunes.UnirVariables(desc, famDesc, modelo);
+        }
+
+        // ─── Refrescar grid ───────────────────────────────────────────────────
+        private void RefrescarGrid()
+        {
+            for (int i = 0; i < _items.Count; i++)
+                _items[i].Linea = i + 1;
+
+            GridItems.ItemsSource = null;
+            GridItems.ItemsSource = _items;
+            TxtTotalUnidades.Text = _items.Sum(x => x.Cantidad).ToString("F2");
+        }
+
+        // ─── Detectar cambios ─────────────────────────────────────────────────
+        private void Campo_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!_cargando) _hayCambios = true;
+        }
+
+        private void Campo_DateChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (!_cargando) _hayCambios = true;
+        }
+
+        // ─── Validación de entrada ────────────────────────────────────────────
+        private void Box_Numeros_PreviewTextInput(object sender, TextCompositionEventArgs e)
+            => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
+
+        // ─── Buscar artículos (modo exportar) ─────────────────────────────────
+        private void BtnBuscarArticulos_Click(object sender, RoutedEventArgs e)
+        {
+            var ventana = new ArticulosGeneral(arts =>
+            {
+                foreach (var art in arts)
+                {
+                    // No agregar duplicados
+                    if (_items.Any(x => x.ArticuloId == art.Id)) continue;
+
+                    _items.Add(new InventarioItemFila
+                    {
+                        InventarioId = "",
+                        Linea        = _items.Count + 1,
+                        ArticuloId   = art.Id,
+                        Descripcion  = art.Descripcion,
+                        Cantidad     = 1
+                    });
+                }
+                _hayCambios = true;
+                RefrescarGrid();
+            });
+            ventana.ShowDialog();
+        }
+
+        // ─── Nueva línea vacía ────────────────────────────────────────────────
+        private void BtnNuevaLinea_Click(object sender, RoutedEventArgs e)
+        {
+            _items.Add(new InventarioItemFila
+            {
+                InventarioId = "",
+                Linea        = _items.Count + 1,
+                ArticuloId   = "",
+                Descripcion  = "",
+                Cantidad     = 1
+            });
+            _hayCambios = true;
+            RefrescarGrid();
+        }
+
+        // ─── Eliminar línea seleccionada ──────────────────────────────────────
+        private void BtnEliminarLinea_Click(object sender, RoutedEventArgs e)
+        {
+            if (GridItems.SelectedItem is not InventarioItemFila fila) return;
+
+            var res = MessageBox.Show("¿Eliminar esta línea?", "Consola",
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (res == MessageBoxResult.Yes)
+            {
+                _items.Remove(fila);
+                _hayCambios = true;
+                RefrescarGrid();
+            }
+        }
+
+        // ─── Celda editada ────────────────────────────────────────────────────
+        private void GridItems_CellEditEnding(object? sender, DataGridCellEditEndingEventArgs e)
+        {
+            _hayCambios = true;
+            // Actualizar total al terminar la edición
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                TxtTotalUnidades.Text = _items.Sum(x => x.Cantidad).ToString("F2");
+            }));
+        }
+
+        // ─── Botón Guardar ────────────────────────────────────────────────────
+        private void BtnGuardar_Click(object sender, RoutedEventArgs e)
+        {
+            bool ok = Guardar();
+            if (ok) { _hayCambios = false; Close(); }
+        }
+
+        // ─── Guardar ─────────────────────────────────────────────────────────
+        private bool Guardar()
+        {
+            return AppState.EventoFormularioI == "editar"
+                ? GuardarEditar()
+                : GuardarNuevo();
+        }
+
+        private bool GuardarEditar()
+        {
+            string docId = _idEditar;
+            try
+            {
+                // Combinar fecha y hora
+                DateTime fecha = CombinarFechaHora();
+
+                // Actualizar documento
+                Sql.DocumentosIObj.EstablecerItem("fecha",       docId, fecha);
+                Sql.DocumentosIObj.EstablecerItem("observacion", docId, Box_Observacion.Text);
+                Sql.DocumentosIObj.EstablecerItem("edicion",     docId, DateTime.Now);
+                Sql.DocumentosIObj.EstablecerItem("usuario",     docId, AppState.UsuarioActivo);
+
+                // Ocultar inventarios existentes de esta apertura
+                int uf = Sql.InventariosObj.ContarFilas;
+                var idsOcultar = new List<string>();
+                for (int i = 1; i <= uf; i++)
+                {
+                    var idObj = Sql.InventariosObj.Mover(i);
+                    if (idObj == null) continue;
+                    string id = idObj.ToString()!;
+                    if (Sql.InventariosObj.ObtenerItem("documentoI", id)?.ToString() == docId)
+                        idsOcultar.Add(id);
+                }
+                foreach (string id in idsOcultar)
+                    Sql.InventariosObj.Ocultar(id);
+
+                // Re-crear inventarios desde _items
+                long maxInv = Convert.ToInt64(Sql.InventariosObj.Maximo("id") ?? 0);
+                for (int i = 0; i < _items.Count; i++)
+                {
+                    var item   = _items[i];
+                    string nid = (maxInv + i + 1).ToString();
+                    Sql.InventariosObj.Nuevo(nid);
+                    Sql.InventariosObj.EstablecerItem("documentoI", nid, docId);
+                    Sql.InventariosObj.EstablecerItem("articulo",   nid, item.ArticuloId);
+                    Sql.InventariosObj.EstablecerItem("cantidad",   nid, item.Cantidad);
+                    Sql.InventariosObj.EstablecerItem("indice",     nid, i + 1);
+                }
+
+                Sql.InventariosObj.OrdenarData(("documentoI", false), ("indice", false));
+                Sql.DocumentosIObj.OrdenarData(("id", false));
+
+                int periodo = string.IsNullOrEmpty(AppState.PeriodoActivo)
+                    ? DateTime.Now.Year
+                    : int.Parse(AppState.PeriodoActivo);
+                AppState.ActualizarBase(periodo);
+                AppLoader.ConectarDocumentos(AppState.DataFechaInicio, AppState.DataFechaFinal);
+
+                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+        }
+
+        private bool GuardarNuevo()
+        {
+            string docId = Box_DocumentoI.Text.Trim();
+            try
+            {
+                if (!Sql.DocumentosIObj.VerificarId(docId, "id"))
+                {
+                    MessageBox.Show("El código de inventario ya existe.", "Consola",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
+
+                DateTime fecha = CombinarFechaHora();
+
+                Sql.DocumentosIObj.Nuevo(docId);
+                Sql.DocumentosIObj.EstablecerItem("fecha",       docId, fecha);
+                Sql.DocumentosIObj.EstablecerItem("observacion", docId, Box_Observacion.Text);
+                Sql.DocumentosIObj.EstablecerItem("sucursal",    docId, AppState.SucursalActiva);
+                Sql.DocumentosIObj.EstablecerItem("emision",     docId, DateTime.Now);
+                Sql.DocumentosIObj.EstablecerItem("edicion",     docId, DateTime.Now);
+                Sql.DocumentosIObj.EstablecerItem("usuario",     docId, AppState.UsuarioActivo);
+
+                long maxInv = Convert.ToInt64(Sql.InventariosObj.Maximo("id") ?? 0);
+                for (int i = 0; i < _items.Count; i++)
+                {
+                    var item   = _items[i];
+                    string nid = (maxInv + i + 1).ToString();
+                    Sql.InventariosObj.Nuevo(nid);
+                    Sql.InventariosObj.EstablecerItem("documentoI", nid, docId);
+                    Sql.InventariosObj.EstablecerItem("articulo",   nid, item.ArticuloId);
+                    Sql.InventariosObj.EstablecerItem("cantidad",   nid, item.Cantidad);
+                    Sql.InventariosObj.EstablecerItem("indice",     nid, i + 1);
+                }
+
+                Sql.InventariosObj.OrdenarData(("documentoI", false), ("indice", false));
+                Sql.DocumentosIObj.OrdenarData(("id", false));
+
+                int periodo = string.IsNullOrEmpty(AppState.PeriodoActivo)
+                    ? DateTime.Now.Year
+                    : int.Parse(AppState.PeriodoActivo);
+                AppState.ActualizarBase(periodo);
+                AppLoader.ConectarDocumentos(AppState.DataFechaInicio, AppState.DataFechaFinal);
+
+                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+        }
+
+        // ─── Helper: combinar fecha del DatePicker y hora del TextBox ─────────
+        private DateTime CombinarFechaHora()
+        {
+            DateTime fecha = Box_Fecha.SelectedDate ?? DateTime.Today;
+
+            if (TimeSpan.TryParse(Box_Hora.Text, out TimeSpan hora))
+                return fecha.Date + hora;
+
+            return fecha.Date + DateTime.Now.TimeOfDay;
+        }
+
+        // ─── Al cerrar: preguntar si hay cambios ──────────────────────────────
+        private void Window_Closing(object sender, CancelEventArgs e)
+        {
+            if (!_hayCambios) return;
+
+            var res = MessageBox.Show("¿Guardar Cambios?", "Consola",
+                MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+
+            if (res == MessageBoxResult.Yes)
+            {
+                bool ok = Guardar();
+                e.Cancel = !ok;
+            }
+            else if (res == MessageBoxResult.Cancel)
+            {
+                e.Cancel = true;
+            }
+            // No → cierra sin guardar
+        }
+    }
+
+    // ─── Modelo de ítem ───────────────────────────────────────────────────────
+    public class InventarioItemFila
+    {
+        public string InventarioId { get; set; } = ""; // vacío = nuevo sin guardar
+        public int    Linea        { get; set; }
+        public string ArticuloId   { get; set; } = "";
+        public string Descripcion  { get; set; } = "";
+        public double Cantidad     { get; set; }
+    }
+}
