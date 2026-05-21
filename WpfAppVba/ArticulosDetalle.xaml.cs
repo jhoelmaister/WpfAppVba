@@ -139,11 +139,17 @@ namespace WpfAppVba
         private void Box_Letras_PreviewTextInput(object sender, TextCompositionEventArgs e)
             => FuncionesComunes.ValidarSoloLetras(sender, e, permitirEspacios: true);
 
-        // ─── Ver familias ─────────────────────────────────────────────────────
+        // ─── Ver familias (modo selector) ────────────────────────────────────
         private void BtnVerFamilias_Click(object sender, RoutedEventArgs e)
         {
-            var familias = new FamiliasGeneral();
-            familias.ShowDialog();
+            FamiliasGeneral.FamiliaSeleccionada = null;
+            new FamiliasGeneral(modoSelector: true).ShowDialog();
+
+            if (!string.IsNullOrEmpty(FamiliasGeneral.FamiliaSeleccionada))
+            {
+                // Asignar el ID — el TextChanged handler llama ActualizarDescripcionFamilia()
+                Box_Identificador_Familia.Text = FamiliasGeneral.FamiliaSeleccionada;
+            }
         }
 
         // ─── Ver movimientos del artículo ─────────────────────────────────────

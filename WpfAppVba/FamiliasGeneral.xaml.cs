@@ -9,11 +9,27 @@ namespace WpfAppVba
     public partial class FamiliasGeneral : Window
     {
         private static SqlData Sql => SqlData.Instance;
+        private readonly bool _modoSelector;
 
-        public FamiliasGeneral()
+        /// <summary>
+        /// Cuando se abre en modo selector, aquí queda el ID de la familia elegida.
+        /// </summary>
+        public static string? FamiliaSeleccionada { get; private set; }
+
+        public FamiliasGeneral(bool modoSelector = false)
         {
             InitializeComponent();
-            Loaded += (_, _) => CargarFamilias();
+            _modoSelector = modoSelector;
+            Loaded += (_, _) =>
+            {
+                if (_modoSelector)
+                {
+                    Title                     = "Seleccionar Familia";
+                    PanelAdmin.Visibility     = Visibility.Collapsed;
+                    BtnSeleccionar.Visibility = Visibility.Visible;
+                }
+                CargarFamilias();
+            };
         }
 
         // ─── Carga la lista ────────────────────────────────────────────────────
@@ -56,9 +72,23 @@ namespace WpfAppVba
         private void TxtBuscar_TextChanged(object sender, TextChangedEventArgs e)
             => CargarFamilias();
 
-        // ─── Doble clic = editar ───────────────────────────────────────────────
+        // ─── Doble clic ───────────────────────────────────────────────────────
         private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-            => AbrirEditar();
+        {
+            if (_modoSelector) Seleccionar();
+            else               AbrirEditar();
+        }
+
+        // ─── Modo selector ─────────────────────────────────────────────────────
+        private void Seleccionar()
+        {
+            if (Grid1.SelectedItem is not FamiliaFila fila) return;
+            FamiliaSeleccionada = fila.Id;
+            Close();
+        }
+
+        private void BtnSeleccionar_Click(object sender, RoutedEventArgs e)
+            => Seleccionar();
 
         // ─── Botones ───────────────────────────────────────────────────────────
 
