@@ -115,8 +115,8 @@ namespace WpfAppVba
         // ─── Obtener filtro de estado seleccionado ────────────────────────────
         private string ObtenerFiltroEstado()
         {
-            if (BtnFiltroPendiente.IsChecked == true) return "pendiente";
-            if (BtnFiltroEntregado.IsChecked == true) return "entregado";
+            if (BtnFiltroPendiente?.IsChecked == true) return "pendiente";
+            if (BtnFiltroEntregado?.IsChecked == true) return "entregado";
             return ""; // todos
         }
 

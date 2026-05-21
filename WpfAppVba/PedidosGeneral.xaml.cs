@@ -126,17 +126,17 @@ namespace WpfAppVba
         // ─── Filtros ──────────────────────────────────────────────────────────
         private string ObtenerFiltroEstado()
         {
-            if (BtnFiltroPendiente.IsChecked == true) return "pendiente";
-            if (BtnFiltroEntregado.IsChecked == true) return "entregado";
-            if (BtnFiltroEntregaParcial.IsChecked == true) return "entrega parcial";
+            if (BtnFiltroPendiente?.IsChecked == true) return "pendiente";
+            if (BtnFiltroEntregado?.IsChecked == true) return "entregado";
+            if (BtnFiltroEntregaParcial?.IsChecked == true) return "entrega parcial";
             return "";
         }
 
         private string ObtenerFiltroCuenta()
         {
-            if (BtnCuentaPendiente.IsChecked == true) return "pendiente";
-            if (BtnCuentaCancelado.IsChecked == true) return "cancelado";
-            if (BtnCuentaParcial.IsChecked   == true) return "parcial pendiente";
+            if (BtnCuentaPendiente?.IsChecked == true) return "pendiente";
+            if (BtnCuentaCancelado?.IsChecked == true) return "cancelado";
+            if (BtnCuentaParcial?.IsChecked   == true) return "parcial pendiente";
             return "";
         }
 
