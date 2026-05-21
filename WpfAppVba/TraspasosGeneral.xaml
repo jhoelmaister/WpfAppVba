@@ -1,0 +1,129 @@
+<Window x:Class="WpfAppVba.TraspasosGeneral"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Traspasos" Height="520" Width="800"
+        WindowStartupLocation="CenterScreen"
+        Background="#F0F2F5">
+
+    <Window.Resources>
+        <Style x:Key="BtnBase" TargetType="Button">
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style x:Key="BtnPrimario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="#1A73E8"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style x:Key="BtnSecundario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="#E8EDF5"/>
+            <Setter Property="Foreground" Value="#5F6368"/>
+        </Style>
+        <Style x:Key="BtnPeligro" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="#D93025"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="12">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="160"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Panel izquierdo: TreeView meses -->
+        <Border Grid.Column="0" Margin="0,0,8,0" BorderBrush="#DDD" BorderThickness="1" Background="White">
+            <TreeView x:Name="Tree1"
+                      SelectedItemChanged="Tree1_SelectedItemChanged"
+                      FontSize="12"/>
+        </Border>
+
+        <!-- Panel derecho -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Título tipo movimiento -->
+            <TextBlock x:Name="LblTipoMovimiento" Grid.Row="0"
+                       FontSize="15" FontWeight="Bold" Foreground="#1A1A2E"
+                       Margin="0,0,0,8"/>
+
+            <!-- Filtro estado -->
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock Text="Estado:" VerticalAlignment="Center" FontSize="12" Margin="0,0,8,0"/>
+                <RadioButton x:Name="BtnFiltroTodos" Content="Todos" IsChecked="True"
+                             VerticalAlignment="Center" FontSize="12" Margin="0,0,12,0"
+                             Checked="FiltroEstado_Checked"/>
+                <RadioButton x:Name="BtnFiltroPendiente" Content="Pendiente"
+                             VerticalAlignment="Center" FontSize="12" Margin="0,0,12,0"
+                             Checked="FiltroEstado_Checked"/>
+                <RadioButton x:Name="BtnFiltroEntregado" Content="Entregado"
+                             VerticalAlignment="Center" FontSize="12"
+                             Checked="FiltroEstado_Checked"/>
+            </StackPanel>
+
+            <!-- Buscador -->
+            <Grid Grid.Row="2" Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="TxtBuscar" Grid.Column="0" Height="28" FontSize="12"
+                         Padding="6,4" BorderBrush="#CCC" Margin="0,0,6,0"
+                         KeyDown="TxtBuscar_KeyDown"/>
+                <Button Content="Buscar" Grid.Column="1"
+                        Style="{StaticResource BtnSecundario}"
+                        Click="BtnBuscar_Click"/>
+            </Grid>
+
+            <!-- DataGrid -->
+            <DataGrid x:Name="Grid1" Grid.Row="3"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      SelectionMode="Single"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="Horizontal"
+                      BorderBrush="#DDD" BorderThickness="1"
+                      FontSize="12"
+                      MouseDoubleClick="Grid1_MouseDoubleClick">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Línea"      Binding="{Binding Linea}"        Width="60"/>
+                    <DataGridTextColumn Header="DocumentoT" Binding="{Binding DocumentoT}"   Width="70"/>
+                    <DataGridTextColumn Header="Fecha"      Binding="{Binding FechaStr}"      Width="120"/>
+                    <DataGridTextColumn Header="Sucursal"   Binding="{Binding SucursalDesc}"  Width="140"/>
+                    <DataGridTextColumn Header="Estado"     Binding="{Binding Estado}"        Width="90"/>
+                    <DataGridTextColumn Header="Cantidad"   Binding="{Binding Cantidad}"      Width="70">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- Totales -->
+            <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,6,0,0">
+                <TextBlock Text="Total Cantidad:" VerticalAlignment="Center" FontSize="12" Margin="0,0,4,0"/>
+                <TextBlock x:Name="TxtTotalCantidad" VerticalAlignment="Center" FontSize="12"
+                           FontWeight="SemiBold" Margin="0,0,0,0"/>
+            </StackPanel>
+
+            <!-- Botones -->
+            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                <Button Content="Nuevo"      Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"   Click="BtnNuevo_Click"/>
+                <Button Content="Editar"     Margin="0,0,6,0" Style="{StaticResource BtnSecundario}" Click="BtnEditar_Click"/>
+                <Button Content="Eliminar"   Margin="0,0,6,0" Style="{StaticResource BtnPeligro}"    Click="BtnEliminar_Click"/>
+                <Button Content="Actualizar" Margin="0,0,0,0" Style="{StaticResource BtnSecundario}" Click="BtnActualizar_Click"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>
