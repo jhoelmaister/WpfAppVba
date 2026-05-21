@@ -80,8 +80,9 @@ namespace WpfAppVba
 
         private void BtnUsuario_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: new DatosUsuario().Show();
-            MessageBox.Show("Datos de Usuario — próximamente");
+            new DatosUsuario().ShowDialog();
+            // Refrescar etiqueta por si cambió el periodo
+            LblUsuario.Text = $"Usuario: {AppState.UsuarioActivo}  |  Período: {AppState.PeriodoActivo}";
         }
 
         // ─── CERRAR SESIÓN ────────────────────────────────────────────────────

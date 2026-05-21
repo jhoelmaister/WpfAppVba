@@ -32,14 +32,16 @@ namespace WpfAppVba
 
             if (AppState.EventoFormularioA == "modificar")
             {
-                LblTitulo.Text       = "Editar Artículo";
-                Box_Codigo.IsEnabled = false;
+                LblTitulo.Text                = "Editar Artículo";
+                Box_Codigo.IsEnabled          = false;
+                BtnVerMovimientos.Visibility  = Visibility.Visible;
                 CargarParaEditar();
             }
             else
             {
-                LblTitulo.Text       = "Nuevo Artículo";
-                Box_Codigo.IsEnabled = true;
+                LblTitulo.Text                = "Nuevo Artículo";
+                Box_Codigo.IsEnabled          = true;
+                BtnVerMovimientos.Visibility  = Visibility.Collapsed;
                 CargarParaNuevo();
             }
 
@@ -142,6 +144,12 @@ namespace WpfAppVba
         {
             var familias = new FamiliasGeneral();
             familias.ShowDialog();
+        }
+
+        // ─── Ver movimientos del artículo ─────────────────────────────────────
+        private void BtnVerMovimientos_Click(object sender, RoutedEventArgs e)
+        {
+            new MovimientosWindow(Box_Codigo.Text.Trim()).Show();
         }
 
         // ─── Guardar ─────────────────────────────────────────────────────────

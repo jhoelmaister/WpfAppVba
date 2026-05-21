@@ -1,0 +1,85 @@
+<Window x:Class="WpfAppVba.DatosUsuario"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Datos de Usuario" Height="400" Width="420"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="#F0F2F5">
+
+    <Window.Resources>
+        <Style x:Key="LblEtiqueta" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="#555"/>
+            <Setter Property="Margin" Value="0,0,0,2"/>
+        </Style>
+        <Style x:Key="CajaLectura" TargetType="TextBox">
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="BorderBrush" Value="#CCC"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="IsEnabled" Value="False"/>
+            <Setter Property="Background" Value="#F5F5F5"/>
+            <Setter Property="Foreground" Value="#555"/>
+        </Style>
+        <Style x:Key="CajaEditable" TargetType="TextBox">
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="BorderBrush" Value="#CCC"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>  <!-- Título -->
+            <RowDefinition Height="*"/>     <!-- Campos -->
+            <RowDefinition Height="Auto"/>  <!-- Botón -->
+        </Grid.RowDefinitions>
+
+        <!-- Título -->
+        <TextBlock Grid.Row="0" Text="Datos de Usuario" FontSize="15" FontWeight="Bold"
+                   Foreground="#1A1A2E" Margin="0,0,0,14"/>
+
+        <!-- Campos -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+
+                <!-- Cuenta (solo lectura) -->
+                <TextBlock Text="Cuenta:" Style="{StaticResource LblEtiqueta}"/>
+                <TextBox x:Name="TxtCuenta" Style="{StaticResource CajaLectura}"/>
+
+                <!-- Nombres -->
+                <TextBlock Text="Nombres:" Style="{StaticResource LblEtiqueta}"/>
+                <TextBox x:Name="TxtNombres" Style="{StaticResource CajaEditable}"/>
+
+                <!-- Apellidos -->
+                <TextBlock Text="Apellidos:" Style="{StaticResource LblEtiqueta}"/>
+                <TextBox x:Name="TxtApellidos" Style="{StaticResource CajaEditable}"/>
+
+                <!-- Sucursal Activa (solo lectura) -->
+                <TextBlock Text="Sucursal Activa:" Style="{StaticResource LblEtiqueta}"/>
+                <TextBox x:Name="TxtSucursal" Style="{StaticResource CajaLectura}"/>
+
+                <!-- Inicio de Sucursal (solo lectura) -->
+                <TextBlock Text="Inicio de Sucursal:" Style="{StaticResource LblEtiqueta}"/>
+                <TextBox x:Name="TxtFechaInicio" Style="{StaticResource CajaLectura}"/>
+
+                <!-- Periodo Activo -->
+                <TextBlock Text="Periodo Activo:" Style="{StaticResource LblEtiqueta}"/>
+                <ComboBox x:Name="CmbPeriodo" Height="30" FontSize="12"
+                          Padding="4,0" Margin="0,0,0,10"/>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Botón Guardar -->
+        <Button Grid.Row="2" x:Name="BtnGuardar" Content="Guardar Cambios"
+                Height="34" FontSize="13" FontWeight="SemiBold"
+                Background="#1A73E8" Foreground="White"
+                BorderThickness="0" Cursor="Hand"
+                Margin="0,10,0,0"
+                Click="BtnGuardar_Click"/>
+    </Grid>
+</Window>
