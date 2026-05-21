@@ -18,22 +18,19 @@ namespace WpfAppVba
             AppState.EventoFormularioM = "nuevo";
             AppState.TipoMovimiento    = "venta";
             AppState.TipoPedido        = "rapido";
-            // TODO: new PedidosDetalle().Show();
-            MessageBox.Show("Venta Rápida — próximamente");
+            new PedidosDetalle().Show();
         }
 
         private void BtnVentas_Click(object sender, RoutedEventArgs e)
         {
             AppState.TipoMovimiento = "venta";
-            // TODO: new PedidosGeneral().Show();
-            MessageBox.Show("Registros de Ventas — próximamente");
+            new PedidosGeneral().Show();
         }
 
         private void BtnCompras_Click(object sender, RoutedEventArgs e)
         {
             AppState.TipoMovimiento = "compra";
-            // TODO: new PedidosGeneral().Show();
-            MessageBox.Show("Registros de Compras — próximamente");
+            new PedidosGeneral().Show();
         }
 
         // ─── TRASPASOS ────────────────────────────────────────────────────────
@@ -42,38 +39,33 @@ namespace WpfAppVba
         {
             AppState.EventoFormularioM = "nuevo";
             AppState.TipoMovimiento    = "entrada";
-            // TODO: new TraspasoDetalle().Show();
-            MessageBox.Show("Entrada Rápida — próximamente");
+            new TraspasosDetalle().Show();
         }
 
         private void BtnSalidaRapida_Click(object sender, RoutedEventArgs e)
         {
             AppState.EventoFormularioM = "nuevo";
             AppState.TipoMovimiento    = "salida";
-            // TODO: new TraspasoDetalle().Show();
-            MessageBox.Show("Salida Rápida — próximamente");
+            new TraspasosDetalle().Show();
         }
 
         private void BtnEntradas_Click(object sender, RoutedEventArgs e)
         {
             AppState.TipoMovimiento = "entrada";
-            // TODO: new TraspasoGeneral().Show();
-            MessageBox.Show("Registros de Entradas — próximamente");
+            new TraspasosGeneral().Show();
         }
 
         private void BtnSalidas_Click(object sender, RoutedEventArgs e)
         {
             AppState.TipoMovimiento = "salida";
-            // TODO: new TraspasoGeneral().Show();
-            MessageBox.Show("Registros de Salidas — próximamente");
+            new TraspasosGeneral().Show();
         }
 
         // ─── CATÁLOGOS ────────────────────────────────────────────────────────
 
         private void BtnArticulos_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: new ArticulosGeneral().Show();
-            MessageBox.Show("Registros de Artículos — próximamente");
+            new ArticulosGeneral().Show();
         }
 
         private void BtnTerceros_Click(object sender, RoutedEventArgs e)
@@ -83,8 +75,7 @@ namespace WpfAppVba
 
         private void BtnInventarios_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: new InventariosGeneral().Show();
-            MessageBox.Show("Registro de Inventarios — próximamente");
+            new InventariosGeneral().Show();
         }
 
         private void BtnUsuario_Click(object sender, RoutedEventArgs e)
