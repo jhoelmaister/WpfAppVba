@@ -25,37 +25,37 @@ namespace WpfAppVba.Data
             var inicio = DateTime.Now;
 
             Sql.UsuariosObj.Conectar("usuarios",
-                "SELECT * FROM usuarios ORDER BY id ASC");
+                "SELECT * FROM usuarios WHERE estadof = 'normal' ORDER BY id ASC");
 
             Sql.StocksObj.Conectar("stocks",
-                "SELECT * FROM stocks ORDER BY id ASC");
+                "SELECT * FROM stocks WHERE estadof = 'normal' ORDER BY id ASC");
 
             Sql.ArticulosObj.Conectar("articulos",
                 "SELECT * FROM articulos WHERE estadof = 'normal' ORDER BY familia ASC, indice ASC");
 
             Sql.FamiliasObj.Conectar("familias",
-                "SELECT * FROM familias ORDER BY id ASC");
+                "SELECT * FROM familias WHERE estadof = 'normal' ORDER BY id ASC");
 
             Sql.ProductosObj.Conectar("productos",
-                "SELECT * FROM productos ORDER BY id ASC");
+                "SELECT * FROM productos WHERE estadof = 'normal' ORDER BY id ASC");
 
             Sql.CategoriasObj.Conectar("Categorias",
-                "SELECT * FROM Categorias ORDER BY id ASC");
+                "SELECT * FROM Categorias WHERE estadof = 'normal' ORDER BY id ASC");
 
             Sql.IndustriasObj.Conectar("industrias",
-                "SELECT * FROM industrias ORDER BY id ASC");
+                "SELECT * FROM industrias WHERE estadof = 'normal' ORDER BY id ASC");
 
             Sql.TercerosObj.Conectar("terceros",
-                "SELECT * FROM terceros ORDER BY id ASC");
+                "SELECT * FROM terceros WHERE estadof = 'normal' ORDER BY id ASC");
 
             Sql.SucursalesObj.Conectar("sucursales",
-                "SELECT * FROM sucursales ORDER BY id ASC");
+                "SELECT * FROM sucursales WHERE estadof = 'normal' ORDER BY id ASC");
 
             Sql.PreciosObj.Conectar("precios",
-                "SELECT * FROM precios ORDER BY fecha ASC");
+                "SELECT * FROM precios WHERE estadof = 'normal' ORDER BY fecha ASC");
 
             Sql.RegionesObj.Conectar("regiones",
-                "SELECT * FROM regiones ORDER BY id ASC");
+                "SELECT * FROM regiones WHERE estadof = 'normal' ORDER BY id ASC");
 
             var tiempo = DateTime.Now - inicio;
             System.Diagnostics.Debug.WriteLine($"ConectarProductos: {tiempo.TotalSeconds:F2}s");
