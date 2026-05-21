@@ -29,12 +29,14 @@
                 <TextBlock Text="Nit:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Nit" Height="30" FontSize="12" Padding="6,4"
                          BorderBrush="#CCC" Margin="0,0,0,8"
-                         TextChanged="Campo_TextChanged"/>
+                         TextChanged="Campo_TextChanged"
+                         PreviewTextInput="Box_Nit_PreviewTextInput"/>
 
                 <TextBlock Text="Descripción:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Descripcion" Height="30" FontSize="12" Padding="6,4"
                          BorderBrush="#CCC" Margin="0,0,0,8"
-                         TextChanged="Campo_TextChanged"/>
+                         TextChanged="Campo_TextChanged"
+                         PreviewTextInput="Box_Descripcion_PreviewTextInput"/>
 
                 <TextBlock Text="Contacto:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Contacto" Height="30" FontSize="12" Padding="6,4"
@@ -44,7 +46,8 @@
                 <TextBlock Text="Teléfono:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Telefono" Height="30" FontSize="12" Padding="6,4"
                          BorderBrush="#CCC" Margin="0,0,0,8"
-                         TextChanged="Campo_TextChanged"/>
+                         TextChanged="Campo_TextChanged"
+                         PreviewTextInput="Box_Telefono_PreviewTextInput"/>
 
                 <TextBlock Text="Dirección:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Direccion" Height="30" FontSize="12" Padding="6,4"
@@ -59,7 +62,8 @@
                 <TextBlock Text="Teléfono 2:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Telefono2" Height="30" FontSize="12" Padding="6,4"
                          BorderBrush="#CCC" Margin="0,0,0,8"
-                         TextChanged="Campo_TextChanged"/>
+                         TextChanged="Campo_TextChanged"
+                         PreviewTextInput="Box_Telefono_PreviewTextInput"/>
 
                 <TextBlock Text="Observaciones:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Observacion" Height="70" FontSize="12" Padding="6,4"
