@@ -42,6 +42,9 @@ namespace WpfAppVba
         // ─── Carga la lista de traspasos ──────────────────────────────────────
         public void CargarTraspasos()
         {
+            // Guard: evita correr antes de que todos los controles estén inicializados
+            if (TxtBuscar == null || Grid1 == null) return;
+
             var lista = new List<TraspasoFila>();
             int linea = 1;
             double totalCant = 0;

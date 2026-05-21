@@ -41,6 +41,9 @@ namespace WpfAppVba
         // ─── Carga la lista de pedidos ────────────────────────────────────────
         public void CargarPedidos()
         {
+            // Guard: evita correr antes de que todos los controles estén inicializados
+            if (TxtBuscar == null || Grid1 == null) return;
+
             var lista = new List<PedidoFila>();
             int linea = 1;
             double totalCant = 0, totalImporte = 0;
