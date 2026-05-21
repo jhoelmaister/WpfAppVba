@@ -68,7 +68,7 @@
                   SelectionMode="Single" HeadersVisibility="Column"
                   GridLinesVisibility="Horizontal"
                   BorderBrush="#DDD" BorderThickness="1"
-                  FontSize="11" RowHeight="24">
+                  FontSize="11">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Línea"      Binding="{Binding Linea}"       Width="50"/>
                 <DataGridTextColumn Header="Fecha"      Binding="{Binding FechaStr}"     Width="130"/>

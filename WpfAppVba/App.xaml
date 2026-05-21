@@ -16,5 +16,10 @@
         <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}"
                          Color="{x:Static SystemColors.HighlightTextColor}"/>
 
+        <!-- Altura de fila global para todos los DataGrids -->
+        <Style TargetType="{x:Type DataGrid}">
+            <Setter Property="RowHeight" Value="28"/>
+        </Style>
+
     </Application.Resources>
 </Application>
