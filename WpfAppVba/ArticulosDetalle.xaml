@@ -1,0 +1,117 @@
+<Window x:Class="WpfAppVba.ArticulosDetalle"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Artículo" Height="560" Width="480"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="#F0F2F5"
+        Closing="Window_Closing">
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Título -->
+        <TextBlock x:Name="LblTitulo" Grid.Row="0" FontSize="15" FontWeight="Bold"
+                   Foreground="#1A1A2E" Margin="0,0,0,12"/>
+
+        <!-- Campos -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+
+                <!-- ID (siempre deshabilitado) -->
+                <TextBlock Text="ID:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBox x:Name="Box_Identificador" Height="30" FontSize="12" Padding="6,4"
+                         BorderBrush="#CCC" Margin="0,0,0,8" IsEnabled="False"
+                         Background="#F5F5F5" Foreground="#888"
+                         TextChanged="Campo_TextChanged"/>
+
+                <!-- Código -->
+                <TextBlock Text="Código:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBox x:Name="Box_Codigo" Height="30" FontSize="12" Padding="6,4"
+                         BorderBrush="#CCC" Margin="0,0,0,8"
+                         TextChanged="Campo_TextChanged"/>
+
+                <!-- Índice -->
+                <TextBlock Text="Índice:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBox x:Name="Box_Indice" Height="30" FontSize="12" Padding="6,4"
+                         BorderBrush="#CCC" Margin="0,0,0,8"
+                         TextChanged="Campo_TextChanged"
+                         PreviewTextInput="Box_Numeros_PreviewTextInput"/>
+
+                <!-- Familia -->
+                <TextBlock Text="Familia (Código):" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="Box_Identificador_Familia" Grid.Column="0" Height="30" FontSize="12"
+                             Padding="6,4" BorderBrush="#CCC" Margin="0,0,6,0"
+                             TextChanged="Box_Familia_TextChanged"
+                             PreviewTextInput="Box_Numeros_PreviewTextInput"/>
+                    <TextBlock x:Name="Box_Familia_Descripcion" Grid.Column="1"
+                               VerticalAlignment="Center" FontSize="11" Foreground="#777"/>
+                    <Button Grid.Column="2" Content="Ver Familias" Height="30" Padding="8,0"
+                            FontSize="11" BorderThickness="0" Cursor="Hand"
+                            Background="#E8EDF5" Foreground="#5F6368"
+                            Click="BtnVerFamilias_Click"/>
+                </Grid>
+
+                <!-- Industria -->
+                <TextBlock Text="Industria (Código):" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="Box_Identificador_Industria" Grid.Column="0" Height="30" FontSize="12"
+                             Padding="6,4" BorderBrush="#CCC" Margin="0,0,6,0"
+                             TextChanged="Box_Industria_TextChanged"
+                             PreviewTextInput="Box_Numeros_PreviewTextInput"/>
+                    <TextBlock x:Name="Box_Industria_Descripcion" Grid.Column="1"
+                               VerticalAlignment="Center" FontSize="11" Foreground="#777"/>
+                </Grid>
+
+                <!-- Categoría -->
+                <TextBlock Text="Categoría (Código):" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="Box_Identificador_Categoria" Grid.Column="0" Height="30" FontSize="12"
+                             Padding="6,4" BorderBrush="#CCC" Margin="0,0,6,0"
+                             TextChanged="Box_Categoria_TextChanged"
+                             PreviewTextInput="Box_Numeros_PreviewTextInput"/>
+                    <TextBlock x:Name="Box_Categoria_Descripcion" Grid.Column="1"
+                               VerticalAlignment="Center" FontSize="11" Foreground="#777"/>
+                </Grid>
+
+                <!-- Descripción -->
+                <TextBlock Text="Descripción:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBox x:Name="Box_Descripcion" Height="30" FontSize="12" Padding="6,4"
+                         BorderBrush="#CCC" Margin="0,0,0,8"
+                         TextChanged="Campo_TextChanged"
+                         PreviewTextInput="Box_Letras_PreviewTextInput"/>
+
+                <!-- Modelo -->
+                <TextBlock Text="Modelo:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBox x:Name="Box_Modelo" Height="30" FontSize="12" Padding="6,4"
+                         BorderBrush="#CCC" Margin="0,0,0,8"
+                         TextChanged="Campo_TextChanged"/>
+
+                <!-- Observaciones -->
+                <TextBlock Text="Observaciones:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBox x:Name="Box_Observacion" Height="60" FontSize="12" Padding="6,4"
+                         BorderBrush="#CCC" TextWrapping="Wrap" AcceptsReturn="True"
+                         VerticalScrollBarVisibility="Auto" Margin="0,0,0,8"
+                         TextChanged="Campo_TextChanged"/>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>
