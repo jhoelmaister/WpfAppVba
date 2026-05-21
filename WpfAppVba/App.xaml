@@ -4,6 +4,17 @@
              xmlns:local="clr-namespace:WpfAppVba"
              StartupUri="LoginWindow.xaml">
     <Application.Resources>
-         
+
+        <!--
+            Mantener el color de selección del DataGrid cuando pierde el foco.
+            Por defecto WPF cambia a gris (InactiveSelectionHighlight).
+            Al igualar esos brushes con el color activo del sistema, la fila
+            seleccionada conserva exactamente el mismo color azul.
+        -->
+        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"
+                         Color="{x:Static SystemColors.HighlightColor}"/>
+        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}"
+                         Color="{x:Static SystemColors.HighlightTextColor}"/>
+
     </Application.Resources>
 </Application>
