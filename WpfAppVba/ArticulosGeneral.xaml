@@ -77,8 +77,41 @@
                       BorderBrush="#DDD" BorderThickness="1"
                       FontSize="12"
                       MouseDoubleClick="Grid1_MouseDoubleClick">
+
+                <!-- Fila verde + negrita cuando está seleccionado -->
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Seleccionado}" Value="True">
+                                <Setter Property="Background" Value="#E8F5E9"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.RowStyle>
+
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Línea"               Binding="{Binding Linea}"       Width="60"/>
+                    <!-- Checkbox visual (solo lectura) -->
+                    <DataGridTemplateColumn Header="✓" Width="34">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding Seleccionado, Mode=OneWay}"
+                                          IsHitTestVisible="False" Focusable="False"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <!-- Orden de selección -->
+                    <DataGridTextColumn Header="#" Binding="{Binding OrdenStr}" Width="36">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                                <Setter Property="Foreground" Value="#1A73E8"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Línea"               Binding="{Binding Linea}"       Width="55"/>
                     <DataGridTextColumn Header="Código"              Binding="{Binding Codigo}"      Width="80"/>
                     <DataGridTextColumn Header="Descripción Completa" Binding="{Binding Descripcion}" Width="*"/>
                     <DataGridTextColumn Header="Disponible"          Binding="{Binding Disponible}"  Width="80">

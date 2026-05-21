@@ -13,7 +13,8 @@ namespace WpfAppVba
 
         // Modo exportar: cuando se abre desde Traspasos/Inventarios/Pedidos
         private readonly Action<List<ArticuloExportado>>? _callbackExportar;
-        private readonly HashSet<string> _seleccionados = new();
+        // List en lugar de HashSet para conservar el orden de selección
+        private readonly List<string> _seleccionados = new();
 
         public bool ModoExportar => _callbackExportar != null;
 
@@ -143,15 +144,18 @@ namespace WpfAppVba
                 double stock  = StockCalculator.ContarStock(id,  DateTime.Now);
                 double stock2 = StockCalculator.ContarStock2(id, DateTime.Now);
 
+                int ordenIdx = _seleccionados.IndexOf(id);   // -1 si no está
+
                 lista.Add(new ArticuloFila
                 {
-                    Linea       = linea++,
-                    Id          = id,
-                    Codigo      = codigo,
-                    Descripcion = descCompleta,
-                    Disponible  = stock2,
-                    Stock       = stock,
-                    Seleccionado = _seleccionados.Contains(id)
+                    Linea          = linea++,
+                    Id             = id,
+                    Codigo         = codigo,
+                    Descripcion    = descCompleta,
+                    Disponible     = stock2,
+                    Stock          = stock,
+                    Seleccionado   = ordenIdx >= 0,
+                    OrdenSeleccion = ordenIdx >= 0 ? ordenIdx + 1 : 0
                 });
 
                 totalDisp  += stock2;
@@ -268,9 +272,9 @@ namespace WpfAppVba
             if (Grid1.SelectedItem is not ArticuloFila fila) return;
 
             if (_seleccionados.Contains(fila.Id))
-                _seleccionados.Remove(fila.Id);
+                _seleccionados.Remove(fila.Id);   // deselecciona y reordena el resto
             else
-                _seleccionados.Add(fila.Id);
+                _seleccionados.Add(fila.Id);      // agrega al final de la cola
 
             CargarArticulos();
         }
@@ -279,13 +283,15 @@ namespace WpfAppVba
     // ─── Modelos ──────────────────────────────────────────────────────────────
     public class ArticuloFila
     {
-        public int    Linea       { get; set; }
-        public string Id          { get; set; } = "";
-        public string Codigo      { get; set; } = "";
-        public string Descripcion { get; set; } = "";
-        public double Disponible  { get; set; }
-        public double Stock       { get; set; }
-        public bool   Seleccionado { get; set; }
+        public int    Linea          { get; set; }
+        public string Id             { get; set; } = "";
+        public string Codigo         { get; set; } = "";
+        public string Descripcion    { get; set; } = "";
+        public double Disponible     { get; set; }
+        public double Stock          { get; set; }
+        public bool   Seleccionado   { get; set; }
+        public int    OrdenSeleccion { get; set; }         // 0 = no seleccionado
+        public string OrdenStr       => OrdenSeleccion > 0 ? OrdenSeleccion.ToString() : "";
     }
 
     public class ArticuloExportado
