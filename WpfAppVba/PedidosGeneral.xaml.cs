@@ -84,16 +84,18 @@ namespace WpfAppVba
                 string terceroDesc = Sql.TercerosObj.ObtenerItem("descripcion", terceroId)?.ToString() ?? terceroId;
 
                 string estado = Sql.DocumentosPObj.ObtenerItem("estado", id)?.ToString() ?? "";
-                string cuenta = Sql.DocumentosPObj.ObtenerItem("cuenta", id)?.ToString() ?? "";
+
+                // ── Usar estadoC (campo correcto en VBA) para cuenta ──────────
+                string estadoC = Sql.DocumentosPObj.ObtenerItem("estadoC", id)?.ToString() ?? "";
 
                 // Filtro por estado
                 if (!string.IsNullOrEmpty(filtroEstado) &&
                     !string.Equals(estado, filtroEstado, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                // Filtro por cuenta
+                // Filtro por cuenta (estadoC)
                 if (!string.IsNullOrEmpty(filtroCuenta) &&
-                    !string.Equals(cuenta, filtroCuenta, StringComparison.OrdinalIgnoreCase))
+                    !string.Equals(estadoC, filtroCuenta, StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 // Filtro por búsqueda
@@ -111,7 +113,7 @@ namespace WpfAppVba
                     FechaStr    = fechaDoc.ToString("dd/MM/yyyy HH:mm:ss"),
                     TerceroDesc = terceroDesc,
                     Estado      = estado,
-                    Cuenta      = cuenta,
+                    Cuenta      = estadoC,
                     Cantidad    = cant,
                     Importe     = importe
                 });
@@ -123,14 +125,21 @@ namespace WpfAppVba
             Grid1.ItemsSource = lista;
             TxtTotalCantidad.Text = totalCant.ToString("F0");
             TxtTotalImporte.Text  = totalImporte.ToString("F2");
-            LblTipoMovimiento.Text = tipoMov == "venta" ? "Registros de Ventas" : "Registros de Compras";
+
+            // ── Título correcto según VBA ─────────────────────────────────────
+            LblTipoMovimiento.Text = tipoMov == "venta"
+                ? "Ventas de Productos"
+                : "Compras de Productos";
+
+            // Ocultar el panel de detalle al recargar
+            OcultarDetalle();
         }
 
         // ─── Filtros ──────────────────────────────────────────────────────────
         private string ObtenerFiltroEstado()
         {
-            if (BtnFiltroPendiente?.IsChecked == true) return "pendiente";
-            if (BtnFiltroEntregado?.IsChecked == true) return "entregado";
+            if (BtnFiltroPendiente?.IsChecked == true)      return "pendiente";
+            if (BtnFiltroEntregado?.IsChecked == true)      return "entregado";
             if (BtnFiltroEntregaParcial?.IsChecked == true) return "entrega parcial";
             return "";
         }
@@ -139,7 +148,7 @@ namespace WpfAppVba
         {
             if (BtnCuentaPendiente?.IsChecked == true) return "pendiente";
             if (BtnCuentaCancelado?.IsChecked == true) return "cancelado";
-            if (BtnCuentaParcial?.IsChecked   == true) return "parcial pendiente";
+            if (BtnCuentaParcial?.IsChecked   == true) return "pendiente parcial";  // ← correcto
             return "";
         }
 
@@ -177,11 +186,52 @@ namespace WpfAppVba
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
                 if (Sql.PedidosObj.ObtenerItem("documentoP", id)?.ToString() != documentoP) continue;
-                double cant   = Convert.ToDouble(Sql.PedidosObj.ObtenerItem("cantidad", id) ?? 0);
-                double precio = Convert.ToDouble(Sql.PedidosObj.ObtenerItem("precio",   id) ?? 0);
-                importe += cant * precio;
+                // ── Usar la columna importe directamente (igual que VBA) ──────
+                importe += Convert.ToDouble(Sql.PedidosObj.ObtenerItem("importe", id) ?? 0);
             }
             return importe;
+        }
+
+        // ─── Panel de detalle (Lista2) ────────────────────────────────────────
+
+        private void MostrarDetalle(string documentoP)
+        {
+            var detalles = new List<PedidoDetalleFila>();
+            int linea = 1;
+
+            int uf = Sql.PedidosObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.PedidosObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                if (Sql.PedidosObj.ObtenerItem("documentoP", id)?.ToString() != documentoP) continue;
+
+                string articuloId  = Sql.PedidosObj.ObtenerItem("articulo",  id)?.ToString() ?? "";
+                string descripcion = Sql.ArticulosObj.ObtenerItem("descripcion", articuloId)?.ToString() ?? articuloId;
+                double cantidad    = Convert.ToDouble(Sql.PedidosObj.ObtenerItem("cantidad", id) ?? 0);
+                double importe     = Convert.ToDouble(Sql.PedidosObj.ObtenerItem("importe",  id) ?? 0);
+
+                detalles.Add(new PedidoDetalleFila
+                {
+                    Linea      = linea++,
+                    ArticuloId = articuloId,
+                    Descripcion = descripcion,
+                    Cantidad   = cantidad,
+                    Importe    = importe.ToString("F2")
+                });
+            }
+
+            Lista2.ItemsSource = detalles;
+            PanelDetalle.Visibility = detalles.Count > 0
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+
+        private void OcultarDetalle()
+        {
+            PanelDetalle.Visibility = Visibility.Collapsed;
+            Lista2.ItemsSource = null;
         }
 
         // ─── Eventos árbol y filtros ──────────────────────────────────────────
@@ -197,6 +247,15 @@ namespace WpfAppVba
 
         private void FiltroCuenta_Checked(object sender, RoutedEventArgs e)
             => CargarPedidos();
+
+        // ─── Selección en Grid1 → mostrar detalle ────────────────────────────
+        private void Grid1_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (Grid1.SelectedItem is PedidoFila fila)
+                MostrarDetalle(fila.DocumentoP);
+            else
+                OcultarDetalle();
+        }
 
         // ─── Búsqueda ─────────────────────────────────────────────────────────
         private void TxtBuscar_KeyDown(object sender, KeyEventArgs e)
@@ -215,6 +274,7 @@ namespace WpfAppVba
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
             AppState.EventoFormularioM = "nuevo";
+            AppState.TipoPedido        = "normal";   // ← según VBA: siempre "normal" desde aquí
             new PedidosDetalle(this).ShowDialog();
             CargarPedidos();
         }
@@ -275,7 +335,7 @@ namespace WpfAppVba
         }
     }
 
-    // ─── Modelo de fila ───────────────────────────────────────────────────────
+    // ─── Modelo de fila principal ─────────────────────────────────────────────
     public class PedidoFila
     {
         public int    Linea       { get; set; }
@@ -286,5 +346,15 @@ namespace WpfAppVba
         public string Cuenta      { get; set; } = "";
         public double Cantidad    { get; set; }
         public double Importe     { get; set; }
+    }
+
+    // ─── Modelo de fila de detalle (Lista2) ──────────────────────────────────
+    public class PedidoDetalleFila
+    {
+        public int    Linea       { get; set; }
+        public string ArticuloId  { get; set; } = "";
+        public string Descripcion { get; set; } = "";
+        public double Cantidad    { get; set; }
+        public string Importe     { get; set; } = "";
     }
 }
