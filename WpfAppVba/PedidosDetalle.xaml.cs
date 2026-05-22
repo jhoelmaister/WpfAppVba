@@ -18,6 +18,10 @@ namespace WpfAppVba
         private bool _cargando   = true;
         private List<PedidoItemFila> _items = new();
 
+        // Listas estáticas para los ComboBox de la grid
+        public static List<string> FormasPedido     = new() { "sin factura", "con factura" };
+        public static List<string> FormasTrasaccion = new() { "cheque", "efectivo", "transferencia", "pago Qr" };
+
         public PedidosDetalle(PedidosGeneral? padre = null, string idEditar = "")
         {
             InitializeComponent();
@@ -468,6 +472,28 @@ namespace WpfAppVba
                 return fecha.Date + ts;
             return fecha.Date;
         }
+
+        // ─── Selección en GridItems → recargar stock y precios ───────────────
+        private void GridItems_SelectionChanged(object sender, SelectionChangedEventArgs e) { }
+
+        // ─── Actualizar precios según fecha del documento ─────────────────────
+        private void BtnActualizarPrecios_Click(object sender, RoutedEventArgs e) { }
+
+        // ─── Tab Cobros/Pagos ─────────────────────────────────────────────────
+        private void BtnNuevaLineaTrasaccion_Click(object sender, RoutedEventArgs e) { }
+        private void BtnInsertarTrasaccion_Click(object sender, RoutedEventArgs e) { }
+        private void BtnEliminarLineaTrasaccion_Click(object sender, RoutedEventArgs e) { }
+        private void BtnCobrarDocumento_Click(object sender, RoutedEventArgs e) { }
+        private void GridTrasacciones_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e) { }
+
+        // ─── Tab Entregas ─────────────────────────────────────────────────────
+        private void BtnImportarArticulosEntregas_Click(object sender, RoutedEventArgs e) { }
+        private void BtnInsertarEntrega_Click(object sender, RoutedEventArgs e) { }
+        private void BtnNuevaLineaEntrega_Click(object sender, RoutedEventArgs e) { }
+        private void BtnEliminarLineaEntrega_Click(object sender, RoutedEventArgs e) { }
+        private void BtnRegistrarEntregas_Click(object sender, RoutedEventArgs e) { }
+        private void GridEntregas_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e) { }
+        private void GridEntregas_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e) { }
 
         // ─── Botones Guardar / Cancelar ───────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)

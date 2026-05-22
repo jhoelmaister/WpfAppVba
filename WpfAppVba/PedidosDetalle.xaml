@@ -1,19 +1,21 @@
 <Window x:Class="WpfAppVba.PedidosDetalle"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Detalle de Pedido" Height="640" Width="860"
+        xmlns:local="clr-namespace:WpfAppVba"
+        Title="Detalle de Pedido" Height="760" Width="1060"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResizeWithGrip"
         Background="#F0F2F5"
         Closing="Window_Closing">
 
     <Window.Resources>
+        <!-- ── Botones ─────────────────────────────────────────────────────── -->
         <Style x:Key="BtnBase" TargetType="Button">
-            <Setter Property="Height" Value="28"/>
-            <Setter Property="Padding" Value="10,0"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Height"          Value="28"/>
+            <Setter Property="Padding"         Value="10,0"/>
+            <Setter Property="FontSize"        Value="12"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Cursor"          Value="Hand"/>
         </Style>
         <Style x:Key="BtnPrimario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
             <Setter Property="Background" Value="#1A73E8"/>
@@ -27,44 +29,64 @@
             <Setter Property="Background" Value="#D93025"/>
             <Setter Property="Foreground" Value="White"/>
         </Style>
-        <!-- Etiqueta inline a la izquierda del control -->
+        <Style x:Key="BtnAmarillo" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="#F4B400"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <!-- ── Etiqueta inline ────────────────────────────────────────────── -->
         <Style x:Key="Lbl" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Foreground" Value="#555"/>
+            <Setter Property="FontSize"           Value="11"/>
+            <Setter Property="Foreground"         Value="#555"/>
+            <Setter Property="VerticalAlignment"  Value="Center"/>
+            <Setter Property="Margin"             Value="0,0,5,0"/>
+        </Style>
+
+        <!-- ── Etiqueta muted (emision/edicion) ─────────────────────────── -->
+        <Style x:Key="LblMuted" TargetType="TextBlock">
+            <Setter Property="FontSize"          Value="10"/>
+            <Setter Property="Foreground"        Value="#999"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Margin" Value="0,0,5,0"/>
+            <Setter Property="Margin"            Value="0,0,4,0"/>
+        </Style>
+
+        <!-- ── Alineación derecha en celdas ──────────────────────────────── -->
+        <Style x:Key="RightCell" TargetType="TextBlock">
+            <Setter Property="HorizontalAlignment" Value="Right"/>
         </Style>
     </Window.Resources>
 
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
     <Grid Margin="14">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>  <!-- Título -->
-            <RowDefinition Height="Auto"/>  <!-- Doc / Fecha / Hora / Estado -->
-            <RowDefinition Height="Auto"/>  <!-- Tercero + descripción -->
-            <RowDefinition Height="Auto"/>  <!-- Observaciones -->
-            <RowDefinition Height="Auto"/>  <!-- Separador -->
-            <RowDefinition Height="Auto"/>  <!-- Cabecera artículos + botones -->
-            <RowDefinition Height="*"/>     <!-- DataGrid -->
-            <RowDefinition Height="Auto"/>  <!-- Totales + Guardar/Cancelar -->
+            <RowDefinition Height="Auto"/>  <!-- 0: Título -->
+            <RowDefinition Height="Auto"/>  <!-- 1: Doc / Fecha / Hora / Estado -->
+            <RowDefinition Height="Auto"/>  <!-- 2: Tercero -->
+            <RowDefinition Height="Auto"/>  <!-- 3: Referencia / Cuenta -->
+            <RowDefinition Height="Auto"/>  <!-- 4: Emisión / Edición -->
+            <RowDefinition Height="Auto"/>  <!-- 5: Separador -->
+            <RowDefinition Height="*"/>     <!-- 6: TabControl -->
+            <RowDefinition Height="Auto"/>  <!-- 7: Totales fila A -->
+            <RowDefinition Height="Auto"/>  <!-- 8: Totales fila B (Guardar/Cancelar) -->
         </Grid.RowDefinitions>
 
-        <!-- ── Título ──────────────────────────────────────────────────── -->
+        <!-- ══ Row 0: Título ══════════════════════════════════════════════ -->
         <TextBlock x:Name="LblTitulo" Grid.Row="0"
                    FontSize="15" FontWeight="Bold" Foreground="#1A1A2E"
-                   Margin="0,0,0,10"/>
+                   Margin="0,0,0,8"/>
 
-        <!-- ── Fila 1: Doc · Fecha · Hora · Estado ─────────────────────── -->
-        <Grid Grid.Row="1" Margin="0,0,0,8">
+        <!-- ══ Row 1: Doc · Fecha · Hora · Estado ════════════════════════ -->
+        <Grid Grid.Row="1" Margin="0,0,0,6">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="70"/>
-                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="75"/>
+                <ColumnDefinition Width="10"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="130"/>
-                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="10"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="90"/>
-                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="10"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
@@ -93,13 +115,13 @@
             </ComboBox>
         </Grid>
 
-        <!-- ── Fila 2: Tercero ──────────────────────────────────────────── -->
-        <Grid Grid.Row="2" Margin="0,0,0,8">
+        <!-- ══ Row 2: Tercero ════════════════════════════════════════════ -->
+        <Grid Grid.Row="2" Margin="0,0,0,6">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="80"/>
                 <ColumnDefinition Width="32"/>
-                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="10"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
@@ -117,96 +139,365 @@
                        TextTrimming="CharacterEllipsis"/>
         </Grid>
 
-        <!-- ── Fila 3: Observaciones ────────────────────────────────────── -->
-        <Grid Grid.Row="3" Margin="0,0,0,8">
+        <!-- ══ Row 3: Referencia / Cuenta ════════════════════════════════ -->
+        <Grid Grid.Row="3" Margin="0,0,0,6">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="110"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Observaciones:" Style="{StaticResource Lbl}"
-                       VerticalAlignment="Top" Margin="0,5,5,0"/>
-            <TextBox   Grid.Column="1" x:Name="Box_Observaciones"
-                       Height="44" FontSize="12" Padding="5,4"
-                       BorderBrush="#CCC" TextWrapping="Wrap" AcceptsReturn="True"
-                       VerticalScrollBarVisibility="Auto"
+
+            <TextBlock Grid.Column="0" Text="Referencia:" Style="{StaticResource Lbl}"/>
+            <TextBox   Grid.Column="1" x:Name="Box_Referencia"
+                       Height="28" FontSize="12" Padding="5,4" BorderBrush="#CCC"
                        TextChanged="Campo_TextChanged"/>
+
+            <TextBlock Grid.Column="3" Text="Cuenta:" Style="{StaticResource Lbl}"/>
+            <TextBox   Grid.Column="4" x:Name="Box_Cuenta"
+                       Height="28" FontSize="12" Padding="5,4" BorderBrush="#CCC"
+                       IsReadOnly="True" Background="#F5F5F5" Foreground="#444"/>
         </Grid>
 
-        <!-- ── Separador ────────────────────────────────────────────────── -->
-        <Separator Grid.Row="4" Margin="0,0,0,8"/>
+        <!-- ══ Row 4: Emisión / Edición ══════════════════════════════════ -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,0,0,6">
+            <TextBlock Text="Emisión:" Style="{StaticResource LblMuted}"/>
+            <TextBlock x:Name="Box_Emision" Style="{StaticResource LblMuted}" Margin="0,0,16,0"/>
+            <TextBlock Text="Edición:" Style="{StaticResource LblMuted}"/>
+            <TextBlock x:Name="Box_Edicion" Style="{StaticResource LblMuted}"/>
+        </StackPanel>
 
-        <!-- ── Cabecera artículos + botones ─────────────────────────────── -->
-        <Grid Grid.Row="5" Margin="0,0,0,6">
+        <!-- ══ Row 5: Separador ═══════════════════════════════════════════ -->
+        <Separator Grid.Row="5" Margin="0,0,0,6"/>
+
+        <!-- ══ Row 6: TabControl ══════════════════════════════════════════ -->
+        <TabControl x:Name="TabControl1" Grid.Row="6">
+
+            <!-- ── Tab 1: Artículos ────────────────────────────────────── -->
+            <TabItem Header="Artículos del Pedido">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="120"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Botones artículos -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal"
+                                HorizontalAlignment="Right" Margin="0,4,0,4">
+                        <Button Content="Importar Artículos" Style="{StaticResource BtnPrimario}"
+                                Margin="0,0,5,0" Click="BtnImportarArticulos_Click"/>
+                        <Button Content="Insertar"       Style="{StaticResource BtnSecundario}"
+                                Margin="0,0,5,0" Click="BtnInsertar_Click"/>
+                        <Button Content="Nueva Línea"    Style="{StaticResource BtnSecundario}"
+                                Margin="0,0,5,0" Click="BtnNuevaLinea_Click"/>
+                        <Button Content="Eliminar Línea" Style="{StaticResource BtnPeligro}"
+                                Margin="0,0,5,0" Click="BtnEliminarLinea_Click"/>
+                        <Button Content="Actualizar Precios" Style="{StaticResource BtnAmarillo}"
+                                Click="BtnActualizarPrecios_Click"/>
+                    </StackPanel>
+
+                    <!-- DataGrid artículos -->
+                    <DataGrid x:Name="GridItems" Grid.Row="1"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              BorderBrush="#DDD" BorderThickness="1"
+                              FontSize="12"
+                              CellEditEnding="GridItems_CellEditEnding"
+                              PreparingCellForEdit="GridItems_PreparingCellForEdit"
+                              SelectionChanged="GridItems_SelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Línea"    Binding="{Binding Linea}"       Width="48"  IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Código"   Binding="{Binding Codigo}"      Width="80"/>
+                            <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Cantidad" Binding="{Binding Cantidad}"    Width="70"/>
+
+                            <!-- Forma (ComboBox) -->
+                            <DataGridTemplateColumn Header="Forma" Width="90">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Forma}" Margin="4,0"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <ComboBox SelectedItem="{Binding Forma, UpdateSourceTrigger=PropertyChanged}"
+                                                  ItemsSource="{x:Static local:PedidosDetalle.FormasPedido}"
+                                                  FontSize="12"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTextColumn Header="Contable" Binding="{Binding Contable, StringFormat=F2}" Width="70">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Precio"   Binding="{Binding Precio,   StringFormat=F2}" Width="75">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Importe"  Binding="{Binding Importe,  StringFormat=F2}" Width="80">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Paneles inferiores: precios + stock -->
+                    <Grid Grid.Row="2" Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="250"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Historial de Precios -->
+                        <DockPanel Grid.Column="0">
+                            <TextBlock DockPanel.Dock="Top" Text="Historial de Precios"
+                                       FontSize="11" FontWeight="SemiBold" Foreground="#555"
+                                       Margin="0,0,0,2"/>
+                            <DataGrid x:Name="GridPrecios"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      IsReadOnly="True"
+                                      HeadersVisibility="Column"
+                                      GridLinesVisibility="Horizontal"
+                                      BorderBrush="#DDD" BorderThickness="1"
+                                      FontSize="11">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="70"/>
+                                    <DataGridTextColumn Header="Fecha"  Binding="{Binding Fecha}"  Width="95"/>
+                                    <DataGridTextColumn Header="Precio" Binding="{Binding Precio}" Width="70">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+
+                        <!-- Stock -->
+                        <DockPanel Grid.Column="2">
+                            <TextBlock DockPanel.Dock="Top" Text="Stock"
+                                       FontSize="11" FontWeight="SemiBold" Foreground="#555"
+                                       Margin="0,0,0,2"/>
+                            <DataGrid x:Name="GridStock"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      IsReadOnly="True"
+                                      HeadersVisibility="Column"
+                                      GridLinesVisibility="Horizontal"
+                                      BorderBrush="#DDD" BorderThickness="1"
+                                      FontSize="11">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Código"     Binding="{Binding Codigo}"     Width="80"/>
+                                    <DataGridTextColumn Header="Disponible" Binding="{Binding Disponible}" Width="80">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Stock"      Binding="{Binding Stock}"      Width="80">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- ── Tab 2: Cobros/Pagos ─────────────────────────────────── -->
+            <TabItem x:Name="TabCobros" Header="Cobros/Pagos">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Cabecera -->
+                    <Grid Grid.Row="0" Margin="0,4,0,4">
+                        <TextBlock Text="Transacciones:" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="#1A1A2E" VerticalAlignment="Center"
+                                   HorizontalAlignment="Left"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Nueva Línea"    Style="{StaticResource BtnSecundario}"
+                                    Margin="0,0,5,0" Click="BtnNuevaLineaTrasaccion_Click"/>
+                            <Button Content="Insertar"       Style="{StaticResource BtnSecundario}"
+                                    Margin="0,0,5,0" Click="BtnInsertarTrasaccion_Click"/>
+                            <Button Content="Eliminar Línea" Style="{StaticResource BtnPeligro}"
+                                    Margin="0,0,5,0" Click="BtnEliminarLineaTrasaccion_Click"/>
+                            <Button Content="Cobrar Documento" Style="{StaticResource BtnPrimario}"
+                                    Click="BtnCobrarDocumento_Click"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- DataGrid transacciones -->
+                    <DataGrid x:Name="GridTrasacciones" Grid.Row="1"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              BorderBrush="#DDD" BorderThickness="1"
+                              FontSize="12"
+                              CellEditEnding="GridTrasacciones_CellEditEnding">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Línea"       Binding="{Binding Linea}"       Width="50"  IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Fecha"       Binding="{Binding FechaStr}"    Width="95"/>
+                            <DataGridTextColumn Header="Hora"        Binding="{Binding HoraStr}"     Width="75"/>
+                            <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
+
+                            <!-- Forma (ComboBox) -->
+                            <DataGridTemplateColumn Header="Forma" Width="100">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Forma}" Margin="4,0"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <ComboBox SelectedItem="{Binding Forma, UpdateSourceTrigger=PropertyChanged}"
+                                                  ItemsSource="{x:Static local:PedidosDetalle.FormasTrasaccion}"
+                                                  FontSize="12"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTextColumn Header="Importe" Binding="{Binding Importe, StringFormat=F2}" Width="85">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <!-- ── Tab 3: Entregas ─────────────────────────────────────── -->
+            <TabItem x:Name="TabEntregas" Header="Entregas">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Cabecera -->
+                    <Grid Grid.Row="0" Margin="0,4,0,4">
+                        <TextBlock Text="Entregas:" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="#1A1A2E" VerticalAlignment="Center"
+                                   HorizontalAlignment="Left"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Importar Artículos"  Style="{StaticResource BtnPrimario}"
+                                    Margin="0,0,5,0" Click="BtnImportarArticulosEntregas_Click"/>
+                            <Button Content="Insertar"            Style="{StaticResource BtnSecundario}"
+                                    Margin="0,0,5,0" Click="BtnInsertarEntrega_Click"/>
+                            <Button Content="Nueva Línea"         Style="{StaticResource BtnSecundario}"
+                                    Margin="0,0,5,0" Click="BtnNuevaLineaEntrega_Click"/>
+                            <Button Content="Eliminar Línea"      Style="{StaticResource BtnPeligro}"
+                                    Margin="0,0,5,0" Click="BtnEliminarLineaEntrega_Click"/>
+                            <Button Content="Registrar Entregas"  Style="{StaticResource BtnAmarillo}"
+                                    Click="BtnRegistrarEntregas_Click"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- DataGrid entregas -->
+                    <DataGrid x:Name="GridEntregas" Grid.Row="1"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              BorderBrush="#DDD" BorderThickness="1"
+                              FontSize="12"
+                              CellEditEnding="GridEntregas_CellEditEnding"
+                              PreparingCellForEdit="GridEntregas_PreparingCellForEdit">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Línea"       Binding="{Binding Linea}"       Width="50"  IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Código"      Binding="{Binding Codigo}"      Width="80"/>
+                            <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"   IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Cantidad"    Binding="{Binding Cantidad}"    Width="70"/>
+                            <DataGridTextColumn Header="Fecha"       Binding="{Binding FechaStr}"    Width="95"/>
+                            <DataGridTextColumn Header="Hora"        Binding="{Binding HoraStr}"     Width="75"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <!-- ══ Row 7: Totales fila A ══════════════════════════════════════ -->
+        <Grid Grid.Row="7" Margin="0,6,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Artículos del pedido:"
-                       FontSize="13" FontWeight="SemiBold" Foreground="#1A1A2E"
-                       VerticalAlignment="Center"/>
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Button Content="Importar Artículos" Style="{StaticResource BtnPrimario}"
-                        Margin="0,0,5,0" Click="BtnImportarArticulos_Click"/>
-                <Button Content="Insertar"     Style="{StaticResource BtnSecundario}"
-                        Margin="0,0,5,0" Click="BtnInsertar_Click"/>
-                <Button Content="Nueva Línea"  Style="{StaticResource BtnSecundario}"
-                        Margin="0,0,5,0" Click="BtnNuevaLinea_Click"/>
-                <Button Content="Eliminar Línea" Style="{StaticResource BtnPeligro}"
-                        Click="BtnEliminarLinea_Click"/>
-            </StackPanel>
-        </Grid>
-
-        <!-- ── DataGrid artículos ────────────────────────────────────────── -->
-        <DataGrid x:Name="GridItems" Grid.Row="6"
-                  AutoGenerateColumns="False"
-                  CanUserAddRows="False"
-                  SelectionMode="Single"
-                  HeadersVisibility="Column"
-                  GridLinesVisibility="Horizontal"
-                  BorderBrush="#DDD" BorderThickness="1"
-                  FontSize="12"
-                  CellEditEnding="GridItems_CellEditEnding"
-                  PreparingCellForEdit="GridItems_PreparingCellForEdit">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Línea"       Binding="{Binding Linea}"       Width="48"  IsReadOnly="True"/>
-                <DataGridTextColumn Header="Código"      Binding="{Binding Codigo}"      Width="80"/>
-                <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"   IsReadOnly="True"/>
-                <DataGridTextColumn Header="Cantidad"    Binding="{Binding Cantidad}"    Width="75"/>
-                <DataGridTextColumn Header="Precio"      Binding="{Binding Precio}"      Width="85"/>
-                <DataGridTextColumn Header="Total"       Binding="{Binding Total}"       Width="85"  IsReadOnly="True">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="HorizontalAlignment" Value="Right"/>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-            </DataGrid.Columns>
-        </DataGrid>
-
-        <!-- ── Totales + Guardar / Cancelar ─────────────────────────────── -->
-        <Grid Grid.Row="7" Margin="0,8,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="20"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="Total Cantidad:" FontSize="12" Foreground="#555"
-                           VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <TextBlock x:Name="TxtTotalCantidad" FontSize="13" FontWeight="Bold"
-                           Foreground="#1A73E8" VerticalAlignment="Center" Margin="0,0,20,0"/>
-                <TextBlock Text="Total Importe:" FontSize="12" Foreground="#555"
-                           VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <TextBlock x:Name="TxtTotalImporte" FontSize="13" FontWeight="Bold"
-                           Foreground="#2E7D32" VerticalAlignment="Center"/>
-            </StackPanel>
+            <!-- Totales unidades -->
+            <WrapPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Total:" Style="{StaticResource Lbl}"/>
+                <TextBlock x:Name="TxtTotalUnidades" FontSize="12" FontWeight="Bold"
+                           Foreground="#1A73E8" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <TextBlock Text="Diferentes:" Style="{StaticResource Lbl}"/>
+                <TextBlock x:Name="TxtUnidadesDiferentes" FontSize="12" FontWeight="Bold"
+                           Foreground="#1A73E8" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <TextBlock Text="Peq:" Style="{StaticResource Lbl}"/>
+                <TextBlock x:Name="TxtTotalPeq" FontSize="12" Foreground="#555"
+                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Text="Med:" Style="{StaticResource Lbl}"/>
+                <TextBlock x:Name="TxtTotalMed" FontSize="12" Foreground="#555"
+                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Text="Gra:" Style="{StaticResource Lbl}"/>
+                <TextBlock x:Name="TxtTotalGra" FontSize="12" Foreground="#555"
+                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Text="Otros:" Style="{StaticResource Lbl}"/>
+                <TextBlock x:Name="TxtTotalOtros" FontSize="12" Foreground="#555"
+                           VerticalAlignment="Center"/>
+            </WrapPanel>
 
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Button Content="Guardar"  Style="{StaticResource BtnPrimario}"
-                        Margin="0,0,8,0" Click="BtnGuardar_Click"/>
-                <Button Content="Cancelar" Style="{StaticResource BtnSecundario}"
-                        Click="BtnCancelar_Click"/>
-            </StackPanel>
+            <!-- Totales divisas -->
+            <WrapPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Importe:" Style="{StaticResource Lbl}"/>
+                <TextBlock x:Name="TxtTotalImporte" FontSize="12" FontWeight="Bold"
+                           Foreground="#2E7D32" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <TextBlock Text="Cuenta:" Style="{StaticResource Lbl}"/>
+                <TextBlock x:Name="TxtTotalCuenta" FontSize="12" FontWeight="Bold"
+                           Foreground="#1A73E8" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <TextBlock Text="Saldo:" Style="{StaticResource Lbl}"/>
+                <TextBlock x:Name="TxtTotalSaldo" FontSize="12" FontWeight="Bold"
+                           Foreground="#D93025" VerticalAlignment="Center"/>
+            </WrapPanel>
         </Grid>
+
+        <!-- ══ Row 8: Guardar / Cancelar ═════════════════════════════════ -->
+        <StackPanel Grid.Row="8" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,6,0,0">
+            <Button Content="Guardar"  Style="{StaticResource BtnPrimario}"
+                    Margin="0,0,8,0" Click="BtnGuardar_Click"/>
+            <Button Content="Cancelar" Style="{StaticResource BtnSecundario}"
+                    Click="BtnCancelar_Click"/>
+        </StackPanel>
     </Grid>
 </Window>
