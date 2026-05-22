@@ -21,5 +21,10 @@
             <Setter Property="RowHeight" Value="28"/>
         </Style>
 
+        <!-- Texto de cada celda centrado verticalmente (equivalente a align-items: center) -->
+        <Style TargetType="{x:Type DataGridCell}">
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
     </Application.Resources>
 </Application>
