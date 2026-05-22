@@ -1,7 +1,7 @@
 <Window x:Class="WpfAppVba.TraspasosGeneral"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Traspasos" Height="520" Width="800"
+        Title="Traspasos" Height="560" Width="800"
         WindowStartupLocation="CenterScreen"
         Background="#F0F2F5">
 
@@ -46,7 +46,8 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="*" MinHeight="120"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
@@ -56,14 +57,17 @@
                        FontSize="15" FontWeight="Bold" Foreground="#1A1A2E"
                        Margin="0,0,0,8"/>
 
-            <!-- Filtro estado -->
+            <!-- Filtro estado (4 opciones igual que VBA) -->
             <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
                 <TextBlock Text="Estado:" VerticalAlignment="Center" FontSize="12" Margin="0,0,8,0"/>
                 <RadioButton x:Name="BtnFiltroTodos" Content="Todos" IsChecked="True"
-                             VerticalAlignment="Center" FontSize="12" Margin="0,0,12,0"
+                             VerticalAlignment="Center" FontSize="12" Margin="0,0,10,0"
                              Checked="FiltroEstado_Checked"/>
                 <RadioButton x:Name="BtnFiltroPendiente" Content="Pendiente"
-                             VerticalAlignment="Center" FontSize="12" Margin="0,0,12,0"
+                             VerticalAlignment="Center" FontSize="12" Margin="0,0,10,0"
+                             Checked="FiltroEstado_Checked"/>
+                <RadioButton x:Name="BtnFiltroPendienteRevisar" Content="Pendiente Revisar"
+                             VerticalAlignment="Center" FontSize="12" Margin="0,0,10,0"
                              Checked="FiltroEstado_Checked"/>
                 <RadioButton x:Name="BtnFiltroEntregado" Content="Entregado"
                              VerticalAlignment="Center" FontSize="12"
@@ -84,7 +88,7 @@
                         Click="BtnBuscar_Click"/>
             </Grid>
 
-            <!-- DataGrid -->
+            <!-- DataGrid principal (Lista1) -->
             <DataGrid x:Name="Grid1" Grid.Row="3"
                       AutoGenerateColumns="False"
                       IsReadOnly="True"
@@ -93,13 +97,15 @@
                       GridLinesVisibility="Horizontal"
                       BorderBrush="#DDD" BorderThickness="1"
                       FontSize="12"
+                      SelectionChanged="Grid1_SelectionChanged"
                       MouseDoubleClick="Grid1_MouseDoubleClick">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Línea"      Binding="{Binding Linea}"        Width="60"/>
                     <DataGridTextColumn Header="DocumentoT" Binding="{Binding DocumentoT}"   Width="70"/>
                     <DataGridTextColumn Header="Fecha"      Binding="{Binding FechaStr}"      Width="120"/>
-                    <DataGridTextColumn Header="Sucursal"   Binding="{Binding SucursalDesc}"  Width="140"/>
-                    <DataGridTextColumn Header="Estado"     Binding="{Binding Estado}"        Width="90"/>
+                    <!-- Header "Destino"/"Origen" se actualiza desde código (index=3) -->
+                    <DataGridTextColumn Header="Sucursal"   Binding="{Binding SucursalDesc}"  Width="*"/>
+                    <DataGridTextColumn Header="Estado"     Binding="{Binding Estado}"        Width="100"/>
                     <DataGridTextColumn Header="Cantidad"   Binding="{Binding Cantidad}"      Width="70">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
@@ -110,15 +116,53 @@
                 </DataGrid.Columns>
             </DataGrid>
 
+            <!-- Panel detalle artículos (Lista2) — visible cuando hay fila seleccionada -->
+            <Border x:Name="PanelDetalle" Grid.Row="4"
+                    Visibility="Collapsed"
+                    Margin="0,4,0,0"
+                    BorderBrush="#1A73E8" BorderThickness="1"
+                    Background="White">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="100"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="Artículos del documento"
+                               FontSize="11" FontWeight="SemiBold" Foreground="#1A73E8"
+                               Margin="6,3,0,2"/>
+                    <DataGrid x:Name="Lista2" Grid.Row="1"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              BorderThickness="0"
+                              FontSize="11">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Línea"       Binding="{Binding Linea}"       Width="40"/>
+                            <DataGridTextColumn Header="Código"      Binding="{Binding Codigo}"      Width="60"/>
+                            <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
+                            <DataGridTextColumn Header="Cantidad"    Binding="{Binding Cantidad}"    Width="70">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
             <!-- Totales -->
-            <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,6,0,0">
+            <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="0,6,0,0">
                 <TextBlock Text="Total Cantidad:" VerticalAlignment="Center" FontSize="12" Margin="0,0,4,0"/>
                 <TextBlock x:Name="TxtTotalCantidad" VerticalAlignment="Center" FontSize="12"
                            FontWeight="SemiBold" Margin="0,0,0,0"/>
             </StackPanel>
 
             <!-- Botones -->
-            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
                 <Button Content="Nuevo"      Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"   Click="BtnNuevo_Click"/>
                 <Button Content="Editar"     Margin="0,0,6,0" Style="{StaticResource BtnSecundario}" Click="BtnEditar_Click"/>
                 <Button Content="Eliminar"   Margin="0,0,6,0" Style="{StaticResource BtnPeligro}"    Click="BtnEliminar_Click"/>

@@ -30,7 +30,6 @@ namespace WpfAppVba
                 Tree1.Items.Add(item);
             }
 
-            // Seleccionar mes actual
             int mesActual = DateTime.Now.Month - 1;
             if (Tree1.Items[mesActual] is TreeViewItem ti)
             {
@@ -42,15 +41,18 @@ namespace WpfAppVba
         // ─── Carga la lista de traspasos ──────────────────────────────────────
         public void CargarTraspasos()
         {
-            // Guard: evita correr antes de que todos los controles estén inicializados
             if (TxtBuscar == null || Grid1 == null) return;
 
             var lista = new List<TraspasoFila>();
             int linea = 1;
             double totalCant = 0;
             string filtroEstado = ObtenerFiltroEstado();
-            string busqueda = TxtBuscar.Text.ToLower();
-            string tipoMov = AppState.TipoMovimiento.ToLower();
+            string busqueda     = TxtBuscar.Text.ToLower();
+            string tipoMov      = AppState.TipoMovimiento.ToLower();
+
+            // ── Actualizar header de columna "Destino"/"Origen" (índice 3) ────
+            if (Grid1.Columns.Count > 3)
+                Grid1.Columns[3].Header = tipoMov == "salida" ? "Destino" : "Origen";
 
             int uf = Sql.DocumentosTObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -60,7 +62,7 @@ namespace WpfAppVba
                 string id = idObj.ToString()!;
 
                 // Filtrar por sucursal activa según tipo de movimiento
-                string campo = tipoMov == "salida" ? "origen" : "destino";
+                string campo   = tipoMov == "salida" ? "origen" : "destino";
                 string campOtro = tipoMov == "salida" ? "destino" : "origen";
 
                 string sucursal = Sql.DocumentosTObj.ObtenerItem(campo, id)?.ToString() ?? "";
@@ -79,11 +81,13 @@ namespace WpfAppVba
                 var fechaDocObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
                 DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
 
-                string otroSucId = Sql.DocumentosTObj.ObtenerItem(campOtro, id)?.ToString() ?? "";
+                string otroSucId   = Sql.DocumentosTObj.ObtenerItem(campOtro, id)?.ToString() ?? "";
                 string otroSucDesc = Sql.SucursalesObj.ObtenerItem("descripcion", otroSucId)?.ToString() ?? otroSucId;
 
-                string estado = Sql.DocumentosTObj.ObtenerItem("estado", id)?.ToString() ?? "";
+                string estado  = Sql.DocumentosTObj.ObtenerItem("estado", id)?.ToString() ?? "";
                 string emitido = Sql.DocumentosTObj.ObtenerItem("emitido", id)?.ToString() ?? "";
+
+                // Si fue emitido por otra sucursal y está "pendiente" → "pendiente revisar"
                 if (emitido != AppState.SucursalActiva.ToString() && estado == "pendiente")
                     estado = "pendiente revisar";
 
@@ -100,12 +104,12 @@ namespace WpfAppVba
                 double cant = CalcularCantidad(id);
                 lista.Add(new TraspasoFila
                 {
-                    Linea       = linea++,
-                    DocumentoT  = id,
-                    FechaStr    = fechaDoc.ToString("dd/MM/yyyy HH:mm:ss"),
+                    Linea        = linea++,
+                    DocumentoT   = id,
+                    FechaStr     = fechaDoc.ToString("dd/MM/yyyy HH:mm:ss"),
                     SucursalDesc = otroSucDesc,
-                    Estado      = estado,
-                    Cantidad    = cant
+                    Estado       = estado,
+                    Cantidad     = cant
                 });
                 totalCant += cant;
             }
@@ -113,17 +117,21 @@ namespace WpfAppVba
             Grid1.ItemsSource = lista;
             TxtTotalCantidad.Text = totalCant.ToString("F0");
             LblTipoMovimiento.Text = tipoMov == "salida" ? "Salidas de Productos" : "Entradas de Productos";
+
+            // Ocultar el panel de detalle al recargar
+            OcultarDetalle();
         }
 
-        // ─── Obtener filtro de estado seleccionado ────────────────────────────
+        // ─── Filtro de estado (4 opciones igual que VBA) ─────────────────────
         private string ObtenerFiltroEstado()
         {
-            if (BtnFiltroPendiente?.IsChecked == true) return "pendiente";
-            if (BtnFiltroEntregado?.IsChecked == true) return "entregado";
+            if (BtnFiltroPendiente?.IsChecked        == true) return "pendiente";
+            if (BtnFiltroPendienteRevisar?.IsChecked == true) return "pendiente revisar";
+            if (BtnFiltroEntregado?.IsChecked        == true) return "entregado";
             return ""; // todos
         }
 
-        // ─── Nombre de mes a partir de número ────────────────────────────────
+        // ─── Nombre de mes ────────────────────────────────────────────────────
         private static string ObtenerNombreMes(int mes)
         {
             string[] meses = { "Enero","Febrero","Marzo","Abril","Mayo","Junio",
@@ -145,6 +153,60 @@ namespace WpfAppVba
                 cant += Convert.ToDouble(Sql.TraspasosObj.ObtenerItem("cantidad", id) ?? 0);
             }
             return cant;
+        }
+
+        // ─── Panel de detalle artículos (Lista2) ─────────────────────────────
+
+        private void MostrarDetalle(string documentoT)
+        {
+            var detalles = new List<TraspasoDetalleFila>();
+            int linea = 1;
+
+            int uf = Sql.TraspasosObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.TraspasosObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                if (Sql.TraspasosObj.ObtenerItem("documentoT", id)?.ToString() != documentoT) continue;
+
+                string artId = Sql.TraspasosObj.ObtenerItem("articulo", id)?.ToString() ?? "";
+                string codigo = Sql.ArticulosObj.ObtenerItem("codigo", artId)?.ToString() ?? artId;
+
+                string desc      = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString() ?? "";
+                string famId     = Sql.ArticulosObj.ObtenerItem("familia", artId)?.ToString() ?? "";
+                string famDesc   = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? "";
+                string modelo    = Sql.ArticulosObj.ObtenerItem("modelo", artId)?.ToString() ?? "";
+                string descFull  = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
+
+                double cantidad = Convert.ToDouble(Sql.TraspasosObj.ObtenerItem("cantidad", id) ?? 0);
+
+                detalles.Add(new TraspasoDetalleFila
+                {
+                    Linea       = linea++,
+                    Codigo      = codigo,
+                    Descripcion = descFull,
+                    Cantidad    = cantidad
+                });
+            }
+
+            Lista2.ItemsSource = detalles;
+            PanelDetalle.Visibility = detalles.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void OcultarDetalle()
+        {
+            PanelDetalle.Visibility = Visibility.Collapsed;
+            Lista2.ItemsSource = null;
+        }
+
+        // ─── Selección en Grid1 → mostrar detalle ────────────────────────────
+        private void Grid1_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (Grid1.SelectedItem is TraspasoFila fila)
+                MostrarDetalle(fila.DocumentoT);
+            else
+                OcultarDetalle();
         }
 
         // ─── Eventos de árbol y filtros ───────────────────────────────────────
@@ -188,15 +250,12 @@ namespace WpfAppVba
 
             var res = MessageBox.Show("¿Eliminar este traspaso y todos sus artículos?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
-
             if (res != MessageBoxResult.Yes) return;
 
             try
             {
-                // Ocultar el documento
                 Sql.DocumentosTObj.Ocultar(fila.DocumentoT);
 
-                // Ocultar todas las líneas del traspaso
                 int uf = Sql.TraspasosObj.ContarFilas;
                 var idsOcultar = new List<string>();
                 for (int i = 1; i <= uf; i++)
@@ -237,7 +296,7 @@ namespace WpfAppVba
         }
     }
 
-    // ─── Modelo de fila para el DataGrid ─────────────────────────────────────
+    // ─── Modelos ──────────────────────────────────────────────────────────────
     public class TraspasoFila
     {
         public int    Linea        { get; set; }
@@ -246,5 +305,13 @@ namespace WpfAppVba
         public string SucursalDesc { get; set; } = "";
         public string Estado       { get; set; } = "";
         public double Cantidad     { get; set; }
+    }
+
+    public class TraspasoDetalleFila
+    {
+        public int    Linea       { get; set; }
+        public string Codigo      { get; set; } = "";
+        public string Descripcion { get; set; } = "";
+        public double Cantidad    { get; set; }
     }
 }
