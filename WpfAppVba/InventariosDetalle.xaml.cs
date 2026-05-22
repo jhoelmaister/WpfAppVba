@@ -117,8 +117,16 @@ namespace WpfAppVba
             for (int i = 0; i < _items.Count; i++)
                 _items[i].Linea = i + 1;
 
+            // Preservar selección antes de resetear el ItemsSource
+            var seleccionado = GridItems.SelectedItem as InventarioItemFila;
+
             GridItems.ItemsSource = null;
             GridItems.ItemsSource = _items;
+
+            // Restaurar selección si el ítem aún existe en la lista
+            if (seleccionado != null && _items.Contains(seleccionado))
+                GridItems.SelectedItem = seleccionado;
+
             TxtTotalUnidades.Text = _items.Sum(x => x.Cantidad).ToString("F2");
         }
 
