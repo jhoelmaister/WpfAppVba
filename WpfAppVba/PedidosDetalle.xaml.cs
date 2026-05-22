@@ -14,13 +14,23 @@ namespace WpfAppVba
         private static SqlData Sql => SqlData.Instance;
         private readonly PedidosGeneral? _padre;
         private readonly string _idEditar;
-        private bool _hayCambios = false;
-        private bool _cargando   = true;
-        private List<PedidoItemFila> _items = new();
 
-        // Listas estáticas para los ComboBox de la grid
+        private bool _cargando         = true;
+        private bool _cambioDocumento  = false;
+        private bool _cambioPedido     = false;
+        private bool _cambioTrasaccion = false;
+        private bool _cambioEntrega    = false;
+
+        private List<PedidoItemFila>     _pedidos       = new();
+        private List<TrasaccionItemFila> _trasacciones  = new();
+        private List<EntregaItemFila>    _entregas      = new();
+        private string                   _observaciones = "";
+
+        // Listas estáticas para ComboBox dentro de DataGrid
         public static List<string> FormasPedido     = new() { "sin factura", "con factura" };
         public static List<string> FormasTrasaccion = new() { "cheque", "efectivo", "transferencia", "pago Qr" };
+
+        private bool HayCambios => _cambioDocumento || _cambioPedido || _cambioTrasaccion || _cambioEntrega;
 
         public PedidosDetalle(PedidosGeneral? padre = null, string idEditar = "")
         {
@@ -36,15 +46,61 @@ namespace WpfAppVba
             _cargando = true;
 
             string tipo = AppState.TipoMovimiento.ToLower();
-            LblTitulo.Text = tipo == "venta" ? "Registro de Venta" : "Registro de Compra";
+            LblTitulo.Text = tipo == "venta" ? "Venta de Productos" : "Compra de Productos";
+
+            // Etiquetas dinámicas según tipo
+            if (TabCobros != null)
+                TabCobros.Header = tipo == "venta" ? "Cobros" : "Pagos";
+            BtnCobrarDocumento.Content = tipo == "venta" ? "Cobrar Documento" : "Pagar Documento";
+
+            // tipoPedido = "rapido" → ocultar tabs de cobros y entregas
+            string tipoPedido = AppState.TipoPedido.ToLower();
+            if (tipoPedido == "rapido")
+            {
+                if (TabCobros   != null) TabCobros.Visibility   = Visibility.Collapsed;
+                if (TabEntregas != null) TabEntregas.Visibility = Visibility.Collapsed;
+            }
 
             if (AppState.EventoFormularioM == "editar")
                 CargarParaEditar();
             else
                 CargarParaNuevo();
 
-            _cargando   = false;
-            _hayCambios = false;
+            _cargando        = false;
+            _cambioDocumento = false;
+            _cambioPedido    = false;
+            _cambioTrasaccion= false;
+            _cambioEntrega   = false;
+        }
+
+        // ─── Modo nuevo ───────────────────────────────────────────────────────
+        private void CargarParaNuevo()
+        {
+            Box_DocumentoP.IsEnabled = true;
+            long siguiente = Convert.ToInt64(Sql.DocumentosPObj.Maximo("id") ?? 0) + 1;
+            Box_DocumentoP.Text = siguiente.ToString();
+
+            string tipoPedido = AppState.TipoPedido.ToLower();
+            DateTime ahora = DateTime.Now;
+            bool mismoAnio = int.TryParse(AppState.PeriodoActivo, out int periodo) && periodo == ahora.Year;
+
+            Box_Fecha.SelectedDate = mismoAnio ? ahora.Date : AppState.DataFechaFinal.Date;
+            Box_Hora.Text          = mismoAnio ? ahora.ToString("HH:mm:ss") : "23:59:59";
+
+            string estadoInicial = tipoPedido == "rapido" ? "entregado" : "pendiente";
+            string cuentaInicial = tipoPedido == "rapido" ? "cancelado"  : "pendiente";
+            SeleccionarEstado(estadoInicial);
+            Box_Cuenta.Text  = cuentaInicial;
+            Box_Emision.Text = ahora.ToString("dd/MM/yyyy HH:mm:ss");
+            Box_Edicion.Text = ahora.ToString("dd/MM/yyyy HH:mm:ss");
+
+            _pedidos.Clear();
+            _trasacciones.Clear();
+            _entregas.Clear();
+            RefrescarGridPedidos();
+            RefrescarGridTrasacciones();
+            RefrescarGridEntregas();
+            ActualizarTotales();
         }
 
         // ─── Modo editar ──────────────────────────────────────────────────────
@@ -65,10 +121,19 @@ namespace WpfAppVba
             string estadoVal = Sql.DocumentosPObj.ObtenerItem("estado", _idEditar)?.ToString() ?? "pendiente";
             SeleccionarEstado(estadoVal);
 
-            Box_Observaciones.Text = Sql.DocumentosPObj.ObtenerItem("observacion", _idEditar)?.ToString() ?? "";
+            Box_Referencia.Text  = Sql.DocumentosPObj.ObtenerItem("referencia",  _idEditar)?.ToString() ?? "";
+            _observaciones = Sql.DocumentosPObj.ObtenerItem("observacion", _idEditar)?.ToString() ?? "";
+            Box_Cuenta.Text      = Sql.DocumentosPObj.ObtenerItem("estadoC",     _idEditar)?.ToString() ?? "";
 
-            // Cargar artículos
-            _items.Clear();
+            var emisionObj = Sql.DocumentosPObj.ObtenerItem("emision", _idEditar);
+            var edicionObj = Sql.DocumentosPObj.ObtenerItem("edicion", _idEditar);
+            Box_Emision.Text = emisionObj != null ? Convert.ToDateTime(emisionObj).ToString("dd/MM/yyyy HH:mm:ss") : "";
+            Box_Edicion.Text = edicionObj != null ? Convert.ToDateTime(edicionObj).ToString("dd/MM/yyyy HH:mm:ss") : "";
+
+            AppState.TipoPedido = Sql.DocumentosPObj.ObtenerItem("tipo", _idEditar)?.ToString() ?? "rapido";
+
+            // Cargar pedidos
+            _pedidos.Clear();
             int linea = 1;
             int uf = Sql.PedidosObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -78,37 +143,88 @@ namespace WpfAppVba
                 string id = idObj.ToString()!;
                 if (Sql.PedidosObj.ObtenerItem("documentoP", id)?.ToString() != _idEditar) continue;
 
-                string artId  = Sql.PedidosObj.ObtenerItem("articulo",  id)?.ToString() ?? "";
-                string codigo = Sql.ArticulosObj.ObtenerItem("codigo",  artId)?.ToString() ?? "";
-                double cant   = Convert.ToDouble(Sql.PedidosObj.ObtenerItem("cantidad", id) ?? 0);
-                double precio = Convert.ToDouble(Sql.PedidosObj.ObtenerItem("precio",   id) ?? 0);
-                string desc   = ObtenerDescripcionArticulo(artId);
+                string artId   = Sql.PedidosObj.ObtenerItem("articulo",  id)?.ToString() ?? "";
+                string codigo  = Sql.ArticulosObj.ObtenerItem("codigo",   artId)?.ToString() ?? "";
+                double cant    = Convert.ToDouble(Sql.PedidosObj.ObtenerItem("cantidad",  id) ?? 0);
+                double importe = Convert.ToDouble(Sql.PedidosObj.ObtenerItem("importe",   id) ?? 0);
+                string forma   = Sql.PedidosObj.ObtenerItem("forma",     id)?.ToString() ?? "sin factura";
+                double contable= Convert.ToDouble(Sql.PedidosObj.ObtenerItem("contable",  id) ?? 0);
+                string tipo    = Sql.PedidosObj.ObtenerItem("tipo",      id)?.ToString() ?? "automatico";
+                double precio  = cant > 0 ? importe / cant : 0;
 
-                _items.Add(new PedidoItemFila
+                _pedidos.Add(new PedidoItemFila
                 {
                     PedidoId    = id,
                     Linea       = linea++,
                     ArticuloId  = artId,
                     Codigo      = codigo,
-                    Descripcion = desc,
+                    Descripcion = ObtenerDescripcionArticulo(artId),
                     Cantidad    = cant,
-                    Precio      = precio
+                    Forma       = forma,
+                    Contable    = contable,
+                    Precio      = precio,
+                    Importe     = importe,
+                    Tipo        = tipo
                 });
             }
-            RefrescarGrid();
-        }
 
-        // ─── Modo nuevo ───────────────────────────────────────────────────────
-        private void CargarParaNuevo()
-        {
-            Box_DocumentoP.IsEnabled = true;
-            long siguiente = Convert.ToInt64(Sql.DocumentosPObj.Maximo("id") ?? 0) + 1;
-            Box_DocumentoP.Text = siguiente.ToString();
-            Box_Fecha.SelectedDate = DateTime.Today;
-            Box_Hora.Text = DateTime.Now.ToString("HH:mm:ss");
-            SeleccionarEstado("pendiente");
-            _items.Clear();
-            RefrescarGrid();
+            // Cargar trasacciones
+            _trasacciones.Clear();
+            int ufT = Sql.TrasaccionesObj.ContarFilas;
+            int lineaT = 1;
+            for (int i = 1; i <= ufT; i++)
+            {
+                var idObj = Sql.TrasaccionesObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                if (Sql.TrasaccionesObj.ObtenerItem("documentoP", id)?.ToString() != _idEditar) continue;
+
+                var fObj = Sql.TrasaccionesObj.ObtenerItem("fecha", id);
+                DateTime ft = fObj != null ? Convert.ToDateTime(fObj) : DateTime.Now;
+                _trasacciones.Add(new TrasaccionItemFila
+                {
+                    TrasaccionId = id,
+                    Linea        = lineaT++,
+                    FechaStr     = ft.ToString("dd/MM/yyyy"),
+                    HoraStr      = ft.ToString("HH:mm:ss"),
+                    Descripcion  = Sql.TrasaccionesObj.ObtenerItem("descripcion", id)?.ToString() ?? "",
+                    Forma        = Sql.TrasaccionesObj.ObtenerItem("forma",       id)?.ToString() ?? "efectivo",
+                    Importe      = Convert.ToDouble(Sql.TrasaccionesObj.ObtenerItem("importe", id) ?? 0)
+                });
+            }
+
+            // Cargar entregas
+            _entregas.Clear();
+            int ufE = Sql.EntregasObj.ContarFilas;
+            int lineaE = 1;
+            for (int i = 1; i <= ufE; i++)
+            {
+                var idObj = Sql.EntregasObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                if (Sql.EntregasObj.ObtenerItem("documentoP", id)?.ToString() != _idEditar) continue;
+
+                string artId  = Sql.EntregasObj.ObtenerItem("articulo", id)?.ToString() ?? "";
+                string codigo = Sql.ArticulosObj.ObtenerItem("codigo",  artId)?.ToString() ?? "";
+                var fObj = Sql.EntregasObj.ObtenerItem("fecha", id);
+                DateTime fe = fObj != null ? Convert.ToDateTime(fObj) : DateTime.Now;
+                _entregas.Add(new EntregaItemFila
+                {
+                    EntregaId   = id,
+                    Linea       = lineaE++,
+                    ArticuloId  = artId,
+                    Codigo      = codigo,
+                    Descripcion = ObtenerDescripcionArticulo(artId),
+                    Cantidad    = Convert.ToDouble(Sql.EntregasObj.ObtenerItem("cantidad", id) ?? 0),
+                    FechaStr    = fe.ToString("dd/MM/yyyy"),
+                    HoraStr     = fe.ToString("HH:mm:ss")
+                });
+            }
+
+            RefrescarGridPedidos();
+            RefrescarGridTrasacciones();
+            RefrescarGridEntregas();
+            ActualizarTotales();
         }
 
         // ─── Helpers ──────────────────────────────────────────────────────────
@@ -117,13 +233,9 @@ namespace WpfAppVba
             foreach (ComboBoxItem item in Box_Estado.Items)
             {
                 if (item.Content?.ToString() == valor)
-                {
-                    Box_Estado.SelectedItem = item;
-                    return;
-                }
+                { Box_Estado.SelectedItem = item; return; }
             }
-            if (Box_Estado.Items.Count > 0)
-                Box_Estado.SelectedIndex = 0;
+            if (Box_Estado.Items.Count > 0) Box_Estado.SelectedIndex = 0;
         }
 
         private void ActualizarDescripcionTercero()
@@ -141,58 +253,215 @@ namespace WpfAppVba
             return FuncionesComunes.UnirVariables(desc, famDesc, modelo);
         }
 
-        private void RefrescarGrid()
-        {
-            for (int i = 0; i < _items.Count; i++) _items[i].Linea = i + 1;
-
-            // Preservar selección antes de resetear el ItemsSource
-            var seleccionado = GridItems.SelectedItem as PedidoItemFila;
-
-            GridItems.ItemsSource = null;
-            GridItems.ItemsSource = _items;
-
-            // Restaurar selección si el ítem aún existe en la lista
-            if (seleccionado != null && _items.Contains(seleccionado))
-                GridItems.SelectedItem = seleccionado;
-
-            TxtTotalCantidad.Text = _items.Sum(x => x.Cantidad).ToString("F2");
-            TxtTotalImporte.Text  = _items.Sum(x => x.Total).ToString("F2");
-        }
-
-        // ─── Búsqueda de precio para un artículo ─────────────────────────────
         private double ObtenerPrecioArticulo(string artId)
         {
             double precio = 0;
             DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
-            int ufp = Sql.PreciosObj.ContarFilas;
-            for (int p = 1; p <= ufp; p++)
+            int uf = Sql.PreciosObj.ContarFilas;
+            for (int p = 1; p <= uf; p++)
             {
                 var pid = Sql.PreciosObj.Mover(p)?.ToString();
                 if (pid == null) continue;
                 if (Sql.PreciosObj.ObtenerItem("articulo", pid)?.ToString() != artId) continue;
-                var fechaPrecioObj = Sql.PreciosObj.ObtenerItem("fecha", pid);
-                if (fechaPrecioObj == null) continue;
-                DateTime fechaPrecio = Convert.ToDateTime(fechaPrecioObj);
-                if (fechaPrecio <= fechaDoc)
+                var fp = Sql.PreciosObj.ObtenerItem("fecha", pid);
+                if (fp == null) continue;
+                if (Convert.ToDateTime(fp) <= fechaDoc)
                     precio = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", pid) ?? 0);
             }
             return precio;
         }
 
-        // ─── Eventos de campos ────────────────────────────────────────────────
+        private static DateTime CombinarFechaHora(DateTime fecha, string horaTexto)
+        {
+            if (TimeSpan.TryParse(horaTexto, out var ts))
+                return fecha.Date + ts;
+            return fecha.Date;
+        }
+
+        // ─── Refrescar grids (preserva selección) ────────────────────────────
+        private void RefrescarGridPedidos()
+        {
+            for (int i = 0; i < _pedidos.Count; i++) _pedidos[i].Linea = i + 1;
+            var sel = GridItems.SelectedItem as PedidoItemFila;
+            GridItems.ItemsSource = null;
+            GridItems.ItemsSource = _pedidos;
+            if (sel != null && _pedidos.Contains(sel)) GridItems.SelectedItem = sel;
+            CargarStockYPrecios(GridItems.SelectedItem as PedidoItemFila);
+        }
+
+        private void RefrescarGridTrasacciones()
+        {
+            for (int i = 0; i < _trasacciones.Count; i++) _trasacciones[i].Linea = i + 1;
+            var sel = GridTrasacciones.SelectedItem as TrasaccionItemFila;
+            GridTrasacciones.ItemsSource = null;
+            GridTrasacciones.ItemsSource = _trasacciones;
+            if (sel != null && _trasacciones.Contains(sel)) GridTrasacciones.SelectedItem = sel;
+        }
+
+        private void RefrescarGridEntregas()
+        {
+            for (int i = 0; i < _entregas.Count; i++) _entregas[i].Linea = i + 1;
+            var sel = GridEntregas.SelectedItem as EntregaItemFila;
+            GridEntregas.ItemsSource = null;
+            GridEntregas.ItemsSource = _entregas;
+            if (sel != null && _entregas.Contains(sel)) GridEntregas.SelectedItem = sel;
+        }
+
+        // ─── Totales ──────────────────────────────────────────────────────────
+        private void ActualizarTotales()
+        {
+            CargarTotales();
+            CargarTotalesDivisas();
+            CargarEstadosCuenta();
+            if (AppState.TipoPedido.ToLower() == "normal")
+                CargarEstados();
+        }
+
+        private void CargarTotales()
+        {
+            double totalUnid = 0, totalPeq = 0, totalMed = 0, totalGra = 0, totalOtros = 0;
+            var articulosUnicos = new HashSet<string>();
+
+            foreach (var p in _pedidos)
+            {
+                if (!string.IsNullOrEmpty(p.ArticuloId)) articulosUnicos.Add(p.ArticuloId);
+                totalUnid += p.Cantidad;
+
+                string catId   = Sql.ArticulosObj.ObtenerItem("categoria", p.ArticuloId)?.ToString() ?? "";
+                string catDesc = Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString()?.ToLower() ?? "";
+                if (catDesc == "pequeña" || catDesc == "pequena")  totalPeq   += p.Cantidad;
+                else if (catDesc == "mediana")                     totalMed   += p.Cantidad;
+                else if (catDesc == "grande")                      totalGra   += p.Cantidad;
+                else                                               totalOtros += p.Cantidad;
+            }
+
+            TxtTotalUnidades.Text        = totalUnid.ToString("F0");
+            TxtUnidadesDiferentes.Text   = articulosUnicos.Count.ToString();
+            TxtTotalPeq.Text             = totalPeq.ToString("F0");
+            TxtTotalMed.Text             = totalMed.ToString("F0");
+            TxtTotalGra.Text             = totalGra.ToString("F0");
+            TxtTotalOtros.Text           = totalOtros.ToString("F0");
+        }
+
+        private void CargarTotalesDivisas()
+        {
+            double totalImporte = _pedidos.Sum(p => p.Importe);
+            double totalCuenta;
+
+            if (AppState.TipoPedido.ToLower() == "rapido")
+                totalCuenta = totalImporte;
+            else
+                totalCuenta = _trasacciones.Sum(t => t.Importe);
+
+            double saldo = totalImporte - totalCuenta;
+
+            TxtTotalImporte.Text = totalImporte.ToString("F2");
+            TxtTotalCuenta.Text  = totalCuenta.ToString("F2");
+            TxtTotalSaldo.Text   = saldo.ToString("F2");
+        }
+
+        private void CargarEstadosCuenta()
+        {
+            if (!double.TryParse(TxtTotalImporte.Text, out double importe)) return;
+            if (!double.TryParse(TxtTotalCuenta.Text,  out double cuenta))  return;
+
+            string nuevaCuenta;
+            if (importe > 0 && cuenta == 0)         nuevaCuenta = "pendiente";
+            else if (cuenta > 0 && cuenta < importe) nuevaCuenta = "pendiente parcial";
+            else if (cuenta >= importe)              nuevaCuenta = "cancelado";
+            else                                     nuevaCuenta = "pendiente";
+
+            bool prev = _cargando;
+            _cargando = true;
+            Box_Cuenta.Text = nuevaCuenta;
+            _cargando = prev;
+        }
+
+        private void CargarEstados()
+        {
+            // Solo aplica en modo "normal"
+            if (AppState.TipoPedido.ToLower() != "normal") return;
+            if (_pedidos.Count == 0) return;
+
+            // Agrupar cantidades de pedidos por artículo
+            var cantPedido = _pedidos
+                .Where(p => !string.IsNullOrEmpty(p.ArticuloId))
+                .GroupBy(p => p.ArticuloId)
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.Cantidad));
+
+            // Agrupar cantidades de entregas por artículo
+            var cantEntrega = _entregas
+                .Where(e => !string.IsNullOrEmpty(e.ArticuloId))
+                .GroupBy(e => e.ArticuloId)
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.Cantidad));
+
+            string estado = "pendiente";
+            bool hayEntregas = _entregas.Count > 0;
+
+            foreach (var kv in cantPedido)
+            {
+                double entregado = cantEntrega.TryGetValue(kv.Key, out double val) ? val : 0;
+                if (entregado < kv.Value && hayEntregas)
+                { estado = "entrega parcial"; break; }
+                if (entregado >= kv.Value)
+                    estado = "entregado";
+            }
+
+            bool prev = _cargando;
+            _cargando = true;
+            SeleccionarEstado(estado);
+            _cargando = prev;
+        }
+
+        // ─── Stock y precios del artículo seleccionado ────────────────────────
+        private void CargarStockYPrecios(PedidoItemFila? fila)
+        {
+            GridPrecios.ItemsSource = null;
+            GridStock.ItemsSource   = null;
+
+            if (fila == null || string.IsNullOrEmpty(fila.ArticuloId)) return;
+
+            // Precios
+            var precios = new List<PrecioFila>();
+            int uf = Sql.PreciosObj.ContarFilas;
+            for (int i = uf; i >= 1; i--)
+            {
+                var pid = Sql.PreciosObj.Mover(i)?.ToString();
+                if (pid == null) continue;
+                if (Sql.PreciosObj.ObtenerItem("articulo", pid)?.ToString() != fila.ArticuloId) continue;
+                var fp = Sql.PreciosObj.ObtenerItem("fecha", pid);
+                precios.Add(new PrecioFila
+                {
+                    Codigo = fila.Codigo,
+                    Fecha  = fp != null ? Convert.ToDateTime(fp).ToString("dd/MM/yyyy") : "",
+                    Precio = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", pid) ?? 0).ToString("F2")
+                });
+            }
+            GridPrecios.ItemsSource = precios;
+
+            // Stock
+            double stockTotal = StockCalculator.ContarStock(fila.ArticuloId, AppState.DataFechaFinal);
+            double stockDisp  = StockCalculator.ContarStock(fila.ArticuloId, DateTime.Now);
+            GridStock.ItemsSource = new List<StockFila>
+            {
+                new() { Codigo = fila.Codigo, Disponible = stockDisp.ToString("F0"), Stock = stockTotal.ToString("F0") }
+            };
+        }
+
+        // ─── Eventos de campos del encabezado ─────────────────────────────────
         private void Campo_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (!_cargando) _hayCambios = true;
+            if (!_cargando) _cambioDocumento = true;
         }
 
         private void Campo_DateChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (!_cargando) _hayCambios = true;
+            if (!_cargando) _cambioDocumento = true;
         }
 
         private void Campo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (!_cargando) _hayCambios = true;
+            if (!_cargando) _cambioDocumento = true;
         }
 
         private void Box_Tercero_Identificador_TextChanged(object sender, TextChangedEventArgs e)
@@ -200,7 +469,7 @@ namespace WpfAppVba
             if (!_cargando)
             {
                 ActualizarDescripcionTercero();
-                _hayCambios = true;
+                _cambioDocumento = true;
             }
         }
 
@@ -212,82 +481,38 @@ namespace WpfAppVba
         {
             TercerosGeneral.TerceroSeleccionado = null;
             new TercerosGeneral(modoSelector: true).ShowDialog();
-
             if (!string.IsNullOrEmpty(TercerosGeneral.TerceroSeleccionado))
                 Box_Tercero_Identificador.Text = TercerosGeneral.TerceroSeleccionado;
-                // El TextChanged de Box_Tercero_Identificador llama ActualizarDescripcionTercero()
         }
 
-        // ─── Importar artículos ───────────────────────────────────────────────
-        private void BtnImportarArticulos_Click(object sender, RoutedEventArgs e)
+        // ─── Selección en grid de pedidos ─────────────────────────────────────
+        private void GridItems_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var dlg = new ArticulosGeneral(arts =>
-            {
-                foreach (var art in arts)
-                {
-                    if (_items.Any(x => x.ArticuloId == art.Id)) continue;
-                    double precio = ObtenerPrecioArticulo(art.Id);
-                    _items.Add(new PedidoItemFila
-                    {
-                        PedidoId    = "",
-                        ArticuloId  = art.Id,
-                        Codigo      = art.Codigo,
-                        Descripcion = art.Descripcion,
-                        Cantidad    = 1,
-                        Precio      = precio
-                    });
-                }
-                _hayCambios = true;
-                RefrescarGrid();
-            });
-            dlg.ShowDialog();
+            CargarStockYPrecios(GridItems.SelectedItem as PedidoItemFila);
         }
 
-        // ─── Nueva línea vacía ────────────────────────────────────────────────
-        private void BtnNuevaLinea_Click(object sender, RoutedEventArgs e)
-        {
-            _items.Add(new PedidoItemFila
-            {
-                PedidoId    = "",
-                ArticuloId  = "",
-                Codigo      = "",
-                Descripcion = "",
-                Cantidad    = 0,
-                Precio      = 0
-            });
-            _hayCambios = true;
-            RefrescarGrid();
-        }
-
-        // ─── Eliminar línea seleccionada ──────────────────────────────────────
-        private void BtnEliminarLinea_Click(object sender, RoutedEventArgs e)
-        {
-            if (GridItems.SelectedItem is not PedidoItemFila fila) return;
-            _items.Remove(fila);
-            _hayCambios = true;
-            RefrescarGrid();
-        }
-
-        // ─── Edición de celda ─────────────────────────────────────────────────
+        // ─── CellEditEnding – Pedidos ─────────────────────────────────────────
         private void GridItems_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
         {
-            _hayCambios = true;
+            if (e.EditAction != DataGridEditAction.Commit) return;
+            if (e.Row.Item is not PedidoItemFila fila) return;
 
-            // Cuando se confirma la edición de la columna Código → buscar artículo
-            if (e.EditAction == DataGridEditAction.Commit &&
-                e.Column.Header?.ToString() == "Código" &&
-                e.Row.Item is PedidoItemFila fila &&
-                e.EditingElement is TextBox tb)
+            string col = e.Column.Header?.ToString() ?? "";
+
+            if (col == "Código" && e.EditingElement is TextBox tbCod)
             {
-                string codigo = tb.Text.Trim();
+                string codigo = tbCod.Text.Trim();
                 long artIdNum = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
                 if (artIdNum > 0)
                 {
-                    string artId     = artIdNum.ToString();
+                    string artId = artIdNum.ToString();
                     fila.ArticuloId  = artId;
                     fila.Codigo      = codigo;
                     fila.Descripcion = ObtenerDescripcionArticulo(artId);
-                    fila.Precio      = ObtenerPrecioArticulo(artId);
+                    double precio    = ObtenerPrecioArticulo(artId);
+                    fila.Precio      = precio;
+                    fila.Importe     = precio * fila.Cantidad;
+                    fila.Tipo        = "automatico";
                 }
                 else
                 {
@@ -295,44 +520,352 @@ namespace WpfAppVba
                     fila.Codigo      = codigo;
                     fila.Descripcion = string.IsNullOrEmpty(codigo) ? "" : "⚠ Artículo no encontrado";
                     fila.Precio      = 0;
+                    fila.Importe     = 0;
                 }
             }
+            else if (col == "Cantidad" && e.EditingElement is TextBox tbCant)
+            {
+                if (double.TryParse(tbCant.Text, out double cant))
+                {
+                    fila.Cantidad = cant;
+                    fila.Importe  = cant * fila.Precio;
+                    fila.Tipo     = "manual";
+                }
+            }
+            else if (col == "Precio" && e.EditingElement is TextBox tbPrecio)
+            {
+                if (double.TryParse(tbPrecio.Text, out double precio))
+                {
+                    fila.Precio  = precio;
+                    fila.Importe = fila.Cantidad * precio;
+                    fila.Tipo    = "manual";
+                }
+            }
+            else if (col == "Importe" && e.EditingElement is TextBox tbImp)
+            {
+                if (double.TryParse(tbImp.Text, out double importe))
+                {
+                    fila.Importe = importe;
+                    fila.Precio  = fila.Cantidad > 0 ? importe / fila.Cantidad : 0;
+                    fila.Tipo    = "manual";
+                }
+            }
+            else if (col == "Contable" && e.EditingElement is TextBox tbCont)
+            {
+                if (double.TryParse(tbCont.Text, out double cont))
+                    fila.Contable = cont;
+            }
 
-            Dispatcher.BeginInvoke(new Action(RefrescarGrid),
-                System.Windows.Threading.DispatcherPriority.Background);
+            _cambioPedido = true;
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                RefrescarGridPedidos();
+                ActualizarTotales();
+            }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
-        // ─── Seleccionar todo al entrar al campo Código ───────────────────────
         private void GridItems_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
         {
-            if (e.Column.Header?.ToString() == "Código" && e.EditingElement is TextBox tb)
-            {
-                tb.SelectAll();
-                tb.Focus();
-            }
+            if (e.EditingElement is TextBox tb) { tb.SelectAll(); tb.Focus(); }
         }
 
-        // ─── Insertar línea en la posición seleccionada ───────────────────────
+        // ─── Botones Pedidos ──────────────────────────────────────────────────
+        private void BtnImportarArticulos_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new ArticulosGeneral(arts =>
+            {
+                foreach (var art in arts)
+                {
+                    if (_pedidos.Any(x => x.ArticuloId == art.Id)) continue;
+                    double precio = ObtenerPrecioArticulo(art.Id);
+                    _pedidos.Add(new PedidoItemFila
+                    {
+                        PedidoId    = "", ArticuloId  = art.Id,
+                        Codigo      = art.Codigo, Descripcion = art.Descripcion,
+                        Cantidad    = 1, Forma = "sin factura", Contable = 0,
+                        Precio      = precio, Importe = precio, Tipo = "automatico"
+                    });
+                }
+                _cambioPedido = true;
+                RefrescarGridPedidos();
+                ActualizarTotales();
+            });
+            dlg.ShowDialog();
+        }
+
+        private void BtnNuevaLinea_Click(object sender, RoutedEventArgs e)
+        {
+            _pedidos.Add(new PedidoItemFila
+            {
+                PedidoId = "", ArticuloId = "", Codigo = "", Descripcion = "",
+                Cantidad = 1, Forma = "sin factura", Contable = 0, Precio = 0, Importe = 0
+            });
+            _cambioPedido = true;
+            RefrescarGridPedidos();
+            ActualizarTotales();
+        }
+
         private void BtnInsertar_Click(object sender, RoutedEventArgs e)
         {
             int idx = GridItems.SelectedItem is PedidoItemFila sel
-                      ? _items.IndexOf(sel)
-                      : _items.Count;
-            if (idx < 0) idx = _items.Count;
-
-            var nueva = new PedidoItemFila
+                      ? _pedidos.IndexOf(sel) : _pedidos.Count;
+            if (idx < 0) idx = _pedidos.Count;
+            _pedidos.Insert(idx, new PedidoItemFila
             {
-                PedidoId = "", ArticuloId = "", Codigo = "",
-                Descripcion = "", Cantidad = 1, Precio = 0
-            };
-            _items.Insert(idx, nueva);
-            _hayCambios = true;
-            RefrescarGrid();
+                PedidoId = "", ArticuloId = "", Codigo = "", Descripcion = "",
+                Cantidad = 1, Forma = "sin factura", Contable = 0, Precio = 0, Importe = 0
+            });
+            _cambioPedido = true;
+            RefrescarGridPedidos();
             if (idx < GridItems.Items.Count)
+            { GridItems.SelectedIndex = idx; GridItems.ScrollIntoView(GridItems.SelectedItem); }
+            ActualizarTotales();
+        }
+
+        private void BtnEliminarLinea_Click(object sender, RoutedEventArgs e)
+        {
+            if (GridItems.SelectedItem is not PedidoItemFila fila) return;
+            _pedidos.Remove(fila);
+            _cambioPedido = true;
+            RefrescarGridPedidos();
+            ActualizarTotales();
+        }
+
+        private void BtnActualizarPrecios_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (var p in _pedidos)
             {
-                GridItems.SelectedIndex = idx;
-                GridItems.ScrollIntoView(GridItems.SelectedItem);
+                if (string.IsNullOrEmpty(p.ArticuloId)) continue;
+                double precio = ObtenerPrecioArticulo(p.ArticuloId);
+                p.Precio  = precio;
+                p.Importe = precio * p.Cantidad;
+                p.Tipo    = "automatico";
             }
+            _cambioPedido = true;
+            RefrescarGridPedidos();
+            ActualizarTotales();
+        }
+
+        // ─── CellEditEnding – Trasacciones ────────────────────────────────────
+        private void GridTrasacciones_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            if (e.EditAction != DataGridEditAction.Commit) return;
+            _cambioTrasaccion = true;
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                RefrescarGridTrasacciones();
+                CargarTotalesDivisas();
+                CargarEstadosCuenta();
+            }), System.Windows.Threading.DispatcherPriority.Background);
+        }
+
+        // ─── Botones Cobros/Pagos ─────────────────────────────────────────────
+        private void BtnNuevaLineaTrasaccion_Click(object sender, RoutedEventArgs e)
+        {
+            if (!double.TryParse(TxtTotalSaldo.Text, out double saldo) || saldo <= 0)
+            { MessageBox.Show("La cuenta ya se canceló.", "Consola", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+
+            DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
+            string tipo = AppState.TipoMovimiento.ToLower();
+            _trasacciones.Add(new TrasaccionItemFila
+            {
+                TrasaccionId = "", Descripcion = $"{(tipo == "venta" ? "Cobro" : "Pago")} de documento {Box_DocumentoP.Text}",
+                FechaStr = fechaDoc.ToString("dd/MM/yyyy"), HoraStr = DateTime.Now.ToString("HH:mm:ss"),
+                Forma = "efectivo", Importe = 0
+            });
+            _cambioTrasaccion = true;
+            RefrescarGridTrasacciones();
+        }
+
+        private void BtnInsertarTrasaccion_Click(object sender, RoutedEventArgs e)
+        {
+            if (!double.TryParse(TxtTotalSaldo.Text, out double saldo) || saldo <= 0)
+            { MessageBox.Show("La cuenta ya se canceló.", "Consola", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+
+            int idx = GridTrasacciones.SelectedItem is TrasaccionItemFila sel
+                      ? _trasacciones.IndexOf(sel) : _trasacciones.Count;
+            if (idx < 0) idx = _trasacciones.Count;
+            DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
+            string tipo = AppState.TipoMovimiento.ToLower();
+            _trasacciones.Insert(idx, new TrasaccionItemFila
+            {
+                TrasaccionId = "", Descripcion = $"{(tipo == "venta" ? "Cobro" : "Pago")} de documento {Box_DocumentoP.Text}",
+                FechaStr = fechaDoc.ToString("dd/MM/yyyy"), HoraStr = DateTime.Now.ToString("HH:mm:ss"),
+                Forma = "efectivo", Importe = 0
+            });
+            _cambioTrasaccion = true;
+            RefrescarGridTrasacciones();
+        }
+
+        private void BtnEliminarLineaTrasaccion_Click(object sender, RoutedEventArgs e)
+        {
+            if (GridTrasacciones.SelectedItem is not TrasaccionItemFila fila) return;
+            _trasacciones.Remove(fila);
+            _cambioTrasaccion = true;
+            RefrescarGridTrasacciones();
+            CargarTotalesDivisas();
+            CargarEstadosCuenta();
+        }
+
+        private void BtnCobrarDocumento_Click(object sender, RoutedEventArgs e)
+        {
+            if (!double.TryParse(TxtTotalSaldo.Text, out double saldo) || saldo <= 0)
+            { MessageBox.Show("La cuenta ya se canceló.", "Consola", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+
+            DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
+            string tipo = AppState.TipoMovimiento.ToLower();
+            _trasacciones.Add(new TrasaccionItemFila
+            {
+                TrasaccionId = "",
+                Descripcion  = $"{(tipo == "venta" ? "Cobro" : "Pago")} de documento {Box_DocumentoP.Text}",
+                FechaStr     = fechaDoc.ToString("dd/MM/yyyy"),
+                HoraStr      = DateTime.Now.ToString("HH:mm:ss"),
+                Forma        = "efectivo",
+                Importe      = saldo
+            });
+            _cambioTrasaccion = true;
+            RefrescarGridTrasacciones();
+            CargarTotalesDivisas();
+            CargarEstadosCuenta();
+        }
+
+        // ─── CellEditEnding – Entregas ────────────────────────────────────────
+        private void GridEntregas_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            if (e.EditAction != DataGridEditAction.Commit) return;
+            if (e.Row.Item is not EntregaItemFila fila) return;
+
+            if (e.Column.Header?.ToString() == "Código" && e.EditingElement is TextBox tbCod)
+            {
+                string codigo = tbCod.Text.Trim();
+                long artIdNum = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
+                if (artIdNum > 0)
+                {
+                    fila.ArticuloId  = artIdNum.ToString();
+                    fila.Codigo      = codigo;
+                    fila.Descripcion = ObtenerDescripcionArticulo(fila.ArticuloId);
+                }
+                else
+                {
+                    fila.ArticuloId  = "";
+                    fila.Codigo      = codigo;
+                    fila.Descripcion = string.IsNullOrEmpty(codigo) ? "" : "⚠ Artículo no encontrado";
+                }
+            }
+
+            _cambioEntrega = true;
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                RefrescarGridEntregas();
+                if (AppState.TipoPedido.ToLower() == "normal") CargarEstados();
+            }), System.Windows.Threading.DispatcherPriority.Background);
+        }
+
+        private void GridEntregas_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
+        {
+            if (e.EditingElement is TextBox tb) { tb.SelectAll(); tb.Focus(); }
+        }
+
+        // ─── Botones Entregas ─────────────────────────────────────────────────
+        private void BtnImportarArticulosEntregas_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new ArticulosGeneral(arts =>
+            {
+                DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
+                foreach (var art in arts)
+                {
+                    if (_entregas.Any(x => x.ArticuloId == art.Id)) continue;
+                    _entregas.Add(new EntregaItemFila
+                    {
+                        EntregaId = "", ArticuloId = art.Id,
+                        Codigo = art.Codigo, Descripcion = art.Descripcion,
+                        Cantidad = 1,
+                        FechaStr = fechaDoc.ToString("dd/MM/yyyy"),
+                        HoraStr  = DateTime.Now.ToString("HH:mm:ss")
+                    });
+                }
+                _cambioEntrega = true;
+                RefrescarGridEntregas();
+                if (AppState.TipoPedido.ToLower() == "normal") CargarEstados();
+            });
+            dlg.ShowDialog();
+        }
+
+        private void BtnNuevaLineaEntrega_Click(object sender, RoutedEventArgs e)
+        {
+            DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
+            _entregas.Add(new EntregaItemFila
+            {
+                EntregaId = "", ArticuloId = "", Codigo = "", Descripcion = "",
+                Cantidad = 1,
+                FechaStr = fechaDoc.ToString("dd/MM/yyyy"),
+                HoraStr  = DateTime.Now.ToString("HH:mm:ss")
+            });
+            _cambioEntrega = true;
+            RefrescarGridEntregas();
+        }
+
+        private void BtnInsertarEntrega_Click(object sender, RoutedEventArgs e)
+        {
+            int idx = GridEntregas.SelectedItem is EntregaItemFila sel
+                      ? _entregas.IndexOf(sel) : _entregas.Count;
+            if (idx < 0) idx = _entregas.Count;
+            DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
+            _entregas.Insert(idx, new EntregaItemFila
+            {
+                EntregaId = "", ArticuloId = "", Codigo = "", Descripcion = "",
+                Cantidad = 1,
+                FechaStr = fechaDoc.ToString("dd/MM/yyyy"),
+                HoraStr  = DateTime.Now.ToString("HH:mm:ss")
+            });
+            _cambioEntrega = true;
+            RefrescarGridEntregas();
+        }
+
+        private void BtnEliminarLineaEntrega_Click(object sender, RoutedEventArgs e)
+        {
+            if (GridEntregas.SelectedItem is not EntregaItemFila fila) return;
+            _entregas.Remove(fila);
+            _cambioEntrega = true;
+            RefrescarGridEntregas();
+            if (AppState.TipoPedido.ToLower() == "normal") CargarEstados();
+        }
+
+        private void BtnRegistrarEntregas_Click(object sender, RoutedEventArgs e)
+        {
+            // Solo modo normal: auto-llena entregas pendientes
+            var cantPedido = _pedidos
+                .Where(p => !string.IsNullOrEmpty(p.ArticuloId))
+                .GroupBy(p => p.ArticuloId)
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.Cantidad));
+
+            var cantEntrega = _entregas
+                .Where(e2 => !string.IsNullOrEmpty(e2.ArticuloId))
+                .GroupBy(e2 => e2.ArticuloId)
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.Cantidad));
+
+            DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
+
+            foreach (var kv in cantPedido)
+            {
+                double entregado = cantEntrega.TryGetValue(kv.Key, out double val) ? val : 0;
+                double pendiente = kv.Value - entregado;
+                if (pendiente <= 0) continue;
+
+                string codigo = Sql.ArticulosObj.ObtenerItem("codigo", kv.Key)?.ToString() ?? "";
+                _entregas.Add(new EntregaItemFila
+                {
+                    EntregaId   = "", ArticuloId = kv.Key, Codigo = codigo,
+                    Descripcion = ObtenerDescripcionArticulo(kv.Key),
+                    Cantidad    = pendiente,
+                    FechaStr    = fechaDoc.ToString("dd/MM/yyyy"),
+                    HoraStr     = DateTime.Now.ToString("HH:mm:ss")
+                });
+            }
+
+            _cambioEntrega = true;
+            RefrescarGridEntregas();
+            CargarEstados();
         }
 
         // ─── Guardar ──────────────────────────────────────────────────────────
@@ -347,64 +880,44 @@ namespace WpfAppVba
         {
             string docP = Box_DocumentoP.Text.Trim();
             if (string.IsNullOrEmpty(docP))
-            {
-                MessageBox.Show("Ingrese el número de documento.", "Consola",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return false;
-            }
+            { MessageBox.Show("Ingrese el número de documento.", "Consola", MessageBoxButton.OK, MessageBoxImage.Warning); return false; }
 
             try
             {
                 if (!Sql.DocumentosPObj.VerificarId(docP, "id"))
-                {
-                    MessageBox.Show("El número de documento ya existe.", "Consola",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return false;
-                }
+                { MessageBox.Show("El número de documento ya existe.", "Consola", MessageBoxButton.OK, MessageBoxImage.Warning); return false; }
 
-                DateTime fechaBase  = Box_Fecha.SelectedDate ?? DateTime.Today;
-                DateTime fechaFinal = CombinarFechaHora(fechaBase, Box_Hora.Text);
-                string estado       = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "pendiente";
+                DateTime fechaFinal = CombinarFechaHora(Box_Fecha.SelectedDate ?? DateTime.Today, Box_Hora.Text);
+                string estado  = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "pendiente";
+                string cuenta  = Box_Cuenta.Text;
+                string tipoPed = AppState.TipoPedido.ToLower();
 
                 Sql.DocumentosPObj.Nuevo(docP);
                 Sql.DocumentosPObj.EstablecerItem("sucursal",    docP, AppState.SucursalActiva);
                 Sql.DocumentosPObj.EstablecerItem("tercero",     docP, Box_Tercero_Identificador.Text.Trim());
-                Sql.DocumentosPObj.EstablecerItem("fecha",       docP, fechaFinal);
                 Sql.DocumentosPObj.EstablecerItem("movimiento",  docP, AppState.TipoMovimiento);
-                Sql.DocumentosPObj.EstablecerItem("tipo",        docP, "rapido");
                 Sql.DocumentosPObj.EstablecerItem("estado",      docP, estado);
-                Sql.DocumentosPObj.EstablecerItem("observacion", docP, Box_Observaciones.Text.Trim());
+                Sql.DocumentosPObj.EstablecerItem("fecha",       docP, fechaFinal);
+                Sql.DocumentosPObj.EstablecerItem("referencia",  docP, Box_Referencia.Text.Trim());
+                Sql.DocumentosPObj.EstablecerItem("observacion", docP, _observaciones);
+                Sql.DocumentosPObj.EstablecerItem("estadoC",     docP, cuenta);
+                Sql.DocumentosPObj.EstablecerItem("tipo",        docP, tipoPed);
                 Sql.DocumentosPObj.EstablecerItem("emision",     docP, DateTime.Now);
                 Sql.DocumentosPObj.EstablecerItem("edicion",     docP, DateTime.Now);
+                Sql.DocumentosPObj.EstablecerItem("emitido",     docP, AppState.SucursalActiva);
                 Sql.DocumentosPObj.EstablecerItem("usuario",     docP, AppState.UsuarioActivo);
 
-                // Crear líneas de pedido
-                long baseId = Convert.ToInt64(Sql.PedidosObj.Maximo("id") ?? 0);
-                for (int i = 0; i < _items.Count; i++)
-                {
-                    var item = _items[i];
-                    long nuevaId = baseId + i + 1;
-                    string idStr = nuevaId.ToString();
-                    Sql.PedidosObj.Nuevo(idStr);
-                    Sql.PedidosObj.EstablecerItem("documentoP", idStr, docP);
-                    Sql.PedidosObj.EstablecerItem("articulo",   idStr, item.ArticuloId);
-                    Sql.PedidosObj.EstablecerItem("cantidad",   idStr, item.Cantidad);
-                    Sql.PedidosObj.EstablecerItem("precio",     idStr, item.Precio);
-                    Sql.PedidosObj.EstablecerItem("indice",     idStr, i + 1);
-                }
-
-                Sql.DocumentosPObj.OrdenarData(("fecha", false));
-                Sql.PedidosObj.OrdenarData(("documentoP", false), ("indice", false));
+                GuardarLineasPedido(docP);
+                GuardarLineasTrasaccion(docP);
+                GuardarLineasEntrega(docP);
+                OrdenarTablas();
 
                 MessageBox.Show("Guardado exitoso.", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
-                _hayCambios = false;
+                _cambioDocumento = _cambioPedido = _cambioTrasaccion = _cambioEntrega = false;
                 return true;
             }
             catch (Exception ex)
-            {
-                MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error);
-                return false;
-            }
+            { MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error); return false; }
         }
 
         private bool GuardarEditar()
@@ -412,94 +925,122 @@ namespace WpfAppVba
             string docP = _idEditar;
             try
             {
-                DateTime fechaBase  = Box_Fecha.SelectedDate ?? DateTime.Today;
-                DateTime fechaFinal = CombinarFechaHora(fechaBase, Box_Hora.Text);
-                string estado       = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "pendiente";
+                DateTime fechaFinal = CombinarFechaHora(Box_Fecha.SelectedDate ?? DateTime.Today, Box_Hora.Text);
+                string estado = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "pendiente";
+                string cuenta = Box_Cuenta.Text;
 
                 Sql.DocumentosPObj.EstablecerItem("tercero",     docP, Box_Tercero_Identificador.Text.Trim());
                 Sql.DocumentosPObj.EstablecerItem("fecha",       docP, fechaFinal);
                 Sql.DocumentosPObj.EstablecerItem("estado",      docP, estado);
-                Sql.DocumentosPObj.EstablecerItem("observacion", docP, Box_Observaciones.Text.Trim());
+                Sql.DocumentosPObj.EstablecerItem("referencia",  docP, Box_Referencia.Text.Trim());
+                Sql.DocumentosPObj.EstablecerItem("observacion", docP, _observaciones);
+                Sql.DocumentosPObj.EstablecerItem("estadoC",     docP, cuenta);
                 Sql.DocumentosPObj.EstablecerItem("edicion",     docP, DateTime.Now);
+                Sql.DocumentosPObj.EstablecerItem("usuario",     docP, AppState.UsuarioActivo);
 
-                // Ocultar líneas existentes
-                int uf = Sql.PedidosObj.ContarFilas;
-                var idsOcultar = new List<string>();
-                for (int i = 1; i <= uf; i++)
-                {
-                    var idObj = Sql.PedidosObj.Mover(i);
-                    if (idObj == null) continue;
-                    string id = idObj.ToString()!;
-                    if (Sql.PedidosObj.ObtenerItem("documentoP", id)?.ToString() == docP)
-                        idsOcultar.Add(id);
-                }
-                foreach (var id in idsOcultar)
-                    Sql.PedidosObj.Ocultar(id);
+                // Eliminar líneas existentes y re-crear
+                EliminarLineas(Sql.PedidosObj,      "documentoP", docP);
+                EliminarLineas(Sql.TrasaccionesObj, "documentoP", docP);
+                EliminarLineas(Sql.EntregasObj,     "documentoP", docP);
 
-                // Re-crear líneas desde _items
-                long baseId = Convert.ToInt64(Sql.PedidosObj.Maximo("id") ?? 0);
-                for (int i = 0; i < _items.Count; i++)
-                {
-                    var item = _items[i];
-                    long nuevaId = baseId + i + 1;
-                    string idStr = nuevaId.ToString();
-                    Sql.PedidosObj.Nuevo(idStr);
-                    Sql.PedidosObj.EstablecerItem("documentoP", idStr, docP);
-                    Sql.PedidosObj.EstablecerItem("articulo",   idStr, item.ArticuloId);
-                    Sql.PedidosObj.EstablecerItem("cantidad",   idStr, item.Cantidad);
-                    Sql.PedidosObj.EstablecerItem("precio",     idStr, item.Precio);
-                    Sql.PedidosObj.EstablecerItem("indice",     idStr, i + 1);
-                }
-
-                Sql.DocumentosPObj.OrdenarData(("fecha", false));
-                Sql.PedidosObj.OrdenarData(("documentoP", false), ("indice", false));
+                GuardarLineasPedido(docP);
+                GuardarLineasTrasaccion(docP);
+                GuardarLineasEntrega(docP);
+                OrdenarTablas();
 
                 MessageBox.Show("Guardado exitoso.", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
-                _hayCambios = false;
+                _cambioDocumento = _cambioPedido = _cambioTrasaccion = _cambioEntrega = false;
                 return true;
             }
             catch (Exception ex)
+            { MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error); return false; }
+        }
+
+        private void EliminarLineas(DataConsulta tabla, string campo, string docP)
+        {
+            int uf = tabla.ContarFilas;
+            var ids = new List<string>();
+            for (int i = 1; i <= uf; i++)
             {
-                MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error);
-                return false;
+                var idObj = tabla.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                if (tabla.ObtenerItem(campo, id)?.ToString() == docP)
+                    ids.Add(id);
+            }
+            foreach (var id in ids) tabla.Ocultar(id);
+        }
+
+        private void GuardarLineasPedido(string docP)
+        {
+            if (!_cambioPedido && AppState.EventoFormularioM == "editar") return;
+            for (int i = 0; i < _pedidos.Count; i++)
+            {
+                var item  = _pedidos[i];
+                string id = $"{docP}{(i + 1):D3}";
+                Sql.PedidosObj.Nuevo(id);
+                Sql.PedidosObj.EstablecerItem("documentoP", id, docP);
+                Sql.PedidosObj.EstablecerItem("articulo",   id, item.ArticuloId);
+                Sql.PedidosObj.EstablecerItem("indice",     id, i + 1);
+                Sql.PedidosObj.EstablecerItem("cantidad",   id, item.Cantidad);
+                Sql.PedidosObj.EstablecerItem("importe",    id, item.Importe);
+                Sql.PedidosObj.EstablecerItem("forma",      id, item.Forma);
+                Sql.PedidosObj.EstablecerItem("contable",   id, item.Contable);
+                Sql.PedidosObj.EstablecerItem("tipo",       id, item.Tipo);
             }
         }
 
-        // ─── Combinar fecha + hora de texto ───────────────────────────────────
-        private static DateTime CombinarFechaHora(DateTime fecha, string horaTexto)
+        private void GuardarLineasTrasaccion(string docP)
         {
-            if (TimeSpan.TryParse(horaTexto, out var ts))
-                return fecha.Date + ts;
-            return fecha.Date;
+            if (!_cambioTrasaccion) return;
+            for (int i = 0; i < _trasacciones.Count; i++)
+            {
+                var item  = _trasacciones[i];
+                string id = $"{docP}{(i + 1):D3}";
+                DateTime fechaT = CombinarFechaHora(
+                    DateTime.TryParse(item.FechaStr, out var fd) ? fd : DateTime.Today,
+                    item.HoraStr);
+                Sql.TrasaccionesObj.Nuevo(id);
+                Sql.TrasaccionesObj.EstablecerItem("documentoP",  id, docP);
+                Sql.TrasaccionesObj.EstablecerItem("indice",      id, i + 1);
+                Sql.TrasaccionesObj.EstablecerItem("fecha",       id, fechaT);
+                Sql.TrasaccionesObj.EstablecerItem("descripcion", id, item.Descripcion);
+                Sql.TrasaccionesObj.EstablecerItem("importe",     id, item.Importe);
+                Sql.TrasaccionesObj.EstablecerItem("forma",       id, item.Forma);
+            }
         }
 
-        // ─── Selección en GridItems → recargar stock y precios ───────────────
-        private void GridItems_SelectionChanged(object sender, SelectionChangedEventArgs e) { }
+        private void GuardarLineasEntrega(string docP)
+        {
+            if (!_cambioEntrega) return;
+            for (int i = 0; i < _entregas.Count; i++)
+            {
+                var item  = _entregas[i];
+                string id = $"{docP}{(i + 1):D3}";
+                DateTime fechaE = CombinarFechaHora(
+                    DateTime.TryParse(item.FechaStr, out var fd) ? fd : DateTime.Today,
+                    item.HoraStr);
+                Sql.EntregasObj.Nuevo(id);
+                Sql.EntregasObj.EstablecerItem("documentoP", id, docP);
+                Sql.EntregasObj.EstablecerItem("articulo",   id, item.ArticuloId);
+                Sql.EntregasObj.EstablecerItem("indice",     id, i + 1);
+                Sql.EntregasObj.EstablecerItem("cantidad",   id, item.Cantidad);
+                Sql.EntregasObj.EstablecerItem("fecha",      id, fechaE);
+            }
+        }
 
-        // ─── Actualizar precios según fecha del documento ─────────────────────
-        private void BtnActualizarPrecios_Click(object sender, RoutedEventArgs e) { }
-
-        // ─── Tab Cobros/Pagos ─────────────────────────────────────────────────
-        private void BtnNuevaLineaTrasaccion_Click(object sender, RoutedEventArgs e) { }
-        private void BtnInsertarTrasaccion_Click(object sender, RoutedEventArgs e) { }
-        private void BtnEliminarLineaTrasaccion_Click(object sender, RoutedEventArgs e) { }
-        private void BtnCobrarDocumento_Click(object sender, RoutedEventArgs e) { }
-        private void GridTrasacciones_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e) { }
-
-        // ─── Tab Entregas ─────────────────────────────────────────────────────
-        private void BtnImportarArticulosEntregas_Click(object sender, RoutedEventArgs e) { }
-        private void BtnInsertarEntrega_Click(object sender, RoutedEventArgs e) { }
-        private void BtnNuevaLineaEntrega_Click(object sender, RoutedEventArgs e) { }
-        private void BtnEliminarLineaEntrega_Click(object sender, RoutedEventArgs e) { }
-        private void BtnRegistrarEntregas_Click(object sender, RoutedEventArgs e) { }
-        private void GridEntregas_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e) { }
-        private void GridEntregas_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e) { }
+        private static void OrdenarTablas()
+        {
+            Sql.DocumentosPObj.OrdenarData(("fecha", false));
+            Sql.PedidosObj.OrdenarData(("documentoP", false), ("indice", false));
+            Sql.TrasaccionesObj.OrdenarData(("documentoP", false), ("indice", false));
+            Sql.EntregasObj.OrdenarData(("documentoP", false), ("indice", false));
+        }
 
         // ─── Botones Guardar / Cancelar ───────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            bool ok = Guardar();
-            if (ok) Close();
+            if (Guardar()) Close();
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
@@ -508,7 +1049,7 @@ namespace WpfAppVba
         // ─── Al cerrar ────────────────────────────────────────────────────────
         private void Window_Closing(object sender, CancelEventArgs e)
         {
-            if (!_hayCambios) return;
+            if (!HayCambios) return;
 
             var res = MessageBox.Show("¿Guardar cambios?", "Consola",
                 MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
@@ -525,7 +1066,7 @@ namespace WpfAppVba
         }
     }
 
-    // ─── Modelo de fila para el grid de artículos ─────────────────────────────
+    // ─── Modelos de fila ──────────────────────────────────────────────────────
     public class PedidoItemFila
     {
         public string PedidoId    { get; set; } = "";
@@ -534,7 +1075,47 @@ namespace WpfAppVba
         public string Codigo      { get; set; } = "";
         public string Descripcion { get; set; } = "";
         public double Cantidad    { get; set; }
+        public string Forma       { get; set; } = "sin factura";
+        public double Contable    { get; set; } = 0;
         public double Precio      { get; set; }
-        public double Total       => Cantidad * Precio;
+        public double Importe     { get; set; }
+        public string Tipo        { get; set; } = "automatico";
+    }
+
+    public class TrasaccionItemFila
+    {
+        public string TrasaccionId { get; set; } = "";
+        public int    Linea        { get; set; }
+        public string FechaStr     { get; set; } = "";
+        public string HoraStr      { get; set; } = "";
+        public string Descripcion  { get; set; } = "";
+        public string Forma        { get; set; } = "efectivo";
+        public double Importe      { get; set; }
+    }
+
+    public class EntregaItemFila
+    {
+        public string EntregaId   { get; set; } = "";
+        public int    Linea       { get; set; }
+        public string ArticuloId  { get; set; } = "";
+        public string Codigo      { get; set; } = "";
+        public string Descripcion { get; set; } = "";
+        public double Cantidad    { get; set; }
+        public string FechaStr    { get; set; } = "";
+        public string HoraStr     { get; set; } = "";
+    }
+
+    public class PrecioFila
+    {
+        public string Codigo { get; set; } = "";
+        public string Fecha  { get; set; } = "";
+        public string Precio { get; set; } = "";
+    }
+
+    public class StockFila
+    {
+        public string Codigo     { get; set; } = "";
+        public string Disponible { get; set; } = "";
+        public string Stock      { get; set; } = "";
     }
 }

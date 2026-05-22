@@ -347,7 +347,8 @@
                                     Margin="0,0,5,0" Click="BtnInsertarTrasaccion_Click"/>
                             <Button Content="Eliminar Línea" Style="{StaticResource BtnPeligro}"
                                     Margin="0,0,5,0" Click="BtnEliminarLineaTrasaccion_Click"/>
-                            <Button Content="Cobrar Documento" Style="{StaticResource BtnPrimario}"
+                            <Button x:Name="BtnCobrarDocumento" Content="Cobrar Documento"
+                                    Style="{StaticResource BtnPrimario}"
                                     Click="BtnCobrarDocumento_Click"/>
                         </StackPanel>
                     </Grid>
