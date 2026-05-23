@@ -231,7 +231,10 @@ namespace WpfAppVba
 
         // ─── Doble clic ───────────────────────────────────────────────────────
         private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-            => AbrirEditar();
+        {
+            e.Handled = true;
+            AbrirEditar();
+        }
 
         // ─── Botones ──────────────────────────────────────────────────────────
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
@@ -290,9 +293,14 @@ namespace WpfAppVba
         private void AbrirEditar()
         {
             if (Grid1.SelectedItem is not TraspasoFila fila) return;
+            string docSel = fila.DocumentoT;
             AppState.EventoFormularioM = "editar";
             new TraspasosDetalle(this, fila.DocumentoT).ShowDialog();
             CargarTraspasos();
+            var item = (Grid1.ItemsSource as System.Collections.Generic.List<TraspasoFila>)
+                       ?.Find(x => x.DocumentoT == docSel);
+            if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+            Grid1.Focus();
         }
     }
 

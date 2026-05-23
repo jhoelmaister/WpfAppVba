@@ -74,6 +74,7 @@ namespace WpfAppVba
         // ─── Doble clic ────────────────────────────────────────────────────────
         private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            e.Handled = true;
             if (_modoSelector)
             {
                 if (Grid1.SelectedItem is not SucursalFila fila) return;
@@ -144,10 +145,15 @@ namespace WpfAppVba
             }
 
             if (Grid1.SelectedItem is not SucursalFila fila) return;
+            string idSel = fila.Id;
             AppState.EventoFormularioI = "modificar";
             var detalle = new SucursalesDetalle(this, fila.Id);
             detalle.ShowDialog();
             CargarSucursales();
+            var item = (Grid1.ItemsSource as System.Collections.Generic.List<SucursalFila>)
+                       ?.Find(x => x.Id == idSel);
+            if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+            Grid1.Focus();
         }
     }
 

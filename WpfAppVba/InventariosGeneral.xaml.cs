@@ -68,7 +68,10 @@ namespace WpfAppVba
 
         // ─── Doble clic = editar ───────────────────────────────────────────────
         private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-            => AbrirEditar();
+        {
+            e.Handled = true;
+            AbrirEditar();
+        }
 
         // ─── Botones ──────────────────────────────────────────────────────────
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
@@ -148,10 +151,15 @@ namespace WpfAppVba
                 return;
             }
 
+            string idSel = fila.Id;
             AppState.EventoFormularioI = "editar";
             var detalle = new InventariosDetalle(this, fila.Id);
             detalle.ShowDialog();
             CargarInventarios();
+            var item = (Grid1.ItemsSource as System.Collections.Generic.List<InventarioFila>)
+                       ?.Find(x => x.Id == idSel);
+            if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+            Grid1.Focus();
         }
     }
 

@@ -201,6 +201,7 @@ namespace WpfAppVba
         // ─── Doble clic ───────────────────────────────────────────────────────
         private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            e.Handled = true;   // evita que eventos de ratón pendientes quiten el foco al cerrar el diálogo
             if (ModoSingle)
             {
                 // Retorna el artículo seleccionado al llamador y cierra
@@ -283,10 +284,16 @@ namespace WpfAppVba
         private void AbrirEditar()
         {
             if (Grid1.SelectedItem is not ArticuloFila fila) return;
+            string idSel = fila.Id;
             AppState.EventoFormularioA = "modificar";
             var detalle = new ArticulosDetalle(this, fila.Id);
             detalle.ShowDialog();
             CargarArticulos();
+            // Restaurar selección y foco después de recargar la lista
+            var item = (Grid1.ItemsSource as System.Collections.Generic.List<ArticuloFila>)
+                       ?.Find(x => x.Id == idSel);
+            if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+            Grid1.Focus();
         }
 
         private void ToggleSeleccion()

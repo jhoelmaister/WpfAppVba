@@ -72,6 +72,7 @@ namespace WpfAppVba
         // ─── Doble clic ───────────────────────────────────────────────────────
         private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            e.Handled = true;
             if (_modoSelector) Seleccionar();
             else               AbrirEditar();
         }
@@ -124,10 +125,15 @@ namespace WpfAppVba
         private void AbrirEditar()
         {
             if (Grid1.SelectedItem is not TerceroFila fila) return;
+            string idSel = fila.Id;
             AppState.EventoFormularioL = "modificar";
             var detalle = new TercerosDetalle(this, fila.Id);
             detalle.ShowDialog();
             CargarTerceros();
+            var item = (Grid1.ItemsSource as System.Collections.Generic.List<TerceroFila>)
+                       ?.Find(x => x.Id == idSel);
+            if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+            Grid1.Focus();
         }
     }
 
