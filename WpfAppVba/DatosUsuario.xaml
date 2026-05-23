@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Background="#F0F2F5">
 
-    <Window.Resources>
+    <UserControl.Resources>
         <Style x:Key="LblEtiqueta" TargetType="TextBlock">
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="Foreground" Value="#555"/>
@@ -26,7 +26,7 @@
             <Setter Property="BorderBrush" Value="#CCC"/>
             <Setter Property="Margin" Value="0,0,0,10"/>
         </Style>
-    </Window.Resources>
+    </UserControl.Resources>
 
     <Grid Margin="16">
         <Grid.RowDefinitions>

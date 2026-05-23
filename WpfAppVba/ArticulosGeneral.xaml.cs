@@ -21,6 +21,9 @@ namespace WpfAppVba
         public bool ModoExportar => _callbackExportar != null;
         public bool ModoSingle   => _callbackSingle   != null;
 
+        /// <summary>Constructor sin parámetros requerido por el compilador XAML.</summary>
+        public ArticulosGeneral() : this(null, null) { }
+
         public ArticulosGeneral(Action<List<ArticuloExportado>>? callbackExportar = null,
                                  Action<ArticuloExportado>?       callbackSingle   = null)
         {

@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Background="#F0F2F5">
 
-    <Window.Resources>
+    <UserControl.Resources>
         <Style x:Key="Btn" TargetType="Button">
             <Setter Property="Height" Value="30"/>
             <Setter Property="Padding" Value="12,0"/>
@@ -11,7 +11,7 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
-    </Window.Resources>
+    </UserControl.Resources>
 
     <Grid Margin="12">
         <Grid.RowDefinitions>

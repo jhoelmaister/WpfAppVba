@@ -14,6 +14,9 @@ namespace WpfAppVba
         /// <summary>ID del tercero elegido cuando se abre en modo selector.</summary>
         public static string? TerceroSeleccionado { get; set; }
 
+        /// <summary>Constructor sin parámetros requerido por el compilador XAML.</summary>
+        public TercerosGeneral() : this(false) { }
+
         public TercerosGeneral(bool modoSelector = false)
         {
             InitializeComponent();

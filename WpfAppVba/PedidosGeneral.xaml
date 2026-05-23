@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Background="#F0F2F5">
 
-    <Window.Resources>
+    <UserControl.Resources>
         <Style x:Key="BtnBase" TargetType="Button">
             <Setter Property="Height" Value="30"/>
             <Setter Property="Padding" Value="12,0"/>
@@ -23,7 +23,7 @@
             <Setter Property="Background" Value="#D93025"/>
             <Setter Property="Foreground" Value="White"/>
         </Style>
-    </Window.Resources>
+    </UserControl.Resources>
 
     <Grid Margin="12">
         <Grid.ColumnDefinitions>
