@@ -35,10 +35,17 @@ namespace WpfAppVba
                 string nombres  = Sql.UsuariosObj.ObtenerItem("nombres",   usuId)?.ToString() ?? "";
                 string apellidos= Sql.UsuariosObj.ObtenerItem("apellidos", usuId)?.ToString() ?? "";
                 string sucId    = Sql.UsuariosObj.ObtenerItem("sucursal",  usuId)?.ToString() ?? "";
+                string tipo     = Sql.UsuariosObj.ObtenerItem("tipo",      usuId)?.ToString() ?? "";
 
                 TxtCuenta.Text    = cuenta;
                 TxtNombres.Text   = nombres;
                 TxtApellidos.Text = apellidos;
+                TxtTipo.Text      = tipo;
+
+                // Limpiar campos de contraseña
+                PwdActual.Password    = "";
+                PwdNueva.Password     = "";
+                PwdConfirmar.Password = "";
 
                 // Llenar ComboBox de sucursales
                 CmbSucursal.Items.Clear();
@@ -101,6 +108,26 @@ namespace WpfAppVba
                 Sql.UsuariosObj.EstablecerItem("nombres",   usuId, TxtNombres.Text.Trim());
                 Sql.UsuariosObj.EstablecerItem("apellidos", usuId, TxtApellidos.Text.Trim());
 
+                // Cambio de contraseña (solo si se ingresó una nueva)
+                if (!string.IsNullOrEmpty(PwdNueva.Password) || !string.IsNullOrEmpty(PwdConfirmar.Password))
+                {
+                    string llaveActualBD = Sql.UsuariosObj.ObtenerItem("llave", usuId)?.ToString() ?? "";
+                    if (PwdActual.Password != llaveActualBD)
+                    {
+                        MessageBox.Show("La contraseña actual es incorrecta", "Datos de Usuario",
+                                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    if (PwdNueva.Password != PwdConfirmar.Password)
+                    {
+                        MessageBox.Show("La nueva contraseña y su confirmación no coinciden",
+                                        "Datos de Usuario",
+                                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    Sql.UsuariosObj.EstablecerItem("llave", usuId, PwdNueva.Password);
+                }
+
                 // Actualizar sucursal activa
                 bool sucursalCambio = false;
                 if (CmbSucursal.SelectedItem is SucursalItem sucItem)
@@ -129,6 +156,11 @@ namespace WpfAppVba
 
                 if (periodoCambio || sucursalCambio)
                     AppLoader.ConectarDocumentos(AppState.DataFechaInicio, AppState.DataFechaFinal);
+
+                // Limpiar campos de contraseña tras guardar
+                PwdActual.Password    = "";
+                PwdNueva.Password     = "";
+                PwdConfirmar.Password = "";
 
                 MessageBox.Show("Guardado exitoso", "Datos de Usuario",
                                 MessageBoxButton.OK, MessageBoxImage.Information);

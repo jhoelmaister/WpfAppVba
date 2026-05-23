@@ -167,8 +167,8 @@ namespace WpfAppVba
             _hayCambios = true;
             ActualizarDescripcionFamilia();
 
-            // Solo en modo "nuevo": auto-sugerir indice = max(familia) + 1
-            if (AppState.EventoFormularioA == "nuevo")
+            // En modo "nuevo" y "modificar": auto-sugerir indice = max(familia) + 1
+            if (AppState.EventoFormularioA is "nuevo" or "modificar")
                 RecalcularIndicePorFamilia();
         }
 
