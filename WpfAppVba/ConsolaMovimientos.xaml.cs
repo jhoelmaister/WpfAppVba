@@ -8,81 +8,40 @@ namespace WpfAppVba
         public ConsolaMovimientos()
         {
             InitializeComponent();
+            ActualizarInfoUsuario();
+        }
+
+        // ─── Actualiza la etiqueta de usuario/período en el header ────────────
+        public void ActualizarInfoUsuario()
+        {
             LblUsuario.Text = $"Usuario: {AppState.UsuarioActivo}  |  Período: {AppState.PeriodoActivo}";
         }
 
-        // ─── VENTAS / COMPRAS ─────────────────────────────────────────────────
+        // ─── ACCIONES RÁPIDAS (abren formulario de detalle directamente) ─────
 
         private void BtnVentaRapida_Click(object sender, RoutedEventArgs e)
         {
             AppState.EventoFormularioM = "nuevo";
             AppState.TipoMovimiento    = "venta";
             AppState.TipoPedido        = "rapido";
-            new PedidosDetalle().Show();
+            new PedidosDetalle().ShowDialog();
+            TabVentas.CargarPedidos();
         }
-
-        private void BtnVentas_Click(object sender, RoutedEventArgs e)
-        {
-            AppState.TipoMovimiento = "venta";
-            new PedidosGeneral().Show();
-        }
-
-        private void BtnCompras_Click(object sender, RoutedEventArgs e)
-        {
-            AppState.TipoMovimiento = "compra";
-            new PedidosGeneral().Show();
-        }
-
-        // ─── TRASPASOS ────────────────────────────────────────────────────────
 
         private void BtnEntradaRapida_Click(object sender, RoutedEventArgs e)
         {
             AppState.EventoFormularioM = "nuevo";
             AppState.TipoMovimiento    = "entrada";
-            new TraspasosDetalle().Show();
+            new TraspasosDetalle().ShowDialog();
+            TabEntradas.CargarTraspasos();
         }
 
         private void BtnSalidaRapida_Click(object sender, RoutedEventArgs e)
         {
             AppState.EventoFormularioM = "nuevo";
             AppState.TipoMovimiento    = "salida";
-            new TraspasosDetalle().Show();
-        }
-
-        private void BtnEntradas_Click(object sender, RoutedEventArgs e)
-        {
-            AppState.TipoMovimiento = "entrada";
-            new TraspasosGeneral().Show();
-        }
-
-        private void BtnSalidas_Click(object sender, RoutedEventArgs e)
-        {
-            AppState.TipoMovimiento = "salida";
-            new TraspasosGeneral().Show();
-        }
-
-        // ─── CATÁLOGOS ────────────────────────────────────────────────────────
-
-        private void BtnArticulos_Click(object sender, RoutedEventArgs e)
-        {
-            new ArticulosGeneral().Show();
-        }
-
-        private void BtnTerceros_Click(object sender, RoutedEventArgs e)
-        {
-            new TercerosGeneral().Show();
-        }
-
-        private void BtnInventarios_Click(object sender, RoutedEventArgs e)
-        {
-            new InventariosGeneral().Show();
-        }
-
-        private void BtnUsuario_Click(object sender, RoutedEventArgs e)
-        {
-            new DatosUsuario().ShowDialog();
-            // Refrescar etiqueta por si cambió el periodo
-            LblUsuario.Text = $"Usuario: {AppState.UsuarioActivo}  |  Período: {AppState.PeriodoActivo}";
+            new TraspasosDetalle().ShowDialog();
+            TabSalidas.CargarTraspasos();
         }
 
         // ─── CERRAR SESIÓN ────────────────────────────────────────────────────

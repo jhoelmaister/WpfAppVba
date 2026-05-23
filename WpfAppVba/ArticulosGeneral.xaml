@@ -1,8 +1,6 @@
-<Window x:Class="WpfAppVba.ArticulosGeneral"
+<UserControl x:Class="WpfAppVba.ArticulosGeneral"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Artículos" Height="560" Width="900"
-        WindowStartupLocation="CenterScreen"
         Background="#F0F2F5">
 
     <Window.Resources>
@@ -167,4 +165,4 @@
             </Grid>
         </Grid>
     </Grid>
-</Window>
+</UserControl>

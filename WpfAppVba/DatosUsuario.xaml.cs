@@ -4,7 +4,7 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class DatosUsuario : Window
+    public partial class DatosUsuario : System.Windows.Controls.UserControl
     {
         private static SqlData Sql => SqlData.Instance;
 
@@ -68,7 +68,13 @@ namespace WpfAppVba
 
                 MessageBox.Show("Guardado exitoso", "Datos de Usuario",
                                 MessageBoxButton.OK, MessageBoxImage.Information);
-                Close();
+
+                // Si está embebido en ConsolaMovimientos (tab), actualizar header; si es diálogo, cerrar
+                var w = Window.GetWindow(this);
+                if (w is ConsolaMovimientos cm)
+                    cm.ActualizarInfoUsuario();
+                else
+                    w?.Close();
             }
             catch (Exception ex)
             {

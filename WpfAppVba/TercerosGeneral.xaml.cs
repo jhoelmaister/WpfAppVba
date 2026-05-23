@@ -6,7 +6,7 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class TercerosGeneral : Window
+    public partial class TercerosGeneral : System.Windows.Controls.UserControl
     {
         private static SqlData Sql => SqlData.Instance;
         private readonly bool _modoSelector;
@@ -22,12 +22,29 @@ namespace WpfAppVba
             {
                 if (_modoSelector)
                 {
-                    Title                     = "Seleccionar Tercero";
                     PanelAdmin.Visibility     = Visibility.Collapsed;
                     BtnSeleccionar.Visibility = Visibility.Visible;
                 }
                 CargarTerceros();
             };
+        }
+
+        /// <summary>Abre TercerosGeneral como diálogo modal dentro de una ventana temporal.</summary>
+        public static void OpenAsDialog(Window owner, bool modoSelector = false)
+        {
+            var ctrl = new TercerosGeneral(modoSelector);
+            var win  = new Window
+            {
+                Content                  = ctrl,
+                Title                    = modoSelector ? "Seleccionar Tercero" : "Registros de Terceros",
+                Width                    = 710,
+                Height                   = 543,
+                WindowStartupLocation    = WindowStartupLocation.CenterOwner,
+                Owner                    = owner,
+                Background               = System.Windows.Media.Brushes.WhiteSmoke,
+                ResizeMode               = ResizeMode.CanResize
+            };
+            win.ShowDialog();
         }
 
         // ─── Carga la lista (equivalente a cargarTerceros) ────────────────────
@@ -82,7 +99,7 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not TerceroFila fila) return;
             TerceroSeleccionado = fila.Id;
-            Close();
+            Window.GetWindow(this)?.Close();
         }
 
         private void BtnSeleccionar_Click(object sender, RoutedEventArgs e)

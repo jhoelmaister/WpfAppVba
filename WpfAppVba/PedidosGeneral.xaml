@@ -1,8 +1,6 @@
-<Window x:Class="WpfAppVba.PedidosGeneral"
+<UserControl x:Class="WpfAppVba.PedidosGeneral"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Pedidos" Height="580" Width="820"
-        WindowStartupLocation="CenterScreen"
         Background="#F0F2F5">
 
     <Window.Resources>
@@ -205,4 +203,4 @@
             </StackPanel>
         </Grid>
     </Grid>
-</Window>
+</UserControl>

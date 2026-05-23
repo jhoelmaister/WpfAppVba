@@ -7,7 +7,7 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class ArticulosGeneral : Window
+    public partial class ArticulosGeneral : System.Windows.Controls.UserControl
     {
         private static SqlData Sql => SqlData.Instance;
 
@@ -28,6 +28,26 @@ namespace WpfAppVba
             _callbackExportar = callbackExportar;
             _callbackSingle   = callbackSingle;
             Loaded += (_, _) => { CargarArbol(); CargarArticulos(); ConfigurarModo(); };
+        }
+
+        /// <summary>Abre ArticulosGeneral como diálogo modal dentro de una ventana temporal.</summary>
+        public static void OpenAsDialog(Window owner,
+                                        Action<List<ArticuloExportado>>? callbackExportar = null,
+                                        Action<ArticuloExportado>?        callbackSingle   = null)
+        {
+            var ctrl = new ArticulosGeneral(callbackExportar, callbackSingle);
+            var win  = new Window
+            {
+                Content               = ctrl,
+                Title                 = "Artículos",
+                Width                 = 900,
+                Height                = 560,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Owner                 = owner,
+                Background            = System.Windows.Media.Brushes.WhiteSmoke,
+                ResizeMode            = ResizeMode.CanResize
+            };
+            win.ShowDialog();
         }
 
         // ─── Configurar modo exportar ─────────────────────────────────────────
@@ -212,12 +232,19 @@ namespace WpfAppVba
                     Codigo      = fila.Codigo,
                     Descripcion = fila.Descripcion
                 });
-                Close();
+                CerrarDialogo();
             }
             else if (ModoExportar)
                 ToggleSeleccion();
             else
                 AbrirEditar();
+        }
+
+        // Cierra el diálogo padre (solo si no estamos embebidos en ConsolaMovimientos)
+        private void CerrarDialogo()
+        {
+            var w = Window.GetWindow(this);
+            if (w is not ConsolaMovimientos) w?.Close();
         }
 
         // ─── Botones ──────────────────────────────────────────────────────────
@@ -277,7 +304,7 @@ namespace WpfAppVba
             }
 
             _callbackExportar(exportados);
-            Close();
+            CerrarDialogo();
         }
 
         // ─── Helpers ──────────────────────────────────────────────────────────

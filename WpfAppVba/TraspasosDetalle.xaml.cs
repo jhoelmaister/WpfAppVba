@@ -362,7 +362,7 @@ namespace WpfAppVba
             if (!_editarFormulario) return;
 
             var filaActual = GridItems.SelectedItem as TraspasoItemFila;
-            var dlg = new ArticulosGeneral(callbackSingle: art =>
+            ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, null, art =>
             {
                 if (filaActual != null && _items.Contains(filaActual))
                 {
@@ -385,7 +385,6 @@ namespace WpfAppVba
                 RefrescarGrid();
                 NotificarStockInsuficiente();
             });
-            dlg.ShowDialog();
         }
 
         // ─── Importar artículos ───────────────────────────────────────────────
@@ -393,7 +392,7 @@ namespace WpfAppVba
         {
             if (!_editarFormulario) return;
 
-            var dlg = new ArticulosGeneral(arts =>
+            ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, arts =>
             {
                 foreach (var art in arts)
                 {
@@ -410,8 +409,7 @@ namespace WpfAppVba
                 _hayCambios = true;
                 RefrescarGrid();
                 NotificarStockInsuficiente();
-            });
-            dlg.ShowDialog();
+            }, null);
         }
 
         // ─── Nueva línea vacía ────────────────────────────────────────────────

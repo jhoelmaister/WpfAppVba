@@ -148,7 +148,7 @@ namespace WpfAppVba
         // ─── Buscar artículos (modo exportar) ─────────────────────────────────
         private void BtnBuscarArticulos_Click(object sender, RoutedEventArgs e)
         {
-            var ventana = new ArticulosGeneral(arts =>
+            ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, arts =>
             {
                 foreach (var art in arts)
                 {
@@ -167,15 +167,14 @@ namespace WpfAppVba
                 }
                 _hayCambios = true;
                 RefrescarGrid();
-            });
-            ventana.ShowDialog();
+            }, null);
         }
 
         // ─── Buscar artículo (single-select) ─────────────────────────────────
         private void BtnBuscarArticulo_Click(object sender, RoutedEventArgs e)
         {
             var filaActual = GridItems.SelectedItem as InventarioItemFila;
-            var dlg = new ArticulosGeneral(callbackSingle: art =>
+            ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, null, art =>
             {
                 if (filaActual != null && _items.Contains(filaActual))
                 {
@@ -197,7 +196,6 @@ namespace WpfAppVba
                 _hayCambios = true;
                 RefrescarGrid();
             });
-            dlg.ShowDialog();
         }
 
         // ─── Nueva línea vacía ────────────────────────────────────────────────

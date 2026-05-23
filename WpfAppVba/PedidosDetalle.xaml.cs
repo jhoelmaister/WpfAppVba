@@ -480,7 +480,7 @@ namespace WpfAppVba
         private void BtnBuscarTercero_Click(object sender, RoutedEventArgs e)
         {
             TercerosGeneral.TerceroSeleccionado = null;
-            new TercerosGeneral(modoSelector: true).ShowDialog();
+            TercerosGeneral.OpenAsDialog(Window.GetWindow(this)!, modoSelector: true);
             if (!string.IsNullOrEmpty(TercerosGeneral.TerceroSeleccionado))
                 Box_Tercero_Identificador.Text = TercerosGeneral.TerceroSeleccionado;
         }
@@ -572,7 +572,7 @@ namespace WpfAppVba
         // ─── Botones Pedidos ──────────────────────────────────────────────────
         private void BtnImportarArticulos_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new ArticulosGeneral(arts =>
+            ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, arts =>
             {
                 foreach (var art in arts)
                 {
@@ -589,8 +589,7 @@ namespace WpfAppVba
                 _cambioPedido = true;
                 RefrescarGridPedidos();
                 ActualizarTotales();
-            });
-            dlg.ShowDialog();
+            }, null);
         }
 
         // ─── Buscar artículo individual (doble clic en ArticulosGeneral) ────────
@@ -599,7 +598,7 @@ namespace WpfAppVba
             // Guardar referencia a la fila actualmente seleccionada
             var filaActual = GridItems.SelectedItem as PedidoItemFila;
 
-            var dlg = new ArticulosGeneral(callbackSingle: art =>
+            ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, null, art =>
             {
                 double precio = ObtenerPrecioArticulo(art.Id);
 
@@ -628,7 +627,6 @@ namespace WpfAppVba
                 RefrescarGridPedidos();
                 ActualizarTotales();
             });
-            dlg.ShowDialog();
         }
 
         private void BtnNuevaLinea_Click(object sender, RoutedEventArgs e)
@@ -807,7 +805,7 @@ namespace WpfAppVba
         // ─── Botones Entregas ─────────────────────────────────────────────────
         private void BtnImportarArticulosEntregas_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new ArticulosGeneral(arts =>
+            ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, arts =>
             {
                 DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
                 foreach (var art in arts)
@@ -825,8 +823,7 @@ namespace WpfAppVba
                 _cambioEntrega = true;
                 RefrescarGridEntregas();
                 if (AppState.TipoPedido.ToLower() == "normal") CargarEstados();
-            });
-            dlg.ShowDialog();
+            }, null);
         }
 
         private void BtnNuevaLineaEntrega_Click(object sender, RoutedEventArgs e)

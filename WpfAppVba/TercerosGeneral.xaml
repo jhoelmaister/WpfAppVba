@@ -1,8 +1,6 @@
-<Window x:Class="WpfAppVba.TercerosGeneral"
+<UserControl x:Class="WpfAppVba.TercerosGeneral"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Registros de Terceros" Height="543" Width="710"
-        WindowStartupLocation="CenterScreen"
         Background="#F0F2F5">
 
     <Window.Resources>
@@ -72,4 +70,4 @@
                 Click="BtnSeleccionar_Click"
                 Style="{StaticResource Btn}"/>
     </Grid>
-</Window>
+</UserControl>

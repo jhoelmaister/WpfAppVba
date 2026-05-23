@@ -7,10 +7,16 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class TraspasosGeneral : Window
+    public partial class TraspasosGeneral : System.Windows.Controls.UserControl
     {
         private static SqlData Sql => SqlData.Instance;
         private string _mesActivo = "";
+
+        /// <summary>
+        /// Tipo de movimiento fijo para este control ("entrada" o "salida").
+        /// Si está vacío, se lee de AppState.TipoMovimiento.
+        /// </summary>
+        public string TipoMovimiento { get; set; } = "";
 
         public TraspasosGeneral()
         {
@@ -48,7 +54,9 @@ namespace WpfAppVba
             double totalCant = 0;
             string filtroEstado = ObtenerFiltroEstado();
             string busqueda     = TxtBuscar.Text.ToLower();
-            string tipoMov      = AppState.TipoMovimiento.ToLower();
+            string tipoMov      = !string.IsNullOrEmpty(TipoMovimiento)
+                                  ? TipoMovimiento.ToLower()
+                                  : AppState.TipoMovimiento.ToLower();
 
             // ── Actualizar header de columna "Destino"/"Origen" (índice 3) ────
             if (Grid1.Columns.Count > 3)
@@ -240,6 +248,8 @@ namespace WpfAppVba
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
             AppState.EventoFormularioM = "nuevo";
+            if (!string.IsNullOrEmpty(TipoMovimiento))
+                AppState.TipoMovimiento = TipoMovimiento;
             new TraspasosDetalle(this).ShowDialog();
             CargarTraspasos();
         }
@@ -295,6 +305,8 @@ namespace WpfAppVba
             if (Grid1.SelectedItem is not TraspasoFila fila) return;
             string docSel = fila.DocumentoT;
             AppState.EventoFormularioM = "editar";
+            if (!string.IsNullOrEmpty(TipoMovimiento))
+                AppState.TipoMovimiento = TipoMovimiento;
             new TraspasosDetalle(this, fila.DocumentoT).ShowDialog();
             CargarTraspasos();
             var item = (Grid1.ItemsSource as System.Collections.Generic.List<TraspasoFila>)

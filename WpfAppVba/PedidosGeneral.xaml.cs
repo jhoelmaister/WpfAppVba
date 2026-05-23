@@ -7,10 +7,16 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class PedidosGeneral : Window
+    public partial class PedidosGeneral : System.Windows.Controls.UserControl
     {
         private static SqlData Sql => SqlData.Instance;
         private string _mesActivo = "";
+
+        /// <summary>
+        /// Tipo de movimiento fijo para este control ("venta" o "compra").
+        /// Si está vacío, se lee de AppState.TipoMovimiento.
+        /// </summary>
+        public string TipoMovimiento { get; set; } = "";
 
         public PedidosGeneral()
         {
@@ -51,7 +57,9 @@ namespace WpfAppVba
             string filtroEstado = ObtenerFiltroEstado();
             string filtroCuenta = ObtenerFiltroCuenta();
             string busqueda     = TxtBuscar.Text.ToLower();
-            string tipoMov      = AppState.TipoMovimiento.ToLower();
+            string tipoMov      = !string.IsNullOrEmpty(TipoMovimiento)
+                                  ? TipoMovimiento.ToLower()
+                                  : AppState.TipoMovimiento.ToLower();
 
             int uf = Sql.DocumentosPObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -277,7 +285,10 @@ namespace WpfAppVba
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
             AppState.EventoFormularioM = "nuevo";
-            AppState.TipoPedido        = "normal";   // ← según VBA: siempre "normal" desde aquí
+            AppState.TipoPedido        = "normal";
+            // Asegurar que AppState tenga el tipo correcto antes de abrir detalle
+            if (!string.IsNullOrEmpty(TipoMovimiento))
+                AppState.TipoMovimiento = TipoMovimiento;
             new PedidosDetalle(this).ShowDialog();
             CargarPedidos();
         }
@@ -334,6 +345,8 @@ namespace WpfAppVba
             if (Grid1.SelectedItem is not PedidoFila fila) return;
             string docSel = fila.DocumentoP;
             AppState.EventoFormularioM = "editar";
+            if (!string.IsNullOrEmpty(TipoMovimiento))
+                AppState.TipoMovimiento = TipoMovimiento;
             new PedidosDetalle(this, fila.DocumentoP).ShowDialog();
             CargarPedidos();
             var item = (Grid1.ItemsSource as System.Collections.Generic.List<PedidoFila>)

@@ -7,7 +7,7 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class InventariosGeneral : Window
+    public partial class InventariosGeneral : System.Windows.Controls.UserControl
     {
         private static SqlData Sql => SqlData.Instance;
 
