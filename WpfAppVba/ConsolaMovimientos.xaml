@@ -189,11 +189,6 @@
                     <local:ArticulosGeneral x:Name="TabArticulos"/>
                 </TabItem>
 
-                <!-- ── Pestaña Terceros ────────────────────────────── -->
-                <TabItem Header="👥 Terceros" Style="{StaticResource ModernTabItem}">
-                    <local:TercerosGeneral x:Name="TabTerceros"/>
-                </TabItem>
-
                 <!-- ── Pestaña Inventarios ─────────────────────────── -->
                 <TabItem Header="📊 Inventarios" Style="{StaticResource ModernTabItem}">
                     <local:InventariosGeneral x:Name="TabInventarios"/>

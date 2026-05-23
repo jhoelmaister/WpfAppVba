@@ -25,7 +25,6 @@ namespace WpfAppVba
             {
                 if (_modoSelector)
                 {
-                    PanelAdmin.Visibility     = Visibility.Collapsed;
                     BtnSeleccionar.Visibility = Visibility.Visible;
                 }
                 CargarTerceros();
