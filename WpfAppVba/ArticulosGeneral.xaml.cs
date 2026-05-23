@@ -215,8 +215,10 @@ namespace WpfAppVba
         private void Tree1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
             => CargarArticulos();
 
-        private void TxtBuscar_TextChanged(object sender, TextChangedEventArgs e)
-            => CargarArticulos();
+        private void TxtBuscar_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter) CargarArticulos();
+        }
 
         private void BtnBuscar_Click(object sender, RoutedEventArgs e)
             => CargarArticulos();

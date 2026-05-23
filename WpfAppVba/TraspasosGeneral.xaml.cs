@@ -30,14 +30,22 @@ namespace WpfAppVba
             Tree1.Items.Clear();
             string[] meses = { "Enero","Febrero","Marzo","Abril","Mayo","Junio",
                                 "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre" };
-            foreach (var mes in meses)
-            {
-                var item = new TreeViewItem { Header = mes, Tag = mes };
-                Tree1.Items.Add(item);
-            }
 
+            // Nodo padre "General" → muestra todos los meses (Tag vacío = sin filtro)
+            var nodoGeneral = new TreeViewItem
+            {
+                Header     = "General",
+                Tag        = "",
+                IsExpanded = true
+            };
+            foreach (var mes in meses)
+                nodoGeneral.Items.Add(new TreeViewItem { Header = mes, Tag = mes });
+
+            Tree1.Items.Add(nodoGeneral);
+
+            // Selección por defecto: mes actual
             int mesActual = DateTime.Now.Month - 1;
-            if (Tree1.Items[mesActual] is TreeViewItem ti)
+            if (nodoGeneral.Items[mesActual] is TreeViewItem ti)
             {
                 ti.IsSelected = true;
                 _mesActivo = meses[mesActual];

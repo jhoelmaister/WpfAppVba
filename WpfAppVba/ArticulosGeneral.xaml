@@ -59,7 +59,7 @@
                 </Grid.ColumnDefinitions>
                 <TextBox x:Name="TxtBuscar" Grid.Column="0" Height="28" FontSize="12"
                          Padding="6,4" BorderBrush="#CCC" Margin="0,0,6,0"
-                         TextChanged="TxtBuscar_TextChanged"/>
+                         KeyDown="TxtBuscar_KeyDown"/>
                 <Button Content="Buscar" Grid.Column="1"
                         Style="{StaticResource BtnSecundario}"
                         Click="BtnBuscar_Click"/>
