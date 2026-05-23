@@ -593,6 +593,44 @@ namespace WpfAppVba
             dlg.ShowDialog();
         }
 
+        // ─── Buscar artículo individual (doble clic en ArticulosGeneral) ────────
+        private void BtnBuscarArticulo_Click(object sender, RoutedEventArgs e)
+        {
+            // Guardar referencia a la fila actualmente seleccionada
+            var filaActual = GridItems.SelectedItem as PedidoItemFila;
+
+            var dlg = new ArticulosGeneral(callbackSingle: art =>
+            {
+                double precio = ObtenerPrecioArticulo(art.Id);
+
+                if (filaActual != null && _pedidos.Contains(filaActual))
+                {
+                    // Llenar la fila seleccionada con el artículo buscado
+                    filaActual.ArticuloId  = art.Id;
+                    filaActual.Codigo      = art.Codigo;
+                    filaActual.Descripcion = art.Descripcion;
+                    filaActual.Precio      = precio;
+                    filaActual.Importe     = precio * filaActual.Cantidad;
+                    filaActual.Tipo        = "automatico";
+                }
+                else
+                {
+                    // Sin fila seleccionada → agregar nueva línea
+                    _pedidos.Add(new PedidoItemFila
+                    {
+                        PedidoId    = "", ArticuloId  = art.Id,
+                        Codigo      = art.Codigo, Descripcion = art.Descripcion,
+                        Cantidad    = 1, Forma = "sin factura", Contable = 0,
+                        Precio      = precio, Importe = precio, Tipo = "automatico"
+                    });
+                }
+                _cambioPedido = true;
+                RefrescarGridPedidos();
+                ActualizarTotales();
+            });
+            dlg.ShowDialog();
+        }
+
         private void BtnNuevaLinea_Click(object sender, RoutedEventArgs e)
         {
             _pedidos.Add(new PedidoItemFila

@@ -188,6 +188,8 @@
                                 HorizontalAlignment="Right" Margin="0,4,0,4">
                         <Button Content="Importar Artículos" Style="{StaticResource BtnPrimario}"
                                 Margin="0,0,5,0" Click="BtnImportarArticulos_Click"/>
+                        <Button Content="Buscar Artículo" Style="{StaticResource BtnSecundario}"
+                                Margin="0,0,5,0" Click="BtnBuscarArticulo_Click"/>
                         <Button Content="Insertar"       Style="{StaticResource BtnSecundario}"
                                 Margin="0,0,5,0" Click="BtnInsertar_Click"/>
                         <Button Content="Nueva Línea"    Style="{StaticResource BtnSecundario}"

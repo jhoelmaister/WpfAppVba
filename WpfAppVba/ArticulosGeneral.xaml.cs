@@ -11,17 +11,22 @@ namespace WpfAppVba
     {
         private static SqlData Sql => SqlData.Instance;
 
-        // Modo exportar: cuando se abre desde Traspasos/Inventarios/Pedidos
+        // Modo exportar: cuando se abre desde Traspasos/Inventarios/Pedidos (multi)
         private readonly Action<List<ArticuloExportado>>? _callbackExportar;
+        // Modo single: buscar un solo artículo con doble clic (sin checkbox ni #)
+        private readonly Action<ArticuloExportado>? _callbackSingle;
         // List en lugar de HashSet para conservar el orden de selección
         private readonly List<string> _seleccionados = new();
 
         public bool ModoExportar => _callbackExportar != null;
+        public bool ModoSingle   => _callbackSingle   != null;
 
-        public ArticulosGeneral(Action<List<ArticuloExportado>>? callbackExportar = null)
+        public ArticulosGeneral(Action<List<ArticuloExportado>>? callbackExportar = null,
+                                 Action<ArticuloExportado>?       callbackSingle   = null)
         {
             InitializeComponent();
             _callbackExportar = callbackExportar;
+            _callbackSingle   = callbackSingle;
             Loaded += (_, _) => { CargarArbol(); CargarArticulos(); ConfigurarModo(); };
         }
 
@@ -196,7 +201,19 @@ namespace WpfAppVba
         // ─── Doble clic ───────────────────────────────────────────────────────
         private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (ModoExportar)
+            if (ModoSingle)
+            {
+                // Retorna el artículo seleccionado al llamador y cierra
+                if (Grid1.SelectedItem is not ArticuloFila fila) return;
+                _callbackSingle!(new ArticuloExportado
+                {
+                    Id          = fila.Id,
+                    Codigo      = fila.Codigo,
+                    Descripcion = fila.Descripcion
+                });
+                Close();
+            }
+            else if (ModoExportar)
                 ToggleSeleccion();
             else
                 AbrirEditar();
