@@ -29,6 +29,11 @@ namespace WpfAppVba
         private void ConfigurarModo()
         {
             PanelExportar.Visibility = ModoExportar ? Visibility.Visible : Visibility.Collapsed;
+
+            // Columna checkbox (✓) y columna "#" solo visibles en modo importar
+            var visibilidad = ModoExportar ? Visibility.Visible : Visibility.Collapsed;
+            Grid1.Columns[0].Visibility = visibilidad;   // ✓ checkbox
+            Grid1.Columns[1].Visibility = visibilidad;   // #  orden selección
         }
 
         // ─── Árbol de productos/familias ──────────────────────────────────────
