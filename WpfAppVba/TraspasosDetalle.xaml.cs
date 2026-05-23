@@ -208,6 +208,7 @@ namespace WpfAppVba
         private void ActualizarBotonesGrid()
         {
             BtnImportarArticulos.IsEnabled = _editarFormulario;
+            BtnBuscarArticulo.IsEnabled    = _editarFormulario;
             BtnInsertar.IsEnabled          = _editarFormulario;
             BtnNuevaLinea.IsEnabled        = _editarFormulario;
             BtnEliminarLinea.IsEnabled     = _editarFormulario;
@@ -353,6 +354,38 @@ namespace WpfAppVba
                 SucursalesGeneral.SucursalSeleccionada = null;
                 _hayCambios = true;
             }
+        }
+
+        // ─── Buscar artículo (single-select) ─────────────────────────────────
+        private void BtnBuscarArticulo_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_editarFormulario) return;
+
+            var filaActual = GridItems.SelectedItem as TraspasoItemFila;
+            var dlg = new ArticulosGeneral(callbackSingle: art =>
+            {
+                if (filaActual != null && _items.Contains(filaActual))
+                {
+                    filaActual.ArticuloId  = art.Id;
+                    filaActual.Codigo      = art.Codigo;
+                    filaActual.Descripcion = art.Descripcion;
+                }
+                else
+                {
+                    _items.Add(new TraspasoItemFila
+                    {
+                        TraspasoId  = "",
+                        ArticuloId  = art.Id,
+                        Codigo      = art.Codigo,
+                        Descripcion = art.Descripcion,
+                        Cantidad    = 1
+                    });
+                }
+                _hayCambios = true;
+                RefrescarGrid();
+                NotificarStockInsuficiente();
+            });
+            dlg.ShowDialog();
         }
 
         // ─── Importar artículos ───────────────────────────────────────────────

@@ -171,6 +171,35 @@ namespace WpfAppVba
             ventana.ShowDialog();
         }
 
+        // ─── Buscar artículo (single-select) ─────────────────────────────────
+        private void BtnBuscarArticulo_Click(object sender, RoutedEventArgs e)
+        {
+            var filaActual = GridItems.SelectedItem as InventarioItemFila;
+            var dlg = new ArticulosGeneral(callbackSingle: art =>
+            {
+                if (filaActual != null && _items.Contains(filaActual))
+                {
+                    filaActual.ArticuloId  = art.Id;
+                    filaActual.Codigo      = art.Codigo;
+                    filaActual.Descripcion = art.Descripcion;
+                }
+                else
+                {
+                    _items.Add(new InventarioItemFila
+                    {
+                        InventarioId = "",
+                        ArticuloId   = art.Id,
+                        Codigo       = art.Codigo,
+                        Descripcion  = art.Descripcion,
+                        Cantidad     = 1
+                    });
+                }
+                _hayCambios = true;
+                RefrescarGrid();
+            });
+            dlg.ShowDialog();
+        }
+
         // ─── Nueva línea vacía ────────────────────────────────────────────────
         private void BtnNuevaLinea_Click(object sender, RoutedEventArgs e)
         {

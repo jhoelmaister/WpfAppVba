@@ -107,6 +107,10 @@
                         Background="#1A73E8" Foreground="White"
                         Style="{StaticResource Btn}"
                         Click="BtnBuscarArticulos_Click"/>
+                <Button Content="Buscar Artículo" Margin="0,0,6,0"
+                        Background="#E8EDF5" Foreground="#5F6368"
+                        Style="{StaticResource Btn}"
+                        Click="BtnBuscarArticulo_Click"/>
                 <Button Content="Insertar" Margin="0,0,6,0"
                         Background="#E8EDF5" Foreground="#5F6368"
                         Style="{StaticResource Btn}"
