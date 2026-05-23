@@ -68,7 +68,7 @@
         <!-- Botón modo selector (solo visible cuando se abre como selector) -->
         <Button x:Name="BtnSeleccionar" Grid.Row="3"
                 Content="✔ Seleccionar"
-                HorizontalAlignment="Right" Margin="0,8,0,0"
+                HorizontalAlignment="Left" Margin="0,8,0,0"
                 Visibility="Collapsed"
                 Height="30" Padding="16,0" FontSize="12"
                 Background="#1A73E8" Foreground="White"

@@ -25,7 +25,6 @@ namespace WpfAppVba
                 if (_modoSelector)
                 {
                     Title                     = "Seleccionar Familia";
-                    PanelAdmin.Visibility     = Visibility.Collapsed;
                     BtnSeleccionar.Visibility = Visibility.Visible;
                 }
                 CargarFamilias();
