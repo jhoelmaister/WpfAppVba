@@ -56,7 +56,7 @@
                              PreviewTextInput="Box_Numeros_PreviewTextInput"/>
                     <TextBlock x:Name="Box_Familia_Descripcion" Grid.Column="1"
                                VerticalAlignment="Center" FontSize="11" Foreground="#777"/>
-                    <Button Grid.Column="2" Content="Ver Familias" Height="30" Padding="8,0"
+                    <Button x:Name="BtnVerFamilias" Grid.Column="2" Content="Ver Familias" Height="30" Padding="8,0"
                             FontSize="11" BorderThickness="0" Cursor="Hand"
                             Background="#E8EDF5" Foreground="#5F6368"
                             Click="BtnVerFamilias_Click"/>

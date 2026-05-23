@@ -262,6 +262,16 @@ namespace WpfAppVba
             CargarArticulos();
         }
 
+        private void BtnInsertar_Click(object sender, RoutedEventArgs e)
+        {
+            if (Grid1.SelectedItem is not ArticuloFila fila) return;
+            AppState.EventoFormularioA = "insertar";
+            var detalle = new ArticulosDetalle(this, fila.Id);
+            detalle.ShowDialog();
+            CargarArbol();
+            CargarArticulos();
+        }
+
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
             => AbrirEditar();
 
@@ -272,13 +282,33 @@ namespace WpfAppVba
             var res = MessageBox.Show("¿Eliminar este artículo?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
 
-            if (res == MessageBoxResult.Yes)
+            if (res != MessageBoxResult.Yes) return;
+
+            // Capturar familia e indice antes de ocultar
+            string famEliminada = Sql.ArticulosObj.ObtenerItem("familia", fila.Id)?.ToString() ?? "";
+            int    indEliminado = Convert.ToInt32(Sql.ArticulosObj.ObtenerItem("indice", fila.Id) ?? 0);
+
+            Sql.ArticulosObj.Ocultar(fila.Id);
+
+            // Rellenar el hueco: restar 1 a los índices > indEliminado dentro de la misma familia
+            int uf = Sql.ArticulosObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
             {
-                Sql.ArticulosObj.Ocultar(fila.Id);
-                AppState.ActualizarStocks();
-                Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
-                CargarArticulos();
+                var idObj = Sql.ArticulosObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+
+                string fam = Sql.ArticulosObj.ObtenerItem("familia", id)?.ToString() ?? "";
+                if (fam != famEliminada) continue;
+
+                int ind = Convert.ToInt32(Sql.ArticulosObj.ObtenerItem("indice", id) ?? 0);
+                if (ind > indEliminado)
+                    Sql.ArticulosObj.EstablecerItem("indice", id, ind - 1);
             }
+
+            AppState.ActualizarStocks();
+            Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
+            CargarArticulos();
         }
 
         private void BtnActualizar_Click(object sender, RoutedEventArgs e)

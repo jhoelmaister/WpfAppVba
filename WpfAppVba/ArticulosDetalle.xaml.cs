@@ -37,6 +37,13 @@ namespace WpfAppVba
                 BtnVerMovimientos.Visibility  = Visibility.Visible;
                 CargarParaEditar();
             }
+            else if (AppState.EventoFormularioA == "insertar")
+            {
+                LblTitulo.Text                = "Insertar Artículo";
+                Box_Codigo.IsEnabled          = true;
+                BtnVerMovimientos.Visibility  = Visibility.Collapsed;
+                CargarParaInsertar();
+            }
             else
             {
                 LblTitulo.Text                = "Nuevo Artículo";
@@ -80,6 +87,49 @@ namespace WpfAppVba
             Box_Indice.Text        = "1";
         }
 
+        private void CargarParaInsertar()
+        {
+            long siguiente = Convert.ToInt64(Sql.ArticulosObj.Maximo("id") ?? 0) + 1;
+            Box_Identificador.Text = siguiente.ToString();
+
+            // Tomar familia e indice del artículo de referencia
+            string famRef = Sql.ArticulosObj.ObtenerItem("familia", _idEditar)?.ToString() ?? "";
+            string indRef = Sql.ArticulosObj.ObtenerItem("indice",  _idEditar)?.ToString() ?? "1";
+
+            Box_Identificador_Familia.Text = famRef;
+            Box_Indice.Text                = indRef;
+            ActualizarDescripcionFamilia();
+
+            // Bloquear campos que no se deben cambiar en modo insertar
+            Box_Identificador_Familia.IsEnabled = false;
+            Box_Indice.IsEnabled                = false;
+            BtnVerFamilias.IsEnabled            = false;
+        }
+
+        // ─── Cuando cambia la familia en modo "nuevo": indice = max(familia) + 1 ───
+        private void RecalcularIndicePorFamilia()
+        {
+            string famId = Box_Identificador_Familia.Text.Trim();
+            if (string.IsNullOrEmpty(famId)) return;
+
+            int indiceMax = 0;
+            int uf = Sql.ArticulosObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.ArticulosObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+
+                string fam = Sql.ArticulosObj.ObtenerItem("familia", id)?.ToString() ?? "";
+                if (fam != famId) continue;
+
+                int ind = Convert.ToInt32(Sql.ArticulosObj.ObtenerItem("indice", id) ?? 0);
+                if (ind > indiceMax) indiceMax = ind;
+            }
+
+            Box_Indice.Text = (indiceMax + 1).ToString();
+        }
+
         // ─── Actualizar descripciones de referidos ────────────────────────────
         private void ActualizarDescripcionFamilia()
         {
@@ -116,6 +166,10 @@ namespace WpfAppVba
             if (_cargando) return;
             _hayCambios = true;
             ActualizarDescripcionFamilia();
+
+            // Solo en modo "nuevo": auto-sugerir indice = max(familia) + 1
+            if (AppState.EventoFormularioA == "nuevo")
+                RecalcularIndicePorFamilia();
         }
 
         private void Box_Industria_TextChanged(object sender, TextChangedEventArgs e)
@@ -161,9 +215,12 @@ namespace WpfAppVba
         // ─── Guardar ─────────────────────────────────────────────────────────
         private bool Guardar()
         {
-            return AppState.EventoFormularioA == "modificar"
-                ? GuardarEditar()
-                : GuardarNuevo();
+            return AppState.EventoFormularioA switch
+            {
+                "modificar" => GuardarEditar(),
+                "insertar"  => GuardarInsertar(),
+                _            => GuardarNuevo()
+            };
         }
 
         private bool GuardarEditar()
@@ -209,6 +266,65 @@ namespace WpfAppVba
                 Sql.ArticulosObj.EstablecerItem("codigo",     id, codigo);
                 Sql.ArticulosObj.EstablecerItem("indice",     id, Box_Indice.Text);
                 Sql.ArticulosObj.EstablecerItem("familia",    id, Box_Identificador_Familia.Text);
+                Sql.ArticulosObj.EstablecerItem("industria",  id, Box_Identificador_Industria.Text);
+                Sql.ArticulosObj.EstablecerItem("Categoria",  id, Box_Identificador_Categoria.Text);
+                Sql.ArticulosObj.EstablecerItem("descripcion",id, Box_Descripcion.Text);
+                Sql.ArticulosObj.EstablecerItem("modelo",     id, Box_Modelo.Text);
+                Sql.ArticulosObj.EstablecerItem("observacion",id, Box_Observacion.Text);
+                Sql.ArticulosObj.EstablecerItem("emision",    id, DateTime.Now);
+                Sql.ArticulosObj.EstablecerItem("edicion",    id, DateTime.Now);
+                Sql.ArticulosObj.EstablecerItem("usuario",    id, AppState.UsuarioActivo);
+
+                Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
+                AppState.ActualizarStocks();
+
+                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+        }
+
+        private bool GuardarInsertar()
+        {
+            string codigo = Box_Codigo.Text.Trim();
+            try
+            {
+                if (!Sql.ArticulosObj.VerificarId(codigo, "codigo"))
+                {
+                    MessageBox.Show("El código ya existe", "Consola",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
+
+                string famNueva = Box_Identificador_Familia.Text.Trim();
+                int    indNuevo = Convert.ToInt32(Box_Indice.Text);
+
+                // Bump: subir 1 a todos los indices >= indNuevo dentro de la misma familia
+                int uf = Sql.ArticulosObj.ContarFilas;
+                for (int i = 1; i <= uf; i++)
+                {
+                    var idObj = Sql.ArticulosObj.Mover(i);
+                    if (idObj == null) continue;
+                    string idIt = idObj.ToString()!;
+
+                    string fam = Sql.ArticulosObj.ObtenerItem("familia", idIt)?.ToString() ?? "";
+                    if (fam != famNueva) continue;
+
+                    int ind = Convert.ToInt32(Sql.ArticulosObj.ObtenerItem("indice", idIt) ?? 0);
+                    if (ind >= indNuevo)
+                        Sql.ArticulosObj.EstablecerItem("indice", idIt, ind + 1);
+                }
+
+                // Crear el nuevo artículo en la posición indNuevo
+                string id = Box_Identificador.Text.Trim();
+                Sql.ArticulosObj.Nuevo(id);
+                Sql.ArticulosObj.EstablecerItem("codigo",     id, codigo);
+                Sql.ArticulosObj.EstablecerItem("indice",     id, indNuevo);
+                Sql.ArticulosObj.EstablecerItem("familia",    id, famNueva);
                 Sql.ArticulosObj.EstablecerItem("industria",  id, Box_Identificador_Industria.Text);
                 Sql.ArticulosObj.EstablecerItem("Categoria",  id, Box_Identificador_Categoria.Text);
                 Sql.ArticulosObj.EstablecerItem("descripcion",id, Box_Descripcion.Text);
