@@ -10,15 +10,13 @@ namespace WpfAppVba
     {
         private static SqlData Sql => SqlData.Instance;
 
-        private readonly TercerosGeneral? _padre;
         private readonly string _idEditar;   // solo en modo modificar
         private bool _hayCambios  = false;
         private bool _cargando    = true;    // evita disparar cambios al cargar
 
-        public TercerosDetalle(TercerosGeneral padre, string idEditar = "")
+        public TercerosDetalle(string idEditar = "")
         {
             InitializeComponent();
-            _padre   = padre;
             _idEditar = idEditar;
             Loaded  += (_, _) => CargarUserform();
         }

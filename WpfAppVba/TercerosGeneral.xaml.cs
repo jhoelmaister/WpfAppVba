@@ -112,7 +112,7 @@ namespace WpfAppVba
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
             AppState.EventoFormularioL = "nuevo";
-            var detalle = new TercerosDetalle(this);
+            var detalle = new TercerosDetalle();
             detalle.ShowDialog();
             CargarTerceros();
         }
@@ -146,7 +146,7 @@ namespace WpfAppVba
             if (Grid1.SelectedItem is not TerceroFila fila) return;
             string idSel = fila.Id;
             AppState.EventoFormularioL = "modificar";
-            var detalle = new TercerosDetalle(this, fila.Id);
+            var detalle = new TercerosDetalle(fila.Id);
             detalle.ShowDialog();
             CargarTerceros();
             var item = (Grid1.ItemsSource as System.Collections.Generic.List<TerceroFila>)
