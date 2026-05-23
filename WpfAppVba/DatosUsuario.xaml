@@ -55,9 +55,12 @@
                 <TextBlock Text="Apellidos:" Style="{StaticResource LblEtiqueta}"/>
                 <TextBox x:Name="TxtApellidos" Style="{StaticResource CajaEditable}"/>
 
-                <!-- Sucursal Activa (solo lectura) -->
+                <!-- Sucursal Activa -->
                 <TextBlock Text="Sucursal Activa:" Style="{StaticResource LblEtiqueta}"/>
-                <TextBox x:Name="TxtSucursal" Style="{StaticResource CajaLectura}"/>
+                <ComboBox x:Name="CmbSucursal" Height="30" FontSize="12"
+                          Padding="4,0" Margin="0,0,0,10"
+                          DisplayMemberPath="Descripcion"
+                          SelectionChanged="CmbSucursal_SelectionChanged"/>
 
                 <!-- Inicio de Sucursal (solo lectura) -->
                 <TextBlock Text="Inicio de Sucursal:" Style="{StaticResource LblEtiqueta}"/>
