@@ -146,7 +146,12 @@ namespace WpfAppVba
                 // Persistir cambios de usuarios en SQL Server
                 Sql.UsuariosObj.ExportarItems();
 
-                // Actualizar periodo activo
+                // Si cambió la sucursal: recargar documentosI e inventarios de la nueva sucursal
+                // ANTES de ActualizarBase, para que calcule la apertura con los datos correctos
+                if (sucursalCambio)
+                    AppLoader.ConectarBases();
+
+                // Actualizar periodo activo y recalcular apertura
                 string periodoStr = CmbPeriodo.SelectedItem?.ToString() ?? DateTime.Now.Year.ToString();
                 bool periodoCambio = periodoStr != AppState.PeriodoActivo;
                 AppState.PeriodoActivo = periodoStr;
