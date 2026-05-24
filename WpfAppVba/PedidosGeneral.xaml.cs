@@ -292,6 +292,7 @@ namespace WpfAppVba
         // ─── Botones ──────────────────────────────────────────────────────────
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
+            string? idSel = (Grid1.SelectedItem as PedidoFila)?.DocumentoP;
             AppState.EventoFormularioM = "nuevo";
             AppState.TipoPedido        = "normal";
             // Asegurar que AppState tenga el tipo correcto antes de abrir detalle
@@ -299,6 +300,13 @@ namespace WpfAppVba
                 AppState.TipoMovimiento = TipoMovimiento;
             new PedidosDetalle(this).ShowDialog();
             CargarPedidos();
+            if (idSel != null)
+            {
+                var item = (Grid1.ItemsSource as System.Collections.Generic.List<PedidoFila>)
+                           ?.Find(x => x.DocumentoP == idSel);
+                if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+            }
+            Grid1.Focus();
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)

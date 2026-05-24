@@ -64,17 +64,11 @@ namespace WpfAppVba
                 if (actual != null) CmbSucursal.SelectedItem = actual;
 
                 ActualizarFechaInicio();
+                ActualizarPeriodos();
 
-                // Llenar ComboBox con años desde la apertura hasta hoy
-                CmbPeriodo.Items.Clear();
-                int inicio = AppState.AperturaFecha != default
-                             ? AppState.AperturaFecha.Year
-                             : DateTime.Now.Year;
-                int final  = DateTime.Now.Year;
-                for (int y = inicio; y <= final; y++)
-                    CmbPeriodo.Items.Add(y.ToString());
-
-                CmbPeriodo.SelectedItem = AppState.PeriodoActivo;
+                // Restaurar periodo activo si está disponible en el combo
+                if (CmbPeriodo.Items.Contains(AppState.PeriodoActivo))
+                    CmbPeriodo.SelectedItem = AppState.PeriodoActivo;
             }
             finally
             {
@@ -87,6 +81,7 @@ namespace WpfAppVba
         {
             if (_cargando) return;
             ActualizarFechaInicio();
+            ActualizarPeriodos();
         }
 
         private void ActualizarFechaInicio()
@@ -95,6 +90,29 @@ namespace WpfAppVba
                 TxtFechaInicio.Text = Sql.SucursalesObj.ObtenerItem("fecha", item.Id)?.ToString() ?? "";
             else
                 TxtFechaInicio.Text = "";
+        }
+
+        private void ActualizarPeriodos()
+        {
+            int inicioAno = DateTime.Now.Year;
+            if (CmbSucursal.SelectedItem is SucursalItem item)
+            {
+                var fechaObj = Sql.SucursalesObj.ObtenerItem("fecha", item.Id);
+                if (fechaObj != null && DateTime.TryParse(fechaObj.ToString(), out DateTime fecha))
+                    inicioAno = fecha.Year;
+            }
+
+            string? selActual = CmbPeriodo.SelectedItem?.ToString();
+            CmbPeriodo.Items.Clear();
+            int final = DateTime.Now.Year;
+            for (int y = inicioAno; y <= final; y++)
+                CmbPeriodo.Items.Add(y.ToString());
+
+            // Mantener el periodo seleccionado si sigue disponible; si no, el más reciente
+            if (selActual != null && CmbPeriodo.Items.Contains(selActual))
+                CmbPeriodo.SelectedItem = selActual;
+            else if (CmbPeriodo.Items.Count > 0)
+                CmbPeriodo.SelectedIndex = CmbPeriodo.Items.Count - 1;
         }
 
         // ─── Guardar ─────────────────────────────────────────────────────────
