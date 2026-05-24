@@ -44,6 +44,42 @@ namespace WpfAppVba
             TabSalidas.CargarTraspasos();
         }
 
+        // ─── INVENTARIOS ─────────────────────────────────────────────────────
+
+        private void BtnInventarios_Click(object sender, RoutedEventArgs e)
+        {
+            var win = new Window
+            {
+                Title                 = "Inventarios",
+                Width                 = 960,
+                Height                = 640,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Owner                 = this,
+                Background            = System.Windows.Media.Brushes.Transparent,
+                Content               = new InventariosGeneral()
+            };
+            win.ShowDialog();
+        }
+
+        // ─── MI CUENTA ────────────────────────────────────────────────────────
+
+        private void BtnMiCuenta_Click(object sender, RoutedEventArgs e)
+        {
+            var win = new Window
+            {
+                Title                 = "Mi Cuenta",
+                Width                 = 480,
+                Height                = 620,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Owner                 = this,
+                ResizeMode            = ResizeMode.NoResize,
+                Background            = System.Windows.Media.Brushes.Transparent,
+                Content               = new DatosUsuario()
+            };
+            win.ShowDialog();
+            ActualizarInfoUsuario();
+        }
+
         // ─── CERRAR SESIÓN ────────────────────────────────────────────────────
 
         private void BtnCerrarSesion_Click(object sender, RoutedEventArgs e)

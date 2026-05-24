@@ -141,12 +141,20 @@
                             Click="BtnSalidaRapida_Click"/>
                 </StackPanel>
 
-                <!-- Info usuario + Cerrar sesión -->
+                <!-- Info usuario + botones + Cerrar sesión -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal"
                             VerticalAlignment="Center" HorizontalAlignment="Right">
                     <TextBlock x:Name="LblUsuario"
                                FontSize="11" Foreground="#9AA3B8"
                                VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <Button Content="📊 Inventarios"
+                            Background="#0277BD" Margin="0,0,6,0"
+                            Style="{StaticResource BtnAccion}"
+                            Click="BtnInventarios_Click"/>
+                    <Button Content="👤 Mi Cuenta"
+                            Background="#4527A0" Margin="0,0,6,0"
+                            Style="{StaticResource BtnAccion}"
+                            Click="BtnMiCuenta_Click"/>
                     <Button Content="Cerrar Sesión"
                             Background="#C62828"
                             Style="{StaticResource BtnAccion}"
@@ -187,16 +195,6 @@
                 <!-- ── Pestaña Artículos ───────────────────────────── -->
                 <TabItem Header="📋 Artículos" Style="{StaticResource ModernTabItem}">
                     <local:ArticulosGeneral x:Name="TabArticulos"/>
-                </TabItem>
-
-                <!-- ── Pestaña Inventarios ─────────────────────────── -->
-                <TabItem Header="📊 Inventarios" Style="{StaticResource ModernTabItem}">
-                    <local:InventariosGeneral x:Name="TabInventarios"/>
-                </TabItem>
-
-                <!-- ── Pestaña Datos de Usuario ────────────────────── -->
-                <TabItem Header="👤 Mi Cuenta" Style="{StaticResource ModernTabItem}">
-                    <local:DatosUsuario x:Name="TabDatosUsuario"/>
                 </TabItem>
 
             </TabControl>
