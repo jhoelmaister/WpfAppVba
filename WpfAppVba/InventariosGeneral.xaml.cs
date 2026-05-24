@@ -76,10 +76,18 @@ namespace WpfAppVba
         // ─── Botones ──────────────────────────────────────────────────────────
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
+            string? idSel = (Grid1.SelectedItem as InventarioFila)?.Id;
             AppState.EventoFormularioI = "nuevo";
             var detalle = new InventariosDetalle(this);
             detalle.ShowDialog();
             CargarInventarios();
+            if (idSel != null)
+            {
+                var item = (Grid1.ItemsSource as System.Collections.Generic.List<InventarioFila>)
+                           ?.Find(x => x.Id == idSel);
+                if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+            }
+            Grid1.Focus();
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)

@@ -255,11 +255,19 @@ namespace WpfAppVba
         // ─── Botones ──────────────────────────────────────────────────────────
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
+            string? docSel = (Grid1.SelectedItem as TraspasoFila)?.DocumentoT;
             AppState.EventoFormularioM = "nuevo";
             if (!string.IsNullOrEmpty(TipoMovimiento))
                 AppState.TipoMovimiento = TipoMovimiento;
             new TraspasosDetalle(this).ShowDialog();
             CargarTraspasos();
+            if (docSel != null)
+            {
+                var item = (Grid1.ItemsSource as System.Collections.Generic.List<TraspasoFila>)
+                           ?.Find(x => x.DocumentoT == docSel);
+                if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+            }
+            Grid1.Focus();
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)

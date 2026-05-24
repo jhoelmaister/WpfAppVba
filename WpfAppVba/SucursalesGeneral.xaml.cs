@@ -98,10 +98,18 @@ namespace WpfAppVba
                 return;
             }
 
+            string? idSel = (Grid1.SelectedItem as SucursalFila)?.Id;
             AppState.EventoFormularioI = "nuevo";
             var detalle = new SucursalesDetalle(this);
             detalle.ShowDialog();
             CargarSucursales();
+            if (idSel != null)
+            {
+                var item = (Grid1.ItemsSource as System.Collections.Generic.List<SucursalFila>)
+                           ?.Find(x => x.Id == idSel);
+                if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+            }
+            Grid1.Focus();
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)

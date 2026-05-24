@@ -255,11 +255,19 @@ namespace WpfAppVba
         // ─── Botones ──────────────────────────────────────────────────────────
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
+            string? idSel = (Grid1.SelectedItem as ArticuloFila)?.Id;
             AppState.EventoFormularioA = "nuevo";
             var detalle = new ArticulosDetalle(this);
             detalle.ShowDialog();
             CargarArbol();
             CargarArticulos();
+            if (idSel != null)
+            {
+                var item = (Grid1.ItemsSource as System.Collections.Generic.List<ArticuloFila>)
+                           ?.Find(x => x.Id == idSel);
+                if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+            }
+            Grid1.Focus();
         }
 
         private void BtnInsertar_Click(object sender, RoutedEventArgs e)

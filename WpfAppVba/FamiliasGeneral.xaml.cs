@@ -94,10 +94,18 @@ namespace WpfAppVba
 
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
+            string? idSel = (Grid1.SelectedItem as FamiliaFila)?.Id;
             AppState.EventoFormularioF = "nuevo";
             var detalle = new FamiliasDetalle(this);
             detalle.ShowDialog();
             CargarFamilias();
+            if (idSel != null)
+            {
+                var item = (Grid1.ItemsSource as System.Collections.Generic.List<FamiliaFila>)
+                           ?.Find(x => x.Id == idSel);
+                if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+            }
+            Grid1.Focus();
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)

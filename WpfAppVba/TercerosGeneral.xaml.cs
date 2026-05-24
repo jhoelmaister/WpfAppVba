@@ -111,10 +111,18 @@ namespace WpfAppVba
 
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
+            string? idSel = (Grid1.SelectedItem as TerceroFila)?.Id;
             AppState.EventoFormularioL = "nuevo";
             var detalle = new TercerosDetalle();
             detalle.ShowDialog();
             CargarTerceros();
+            if (idSel != null)
+            {
+                var item = (Grid1.ItemsSource as System.Collections.Generic.List<TerceroFila>)
+                           ?.Find(x => x.Id == idSel);
+                if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+            }
+            Grid1.Focus();
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
