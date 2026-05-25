@@ -16,6 +16,7 @@ namespace WpfAppVba
         public MovimientosWindow(string codigoArticulo = "")
         {
             InitializeComponent();
+            WindowHelper.AjustarAlEcran(this);
             Loaded += (_, _) =>
             {
                 if (!string.IsNullOrEmpty(codigoArticulo))

@@ -35,6 +35,7 @@ namespace WpfAppVba
         public PedidosDetalle(PedidosGeneral? padre = null, string idEditar = "")
         {
             InitializeComponent();
+            WindowHelper.AjustarAlEcran(this);
             _padre    = padre;
             _idEditar = idEditar;
             Loaded   += (_, _) => CargarUserform();

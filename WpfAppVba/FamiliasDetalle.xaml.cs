@@ -18,6 +18,7 @@ namespace WpfAppVba
         public FamiliasDetalle(FamiliasGeneral padre, string idEditar = "")
         {
             InitializeComponent();
+            WindowHelper.AjustarAlEcran(this);
             _padre    = padre;
             _idEditar = idEditar;
             Loaded   += (_, _) => CargarUserform();

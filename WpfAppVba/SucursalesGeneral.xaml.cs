@@ -21,6 +21,7 @@ namespace WpfAppVba
         public SucursalesGeneral(bool modoSelector = false)
         {
             InitializeComponent();
+            WindowHelper.AjustarAlEcran(this);
             _modoSelector = modoSelector;
             Loaded += (_, _) => CargarSucursales();
         }

@@ -14,6 +14,7 @@ namespace WpfAppVba
         public LoginWindow()
         {
             InitializeComponent();
+            WindowHelper.AjustarAlEcran(this);
             Loaded += LoginWindow_Loaded;
         }
 

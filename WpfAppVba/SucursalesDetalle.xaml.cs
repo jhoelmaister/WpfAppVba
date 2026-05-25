@@ -19,6 +19,7 @@ namespace WpfAppVba
         public SucursalesDetalle(SucursalesGeneral padre, string idEditar = "")
         {
             InitializeComponent();
+            WindowHelper.AjustarAlEcran(this);
             _padre    = padre;
             _idEditar = idEditar;
             Loaded   += (_, _) => CargarUserform();

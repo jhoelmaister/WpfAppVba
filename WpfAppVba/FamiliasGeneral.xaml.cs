@@ -19,6 +19,7 @@ namespace WpfAppVba
         public FamiliasGeneral(bool modoSelector = false)
         {
             InitializeComponent();
+            WindowHelper.AjustarAlEcran(this);
             _modoSelector = modoSelector;
             Loaded += (_, _) =>
             {

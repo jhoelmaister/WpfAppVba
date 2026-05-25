@@ -17,6 +17,7 @@ namespace WpfAppVba
         public TercerosDetalle(string idEditar = "")
         {
             InitializeComponent();
+            WindowHelper.AjustarAlEcran(this);
             _idEditar = idEditar;
             Loaded  += (_, _) => CargarUserform();
         }

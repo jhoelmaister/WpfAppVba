@@ -58,6 +58,7 @@ namespace WpfAppVba
                 Background            = System.Windows.Media.Brushes.Transparent,
                 Content               = new InventariosGeneral()
             };
+            WindowHelper.AjustarAlEcran(win);
             win.ShowDialog();
         }
 
@@ -76,6 +77,7 @@ namespace WpfAppVba
                 Background            = System.Windows.Media.Brushes.Transparent,
                 Content               = new DatosUsuario()
             };
+            WindowHelper.AjustarAlEcran(win);
             win.ShowDialog();
             ActualizarInfoUsuario();
         }

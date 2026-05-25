@@ -10,6 +10,7 @@ namespace WpfAppVba
         public CambiarContrasena()
         {
             InitializeComponent();
+            WindowHelper.AjustarAlEcran(this);
         }
 
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)

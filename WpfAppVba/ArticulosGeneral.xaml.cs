@@ -50,6 +50,7 @@ namespace WpfAppVba
                 Background            = System.Windows.Media.Brushes.WhiteSmoke,
                 ResizeMode            = ResizeMode.CanResize
             };
+            WindowHelper.AjustarAlEcran(win);
             win.ShowDialog();
         }
 
