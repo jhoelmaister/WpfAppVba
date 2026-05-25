@@ -68,8 +68,8 @@ namespace WpfAppVba
             // Emisión / Edición
             var emisionObj = Sql.DocumentosTObj.ObtenerItem("emision", _idEditar);
             var edicionObj = Sql.DocumentosTObj.ObtenerItem("edicion", _idEditar);
-            TxtEmision.Text = emisionObj != null ? Convert.ToDateTime(emisionObj).ToString("dd/MM/yyyy HH:mm:ss") : "";
-            TxtEdicion.Text = edicionObj != null ? Convert.ToDateTime(edicionObj).ToString("dd/MM/yyyy HH:mm:ss") : "";
+            TxtEmision.Text = emisionObj != null ? $"{Convert.ToDateTime(emisionObj):d} {Convert.ToDateTime(emisionObj):HH:mm:ss}" : "";
+            TxtEdicion.Text = edicionObj != null ? $"{Convert.ToDateTime(edicionObj):d} {Convert.ToDateTime(edicionObj):HH:mm:ss}" : "";
 
             Box_Referencia.Text    = Sql.DocumentosTObj.ObtenerItem("referencia",  _idEditar)?.ToString() ?? "";
             Box_Observaciones.Text = Sql.DocumentosTObj.ObtenerItem("observacion", _idEditar)?.ToString() ?? "";
@@ -158,8 +158,8 @@ namespace WpfAppVba
             SeleccionarEstado("pendiente");
             Box_Estado.IsEnabled = false;
 
-            TxtEmision.Text = ahora.ToString("dd/MM/yyyy HH:mm:ss");
-            TxtEdicion.Text = ahora.ToString("dd/MM/yyyy HH:mm:ss");
+            TxtEmision.Text = $"{ahora:d} {ahora:HH:mm:ss}";
+            TxtEdicion.Text = $"{ahora:d} {ahora:HH:mm:ss}";
 
             _items.Clear();
             RefrescarGrid();

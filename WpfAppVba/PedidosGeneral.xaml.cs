@@ -126,7 +126,7 @@ namespace WpfAppVba
                 {
                     Linea       = linea++,
                     DocumentoP  = id,
-                    FechaStr    = fechaDoc.ToString("dd/MM/yyyy HH:mm:ss"),
+                    FechaStr    = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                     TerceroDesc = terceroDesc,
                     Estado      = estado,
                     Cuenta      = estadoC,

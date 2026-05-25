@@ -39,7 +39,7 @@ namespace WpfAppVba
                     Linea         = linea++,
                     Id            = id,
                     Fecha         = fecha,
-                    FechaStr      = fecha != default ? fecha.ToString("dd/MM/yyyy HH:mm:ss") : "",
+                    FechaStr      = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                     CantidadTotal = cantidad
                 });
             }

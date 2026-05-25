@@ -122,7 +122,7 @@ namespace WpfAppVba
                 {
                     Linea        = linea++,
                     DocumentoT   = id,
-                    FechaStr     = fechaDoc.ToString("dd/MM/yyyy HH:mm:ss"),
+                    FechaStr     = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                     SucursalDesc = otroSucDesc,
                     Estado       = estado,
                     Cantidad     = cant

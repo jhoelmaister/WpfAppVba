@@ -92,8 +92,8 @@ namespace WpfAppVba
             string cuentaInicial = tipoPedido == "rapido" ? "cancelado"  : "pendiente";
             SeleccionarEstado(estadoInicial);
             Box_Cuenta.Text  = cuentaInicial;
-            Box_Emision.Text = ahora.ToString("dd/MM/yyyy HH:mm:ss");
-            Box_Edicion.Text = ahora.ToString("dd/MM/yyyy HH:mm:ss");
+            Box_Emision.Text = $"{ahora:d} {ahora:HH:mm:ss}";
+            Box_Edicion.Text = $"{ahora:d} {ahora:HH:mm:ss}";
 
             _pedidos.Clear();
             _trasacciones.Clear();
@@ -128,8 +128,8 @@ namespace WpfAppVba
 
             var emisionObj = Sql.DocumentosPObj.ObtenerItem("emision", _idEditar);
             var edicionObj = Sql.DocumentosPObj.ObtenerItem("edicion", _idEditar);
-            Box_Emision.Text = emisionObj != null ? Convert.ToDateTime(emisionObj).ToString("dd/MM/yyyy HH:mm:ss") : "";
-            Box_Edicion.Text = edicionObj != null ? Convert.ToDateTime(edicionObj).ToString("dd/MM/yyyy HH:mm:ss") : "";
+            Box_Emision.Text = emisionObj != null ? $"{Convert.ToDateTime(emisionObj):d} {Convert.ToDateTime(emisionObj):HH:mm:ss}" : "";
+            Box_Edicion.Text = edicionObj != null ? $"{Convert.ToDateTime(edicionObj):d} {Convert.ToDateTime(edicionObj):HH:mm:ss}" : "";
 
             AppState.TipoPedido = Sql.DocumentosPObj.ObtenerItem("tipo", _idEditar)?.ToString() ?? "rapido";
 
@@ -186,7 +186,7 @@ namespace WpfAppVba
                 {
                     TrasaccionId = id,
                     Linea        = lineaT++,
-                    FechaStr     = ft.ToString("dd/MM/yyyy"),
+                    FechaStr     = ft.ToString("d"),
                     HoraStr      = ft.ToString("HH:mm:ss"),
                     Descripcion  = Sql.TrasaccionesObj.ObtenerItem("descripcion", id)?.ToString() ?? "",
                     Forma        = Sql.TrasaccionesObj.ObtenerItem("forma",       id)?.ToString() ?? "efectivo",
@@ -217,7 +217,7 @@ namespace WpfAppVba
                     Codigo      = codigo,
                     Descripcion = ObtenerDescripcionArticulo(artId),
                     Cantidad    = Convert.ToDouble(Sql.EntregasObj.ObtenerItem("cantidad", id) ?? 0),
-                    FechaStr    = fe.ToString("dd/MM/yyyy"),
+                    FechaStr    = fe.ToString("d"),
                     HoraStr     = fe.ToString("HH:mm:ss")
                 });
             }
@@ -434,7 +434,7 @@ namespace WpfAppVba
                 precios.Add(new PrecioFila
                 {
                     Codigo = fila.Codigo,
-                    Fecha  = fp != null ? Convert.ToDateTime(fp).ToString("dd/MM/yyyy") : "",
+                    Fecha  = fp != null ? Convert.ToDateTime(fp).ToString("d") : "",
                     Precio = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", pid) ?? 0).ToString("N2")
                 });
             }
@@ -707,7 +707,7 @@ namespace WpfAppVba
             _trasacciones.Add(new TrasaccionItemFila
             {
                 TrasaccionId = "", Descripcion = $"{(tipo == "venta" ? "Cobro" : "Pago")} de documento {Box_DocumentoP.Text}",
-                FechaStr = fechaDoc.ToString("dd/MM/yyyy"), HoraStr = DateTime.Now.ToString("HH:mm:ss"),
+                FechaStr = fechaDoc.ToString("d"), HoraStr = DateTime.Now.ToString("HH:mm:ss"),
                 Forma = "efectivo", Importe = 0
             });
             _cambioTrasaccion = true;
@@ -727,7 +727,7 @@ namespace WpfAppVba
             _trasacciones.Insert(idx, new TrasaccionItemFila
             {
                 TrasaccionId = "", Descripcion = $"{(tipo == "venta" ? "Cobro" : "Pago")} de documento {Box_DocumentoP.Text}",
-                FechaStr = fechaDoc.ToString("dd/MM/yyyy"), HoraStr = DateTime.Now.ToString("HH:mm:ss"),
+                FechaStr = fechaDoc.ToString("d"), HoraStr = DateTime.Now.ToString("HH:mm:ss"),
                 Forma = "efectivo", Importe = 0
             });
             _cambioTrasaccion = true;
@@ -755,7 +755,7 @@ namespace WpfAppVba
             {
                 TrasaccionId = "",
                 Descripcion  = $"{(tipo == "venta" ? "Cobro" : "Pago")} de documento {Box_DocumentoP.Text}",
-                FechaStr     = fechaDoc.ToString("dd/MM/yyyy"),
+                FechaStr     = fechaDoc.ToString("d"),
                 HoraStr      = DateTime.Now.ToString("HH:mm:ss"),
                 Forma        = "efectivo",
                 Importe      = saldo
@@ -817,7 +817,7 @@ namespace WpfAppVba
                         EntregaId = "", ArticuloId = art.Id,
                         Codigo = art.Codigo, Descripcion = art.Descripcion,
                         Cantidad = 1,
-                        FechaStr = fechaDoc.ToString("dd/MM/yyyy"),
+                        FechaStr = fechaDoc.ToString("d"),
                         HoraStr  = DateTime.Now.ToString("HH:mm:ss")
                     });
                 }
@@ -834,7 +834,7 @@ namespace WpfAppVba
             {
                 EntregaId = "", ArticuloId = "", Codigo = "", Descripcion = "",
                 Cantidad = 1,
-                FechaStr = fechaDoc.ToString("dd/MM/yyyy"),
+                FechaStr = fechaDoc.ToString("d"),
                 HoraStr  = DateTime.Now.ToString("HH:mm:ss")
             });
             _cambioEntrega = true;
@@ -851,7 +851,7 @@ namespace WpfAppVba
             {
                 EntregaId = "", ArticuloId = "", Codigo = "", Descripcion = "",
                 Cantidad = 1,
-                FechaStr = fechaDoc.ToString("dd/MM/yyyy"),
+                FechaStr = fechaDoc.ToString("d"),
                 HoraStr  = DateTime.Now.ToString("HH:mm:ss")
             });
             _cambioEntrega = true;
@@ -894,7 +894,7 @@ namespace WpfAppVba
                     EntregaId   = "", ArticuloId = kv.Key, Codigo = codigo,
                     Descripcion = ObtenerDescripcionArticulo(kv.Key),
                     Cantidad    = pendiente,
-                    FechaStr    = fechaDoc.ToString("dd/MM/yyyy"),
+                    FechaStr    = fechaDoc.ToString("d"),
                     HoraStr     = DateTime.Now.ToString("HH:mm:ss")
                 });
             }

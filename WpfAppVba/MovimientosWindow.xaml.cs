@@ -184,7 +184,7 @@ namespace WpfAppVba
                 lista.Add(new MovimientoFila
                 {
                     Linea      = linea++,
-                    FechaStr   = d.Fecha != default ? d.Fecha.ToString("dd/MM/yyyy HH:mm:ss") : "-",
+                    FechaStr   = d.Fecha != default ? $"{d.Fecha:d} {d.Fecha:HH:mm:ss}" : "-",
                     Movimiento = string.IsNullOrEmpty(d.Documento) || d.Documento == "0"
                                  ? d.Movimiento
                                  : $"{d.Documento.PadLeft(6, '0')}-{d.Movimiento}",
