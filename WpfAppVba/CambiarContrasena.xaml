@@ -1,7 +1,7 @@
 <Window x:Class="WpfAppVba.CambiarContrasena"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Cambiar Contraseña" Height="290" Width="360"
+        Title="Cambiar Contraseña" Height="230" Width="360"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="#F0F2F5">
@@ -25,10 +25,6 @@
 
             <TextBlock Text="Nueva Contraseña:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
             <PasswordBox x:Name="PwdNueva" Height="30" FontSize="12"
-                         Padding="6,4" BorderBrush="#CCC" Margin="0,0,0,12"/>
-
-            <TextBlock Text="Confirmar Nueva Contraseña:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
-            <PasswordBox x:Name="PwdConfirmar" Height="30" FontSize="12"
                          Padding="6,4" BorderBrush="#CCC" Margin="0,0,0,0"/>
         </StackPanel>
 

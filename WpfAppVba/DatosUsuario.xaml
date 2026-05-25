@@ -26,6 +26,13 @@
             <Setter Property="BorderBrush" Value="#CCC"/>
             <Setter Property="Margin" Value="0,0,0,10"/>
         </Style>
+        <!-- Encabezado de sección -->
+        <Style x:Key="LblSeccion" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#1A1A2E"/>
+            <Setter Property="Margin" Value="0,12,0,4"/>
+        </Style>
     </UserControl.Resources>
 
     <Grid Margin="16">
@@ -36,12 +43,22 @@
         </Grid.RowDefinitions>
 
         <!-- Título -->
-        <TextBlock Grid.Row="0" Text="Datos de Usuario" FontSize="15" FontWeight="Bold"
+        <TextBlock Grid.Row="0" Text="Configuración" FontSize="15" FontWeight="Bold"
                    Foreground="#1A1A2E" Margin="0,0,0,14"/>
 
         <!-- Campos -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
+
+                <!-- ══ Sección: General ══════════════════════════════════════ -->
+                <TextBlock Text="General" Style="{StaticResource LblSeccion}"/>
+                <Separator Background="#DDD" Margin="0,0,0,10"/>
+
+                <!-- (espacio reservado para futuras opciones generales) -->
+
+                <!-- ══ Sección: Mi Cuenta ════════════════════════════════════ -->
+                <TextBlock Text="Mi Cuenta" Style="{StaticResource LblSeccion}"/>
+                <Separator Background="#DDD" Margin="0,0,0,10"/>
 
                 <!-- Cuenta (solo lectura) -->
                 <TextBlock Text="Cuenta:" Style="{StaticResource LblEtiqueta}"/>

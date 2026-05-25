@@ -67,7 +67,7 @@ namespace WpfAppVba
         {
             var win = new Window
             {
-                Title                 = "Mi Cuenta",
+                Title                 = "Configuración",
                 Width                 = 480,
                 Height                = 620,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
