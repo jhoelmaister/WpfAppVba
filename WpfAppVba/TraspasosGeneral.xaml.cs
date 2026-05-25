@@ -131,7 +131,7 @@ namespace WpfAppVba
             }
 
             Grid1.ItemsSource = lista;
-            TxtTotalCantidad.Text = totalCant.ToString("F0");
+            TxtTotalCantidad.Text = totalCant.ToString("N0");
             LblTipoMovimiento.Text = tipoMov == "salida" ? "Salidas de Productos" : "Entradas de Productos";
 
             // Ocultar el panel de detalle al recargar

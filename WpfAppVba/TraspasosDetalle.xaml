@@ -217,7 +217,9 @@
                     <DataGridTextColumn Header="Línea"       Binding="{Binding Linea}"       Width="48"  IsReadOnly="True"/>
                     <DataGridTextColumn Header="Código"      Binding="{Binding Codigo}"      Width="80"/>
                     <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"   IsReadOnly="True"/>
-                    <DataGridTextColumn Header="Cantidad"    Binding="{Binding Cantidad}"    Width="80"/>
+                    <DataGridTextColumn Header="Cantidad"    Binding="{Binding Cantidad, StringFormat=#\,##0.##}" Width="80"
+                                        ElementStyle="{StaticResource CeldaNumero}"
+                                        EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
                 </DataGrid.Columns>
             </DataGrid>
 
@@ -243,20 +245,10 @@
                               FontSize="10">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Artículo"   Binding="{Binding Codigo}"     Width="55"/>
-                            <DataGridTextColumn Header="Disp."      Binding="{Binding Disponible}" Width="*">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="HorizontalAlignment" Value="Right"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Stock"      Binding="{Binding Stock}"      Width="50">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="HorizontalAlignment" Value="Right"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Disp."      Binding="{Binding Disponible}" Width="*"
+                                                ElementStyle="{StaticResource CeldaNumero}"/>
+                            <DataGridTextColumn Header="Stock"      Binding="{Binding Stock}"      Width="50"
+                                                ElementStyle="{StaticResource CeldaNumero}"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>

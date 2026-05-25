@@ -108,8 +108,8 @@ namespace WpfAppVba
                     Movimiento = movDoc,
                     Estado     = estado,
                     Cantidad   = cantidad,
-                    Unitario   = unitario.ToString("F2"),
-                    SubTotal   = importe.ToString("F2"),
+                    Unitario   = unitario.ToString("N2"),
+                    SubTotal   = importe.ToString("N2"),
                     Forma      = Sql.PedidosObj.ObtenerItem("forma",     id)?.ToString() ?? "-",
                     Contable   = Sql.PedidosObj.ObtenerItem("contable",  id)?.ToString() ?? "-"
                 });
@@ -200,10 +200,10 @@ namespace WpfAppVba
 
             Grid1.ItemsSource = lista;
 
-            TxtTotalCompras.Text  = totalCompras.ToString("F0");
-            TxtTotalVentas.Text   = totalVentas.ToString("F0");
-            TxtTotalEntradas.Text = totalEntradas.ToString("F0");
-            TxtTotalSalidas.Text  = totalSalidas.ToString("F0");
+            TxtTotalCompras.Text  = totalCompras.ToString("N0");
+            TxtTotalVentas.Text   = totalVentas.ToString("N0");
+            TxtTotalEntradas.Text = totalEntradas.ToString("N0");
+            TxtTotalSalidas.Text  = totalSalidas.ToString("N0");
         }
 
         // ─── Eventos ─────────────────────────────────────────────────────────

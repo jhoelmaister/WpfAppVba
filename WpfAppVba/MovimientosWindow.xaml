@@ -75,26 +75,17 @@
                 <DataGridTextColumn Header="Movimiento" Binding="{Binding Movimiento}"   Width="130"/>
                 <DataGridTextColumn Header="Estado"     Binding="{Binding Estado}"       Width="100"/>
                 <DataGridTextColumn Header="Forma"      Binding="{Binding Forma}"        Width="70"/>
-                <DataGridTextColumn Header="Contable"   Binding="{Binding Contable}"     Width="70"/>
-                <DataGridTextColumn Header="Cantidad"   Binding="{Binding Cantidad}"     Width="70">
+                <DataGridTextColumn Header="Contable"   Binding="{Binding Contable, StringFormat=#\,##0.##}"  Width="70"
+                                    ElementStyle="{StaticResource CeldaNumero}"/>
+                <DataGridTextColumn Header="Cantidad"   Binding="{Binding Cantidad, StringFormat=#\,##0.##}"  Width="70"
+                                    ElementStyle="{StaticResource CeldaNumero}"/>
+                <DataGridTextColumn Header="Unitario"   Binding="{Binding Unitario, StringFormat=#\,##0.##}"  Width="70"
+                                    ElementStyle="{StaticResource CeldaNumero}"/>
+                <DataGridTextColumn Header="SubTotal"   Binding="{Binding SubTotal, StringFormat=#\,##0.##}"  Width="80"
+                                    ElementStyle="{StaticResource CeldaNumero}"/>
+                <DataGridTextColumn Header="Stock"      Binding="{Binding Stock,    StringFormat=#\,##0.##}"  Width="70">
                     <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Right"/></Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-                <DataGridTextColumn Header="Unitario"   Binding="{Binding Unitario}"     Width="70">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Right"/></Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-                <DataGridTextColumn Header="SubTotal"   Binding="{Binding SubTotal}"     Width="80">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Right"/></Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-                <DataGridTextColumn Header="Stock"      Binding="{Binding Stock}"        Width="70">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource CeldaNumero}">
                             <Setter Property="FontWeight" Value="SemiBold"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>

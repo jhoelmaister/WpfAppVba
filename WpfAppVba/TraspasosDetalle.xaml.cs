@@ -254,11 +254,11 @@ namespace WpfAppVba
                 }
             }
 
-            TxtTotalPeq.Text            = totalPeq.ToString("F0");
-            TxtTotalMed.Text            = totalMed.ToString("F0");
-            TxtTotalGra.Text            = totalGra.ToString("F0");
-            TxtTotalOtros.Text          = totalOtros.ToString("F0");
-            TxtTotalUnidades.Text       = totalUnidades.ToString("F0");
+            TxtTotalPeq.Text            = totalPeq.ToString("N0");
+            TxtTotalMed.Text            = totalMed.ToString("N0");
+            TxtTotalGra.Text            = totalGra.ToString("N0");
+            TxtTotalOtros.Text          = totalOtros.ToString("N0");
+            TxtTotalUnidades.Text       = totalUnidades.ToString("N0");
             TxtUnidadesDiferentes.Text  = distintos.Count.ToString();
         }
 
@@ -278,8 +278,8 @@ namespace WpfAppVba
                 new TraspasoStockFila
                 {
                     Codigo     = fila.Codigo,
-                    Disponible = stock.ToString("F0"),
-                    Stock      = stock.ToString("F0")
+                    Disponible = stock.ToString("N0"),
+                    Stock      = stock.ToString("N0")
                 }
             };
         }

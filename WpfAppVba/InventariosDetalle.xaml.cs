@@ -128,7 +128,7 @@ namespace WpfAppVba
             if (seleccionado != null && _items.Contains(seleccionado))
                 GridItems.SelectedItem = seleccionado;
 
-            TxtTotalUnidades.Text = _items.Sum(x => x.Cantidad).ToString("F2");
+            TxtTotalUnidades.Text = _items.Sum(x => x.Cantidad).ToString("N2");
         }
 
         // ─── Detectar cambios ─────────────────────────────────────────────────

@@ -44,5 +44,19 @@
             </Setter>
         </Style>
 
+        <!--
+            Estilos para columnas numéricas (float / double):
+            CeldaNumero        → alinea el texto a la derecha en modo lectura.
+            CeldaNumeroEditar  → alinea el texto a la derecha al editar la celda.
+        -->
+        <Style x:Key="CeldaNumero" TargetType="TextBlock">
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="TextAlignment"       Value="Right"/>
+        </Style>
+        <Style x:Key="CeldaNumeroEditar" TargetType="TextBox">
+            <Setter Property="HorizontalContentAlignment" Value="Right"/>
+            <Setter Property="TextAlignment"              Value="Right"/>
+        </Style>
+
     </Application.Resources>
 </Application>

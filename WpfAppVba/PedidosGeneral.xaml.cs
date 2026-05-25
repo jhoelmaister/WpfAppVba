@@ -139,8 +139,8 @@ namespace WpfAppVba
             }
 
             Grid1.ItemsSource = lista;
-            TxtTotalCantidad.Text = totalCant.ToString("F0");
-            TxtTotalImporte.Text  = totalImporte.ToString("F2");
+            TxtTotalCantidad.Text = totalCant.ToString("N0");
+            TxtTotalImporte.Text  = totalImporte.ToString("N2");
 
             // ── Título correcto según VBA ─────────────────────────────────────
             LblTipoMovimiento.Text = tipoMov == "venta"
@@ -234,7 +234,7 @@ namespace WpfAppVba
                     ArticuloId = articuloId,
                     Descripcion = descripcion,
                     Cantidad   = cantidad,
-                    Importe    = importe.ToString("F2")
+                    Importe    = importe.ToString("N2")
                 });
             }
 

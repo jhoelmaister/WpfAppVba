@@ -145,13 +145,16 @@
                 <DataGridTemplateColumn Header="Cantidad" Width="80">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding Cantidad}" HorizontalAlignment="Right"/>
+                            <TextBlock Text="{Binding Cantidad, StringFormat=#\,##0.##}"
+                                       HorizontalAlignment="Right" TextAlignment="Right"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
                         <DataTemplate>
-                            <TextBox Text="{Binding Cantidad, UpdateSourceTrigger=PropertyChanged}"
-                                     HorizontalAlignment="Stretch"/>
+                            <TextBox Text="{Binding Cantidad, UpdateSourceTrigger=PropertyChanged, StringFormat=#\,##0.##}"
+                                     HorizontalAlignment="Stretch"
+                                     HorizontalContentAlignment="Right"
+                                     TextAlignment="Right"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>

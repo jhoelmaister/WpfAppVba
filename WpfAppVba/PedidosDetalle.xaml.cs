@@ -336,12 +336,12 @@ namespace WpfAppVba
                 else                                               totalOtros += p.Cantidad;
             }
 
-            TxtTotalUnidades.Text        = totalUnid.ToString("F0");
+            TxtTotalUnidades.Text        = totalUnid.ToString("N0");
             TxtUnidadesDiferentes.Text   = articulosUnicos.Count.ToString();
-            TxtTotalPeq.Text             = totalPeq.ToString("F0");
-            TxtTotalMed.Text             = totalMed.ToString("F0");
-            TxtTotalGra.Text             = totalGra.ToString("F0");
-            TxtTotalOtros.Text           = totalOtros.ToString("F0");
+            TxtTotalPeq.Text             = totalPeq.ToString("N0");
+            TxtTotalMed.Text             = totalMed.ToString("N0");
+            TxtTotalGra.Text             = totalGra.ToString("N0");
+            TxtTotalOtros.Text           = totalOtros.ToString("N0");
         }
 
         private void CargarTotalesDivisas()
@@ -356,9 +356,9 @@ namespace WpfAppVba
 
             double saldo = totalImporte - totalCuenta;
 
-            TxtTotalImporte.Text = totalImporte.ToString("F2");
-            TxtTotalCuenta.Text  = totalCuenta.ToString("F2");
-            TxtTotalSaldo.Text   = saldo.ToString("F2");
+            TxtTotalImporte.Text = totalImporte.ToString("N2");
+            TxtTotalCuenta.Text  = totalCuenta.ToString("N2");
+            TxtTotalSaldo.Text   = saldo.ToString("N2");
         }
 
         private void CargarEstadosCuenta()
@@ -435,7 +435,7 @@ namespace WpfAppVba
                 {
                     Codigo = fila.Codigo,
                     Fecha  = fp != null ? Convert.ToDateTime(fp).ToString("dd/MM/yyyy") : "",
-                    Precio = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", pid) ?? 0).ToString("F2")
+                    Precio = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", pid) ?? 0).ToString("N2")
                 });
             }
             GridPrecios.ItemsSource = precios;
@@ -445,7 +445,7 @@ namespace WpfAppVba
             double stockDisp  = StockCalculator.ContarStock(fila.ArticuloId, DateTime.Now);
             GridStock.ItemsSource = new List<StockFila>
             {
-                new() { Codigo = fila.Codigo, Disponible = stockDisp.ToString("F0"), Stock = stockTotal.ToString("F0") }
+                new() { Codigo = fila.Codigo, Disponible = stockDisp.ToString("N0"), Stock = stockTotal.ToString("N0") }
             };
         }
 

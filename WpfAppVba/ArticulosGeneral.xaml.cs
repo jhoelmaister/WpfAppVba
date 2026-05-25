@@ -197,8 +197,8 @@ namespace WpfAppVba
             }
 
             Grid1.ItemsSource      = lista;
-            TxtTotalDisponible.Text = totalDisp.ToString("F0");
-            TxtTotalStock.Text      = totalStock.ToString("F0");
+            TxtTotalDisponible.Text = totalDisp.ToString("N0");
+            TxtTotalStock.Text      = totalStock.ToString("N0");
 
             if (ModoExportar)
                 LblSeleccionados.Text = $"Seleccionados: {_seleccionados.Count}";

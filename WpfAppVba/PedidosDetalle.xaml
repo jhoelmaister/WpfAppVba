@@ -216,7 +216,9 @@
                             <DataGridTextColumn Header="Línea"    Binding="{Binding Linea}"       Width="48"  IsReadOnly="True"/>
                             <DataGridTextColumn Header="Código"   Binding="{Binding Codigo}"      Width="80"/>
                             <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*" IsReadOnly="True"/>
-                            <DataGridTextColumn Header="Cantidad" Binding="{Binding Cantidad}"    Width="70"/>
+                            <DataGridTextColumn Header="Cantidad" Binding="{Binding Cantidad, StringFormat=#\,##0.##}" Width="70"
+                                                ElementStyle="{StaticResource CeldaNumero}"
+                                                EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
 
                             <!-- Forma (ComboBox) -->
                             <DataGridTemplateColumn Header="Forma" Width="90">
@@ -234,27 +236,15 @@
                                 </DataGridTemplateColumn.CellEditingTemplate>
                             </DataGridTemplateColumn>
 
-                            <DataGridTextColumn Header="Contable" Binding="{Binding Contable, StringFormat=F2}" Width="70">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="HorizontalAlignment" Value="Right"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Precio"   Binding="{Binding Precio,   StringFormat=F2}" Width="75">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="HorizontalAlignment" Value="Right"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Importe"  Binding="{Binding Importe,  StringFormat=F2}" Width="80">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="HorizontalAlignment" Value="Right"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Contable" Binding="{Binding Contable, StringFormat=#\,##0.##}" Width="70"
+                                                ElementStyle="{StaticResource CeldaNumero}"
+                                                EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
+                            <DataGridTextColumn Header="Precio"   Binding="{Binding Precio,   StringFormat=#\,##0.##}" Width="75"
+                                                ElementStyle="{StaticResource CeldaNumero}"
+                                                EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
+                            <DataGridTextColumn Header="Importe"  Binding="{Binding Importe,  StringFormat=#\,##0.##}" Width="80"
+                                                ElementStyle="{StaticResource CeldaNumero}"
+                                                EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
                         </DataGrid.Columns>
                     </DataGrid>
 
@@ -282,13 +272,8 @@
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="70"/>
                                     <DataGridTextColumn Header="Fecha"  Binding="{Binding Fecha}"  Width="95"/>
-                                    <DataGridTextColumn Header="Precio" Binding="{Binding Precio}" Width="70">
-                                        <DataGridTextColumn.ElementStyle>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="HorizontalAlignment" Value="Right"/>
-                                            </Style>
-                                        </DataGridTextColumn.ElementStyle>
-                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Precio" Binding="{Binding Precio, StringFormat=#\,##0.##}" Width="70"
+                                                        ElementStyle="{StaticResource CeldaNumero}"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </DockPanel>
@@ -308,20 +293,10 @@
                                       FontSize="11">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Código"     Binding="{Binding Codigo}"     Width="80"/>
-                                    <DataGridTextColumn Header="Disponible" Binding="{Binding Disponible}" Width="80">
-                                        <DataGridTextColumn.ElementStyle>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="HorizontalAlignment" Value="Right"/>
-                                            </Style>
-                                        </DataGridTextColumn.ElementStyle>
-                                    </DataGridTextColumn>
-                                    <DataGridTextColumn Header="Stock"      Binding="{Binding Stock}"      Width="80">
-                                        <DataGridTextColumn.ElementStyle>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="HorizontalAlignment" Value="Right"/>
-                                            </Style>
-                                        </DataGridTextColumn.ElementStyle>
-                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Disponible" Binding="{Binding Disponible, StringFormat=#\,##0.##}" Width="80"
+                                                        ElementStyle="{StaticResource CeldaNumero}"/>
+                                    <DataGridTextColumn Header="Stock"      Binding="{Binding Stock,      StringFormat=#\,##0.##}" Width="80"
+                                                        ElementStyle="{StaticResource CeldaNumero}"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </DockPanel>
@@ -387,13 +362,9 @@
                                 </DataGridTemplateColumn.CellEditingTemplate>
                             </DataGridTemplateColumn>
 
-                            <DataGridTextColumn Header="Importe" Binding="{Binding Importe, StringFormat=F2}" Width="85">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="HorizontalAlignment" Value="Right"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Importe" Binding="{Binding Importe, StringFormat=#\,##0.##}" Width="85"
+                                                ElementStyle="{StaticResource CeldaNumero}"
+                                                EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -441,7 +412,9 @@
                             <DataGridTextColumn Header="Línea"       Binding="{Binding Linea}"       Width="50"  IsReadOnly="True"/>
                             <DataGridTextColumn Header="Código"      Binding="{Binding Codigo}"      Width="80"/>
                             <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"   IsReadOnly="True"/>
-                            <DataGridTextColumn Header="Cantidad"    Binding="{Binding Cantidad}"    Width="70"/>
+                            <DataGridTextColumn Header="Cantidad"    Binding="{Binding Cantidad, StringFormat=#\,##0.##}" Width="70"
+                                                ElementStyle="{StaticResource CeldaNumero}"
+                                                EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
                             <DataGridTextColumn Header="Fecha"       Binding="{Binding FechaStr}"    Width="95"/>
                             <DataGridTextColumn Header="Hora"        Binding="{Binding HoraStr}"     Width="75"/>
                         </DataGrid.Columns>

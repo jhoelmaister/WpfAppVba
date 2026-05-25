@@ -104,13 +104,8 @@
                     <!-- Header "Destino"/"Origen" se actualiza desde código (index=3) -->
                     <DataGridTextColumn Header="Sucursal"   Binding="{Binding SucursalDesc}"  Width="*"/>
                     <DataGridTextColumn Header="Estado"     Binding="{Binding Estado}"        Width="100"/>
-                    <DataGridTextColumn Header="Cantidad"   Binding="{Binding Cantidad}"      Width="70">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="HorizontalAlignment" Value="Right"/>
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Cantidad"   Binding="{Binding Cantidad, StringFormat=#\,##0.##}"  Width="70"
+                                        ElementStyle="{StaticResource CeldaNumero}"/>
                 </DataGrid.Columns>
             </DataGrid>
 
@@ -140,13 +135,8 @@
                             <DataGridTextColumn Header="Línea"       Binding="{Binding Linea}"       Width="40"/>
                             <DataGridTextColumn Header="Código"      Binding="{Binding Codigo}"      Width="60"/>
                             <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
-                            <DataGridTextColumn Header="Cantidad"    Binding="{Binding Cantidad}"    Width="70">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="HorizontalAlignment" Value="Right"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Cantidad"    Binding="{Binding Cantidad, StringFormat=#\,##0.##}"  Width="70"
+                                                ElementStyle="{StaticResource CeldaNumero}"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
