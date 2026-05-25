@@ -89,12 +89,15 @@ namespace WpfAppVba
             Box_Fecha.SelectedDate = mismoAnio ? ahora.Date : AppState.DataFechaFinal.Date;
             Box_Hora.Text          = mismoAnio ? ahora.ToString("HH:mm:ss") : "23:59:59";
 
-            string estadoInicial = tipoPedido == "rapido" ? "entregado" : "pendiente";
-            string cuentaInicial = tipoPedido == "rapido" ? "cancelado"  : "pendiente";
-            SeleccionarEstado(estadoInicial);
+            // Pedido nuevo sin líneas ni entregas -> nada pendiente -> estado "entregado".
+            string cuentaInicial = tipoPedido == "rapido" ? "cancelado" : "pendiente";
+            SeleccionarEstado("entregado");
             Box_Cuenta.Text  = cuentaInicial;
             Box_Emision.Text = $"{ahora:d} {ahora:HH:mm:ss}";
             Box_Edicion.Text = $"{ahora:d} {ahora:HH:mm:ss}";
+
+            _observaciones = "";
+            Box_Observaciones.Text = "";
 
             _pedidos.Clear();
             _trasacciones.Clear();
@@ -125,6 +128,7 @@ namespace WpfAppVba
 
             Box_Referencia.Text  = Sql.DocumentosPObj.ObtenerItem("referencia",  _idEditar)?.ToString() ?? "";
             _observaciones = Sql.DocumentosPObj.ObtenerItem("observacion", _idEditar)?.ToString() ?? "";
+            Box_Observaciones.Text = _observaciones;
             Box_Cuenta.Text      = Sql.DocumentosPObj.ObtenerItem("estadoC",     _idEditar)?.ToString() ?? "";
 
             var emisionObj = Sql.DocumentosPObj.ObtenerItem("emision", _idEditar);
@@ -473,6 +477,12 @@ namespace WpfAppVba
                 ActualizarDescripcionTercero();
                 _cambioDocumento = true;
             }
+        }
+
+        private void Box_Observaciones_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            _observaciones = Box_Observaciones.Text;
+            if (!_cargando) _cambioDocumento = true;
         }
 
         private void Box_Numeros_PreviewTextInput(object sender, TextCompositionEventArgs e)
