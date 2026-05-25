@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Cambiar Contraseña" Height="320" Width="380"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize"
+        ResizeMode="CanResize"
         Background="#F0F2F5">
 
     <Grid Margin="24">
@@ -18,19 +18,22 @@
                    Foreground="#1A1A2E" Margin="0,0,0,18"/>
 
         <!-- Campos -->
-        <StackPanel Grid.Row="1">
-            <TextBlock Text="Contraseña Actual:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
-            <PasswordBox x:Name="PwdActual" Height="30" FontSize="12"
-                         Padding="6,4" BorderBrush="#CCC" Margin="0,0,0,12"/>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+                <TextBlock Text="Contraseña Actual:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <PasswordBox x:Name="PwdActual" Height="30" FontSize="12"
+                             Padding="6,4" BorderBrush="#CCC" Margin="0,0,0,12"/>
 
-            <TextBlock Text="Nueva Contraseña:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
-            <PasswordBox x:Name="PwdNueva" Height="30" FontSize="12"
-                         Padding="6,4" BorderBrush="#CCC" Margin="0,0,0,12"/>
+                <TextBlock Text="Nueva Contraseña:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <PasswordBox x:Name="PwdNueva" Height="30" FontSize="12"
+                             Padding="6,4" BorderBrush="#CCC" Margin="0,0,0,12"/>
 
-            <TextBlock Text="Confirmar Nueva Contraseña:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
-            <PasswordBox x:Name="PwdConfirmar" Height="30" FontSize="12"
-                         Padding="6,4" BorderBrush="#CCC" Margin="0,0,0,0"/>
-        </StackPanel>
+                <TextBlock Text="Confirmar Nueva Contraseña:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <PasswordBox x:Name="PwdConfirmar" Height="30" FontSize="12"
+                             Padding="6,4" BorderBrush="#CCC" Margin="0,0,0,0"/>
+            </StackPanel>
+        </ScrollViewer>
 
         <!-- Botón -->
         <Button Grid.Row="2" Content="Guardar Contraseña"
