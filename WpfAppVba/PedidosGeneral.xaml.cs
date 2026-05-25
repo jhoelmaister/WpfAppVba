@@ -295,15 +295,17 @@ namespace WpfAppVba
             string? idSel = (Grid1.SelectedItem as PedidoFila)?.DocumentoP;
             AppState.EventoFormularioM = "nuevo";
             AppState.TipoPedido        = "normal";
-            // Asegurar que AppState tenga el tipo correcto antes de abrir detalle
             if (!string.IsNullOrEmpty(TipoMovimiento))
                 AppState.TipoMovimiento = TipoMovimiento;
-            new PedidosDetalle(this).ShowDialog();
+            var dlg = new PedidosDetalle(this);
+            dlg.ShowDialog();
             CargarPedidos();
-            if (idSel != null)
+            var lista = Grid1.ItemsSource as System.Collections.Generic.List<PedidoFila>;
+            // Bug 3: si se creó un nuevo documento, enfocarlo; si no, restaurar selección previa.
+            string? enfocar = dlg.DocumentoCreadoId ?? idSel;
+            if (enfocar != null)
             {
-                var item = (Grid1.ItemsSource as System.Collections.Generic.List<PedidoFila>)
-                           ?.Find(x => x.DocumentoP == idSel);
+                var item = lista?.Find(x => x.DocumentoP == enfocar);
                 if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
             }
             Grid1.Focus();

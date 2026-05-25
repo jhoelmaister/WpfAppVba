@@ -114,6 +114,14 @@ namespace WpfAppVba.Data
         {
             if (!_tabla.Columns.Contains("id") || !_tabla.Columns.Contains("estadof")) return;
 
+            // Limpia cualquier fila en memoria con el mismo id (ej. de un intento de
+            // guardado previo fallido que dejó una fila "nuevo" sin persistir).
+            if (_indiceId.TryGetValue(id.ToLower(), out var existente))
+            {
+                _tabla.Rows.Remove(existente);
+                _indiceId.Remove(id.ToLower());
+            }
+
             var row = _tabla.NewRow();
             row["id"]      = id;
             row["estadof"] = "nuevo";

@@ -259,12 +259,15 @@ namespace WpfAppVba
             AppState.EventoFormularioM = "nuevo";
             if (!string.IsNullOrEmpty(TipoMovimiento))
                 AppState.TipoMovimiento = TipoMovimiento;
-            new TraspasosDetalle(this).ShowDialog();
+            var dlg = new TraspasosDetalle(this);
+            dlg.ShowDialog();
             CargarTraspasos();
-            if (docSel != null)
+            var lista = Grid1.ItemsSource as System.Collections.Generic.List<TraspasoFila>;
+            // Bug 3: si se creó un nuevo documento, enfocarlo; si no, restaurar selección previa.
+            string? enfocar = dlg.DocumentoCreadoId ?? docSel;
+            if (enfocar != null)
             {
-                var item = (Grid1.ItemsSource as System.Collections.Generic.List<TraspasoFila>)
-                           ?.Find(x => x.DocumentoT == docSel);
+                var item = lista?.Find(x => x.DocumentoT == enfocar);
                 if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
             }
             Grid1.Focus();

@@ -19,6 +19,12 @@ namespace WpfAppVba
         private bool _editarFormulario = false;
         private List<TraspasoItemFila> _items = new();
 
+        /// <summary>
+        /// ID del documento recién creado (solo en modo "nuevo").
+        /// El padre lo lee después de ShowDialog() para enfocar la fila.
+        /// </summary>
+        public string? DocumentoCreadoId { get; private set; }
+
         public TraspasosDetalle(TraspasosGeneral? padre = null, string idEditar = "")
         {
             InitializeComponent();
@@ -584,6 +590,7 @@ namespace WpfAppVba
 
                 MessageBox.Show("Guardado exitoso.", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 _hayCambios = false;
+                DocumentoCreadoId = docT;   // Bug 3: comunica el id al padre
                 return true;
             }
             catch (Exception ex)

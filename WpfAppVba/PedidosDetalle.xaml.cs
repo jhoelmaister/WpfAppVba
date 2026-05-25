@@ -27,6 +27,12 @@ namespace WpfAppVba
         private List<EntregaItemFila>    _entregas      = new();
         private string                   _observaciones = "";
 
+        /// <summary>
+        /// ID del documento recién creado (solo en modo "nuevo").
+        /// El padre lo lee después de ShowDialog() para enfocar la fila.
+        /// </summary>
+        public string? DocumentoCreadoId { get; private set; }
+
         // Listas estáticas para ComboBox dentro de DataGrid
         public static List<string> FormasPedido     = new() { "sin factura", "con factura" };
         public static List<string> FormasTrasaccion = new() { "cheque", "efectivo", "transferencia", "pago Qr" };
@@ -961,6 +967,7 @@ namespace WpfAppVba
 
                 MessageBox.Show("Guardado exitoso.", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 _cambioDocumento = _cambioPedido = _cambioTrasaccion = _cambioEntrega = false;
+                DocumentoCreadoId = docP;   // Bug 3: comunica el id al padre
                 return true;
             }
             catch (Exception ex)
@@ -985,14 +992,24 @@ namespace WpfAppVba
                 Sql.DocumentosPObj.EstablecerItem("edicion",     docP, DateTime.Now);
                 Sql.DocumentosPObj.EstablecerItem("usuario",     docP, AppState.UsuarioActivo);
 
-                // Eliminar líneas existentes y re-crear
-                EliminarLineas(Sql.PedidosObj,      "documentoP", docP);
-                EliminarLineas(Sql.TrasaccionesObj, "documentoP", docP);
-                EliminarLineas(Sql.EntregasObj,     "documentoP", docP);
-
-                GuardarLineasPedido(docP);
-                GuardarLineasTrasaccion(docP);
-                GuardarLineasEntrega(docP);
+                // Solo eliminar y recrear las líneas que realmente cambiaron.
+                // EliminarLineas sin su correspondiente Guardar ocultaría
+                // las filas existentes sin volver a crearlas (Bug 2).
+                if (_cambioPedido)
+                {
+                    EliminarLineas(Sql.PedidosObj, "documentoP", docP);
+                    GuardarLineasPedido(docP);
+                }
+                if (_cambioTrasaccion)
+                {
+                    EliminarLineas(Sql.TrasaccionesObj, "documentoP", docP);
+                    GuardarLineasTrasaccion(docP);
+                }
+                if (_cambioEntrega)
+                {
+                    EliminarLineas(Sql.EntregasObj, "documentoP", docP);
+                    GuardarLineasEntrega(docP);
+                }
                 OrdenarTablas();
 
                 MessageBox.Show("Guardado exitoso.", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -1020,7 +1037,6 @@ namespace WpfAppVba
 
         private void GuardarLineasPedido(string docP)
         {
-            if (!_cambioPedido && AppState.EventoFormularioM == "editar") return;
             for (int i = 0; i < _pedidos.Count; i++)
             {
                 var item  = _pedidos[i];
@@ -1039,7 +1055,6 @@ namespace WpfAppVba
 
         private void GuardarLineasTrasaccion(string docP)
         {
-            if (!_cambioTrasaccion) return;
             for (int i = 0; i < _trasacciones.Count; i++)
             {
                 var item  = _trasacciones[i];
@@ -1059,7 +1074,6 @@ namespace WpfAppVba
 
         private void GuardarLineasEntrega(string docP)
         {
-            if (!_cambioEntrega) return;
             for (int i = 0; i < _entregas.Count; i++)
             {
                 var item  = _entregas[i];
