@@ -75,21 +75,13 @@
                 <TextBlock Text="Tipo de Usuario:" Style="{StaticResource LblEtiqueta}"/>
                 <TextBox x:Name="TxtTipo" Style="{StaticResource CajaLectura}"/>
 
-                <!-- Cambiar Contraseña -->
-                <TextBlock Text="Cambiar Contraseña" FontSize="13" FontWeight="SemiBold"
-                           Foreground="#1A1A2E" Margin="0,10,0,8"/>
-
-                <TextBlock Text="Contraseña Actual:" Style="{StaticResource LblEtiqueta}"/>
-                <PasswordBox x:Name="PwdActual" Height="30" FontSize="12"
-                             Padding="6,4" BorderBrush="#CCC" Margin="0,0,0,10"/>
-
-                <TextBlock Text="Nueva Contraseña:" Style="{StaticResource LblEtiqueta}"/>
-                <PasswordBox x:Name="PwdNueva" Height="30" FontSize="12"
-                             Padding="6,4" BorderBrush="#CCC" Margin="0,0,0,10"/>
-
-                <TextBlock Text="Confirmar Nueva Contraseña:" Style="{StaticResource LblEtiqueta}"/>
-                <PasswordBox x:Name="PwdConfirmar" Height="30" FontSize="12"
-                             Padding="6,4" BorderBrush="#CCC" Margin="0,0,0,10"/>
+                <!-- Botón Cambiar Contraseña -->
+                <Button x:Name="BtnCambiarContrasena" Content="🔑 Cambiar Contraseña"
+                        Height="30" FontSize="12" Padding="12,0"
+                        Background="#5C6BC0" Foreground="White"
+                        BorderThickness="0" Cursor="Hand"
+                        HorizontalAlignment="Left" Margin="0,6,0,10"
+                        Click="BtnCambiarContrasena_Click"/>
 
             </StackPanel>
         </ScrollViewer>

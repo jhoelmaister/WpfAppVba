@@ -51,8 +51,8 @@ namespace WpfAppVba
             var win = new Window
             {
                 Title                 = "Inventarios",
-                Width                 = 960,
-                Height                = 640,
+                Width                 = 520,
+                Height                = 380,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Owner                 = this,
                 Background            = System.Windows.Media.Brushes.Transparent,

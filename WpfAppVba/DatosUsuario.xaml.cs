@@ -42,11 +42,6 @@ namespace WpfAppVba
                 TxtApellidos.Text = apellidos;
                 TxtTipo.Text      = tipo;
 
-                // Limpiar campos de contraseña
-                PwdActual.Password    = "";
-                PwdNueva.Password     = "";
-                PwdConfirmar.Password = "";
-
                 // Llenar ComboBox de sucursales
                 CmbSucursal.Items.Clear();
                 int total = Sql.SucursalesObj.ContarFilas;
@@ -115,6 +110,16 @@ namespace WpfAppVba
                 CmbPeriodo.SelectedIndex = CmbPeriodo.Items.Count - 1;
         }
 
+        // ─── Cambiar contraseña ───────────────────────────────────────────────
+        private void BtnCambiarContrasena_Click(object sender, RoutedEventArgs e)
+        {
+            var win = new CambiarContrasena
+            {
+                Owner = Window.GetWindow(this)
+            };
+            win.ShowDialog();
+        }
+
         // ─── Guardar ─────────────────────────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
@@ -125,26 +130,6 @@ namespace WpfAppVba
                 // Actualizar nombres y apellidos en memoria / SQL
                 Sql.UsuariosObj.EstablecerItem("nombres",   usuId, TxtNombres.Text.Trim());
                 Sql.UsuariosObj.EstablecerItem("apellidos", usuId, TxtApellidos.Text.Trim());
-
-                // Cambio de contraseña (solo si se ingresó una nueva)
-                if (!string.IsNullOrEmpty(PwdNueva.Password) || !string.IsNullOrEmpty(PwdConfirmar.Password))
-                {
-                    string llaveActualBD = Sql.UsuariosObj.ObtenerItem("llave", usuId)?.ToString() ?? "";
-                    if (PwdActual.Password != llaveActualBD)
-                    {
-                        MessageBox.Show("La contraseña actual es incorrecta", "Datos de Usuario",
-                                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                        return;
-                    }
-                    if (PwdNueva.Password != PwdConfirmar.Password)
-                    {
-                        MessageBox.Show("La nueva contraseña y su confirmación no coinciden",
-                                        "Datos de Usuario",
-                                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                        return;
-                    }
-                    Sql.UsuariosObj.EstablecerItem("llave", usuId, PwdNueva.Password);
-                }
 
                 // Actualizar sucursal activa
                 bool sucursalCambio = false;
@@ -179,11 +164,6 @@ namespace WpfAppVba
 
                 if (periodoCambio || sucursalCambio)
                     AppLoader.ConectarDocumentos(AppState.DataFechaInicio, AppState.DataFechaFinal);
-
-                // Limpiar campos de contraseña tras guardar
-                PwdActual.Password    = "";
-                PwdNueva.Password     = "";
-                PwdConfirmar.Password = "";
 
                 MessageBox.Show("Guardado exitoso", "Datos de Usuario",
                                 MessageBoxButton.OK, MessageBoxImage.Information);

@@ -37,7 +37,7 @@
                   MouseDoubleClick="Grid1_MouseDoubleClick">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Línea"       Binding="{Binding Linea}"        Width="60"/>
-                <DataGridTextColumn Header="Código"      Binding="{Binding Id}"           Width="80"/>
+                <DataGridTextColumn Header="DocumentoI"  Binding="{Binding Id}"           Width="90"/>
                 <DataGridTextColumn Header="Fecha"       Binding="{Binding FechaStr}"     Width="150"/>
                 <DataGridTextColumn Header="Cant. Total" Binding="{Binding CantidadTotal}" Width="100">
                     <DataGridTextColumn.ElementStyle>
