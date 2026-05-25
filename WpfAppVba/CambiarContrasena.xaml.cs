@@ -33,6 +33,14 @@ namespace WpfAppVba
                 return;
             }
 
+            if (PwdNueva.Password != PwdConfirmar.Password)
+            {
+                MessageBox.Show("La nueva contraseña y su confirmación no coinciden.", "Cambiar Contraseña",
+                                MessageBoxButton.OK, MessageBoxImage.Warning);
+                PwdConfirmar.Focus();
+                return;
+            }
+
             Sql.UsuariosObj.EstablecerItem("llave", usuId, PwdNueva.Password);
             Sql.UsuariosObj.ExportarItems();
 
