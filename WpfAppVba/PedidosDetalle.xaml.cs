@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -363,8 +364,8 @@ namespace WpfAppVba
 
         private void CargarEstadosCuenta()
         {
-            if (!double.TryParse(TxtTotalImporte.Text, out double importe)) return;
-            if (!double.TryParse(TxtTotalCuenta.Text,  out double cuenta))  return;
+            if (!double.TryParse(TxtTotalImporte.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double importe)) return;
+            if (!double.TryParse(TxtTotalCuenta.Text,  NumberStyles.Any, CultureInfo.CurrentCulture, out double cuenta))  return;
 
             string nuevaCuenta;
             if (importe > 0 && cuenta == 0)         nuevaCuenta = "pendiente";
@@ -526,7 +527,7 @@ namespace WpfAppVba
             }
             else if (col == "Cantidad" && e.EditingElement is TextBox tbCant)
             {
-                if (double.TryParse(tbCant.Text, out double cant))
+                if (double.TryParse(tbCant.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double cant))
                 {
                     fila.Cantidad = cant;
                     fila.Importe  = cant * fila.Precio;
@@ -535,7 +536,7 @@ namespace WpfAppVba
             }
             else if (col == "Precio" && e.EditingElement is TextBox tbPrecio)
             {
-                if (double.TryParse(tbPrecio.Text, out double precio))
+                if (double.TryParse(tbPrecio.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double precio))
                 {
                     fila.Precio  = precio;
                     fila.Importe = fila.Cantidad * precio;
@@ -544,7 +545,7 @@ namespace WpfAppVba
             }
             else if (col == "Importe" && e.EditingElement is TextBox tbImp)
             {
-                if (double.TryParse(tbImp.Text, out double importe))
+                if (double.TryParse(tbImp.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double importe))
                 {
                     fila.Importe = importe;
                     fila.Precio  = fila.Cantidad > 0 ? importe / fila.Cantidad : 0;
@@ -553,7 +554,7 @@ namespace WpfAppVba
             }
             else if (col == "Contable" && e.EditingElement is TextBox tbCont)
             {
-                if (double.TryParse(tbCont.Text, out double cont))
+                if (double.TryParse(tbCont.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double cont))
                     fila.Contable = cont;
             }
 
@@ -699,7 +700,7 @@ namespace WpfAppVba
         // ─── Botones Cobros/Pagos ─────────────────────────────────────────────
         private void BtnNuevaLineaTrasaccion_Click(object sender, RoutedEventArgs e)
         {
-            if (!double.TryParse(TxtTotalSaldo.Text, out double saldo) || saldo <= 0)
+            if (!double.TryParse(TxtTotalSaldo.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double saldo) || saldo <= 0)
             { MessageBox.Show("La cuenta ya se canceló.", "Consola", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
 
             DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
@@ -716,7 +717,7 @@ namespace WpfAppVba
 
         private void BtnInsertarTrasaccion_Click(object sender, RoutedEventArgs e)
         {
-            if (!double.TryParse(TxtTotalSaldo.Text, out double saldo) || saldo <= 0)
+            if (!double.TryParse(TxtTotalSaldo.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double saldo) || saldo <= 0)
             { MessageBox.Show("La cuenta ya se canceló.", "Consola", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
 
             int idx = GridTrasacciones.SelectedItem is TrasaccionItemFila sel
@@ -746,7 +747,7 @@ namespace WpfAppVba
 
         private void BtnCobrarDocumento_Click(object sender, RoutedEventArgs e)
         {
-            if (!double.TryParse(TxtTotalSaldo.Text, out double saldo) || saldo <= 0)
+            if (!double.TryParse(TxtTotalSaldo.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double saldo) || saldo <= 0)
             { MessageBox.Show("La cuenta ya se canceló.", "Consola", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
 
             DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
