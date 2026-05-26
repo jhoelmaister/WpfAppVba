@@ -4,10 +4,10 @@
         Title="Inicio de Sesión" Height="450" Width="400"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Background="#F0F2F5">
+        Background="{DynamicResource ThemeBgPrincipal}">
 
     <Grid>
-        <Border Background="White" CornerRadius="8" Margin="30,30,30,30">
+        <Border Background="{DynamicResource ThemeBgSurface}" CornerRadius="8" Margin="30,30,30,30">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.15" Color="Black"/>
             </Border.Effect>
@@ -15,19 +15,19 @@
 
                 <!-- Título -->
                 <TextBlock Text="Iniciar Sesión" FontSize="20" FontWeight="Bold"
-                           Foreground="#1A1A2E" HorizontalAlignment="Center"
+                           Foreground="{DynamicResource ThemeTexto}" HorizontalAlignment="Center"
                            Margin="0,0,0,20"/>
 
                 <!-- Usuario -->
-                <TextBlock Text="Usuario" FontSize="12" Foreground="#555" Margin="0,0,0,4"/>
+                <TextBlock Text="Usuario" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,4"/>
                 <TextBox x:Name="TxtCuenta" Height="34" FontSize="13"
-                         Padding="8,6" BorderBrush="#CCC" BorderThickness="1"
+                         Padding="8,6" BorderBrush="{DynamicResource ThemeBordeInput}" BorderThickness="1"
                          Margin="0,0,0,12"/>
 
                 <!-- Contraseña -->
-                <TextBlock Text="Contraseña" FontSize="12" Foreground="#555" Margin="0,0,0,4"/>
+                <TextBlock Text="Contraseña" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,4"/>
                 <PasswordBox x:Name="TxtContrasena" Height="34" FontSize="13"
-                             Padding="8,6" BorderBrush="#CCC" BorderThickness="1"
+                             Padding="8,6" BorderBrush="{DynamicResource ThemeBordeInput}" BorderThickness="1"
                              Margin="0,0,0,16"
                              KeyDown="TxtContrasena_KeyDown"/>
 

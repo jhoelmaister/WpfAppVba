@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Movimientos de Artículo" Height="600" Width="950"
         WindowStartupLocation="CenterScreen"
-        Background="#F0F2F5">
+        Background="{DynamicResource ThemeBgPrincipal}">
 
     <Window.Resources>
         <Style x:Key="BtnBase" TargetType="Button">
@@ -18,8 +18,8 @@
             <Setter Property="Foreground" Value="White"/>
         </Style>
         <Style x:Key="BtnSecundario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
-            <Setter Property="Background" Value="#E8EDF5"/>
-            <Setter Property="Foreground" Value="#5F6368"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeBtnSecBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeBtnSecFg}"/>
         </Style>
 
         <!-- Estilo columnas numéricas -->
@@ -50,16 +50,16 @@
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Row="0" Grid.Column="0" Text="Código:" VerticalAlignment="Center"
-                       FontSize="12" Foreground="#555" Margin="0,0,6,0"/>
+                       FontSize="12" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,6,0"/>
             <TextBox x:Name="TxtCodigo" Grid.Row="0" Grid.Column="1" Height="30" FontSize="12"
-                     Padding="6,4" BorderBrush="#CCC" Margin="0,0,6,0"
+                     Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,6,0"
                      KeyDown="TxtCodigo_KeyDown"/>
             <Button Grid.Row="0" Grid.Column="2" Content="Buscar"
                     Style="{StaticResource BtnPrimario}" Margin="0,0,12,0"
                     Click="BtnBuscar_Click"/>
             <TextBlock x:Name="LblDescripcion" Grid.Row="0" Grid.Column="3"
                        VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"
-                       Foreground="#1A1A2E" TextTrimming="CharacterEllipsis"/>
+                       Foreground="{DynamicResource ThemeTexto}" TextTrimming="CharacterEllipsis"/>
         </Grid>
 
         <!-- ── DataGrid ──────────────────────────────────────── -->
@@ -67,7 +67,7 @@
                   AutoGenerateColumns="False" IsReadOnly="True"
                   SelectionMode="Single" HeadersVisibility="Column"
                   GridLinesVisibility="Horizontal"
-                  BorderBrush="#DDD" BorderThickness="1"
+                  BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
                   FontSize="11">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Línea"      Binding="{Binding Linea}"       Width="50"/>
@@ -94,16 +94,16 @@
         </DataGrid>
 
         <!-- ── Totales ───────────────────────────────────────── -->
-        <Border Grid.Row="2" Background="White" BorderBrush="#DDD" BorderThickness="1"
+        <Border Grid.Row="2" Background="{DynamicResource ThemeBgSurface}" BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
                 CornerRadius="4" Margin="0,8,0,0" Padding="12,8">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Total Compras:"  FontSize="12" Foreground="#555" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <TextBlock Text="Total Compras:"  FontSize="12" Foreground="{DynamicResource ThemeTextoSec}" VerticalAlignment="Center" Margin="0,0,4,0"/>
                 <TextBlock x:Name="TxtTotalCompras" FontSize="12" FontWeight="Bold" Foreground="#1A73E8" VerticalAlignment="Center" Margin="0,0,24,0"/>
-                <TextBlock Text="Total Ventas:"   FontSize="12" Foreground="#555" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <TextBlock Text="Total Ventas:"   FontSize="12" Foreground="{DynamicResource ThemeTextoSec}" VerticalAlignment="Center" Margin="0,0,4,0"/>
                 <TextBlock x:Name="TxtTotalVentas"  FontSize="12" FontWeight="Bold" Foreground="#D93025" VerticalAlignment="Center" Margin="0,0,24,0"/>
-                <TextBlock Text="Total Entradas:" FontSize="12" Foreground="#555" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <TextBlock Text="Total Entradas:" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}" VerticalAlignment="Center" Margin="0,0,4,0"/>
                 <TextBlock x:Name="TxtTotalEntradas" FontSize="12" FontWeight="Bold" Foreground="#2E7D32" VerticalAlignment="Center" Margin="0,0,24,0"/>
-                <TextBlock Text="Total Salidas:"  FontSize="12" Foreground="#555" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <TextBlock Text="Total Salidas:"  FontSize="12" Foreground="{DynamicResource ThemeTextoSec}" VerticalAlignment="Center" Margin="0,0,4,0"/>
                 <TextBlock x:Name="TxtTotalSalidas" FontSize="12" FontWeight="Bold" Foreground="#E65100" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>

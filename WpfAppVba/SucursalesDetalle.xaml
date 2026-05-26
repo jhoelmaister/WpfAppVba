@@ -4,7 +4,7 @@
         Title="Sucursal" Height="550" Width="420"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Background="#F0F2F5"
+        Background="{DynamicResource ThemeBgPrincipal}"
         Closing="Window_Closing">
 
     <Grid Margin="16">
@@ -15,56 +15,56 @@
 
         <!-- Título -->
         <TextBlock x:Name="LblTitulo" Grid.Row="0" FontSize="15" FontWeight="Bold"
-                   Foreground="#1A1A2E" Margin="0,0,0,12"/>
+                   Foreground="{DynamicResource ThemeTexto}" Margin="0,0,0,12"/>
 
         <!-- Campos -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
 
-                <TextBlock Text="Código:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="Código:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Codigo" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="#CCC" Margin="0,0,0,8"
+                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
                          TextChanged="Campo_TextChanged"/>
 
-                <TextBlock Text="NIT:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="NIT:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Nit" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="#CCC" Margin="0,0,0,8"
+                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
                          TextChanged="Campo_TextChanged"
                          PreviewTextInput="Box_Nit_PreviewTextInput"/>
 
-                <TextBlock Text="Descripción:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="Descripción:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Descripcion" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="#CCC" Margin="0,0,0,8"
+                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
                          TextChanged="Campo_TextChanged"
                          PreviewTextInput="Box_Descripcion_PreviewTextInput"/>
 
-                <TextBlock Text="Región (Código):" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="Región (Código):" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Referido_Codigo" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="#CCC" Margin="0,0,0,4"
+                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,4"
                          TextChanged="Box_Referido_Codigo_TextChanged"
                          PreviewTextInput="Box_Referido_Codigo_PreviewTextInput"/>
-                <TextBlock x:Name="Box_Referido_Descripcion" FontSize="11" Foreground="#777"
+                <TextBlock x:Name="Box_Referido_Descripcion" FontSize="11" Foreground="{DynamicResource ThemeTextoMuted}"
                            Margin="0,0,0,8"/>
 
-                <TextBlock Text="Teléfono:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="Teléfono:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Telefono" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="#CCC" Margin="0,0,0,8"
+                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
                          TextChanged="Campo_TextChanged"
                          PreviewTextInput="Box_Telefono_PreviewTextInput"/>
 
-                <TextBlock Text="Dirección:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="Dirección:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Direccion" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="#CCC" Margin="0,0,0,8"
+                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
                          TextChanged="Campo_TextChanged"/>
 
-                <TextBlock Text="Fecha:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="Fecha:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <DatePicker x:Name="Box_Fecha" Height="30" FontSize="12"
-                            BorderBrush="#CCC" Margin="0,0,0,8"
+                            BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
                             SelectedDateChanged="Box_Fecha_SelectedDateChanged"/>
 
-                <TextBlock Text="Observaciones:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="Observaciones:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Observacion" Height="70" FontSize="12" Padding="6,4"
-                         BorderBrush="#CCC" TextWrapping="Wrap" AcceptsReturn="True"
+                         BorderBrush="{DynamicResource ThemeBordeInput}" TextWrapping="Wrap" AcceptsReturn="True"
                          VerticalScrollBarVisibility="Auto" Margin="0,0,0,8"
                          TextChanged="Campo_TextChanged"/>
 

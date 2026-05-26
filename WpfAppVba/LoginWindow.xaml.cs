@@ -99,6 +99,13 @@ namespace WpfAppVba
                 AppState.SesionActiva   = true;
                 AppState.PeriodoActivo  = DateTime.Now.Year.ToString();
 
+                // Cargar tema preferido del usuario y aplicarlo
+                string temaUsuario = Sql.UsuariosObj.ObtenerItem("temaC", idEncontrado)?.ToString() ?? "";
+                AppState.TemaActivo = temaUsuario.Trim().ToLowerInvariant() == ThemeManager.TemaOscuro
+                    ? ThemeManager.TemaOscuro
+                    : ThemeManager.TemaClaro;
+                ThemeManager.AplicarTema(AppState.TemaActivo);
+
                 MostrarEstado("Conectando a base de datos principal...", Colors.Green);
                 await Task.Run(() => AppLoader.ConectarBases());
 

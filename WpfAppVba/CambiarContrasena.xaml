@@ -4,7 +4,7 @@
         Title="Cambiar Contraseña" Height="320" Width="380"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
-        Background="#F0F2F5">
+        Background="{DynamicResource ThemeBgPrincipal}">
 
     <Grid Margin="24">
         <Grid.RowDefinitions>
@@ -15,23 +15,23 @@
 
         <!-- Título -->
         <TextBlock Grid.Row="0" Text="Cambiar Contraseña" FontSize="15" FontWeight="Bold"
-                   Foreground="#1A1A2E" Margin="0,0,0,18"/>
+                   Foreground="{DynamicResource ThemeTexto}" Margin="0,0,0,18"/>
 
         <!-- Campos -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
             <StackPanel>
-                <TextBlock Text="Contraseña Actual:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="Contraseña Actual:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <PasswordBox x:Name="PwdActual" Height="30" FontSize="12"
-                             Padding="6,4" BorderBrush="#CCC" Margin="0,0,0,12"/>
+                             Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,12"/>
 
-                <TextBlock Text="Nueva Contraseña:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="Nueva Contraseña:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <PasswordBox x:Name="PwdNueva" Height="30" FontSize="12"
-                             Padding="6,4" BorderBrush="#CCC" Margin="0,0,0,12"/>
+                             Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,12"/>
 
-                <TextBlock Text="Confirmar Nueva Contraseña:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="Confirmar Nueva Contraseña:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <PasswordBox x:Name="PwdConfirmar" Height="30" FontSize="12"
-                             Padding="6,4" BorderBrush="#CCC" Margin="0,0,0,0"/>
+                             Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,0"/>
             </StackPanel>
         </ScrollViewer>
 

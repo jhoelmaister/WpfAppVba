@@ -4,7 +4,7 @@
         Title="Inventario / Apertura" Height="580" Width="700"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResize"
-        Background="#F0F2F5"
+        Background="{DynamicResource ThemeBgPrincipal}"
         Closing="Window_Closing">
 
     <Window.Resources>
@@ -17,7 +17,7 @@
         </Style>
         <Style x:Key="Lbl" TargetType="TextBlock">
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Foreground" Value="#555"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
             <Setter Property="Margin" Value="0,0,0,2"/>
         </Style>
     </Window.Resources>
@@ -36,7 +36,7 @@
 
         <!-- Título -->
         <TextBlock x:Name="LblTitulo" Grid.Row="0" FontSize="15" FontWeight="Bold"
-                   Foreground="#1A1A2E" Margin="0,0,0,12"/>
+                   Foreground="{DynamicResource ThemeTexto}" Margin="0,0,0,12"/>
 
         <!-- Fila de cabecera: Doc. Inventario / Fecha / Hora -->
         <Grid Grid.Row="1" Margin="0,0,0,8">
@@ -54,7 +54,7 @@
             <TextBlock Grid.Column="0" Text="Doc. Inventario:" Style="{StaticResource Lbl}"
                        VerticalAlignment="Center" Margin="0,0,6,0"/>
             <TextBox x:Name="Box_DocumentoI" Grid.Column="1" Height="28" FontSize="12"
-                     Padding="6,4" BorderBrush="#CCC"
+                     Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}"
                      TextChanged="Campo_TextChanged"
                      PreviewTextInput="Box_Numeros_PreviewTextInput"/>
 
@@ -66,7 +66,7 @@
             <TextBlock Grid.Column="6" Text="Hora (HH:mm:ss):" Style="{StaticResource Lbl}"
                        VerticalAlignment="Center" Margin="0,0,6,0"/>
             <TextBox x:Name="Box_Hora" Grid.Column="7" Height="28" FontSize="12"
-                     Padding="6,4" BorderBrush="#CCC"
+                     Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}"
                      TextChanged="Campo_TextChanged"/>
         </Grid>
 
@@ -79,13 +79,13 @@
             <TextBlock Grid.Column="0" Text="Observaciones:" Style="{StaticResource Lbl}"
                        VerticalAlignment="Center" Margin="0,0,6,0"/>
             <TextBox x:Name="Box_Observacion" Grid.Column="1" Height="28" FontSize="12"
-                     Padding="6,4" BorderBrush="#CCC"
+                     Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}"
                      TextChanged="Campo_TextChanged"/>
         </Grid>
 
         <!-- Total unidades -->
         <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,0,0,8">
-            <TextBlock Text="Total Unidades:" FontSize="12" Foreground="#555"
+            <TextBlock Text="Total Unidades:" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
                        VerticalAlignment="Center" Margin="0,0,6,0"/>
             <TextBlock x:Name="TxtTotalUnidades" FontSize="12" FontWeight="SemiBold"
                        VerticalAlignment="Center" Text="0.00"/>
@@ -101,22 +101,22 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" Text="Artículos del inventario:" FontSize="12"
-                       FontWeight="SemiBold" Foreground="#1A1A2E" VerticalAlignment="Center"/>
+                       FontWeight="SemiBold" Foreground="{DynamicResource ThemeTexto}" VerticalAlignment="Center"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button Content="Buscar Artículos" Margin="0,0,6,0"
                         Background="#1A73E8" Foreground="White"
                         Style="{StaticResource Btn}"
                         Click="BtnBuscarArticulos_Click"/>
                 <Button Content="Buscar Artículo" Margin="0,0,6,0"
-                        Background="#E8EDF5" Foreground="#5F6368"
+                        Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
                         Style="{StaticResource Btn}"
                         Click="BtnBuscarArticulo_Click"/>
                 <Button Content="Insertar" Margin="0,0,6,0"
-                        Background="#E8EDF5" Foreground="#5F6368"
+                        Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
                         Style="{StaticResource Btn}"
                         Click="BtnInsertar_Click"/>
                 <Button Content="Nueva Línea" Margin="0,0,6,0"
-                        Background="#E8EDF5" Foreground="#5F6368"
+                        Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
                         Style="{StaticResource Btn}"
                         Click="BtnNuevaLinea_Click"/>
                 <Button Content="Eliminar Línea"
@@ -134,7 +134,7 @@
                   SelectionMode="Single"
                   HeadersVisibility="Column"
                   GridLinesVisibility="Horizontal"
-                  BorderBrush="#DDD" BorderThickness="1"
+                  BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
                   FontSize="12"
                   CellEditEnding="GridItems_CellEditEnding"
                   PreparingCellForEdit="GridItems_PreparingCellForEdit">

@@ -5,7 +5,7 @@
         Title="Detalle de Pedido" Height="760" Width="1060"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResizeWithGrip"
-        Background="#F0F2F5"
+        Background="{DynamicResource ThemeBgPrincipal}"
         Closing="Window_Closing">
 
     <Window.Resources>
@@ -22,8 +22,8 @@
             <Setter Property="Foreground" Value="White"/>
         </Style>
         <Style x:Key="BtnSecundario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
-            <Setter Property="Background" Value="#E8EDF5"/>
-            <Setter Property="Foreground" Value="#5F6368"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeBtnSecBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeBtnSecFg}"/>
         </Style>
         <Style x:Key="BtnPeligro" TargetType="Button" BasedOn="{StaticResource BtnBase}">
             <Setter Property="Background" Value="#D93025"/>
@@ -37,7 +37,7 @@
         <!-- ── Etiqueta inline ────────────────────────────────────────────── -->
         <Style x:Key="Lbl" TargetType="TextBlock">
             <Setter Property="FontSize"           Value="11"/>
-            <Setter Property="Foreground"         Value="#555"/>
+            <Setter Property="Foreground"         Value="{DynamicResource ThemeTextoSec}"/>
             <Setter Property="VerticalAlignment"  Value="Center"/>
             <Setter Property="Margin"             Value="0,0,5,0"/>
         </Style>
@@ -72,7 +72,7 @@
 
         <!-- ══ Row 0: Título ══════════════════════════════════════════════ -->
         <TextBlock x:Name="LblTitulo" Grid.Row="0"
-                   FontSize="15" FontWeight="Bold" Foreground="#1A1A2E"
+                   FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTexto}"
                    Margin="0,0,0,8"/>
 
         <!-- ══ Row 1: Doc · Fecha · Hora · Estado ════════════════════════ -->
@@ -93,7 +93,7 @@
 
             <TextBlock Grid.Column="0"  Text="Doc. Pedido:" Style="{StaticResource Lbl}"/>
             <TextBox   Grid.Column="1"  x:Name="Box_DocumentoP" Height="28" FontSize="12"
-                       Padding="5,4" BorderBrush="#CCC"
+                       Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
                        PreviewTextInput="Box_Numeros_PreviewTextInput"
                        TextChanged="Campo_TextChanged"/>
 
@@ -103,7 +103,7 @@
 
             <TextBlock Grid.Column="6"  Text="Hora:" Style="{StaticResource Lbl}"/>
             <TextBox   Grid.Column="7"  x:Name="Box_Hora" Height="28" FontSize="12"
-                       Padding="5,4" BorderBrush="#CCC"
+                       Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
                        TextChanged="Campo_TextChanged"/>
 
             <TextBlock Grid.Column="9"  Text="Estado:" Style="{StaticResource Lbl}"/>
@@ -127,7 +127,7 @@
 
             <TextBlock Grid.Column="0" Text="Tercero:" Style="{StaticResource Lbl}"/>
             <TextBox   Grid.Column="1" x:Name="Box_Tercero_Identificador"
-                       Height="28" FontSize="12" Padding="5,4" BorderBrush="#CCC"
+                       Height="28" FontSize="12" Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
                        PreviewTextInput="Box_Numeros_PreviewTextInput"
                        TextChanged="Box_Tercero_Identificador_TextChanged"/>
             <Button    Grid.Column="2" Content="..." Width="30" Height="28"
@@ -151,13 +151,13 @@
 
             <TextBlock Grid.Column="0" Text="Referencia:" Style="{StaticResource Lbl}"/>
             <TextBox   Grid.Column="1" x:Name="Box_Referencia"
-                       Height="28" FontSize="12" Padding="5,4" BorderBrush="#CCC"
+                       Height="28" FontSize="12" Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
                        TextChanged="Campo_TextChanged"/>
 
             <TextBlock Grid.Column="3" Text="Cuenta:" Style="{StaticResource Lbl}"/>
             <TextBox   Grid.Column="4" x:Name="Box_Cuenta"
-                       Height="28" FontSize="12" Padding="5,4" BorderBrush="#CCC"
-                       IsReadOnly="True" Background="#F5F5F5" Foreground="#444"/>
+                       Height="28" FontSize="12" Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
+                       IsReadOnly="True" Background="{DynamicResource ThemeBgReadOnly}" Foreground="{DynamicResource ThemeTextoSec}"/>
         </Grid>
 
         <!-- ══ Row 4: Emisión / Edición ══════════════════════════════════ -->
@@ -207,7 +207,7 @@
                               SelectionMode="Single"
                               HeadersVisibility="Column"
                               GridLinesVisibility="Horizontal"
-                              BorderBrush="#DDD" BorderThickness="1"
+                              BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
                               FontSize="12"
                               CellEditEnding="GridItems_CellEditEnding"
                               PreparingCellForEdit="GridItems_PreparingCellForEdit"
@@ -261,7 +261,7 @@
                         <!-- Historial de Precios -->
                         <DockPanel Grid.Column="0">
                             <TextBlock DockPanel.Dock="Top" Text="Historial de Precios"
-                                       FontSize="11" FontWeight="SemiBold" Foreground="#555"
+                                       FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextoSec}"
                                        Margin="0,0,0,2"/>
                             <DataGrid x:Name="GridPrecios"
                                       AutoGenerateColumns="False"
@@ -269,7 +269,7 @@
                                       IsReadOnly="True"
                                       HeadersVisibility="Column"
                                       GridLinesVisibility="Horizontal"
-                                      BorderBrush="#DDD" BorderThickness="1"
+                                      BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
                                       FontSize="11">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="70"/>
@@ -283,7 +283,7 @@
                         <!-- Stock -->
                         <DockPanel Grid.Column="2">
                             <TextBlock DockPanel.Dock="Top" Text="Stock"
-                                       FontSize="11" FontWeight="SemiBold" Foreground="#555"
+                                       FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextoSec}"
                                        Margin="0,0,0,2"/>
                             <DataGrid x:Name="GridStock"
                                       AutoGenerateColumns="False"
@@ -291,7 +291,7 @@
                                       IsReadOnly="True"
                                       HeadersVisibility="Column"
                                       GridLinesVisibility="Horizontal"
-                                      BorderBrush="#DDD" BorderThickness="1"
+                                      BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
                                       FontSize="11">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Código"     Binding="{Binding Codigo}"     Width="*"/>
@@ -306,10 +306,10 @@
                         <!-- Observaciones -->
                         <DockPanel Grid.Column="4">
                             <TextBlock DockPanel.Dock="Top" Text="Observaciones"
-                                       FontSize="11" FontWeight="SemiBold" Foreground="#555"
+                                       FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextoSec}"
                                        Margin="0,0,0,2"/>
                             <TextBox x:Name="Box_Observaciones" FontSize="12"
-                                     Padding="5,4" BorderBrush="#DDD"
+                                     Padding="5,4" BorderBrush="{DynamicResource ThemeBorde}"
                                      AcceptsReturn="True"
                                      TextWrapping="Wrap"
                                      VerticalScrollBarVisibility="Auto"
@@ -330,7 +330,7 @@
                     <!-- Cabecera -->
                     <Grid Grid.Row="0" Margin="0,4,0,4">
                         <TextBlock Text="Transacciones:" FontSize="13" FontWeight="SemiBold"
-                                   Foreground="#1A1A2E" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource ThemeTexto}" VerticalAlignment="Center"
                                    HorizontalAlignment="Left"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Content="Nueva Línea"    Style="{StaticResource BtnSecundario}"
@@ -352,7 +352,7 @@
                               SelectionMode="Single"
                               HeadersVisibility="Column"
                               GridLinesVisibility="Horizontal"
-                              BorderBrush="#DDD" BorderThickness="1"
+                              BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
                               FontSize="12"
                               CellEditEnding="GridTrasacciones_CellEditEnding">
                         <DataGrid.Columns>
@@ -396,7 +396,7 @@
                     <!-- Cabecera -->
                     <Grid Grid.Row="0" Margin="0,4,0,4">
                         <TextBlock Text="Entregas:" FontSize="13" FontWeight="SemiBold"
-                                   Foreground="#1A1A2E" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource ThemeTexto}" VerticalAlignment="Center"
                                    HorizontalAlignment="Left"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Content="Importar Artículos"  Style="{StaticResource BtnPrimario}"
@@ -419,7 +419,7 @@
                               SelectionMode="Single"
                               HeadersVisibility="Column"
                               GridLinesVisibility="Horizontal"
-                              BorderBrush="#DDD" BorderThickness="1"
+                              BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
                               FontSize="12"
                               CellEditEnding="GridEntregas_CellEditEnding"
                               PreparingCellForEdit="GridEntregas_PreparingCellForEdit">
@@ -455,16 +455,16 @@
                 <TextBlock x:Name="TxtUnidadesDiferentes" FontSize="12" FontWeight="Bold"
                            Foreground="#1A73E8" VerticalAlignment="Center" Margin="0,0,12,0"/>
                 <TextBlock Text="Peq:" Style="{StaticResource Lbl}"/>
-                <TextBlock x:Name="TxtTotalPeq" FontSize="12" Foreground="#555"
+                <TextBlock x:Name="TxtTotalPeq" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
                            VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <TextBlock Text="Med:" Style="{StaticResource Lbl}"/>
-                <TextBlock x:Name="TxtTotalMed" FontSize="12" Foreground="#555"
+                <TextBlock x:Name="TxtTotalMed" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
                            VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <TextBlock Text="Gra:" Style="{StaticResource Lbl}"/>
-                <TextBlock x:Name="TxtTotalGra" FontSize="12" Foreground="#555"
+                <TextBlock x:Name="TxtTotalGra" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
                            VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <TextBlock Text="Otros:" Style="{StaticResource Lbl}"/>
-                <TextBlock x:Name="TxtTotalOtros" FontSize="12" Foreground="#555"
+                <TextBlock x:Name="TxtTotalOtros" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
                            VerticalAlignment="Center"/>
             </WrapPanel>
 

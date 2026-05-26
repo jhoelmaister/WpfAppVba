@@ -1,36 +1,36 @@
 <UserControl x:Class="WpfAppVba.Configuracion"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Background="#F0F2F5">
+        Background="{DynamicResource ThemeBgPrincipal}">
 
     <UserControl.Resources>
         <Style x:Key="LblEtiqueta" TargetType="TextBlock">
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Foreground" Value="#555"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
             <Setter Property="Margin" Value="0,0,0,2"/>
         </Style>
         <Style x:Key="CajaLectura" TargetType="TextBox">
             <Setter Property="Height" Value="30"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Padding" Value="6,4"/>
-            <Setter Property="BorderBrush" Value="#CCC"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
             <Setter Property="Margin" Value="0,0,0,10"/>
             <Setter Property="IsEnabled" Value="False"/>
-            <Setter Property="Background" Value="#F5F5F5"/>
-            <Setter Property="Foreground" Value="#555"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeBgReadOnly}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
         </Style>
         <Style x:Key="CajaEditable" TargetType="TextBox">
             <Setter Property="Height" Value="30"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Padding" Value="6,4"/>
-            <Setter Property="BorderBrush" Value="#CCC"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
             <Setter Property="Margin" Value="0,0,0,10"/>
         </Style>
         <!-- Encabezado de sección -->
         <Style x:Key="LblSeccion" TargetType="TextBlock">
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#1A1A2E"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
             <Setter Property="Margin" Value="0,12,0,4"/>
         </Style>
     </UserControl.Resources>
@@ -44,7 +44,7 @@
 
         <!-- Título -->
         <TextBlock Grid.Row="0" Text="Configuración" FontSize="15" FontWeight="Bold"
-                   Foreground="#1A1A2E" Margin="0,0,0,14"/>
+                   Foreground="{DynamicResource ThemeTexto}" Margin="0,0,0,14"/>
 
         <!-- Campos -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -52,13 +52,20 @@
 
                 <!-- ══ Sección: General ══════════════════════════════════════ -->
                 <TextBlock Text="General" Style="{StaticResource LblSeccion}"/>
-                <Separator Background="#DDD" Margin="0,0,0,10"/>
+                <Separator Background="{DynamicResource ThemeBorde}" Margin="0,0,0,10"/>
 
-                <!-- (espacio reservado para futuras opciones generales) -->
+                <!-- Tema -->
+                <TextBlock Text="Tema:" Style="{StaticResource LblEtiqueta}"/>
+                <ComboBox x:Name="CmbTema" Height="30" FontSize="12"
+                          Padding="4,0" Margin="0,0,0,10"
+                          SelectionChanged="CmbTema_SelectionChanged">
+                    <ComboBoxItem Content="claro"/>
+                    <ComboBoxItem Content="oscuro"/>
+                </ComboBox>
 
                 <!-- ══ Sección: Mi Cuenta ════════════════════════════════════ -->
                 <TextBlock Text="Mi Cuenta" Style="{StaticResource LblSeccion}"/>
-                <Separator Background="#DDD" Margin="0,0,0,10"/>
+                <Separator Background="{DynamicResource ThemeBorde}" Margin="0,0,0,10"/>
 
                 <!-- Cuenta (solo lectura) -->
                 <TextBlock Text="Cuenta:" Style="{StaticResource LblEtiqueta}"/>

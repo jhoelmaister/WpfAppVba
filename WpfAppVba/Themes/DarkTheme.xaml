@@ -1,0 +1,32 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ── Fondos ───────────────────────────────────────────────────── -->
+    <SolidColorBrush x:Key="ThemeBgPrincipal"  Color="#1A1D2E"/>
+    <SolidColorBrush x:Key="ThemeBgSurface"    Color="#252A40"/>
+    <SolidColorBrush x:Key="ThemeBgContenido"  Color="#1A1D2E"/>
+    <SolidColorBrush x:Key="ThemeBgReadOnly"   Color="#2D3152"/>
+    <SolidColorBrush x:Key="ThemeInputBg"      Color="#2D3152"/>
+
+    <!-- ── Texto ────────────────────────────────────────────────────── -->
+    <SolidColorBrush x:Key="ThemeTexto"        Color="#E8EAED"/>
+    <SolidColorBrush x:Key="ThemeTextoSec"     Color="#9AA3B8"/>
+    <SolidColorBrush x:Key="ThemeTextoMuted"   Color="#6B7280"/>
+
+    <!-- ── Bordes ───────────────────────────────────────────────────── -->
+    <SolidColorBrush x:Key="ThemeBorde"        Color="#3A3F5C"/>
+    <SolidColorBrush x:Key="ThemeBordeInput"   Color="#3A3F5C"/>
+
+    <!-- ── Botones secundarios ─────────────────────────────────────── -->
+    <SolidColorBrush x:Key="ThemeBtnSecBg"     Color="#2D3152"/>
+    <SolidColorBrush x:Key="ThemeBtnSecFg"     Color="#9AA3B8"/>
+
+    <!-- ── Tabs ─────────────────────────────────────────────────────── -->
+    <SolidColorBrush x:Key="ThemeTabSelBg"     Color="#252A40"/>
+    <SolidColorBrush x:Key="ThemeTabHoverBg"   Color="#2D3152"/>
+
+    <!-- ── DataGrid ─────────────────────────────────────────────────── -->
+    <SolidColorBrush x:Key="ThemeDataGridBg"   Color="#252A40"/>
+    <SolidColorBrush x:Key="ThemeDataGridAltBg" Color="#2D3152"/>
+
+</ResourceDictionary>

@@ -4,7 +4,7 @@
         Title="Artículo" Height="560" Width="480"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Background="#F0F2F5"
+        Background="{DynamicResource ThemeBgPrincipal}"
         Closing="Window_Closing">
 
     <Grid Margin="16">
@@ -16,34 +16,34 @@
 
         <!-- Título -->
         <TextBlock x:Name="LblTitulo" Grid.Row="0" FontSize="15" FontWeight="Bold"
-                   Foreground="#1A1A2E" Margin="0,0,0,12"/>
+                   Foreground="{DynamicResource ThemeTexto}" Margin="0,0,0,12"/>
 
         <!-- Campos -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,0">
             <StackPanel>
 
                 <!-- ID (siempre deshabilitado) -->
-                <TextBlock Text="ID:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="ID:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Identificador" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="#CCC" Margin="0,0,0,8" IsEnabled="False"
-                         Background="#F5F5F5" Foreground="#888"
+                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8" IsEnabled="False"
+                         Background="{DynamicResource ThemeBgReadOnly}" Foreground="{DynamicResource ThemeTextoMuted}"
                          TextChanged="Campo_TextChanged"/>
 
                 <!-- Código -->
-                <TextBlock Text="Código:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="Código:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Codigo" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="#CCC" Margin="0,0,0,8"
+                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
                          TextChanged="Campo_TextChanged"/>
 
                 <!-- Índice -->
-                <TextBlock Text="Índice:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="Índice:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Indice" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="#CCC" Margin="0,0,0,8"
+                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
                          TextChanged="Campo_TextChanged"
                          PreviewTextInput="Box_Numeros_PreviewTextInput"/>
 
                 <!-- Familia -->
-                <TextBlock Text="Familia (Código):" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="Familia (Código):" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <Grid Margin="0,0,0,4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="100"/>
@@ -51,64 +51,64 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBox x:Name="Box_Identificador_Familia" Grid.Column="0" Height="30" FontSize="12"
-                             Padding="6,4" BorderBrush="#CCC" Margin="0,0,6,0"
+                             Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,6,0"
                              TextChanged="Box_Familia_TextChanged"
                              PreviewTextInput="Box_Numeros_PreviewTextInput"/>
                     <TextBlock x:Name="Box_Familia_Descripcion" Grid.Column="1"
-                               VerticalAlignment="Center" FontSize="11" Foreground="#777"/>
+                               VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource ThemeTextoMuted}"/>
                     <Button x:Name="BtnVerFamilias" Grid.Column="2" Content="Ver Familias" Height="30" Padding="8,0"
                             FontSize="11" BorderThickness="0" Cursor="Hand"
-                            Background="#E8EDF5" Foreground="#5F6368"
+                            Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
                             Click="BtnVerFamilias_Click"/>
                 </Grid>
 
                 <!-- Industria -->
-                <TextBlock Text="Industria (Código):" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="Industria (Código):" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <Grid Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="100"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <TextBox x:Name="Box_Identificador_Industria" Grid.Column="0" Height="30" FontSize="12"
-                             Padding="6,4" BorderBrush="#CCC" Margin="0,0,6,0"
+                             Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,6,0"
                              TextChanged="Box_Industria_TextChanged"
                              PreviewTextInput="Box_Numeros_PreviewTextInput"/>
                     <TextBlock x:Name="Box_Industria_Descripcion" Grid.Column="1"
-                               VerticalAlignment="Center" FontSize="11" Foreground="#777"/>
+                               VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource ThemeTextoMuted}"/>
                 </Grid>
 
                 <!-- Categoría -->
-                <TextBlock Text="Categoría (Código):" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="Categoría (Código):" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <Grid Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="100"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <TextBox x:Name="Box_Identificador_Categoria" Grid.Column="0" Height="30" FontSize="12"
-                             Padding="6,4" BorderBrush="#CCC" Margin="0,0,6,0"
+                             Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,6,0"
                              TextChanged="Box_Categoria_TextChanged"
                              PreviewTextInput="Box_Numeros_PreviewTextInput"/>
                     <TextBlock x:Name="Box_Categoria_Descripcion" Grid.Column="1"
-                               VerticalAlignment="Center" FontSize="11" Foreground="#777"/>
+                               VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource ThemeTextoMuted}"/>
                 </Grid>
 
                 <!-- Descripción -->
-                <TextBlock Text="Descripción:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="Descripción:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Descripcion" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="#CCC" Margin="0,0,0,8"
+                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
                          TextChanged="Campo_TextChanged"
                          PreviewTextInput="Box_Letras_PreviewTextInput"/>
 
                 <!-- Modelo -->
-                <TextBlock Text="Modelo:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="Modelo:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Modelo" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="#CCC" Margin="0,0,0,8"
+                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
                          TextChanged="Campo_TextChanged"/>
 
                 <!-- Observaciones -->
-                <TextBlock Text="Observaciones:" FontSize="11" Foreground="#555" Margin="0,0,0,2"/>
+                <TextBlock Text="Observaciones:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Observacion" Height="60" FontSize="12" Padding="6,4"
-                         BorderBrush="#CCC" TextWrapping="Wrap" AcceptsReturn="True"
+                         BorderBrush="{DynamicResource ThemeBordeInput}" TextWrapping="Wrap" AcceptsReturn="True"
                          VerticalScrollBarVisibility="Auto" Margin="0,0,0,8"
                          TextChanged="Campo_TextChanged"/>
 
@@ -119,7 +119,7 @@
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
             <Button x:Name="BtnVerMovimientos" Content="📊 Ver Movimientos"
                     Height="32" Padding="14,0" FontSize="12"
-                    Background="#E8EDF5" Foreground="#1A73E8"
+                    Background="{DynamicResource ThemeBtnSecBg}" Foreground="#1A73E8"
                     BorderThickness="0" Cursor="Hand"
                     Visibility="Collapsed"
                     Click="BtnVerMovimientos_Click"/>

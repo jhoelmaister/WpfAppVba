@@ -16,6 +16,7 @@ namespace WpfAppVba.Data
         public static long   SucursalActiva    { get; set; }
         public static long   UsuarioActivo     { get; set; }
         public static long   AperturaIdActiva  { get; set; }
+        public static string TemaActivo        { get; set; } = "claro";
 
         // ─── Rango de fechas activo ───────────────────────────────────────────
         public static DateTime DataFechaInicio { get; set; }

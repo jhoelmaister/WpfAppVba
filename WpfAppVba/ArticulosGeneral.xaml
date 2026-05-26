@@ -1,7 +1,7 @@
 <UserControl x:Class="WpfAppVba.ArticulosGeneral"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Background="#F0F2F5">
+        Background="{DynamicResource ThemeBgPrincipal}">
 
     <UserControl.Resources>
         <Style x:Key="BtnBase" TargetType="Button">
@@ -16,8 +16,8 @@
             <Setter Property="Foreground" Value="White"/>
         </Style>
         <Style x:Key="BtnSecundario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
-            <Setter Property="Background" Value="#E8EDF5"/>
-            <Setter Property="Foreground" Value="#5F6368"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeBtnSecBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeBtnSecFg}"/>
         </Style>
         <Style x:Key="BtnPeligro" TargetType="Button" BasedOn="{StaticResource BtnBase}">
             <Setter Property="Background" Value="#D93025"/>
@@ -36,7 +36,7 @@
         </Grid.ColumnDefinitions>
 
         <!-- Panel izquierdo: TreeView -->
-        <Border Grid.Column="0" Margin="0,0,8,0" BorderBrush="#DDD" BorderThickness="1" Background="White">
+        <Border Grid.Column="0" Margin="0,0,8,0" BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1" Background="{DynamicResource ThemeBgSurface}">
             <TreeView x:Name="Tree1"
                       SelectedItemChanged="Tree1_SelectedItemChanged"
                       FontSize="12"/>
@@ -58,7 +58,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBox x:Name="TxtBuscar" Grid.Column="0" Height="28" FontSize="12"
-                         Padding="6,4" BorderBrush="#CCC" Margin="0,0,6,0"
+                         Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,6,0"
                          KeyDown="TxtBuscar_KeyDown"/>
                 <Button Content="Buscar" Grid.Column="1"
                         Style="{StaticResource BtnSecundario}"
@@ -72,7 +72,7 @@
                       SelectionMode="Single"
                       HeadersVisibility="Column"
                       GridLinesVisibility="Horizontal"
-                      BorderBrush="#DDD" BorderThickness="1"
+                      BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
                       FontSize="12"
                       MouseDoubleClick="Grid1_MouseDoubleClick">
 

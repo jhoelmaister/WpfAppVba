@@ -36,11 +36,18 @@ namespace WpfAppVba
                 string apellidos= Sql.UsuariosObj.ObtenerItem("apellidos", usuId)?.ToString() ?? "";
                 string sucId    = Sql.UsuariosObj.ObtenerItem("sucursal",  usuId)?.ToString() ?? "";
                 string tipo     = Sql.UsuariosObj.ObtenerItem("tipo",      usuId)?.ToString() ?? "";
+                string temaDb   = Sql.UsuariosObj.ObtenerItem("temaC",     usuId)?.ToString() ?? "";
 
                 TxtCuenta.Text    = cuenta;
                 TxtNombres.Text   = nombres;
                 TxtApellidos.Text = apellidos;
                 TxtTipo.Text      = tipo;
+
+                // Tema: si el valor de BD no es válido, usar el tema activo o "claro"
+                string temaInicial = temaDb.Trim().ToLowerInvariant() == ThemeManager.TemaOscuro
+                    ? ThemeManager.TemaOscuro
+                    : ThemeManager.TemaClaro;
+                SeleccionarTema(temaInicial);
 
                 // Llenar ComboBox de sucursales
                 CmbSucursal.Items.Clear();
@@ -110,6 +117,25 @@ namespace WpfAppVba
                 CmbPeriodo.SelectedIndex = CmbPeriodo.Items.Count - 1;
         }
 
+        // ─── Tema ─────────────────────────────────────────────────────────────
+        private void SeleccionarTema(string tema)
+        {
+            foreach (ComboBoxItem item in CmbTema.Items)
+            {
+                if (item.Content?.ToString() == tema)
+                { CmbTema.SelectedItem = item; return; }
+            }
+            if (CmbTema.Items.Count > 0) CmbTema.SelectedIndex = 0;
+        }
+
+        private void CmbTema_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_cargando) return;
+            string tema = (CmbTema.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? ThemeManager.TemaClaro;
+            ThemeManager.AplicarTema(tema);
+            AppState.TemaActivo = tema;
+        }
+
         // ─── Cambiar contraseña ───────────────────────────────────────────────
         private void BtnCambiarContrasena_Click(object sender, RoutedEventArgs e)
         {
@@ -130,6 +156,12 @@ namespace WpfAppVba
                 // Actualizar nombres y apellidos en memoria / SQL
                 Sql.UsuariosObj.EstablecerItem("nombres",   usuId, TxtNombres.Text.Trim());
                 Sql.UsuariosObj.EstablecerItem("apellidos", usuId, TxtApellidos.Text.Trim());
+
+                // Persistir tema seleccionado
+                string temaSeleccionado = (CmbTema.SelectedItem as ComboBoxItem)?.Content?.ToString()
+                                          ?? ThemeManager.TemaClaro;
+                Sql.UsuariosObj.EstablecerItem("temaC", usuId, temaSeleccionado);
+                AppState.TemaActivo = temaSeleccionado;
 
                 // Actualizar sucursal activa
                 bool sucursalCambio = false;

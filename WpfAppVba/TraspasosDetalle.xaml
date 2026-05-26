@@ -4,7 +4,7 @@
         Title="Detalle de Traspaso" Height="740" Width="860"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResizeWithGrip"
-        Background="#F0F2F5"
+        Background="{DynamicResource ThemeBgPrincipal}"
         Closing="Window_Closing">
 
     <Window.Resources>
@@ -20,8 +20,8 @@
             <Setter Property="Foreground" Value="White"/>
         </Style>
         <Style x:Key="BtnSecundario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
-            <Setter Property="Background" Value="#E8EDF5"/>
-            <Setter Property="Foreground" Value="#5F6368"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeBtnSecBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeBtnSecFg}"/>
         </Style>
         <Style x:Key="BtnPeligro" TargetType="Button" BasedOn="{StaticResource BtnBase}">
             <Setter Property="Background" Value="#D93025"/>
@@ -29,7 +29,7 @@
         </Style>
         <Style x:Key="Lbl" TargetType="TextBlock">
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Foreground" Value="#555"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Margin" Value="0,0,5,0"/>
         </Style>
@@ -58,7 +58,7 @@
 
         <!-- ── 0: Título ──────────────────────────────────────────────────── -->
         <TextBlock x:Name="LblTitulo" Grid.Row="0"
-                   FontSize="15" FontWeight="Bold" Foreground="#1A1A2E"
+                   FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTexto}"
                    Margin="0,0,0,10"/>
 
         <!-- ── 1: Doc · Fecha · Hora · Estado ─────────────────────────────── -->
@@ -79,7 +79,7 @@
 
             <TextBlock Grid.Column="0"  Text="Doc. Traspaso:" Style="{StaticResource Lbl}"/>
             <TextBox   Grid.Column="1"  x:Name="Box_DocumentoT" Height="28" FontSize="12"
-                       Padding="5,4" BorderBrush="#CCC"
+                       Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
                        PreviewTextInput="Box_Numeros_PreviewTextInput"
                        TextChanged="Campo_TextChanged"/>
 
@@ -89,7 +89,7 @@
 
             <TextBlock Grid.Column="6"  Text="Hora:" Style="{StaticResource Lbl}"/>
             <TextBox   Grid.Column="7"  x:Name="Box_Hora" Height="28" FontSize="12"
-                       Padding="5,4" BorderBrush="#CCC"
+                       Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
                        TextChanged="Campo_TextChanged"/>
 
             <TextBlock Grid.Column="9"  Text="Estado:" Style="{StaticResource Lbl}"/>
@@ -113,7 +113,7 @@
 
             <TextBlock Grid.Column="0" Text="Sucursal:" Style="{StaticResource Lbl}"/>
             <TextBox   Grid.Column="1" x:Name="Box_Sucursal_Identificador"
-                       Height="28" FontSize="12" Padding="5,4" BorderBrush="#CCC"
+                       Height="28" FontSize="12" Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
                        PreviewTextInput="Box_Numeros_PreviewTextInput"
                        TextChanged="Box_Sucursal_Identificador_TextChanged"/>
             <Button    Grid.Column="2" x:Name="BtnBuscarSucursal"
@@ -134,17 +134,17 @@
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" Text="Referencia:" Style="{StaticResource Lbl}"/>
             <TextBox   Grid.Column="1" x:Name="Box_Referencia"
-                       Height="28" FontSize="12" Padding="5,4" BorderBrush="#CCC"
+                       Height="28" FontSize="12" Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
                        TextChanged="Campo_TextChanged"/>
         </Grid>
 
         <!-- ── 4: Emisión / Edición (solo lectura) ──────────────────────────── -->
         <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,0,0,8">
             <TextBlock Text="Emisión:" Style="{StaticResource LblMuted}"/>
-            <TextBlock x:Name="TxtEmision" FontSize="10" Foreground="#555"
+            <TextBlock x:Name="TxtEmision" FontSize="10" Foreground="{DynamicResource ThemeTextoSec}"
                        VerticalAlignment="Center" Margin="0,0,20,0"/>
             <TextBlock Text="Edición:" Style="{StaticResource LblMuted}"/>
-            <TextBlock x:Name="TxtEdicion" FontSize="10" Foreground="#555"
+            <TextBlock x:Name="TxtEdicion" FontSize="10" Foreground="{DynamicResource ThemeTextoSec}"
                        VerticalAlignment="Center"/>
         </StackPanel>
 
@@ -158,7 +158,7 @@
                        VerticalAlignment="Top" Margin="0,5,5,0"/>
             <TextBox   Grid.Column="1" x:Name="Box_Observaciones"
                        Height="44" FontSize="12" Padding="5,4"
-                       BorderBrush="#CCC" TextWrapping="Wrap" AcceptsReturn="True"
+                       BorderBrush="{DynamicResource ThemeBordeInput}" TextWrapping="Wrap" AcceptsReturn="True"
                        VerticalScrollBarVisibility="Auto"
                        TextChanged="Campo_TextChanged"/>
         </Grid>
@@ -173,7 +173,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" Text="Artículos del traspaso:"
-                       FontSize="13" FontWeight="SemiBold" Foreground="#1A1A2E"
+                       FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTexto}"
                        VerticalAlignment="Center"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button x:Name="BtnImportarArticulos"
@@ -208,7 +208,7 @@
                       SelectionMode="Single"
                       HeadersVisibility="Column"
                       GridLinesVisibility="Horizontal"
-                      BorderBrush="#DDD" BorderThickness="1"
+                      BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
                       FontSize="12"
                       SelectionChanged="GridItems_SelectionChanged"
                       CellEditEnding="GridItems_CellEditEnding"
@@ -225,7 +225,7 @@
 
             <!-- Panel stock del artículo seleccionado (Lista3) -->
             <Border Grid.Column="1" Margin="6,0,0,0"
-                    BorderBrush="#DDD" BorderThickness="1" Background="White">
+                    BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1" Background="{DynamicResource ThemeBgSurface}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>

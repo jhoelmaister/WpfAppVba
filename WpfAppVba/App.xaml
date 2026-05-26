@@ -1,62 +1,138 @@
-﻿<Application x:Class="WpfAppVba.App"
+<Application x:Class="WpfAppVba.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:WpfAppVba"
              StartupUri="LoginWindow.xaml">
     <Application.Resources>
+        <ResourceDictionary>
 
-        <!--
-            Mantener el color de selección del DataGrid cuando pierde el foco.
-            Por defecto WPF cambia a gris (InactiveSelectionHighlight).
-            Al igualar esos brushes con el color activo del sistema, la fila
-            seleccionada conserva exactamente el mismo color azul.
-        -->
-        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"
-                         Color="{x:Static SystemColors.HighlightColor}"/>
-        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}"
-                         Color="{x:Static SystemColors.HighlightTextColor}"/>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Tema inicial: claro. ThemeManager.AplicarTema lo reemplaza en runtime. -->
+                <ResourceDictionary Source="Themes/LightTheme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
 
-        <!-- Altura de fila global para todos los DataGrids -->
-        <Style TargetType="{x:Type DataGrid}">
-            <Setter Property="RowHeight" Value="28"/>
-        </Style>
+            <!--
+                Mantener el color de selección del DataGrid cuando pierde el foco.
+                Por defecto WPF cambia a gris (InactiveSelectionHighlight).
+                Al igualar esos brushes con el color activo del sistema, la fila
+                seleccionada conserva exactamente el mismo color azul.
+            -->
+            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"
+                             Color="{x:Static SystemColors.HighlightColor}"/>
+            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}"
+                             Color="{x:Static SystemColors.HighlightTextColor}"/>
 
-        <!-- Texto de cada celda centrado verticalmente (equivalente a align-items: center) -->
-        <Style TargetType="{x:Type DataGridRow}">
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-        </Style>
-        <Style TargetType="{x:Type DataGridCell}">
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <!-- Template explícito para garantizar que ContentPresenter quede centrado -->
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type DataGridCell}">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter VerticalAlignment="Center"
-                                              Margin="4,0"
-                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+            <!-- ════════════════════════════════════════════════════════════ -->
+            <!-- Estilos globales (implícitos) — responden al tema activo     -->
+            <!-- ════════════════════════════════════════════════════════════ -->
 
-        <!--
-            Estilos para columnas numéricas (float / double):
-            CeldaNumero        → alinea el texto a la derecha en modo lectura.
-            CeldaNumeroEditar  → alinea el texto a la derecha al editar la celda.
-        -->
-        <Style x:Key="CeldaNumero" TargetType="TextBlock">
-            <Setter Property="HorizontalAlignment" Value="Right"/>
-            <Setter Property="TextAlignment"       Value="Right"/>
-        </Style>
-        <Style x:Key="CeldaNumeroEditar" TargetType="TextBox">
-            <Setter Property="HorizontalContentAlignment" Value="Right"/>
-            <Setter Property="TextAlignment"              Value="Right"/>
-        </Style>
+            <!-- DataGrid -->
+            <Style TargetType="{x:Type DataGrid}">
+                <Setter Property="RowHeight"               Value="28"/>
+                <Setter Property="Background"              Value="{DynamicResource ThemeDataGridBg}"/>
+                <Setter Property="Foreground"              Value="{DynamicResource ThemeTexto}"/>
+                <Setter Property="RowBackground"           Value="{DynamicResource ThemeDataGridBg}"/>
+                <Setter Property="AlternatingRowBackground" Value="{DynamicResource ThemeDataGridAltBg}"/>
+                <Setter Property="BorderBrush"             Value="{DynamicResource ThemeBorde}"/>
+                <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource ThemeBorde}"/>
+                <Setter Property="VerticalGridLinesBrush"   Value="{DynamicResource ThemeBorde}"/>
+            </Style>
 
+            <!-- Texto de cada celda centrado verticalmente -->
+            <Style TargetType="{x:Type DataGridRow}">
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+            </Style>
+            <Style TargetType="{x:Type DataGridCell}">
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Foreground"               Value="{DynamicResource ThemeTexto}"/>
+                <Setter Property="BorderBrush"              Value="Transparent"/>
+                <!-- Template explícito para garantizar que ContentPresenter quede centrado -->
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type DataGridCell}">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter VerticalAlignment="Center"
+                                                  Margin="4,0"
+                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Encabezado de columnas del DataGrid -->
+            <Style TargetType="{x:Type DataGridColumnHeader}">
+                <Setter Property="Background" Value="{DynamicResource ThemeBgSurface}"/>
+                <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorde}"/>
+                <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                <Setter Property="Padding" Value="6,4"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+            </Style>
+
+            <!-- TextBox -->
+            <Style TargetType="{x:Type TextBox}">
+                <Setter Property="Background"    Value="{DynamicResource ThemeInputBg}"/>
+                <Setter Property="Foreground"    Value="{DynamicResource ThemeTexto}"/>
+                <Setter Property="CaretBrush"    Value="{DynamicResource ThemeTexto}"/>
+                <Setter Property="BorderBrush"   Value="{DynamicResource ThemeBordeInput}"/>
+                <Setter Property="SelectionBrush" Value="#4A6FE3"/>
+            </Style>
+
+            <!-- PasswordBox -->
+            <Style TargetType="{x:Type PasswordBox}">
+                <Setter Property="Background"  Value="{DynamicResource ThemeInputBg}"/>
+                <Setter Property="Foreground"  Value="{DynamicResource ThemeTexto}"/>
+                <Setter Property="CaretBrush"  Value="{DynamicResource ThemeTexto}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
+            </Style>
+
+            <!-- ComboBox -->
+            <Style TargetType="{x:Type ComboBox}">
+                <Setter Property="Background"  Value="{DynamicResource ThemeInputBg}"/>
+                <Setter Property="Foreground"  Value="{DynamicResource ThemeTexto}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
+            </Style>
+            <Style TargetType="{x:Type ComboBoxItem}">
+                <Setter Property="Background" Value="{DynamicResource ThemeInputBg}"/>
+                <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+            </Style>
+
+            <!-- TreeView -->
+            <Style TargetType="{x:Type TreeView}">
+                <Setter Property="Background"  Value="{DynamicResource ThemeBgSurface}"/>
+                <Setter Property="Foreground"  Value="{DynamicResource ThemeTexto}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorde}"/>
+            </Style>
+            <Style TargetType="{x:Type TreeViewItem}">
+                <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+            </Style>
+
+            <!-- DatePicker -->
+            <Style TargetType="{x:Type DatePicker}">
+                <Setter Property="Background"  Value="{DynamicResource ThemeInputBg}"/>
+                <Setter Property="Foreground"  Value="{DynamicResource ThemeTexto}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
+            </Style>
+
+            <!--
+                Estilos para columnas numéricas (float / double):
+                CeldaNumero        → alinea el texto a la derecha en modo lectura.
+                CeldaNumeroEditar  → alinea el texto a la derecha al editar la celda.
+            -->
+            <Style x:Key="CeldaNumero" TargetType="TextBlock">
+                <Setter Property="HorizontalAlignment" Value="Right"/>
+                <Setter Property="TextAlignment"       Value="Right"/>
+            </Style>
+            <Style x:Key="CeldaNumeroEditar" TargetType="TextBox">
+                <Setter Property="HorizontalContentAlignment" Value="Right"/>
+                <Setter Property="TextAlignment"              Value="Right"/>
+            </Style>
+
+        </ResourceDictionary>
     </Application.Resources>
 </Application>
