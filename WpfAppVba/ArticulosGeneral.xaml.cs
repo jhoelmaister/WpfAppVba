@@ -220,7 +220,6 @@ namespace WpfAppVba
         private void Tree1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             _modoFiltro = "familia";
-            TxtBuscar.Text = "";
             CargarArticulos();
         }
 
