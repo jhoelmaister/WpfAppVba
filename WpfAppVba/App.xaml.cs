@@ -13,6 +13,16 @@ namespace WpfAppVba
     {
         public App()
         {
+            // Aplicar modo oscuro a la barra de título de cada Window al cargarse
+            EventManager.RegisterClassHandler(
+                typeof(Window),
+                FrameworkElement.LoadedEvent,
+                new RoutedEventHandler((s, _) =>
+                {
+                    if (s is Window w)
+                        WindowTheming.AplicarModoOscuro(w, ThemeManager.EsOscuroActivo);
+                }));
+
             var cultura = CultureInfo.CurrentCulture;
 
             // Propagar cultura (con ajustes manuales de Windows) a todos los hilos.

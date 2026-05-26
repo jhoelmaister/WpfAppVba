@@ -91,15 +91,320 @@
                 <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
             </Style>
 
-            <!-- ComboBox -->
+            <!-- ════════════════════════════════════════════════════════════ -->
+            <!-- ComboBox (template completo para que responda al tema)      -->
+            <!-- ════════════════════════════════════════════════════════════ -->
+            <ControlTemplate x:Key="ComboBoxToggleTpl" TargetType="ToggleButton">
+                <Border x:Name="Bd"
+                        Background="{DynamicResource ThemeInputBg}"
+                        BorderBrush="{DynamicResource ThemeBordeInput}"
+                        BorderThickness="1"
+                        CornerRadius="3">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="22"/>
+                        </Grid.ColumnDefinitions>
+                        <Path Grid.Column="1"
+                              Data="M 0 0 L 4 4 L 8 0 Z"
+                              Fill="{DynamicResource ThemeTextoSec}"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              SnapsToDevicePixels="True"/>
+                    </Grid>
+                </Border>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter TargetName="Bd" Property="BorderBrush" Value="#4A6FE3"/>
+                    </Trigger>
+                    <Trigger Property="IsChecked" Value="True">
+                        <Setter TargetName="Bd" Property="BorderBrush" Value="#4A6FE3"/>
+                    </Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+
             <Style TargetType="{x:Type ComboBox}">
                 <Setter Property="Background"  Value="{DynamicResource ThemeInputBg}"/>
                 <Setter Property="Foreground"  Value="{DynamicResource ThemeTexto}"/>
                 <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="MinHeight" Value="26"/>
+                <Setter Property="Padding" Value="6,2"/>
+                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+                <Setter Property="ScrollViewer.VerticalScrollBarVisibility"   Value="Auto"/>
+                <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ComboBox}">
+                            <Grid>
+                                <ToggleButton x:Name="ToggleButton"
+                                              Template="{StaticResource ComboBoxToggleTpl}"
+                                              Focusable="False"
+                                              ClickMode="Press"
+                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
+                                <ContentPresenter x:Name="ContentSite"
+                                                  IsHitTestVisible="False"
+                                                  Content="{TemplateBinding SelectionBoxItem}"
+                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                  ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                  ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
+                                                  Margin="8,3,28,3"
+                                                  VerticalAlignment="Center"
+                                                  HorizontalAlignment="Left"
+                                                  TextElement.Foreground="{TemplateBinding Foreground}"/>
+                                <TextBox x:Name="PART_EditableTextBox"
+                                         Visibility="Hidden"
+                                         IsReadOnly="{TemplateBinding IsReadOnly}"
+                                         Margin="5,3,28,3"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         Foreground="{TemplateBinding Foreground}"
+                                         CaretBrush="{TemplateBinding Foreground}"
+                                         HorizontalAlignment="Stretch"
+                                         VerticalAlignment="Center"
+                                         Focusable="True"/>
+                                <Popup x:Name="PART_Popup"
+                                       Placement="Bottom"
+                                       IsOpen="{TemplateBinding IsDropDownOpen}"
+                                       AllowsTransparency="True"
+                                       PopupAnimation="Slide"
+                                       Focusable="False">
+                                    <Grid MinWidth="{TemplateBinding ActualWidth}"
+                                          MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                        <Border Background="{DynamicResource ThemeBgSurface}"
+                                                BorderBrush="{DynamicResource ThemeBordeInput}"
+                                                BorderThickness="1"
+                                                CornerRadius="3"
+                                                SnapsToDevicePixels="True">
+                                            <ScrollViewer>
+                                                <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"
+                                                                SnapsToDevicePixels="True"/>
+                                            </ScrollViewer>
+                                        </Border>
+                                    </Grid>
+                                </Popup>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsEditable" Value="True">
+                                    <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
+                                    <Setter TargetName="ContentSite"          Property="Visibility" Value="Hidden"/>
+                                </Trigger>
+                                <Trigger Property="HasItems" Value="False">
+                                    <Setter Property="Height" Value="26"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="{DynamicResource ThemeTextoMuted}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
+
             <Style TargetType="{x:Type ComboBoxItem}">
-                <Setter Property="Background" Value="{DynamicResource ThemeInputBg}"/>
+                <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+                <Setter Property="Padding" Value="8,4"/>
+                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ComboBoxItem}">
+                            <Border x:Name="Bd"
+                                    Background="{TemplateBinding Background}"
+                                    Padding="{TemplateBinding Padding}"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  TextElement.Foreground="{TemplateBinding Foreground}"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsHighlighted" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ThemeTabHoverBg}"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ThemeTabSelBg}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ════════════════════════════════════════════════════════════ -->
+            <!-- RadioButton                                                  -->
+            <!-- ════════════════════════════════════════════════════════════ -->
+            <Style TargetType="{x:Type RadioButton}">
+                <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+                <Setter Property="Background" Value="{DynamicResource ThemeInputBg}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Padding" Value="4,0,0,0"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type RadioButton}">
+                            <StackPanel Orientation="Horizontal" Background="Transparent">
+                                <Grid Width="16" Height="16" VerticalAlignment="Center">
+                                    <Ellipse x:Name="Outer"
+                                             Stroke="{TemplateBinding BorderBrush}"
+                                             StrokeThickness="1.5"
+                                             Fill="{TemplateBinding Background}"/>
+                                    <Ellipse x:Name="Dot"
+                                             Width="8" Height="8"
+                                             Fill="#4A6FE3"
+                                             Visibility="Collapsed"/>
+                                </Grid>
+                                <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                  VerticalAlignment="Center"
+                                                  TextElement.Foreground="{TemplateBinding Foreground}"
+                                                  RecognizesAccessKey="True"/>
+                            </StackPanel>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="Dot"   Property="Visibility" Value="Visible"/>
+                                    <Setter TargetName="Outer" Property="Stroke" Value="#4A6FE3"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Outer" Property="Stroke" Value="#4A6FE3"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="{DynamicResource ThemeTextoMuted}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ════════════════════════════════════════════════════════════ -->
+            <!-- CheckBox                                                     -->
+            <!-- ════════════════════════════════════════════════════════════ -->
+            <Style TargetType="{x:Type CheckBox}">
+                <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+                <Setter Property="Background" Value="{DynamicResource ThemeInputBg}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Padding" Value="4,0,0,0"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type CheckBox}">
+                            <StackPanel Orientation="Horizontal" Background="Transparent">
+                                <Border x:Name="Box"
+                                        Width="16" Height="16"
+                                        VerticalAlignment="Center"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="1.5"
+                                        CornerRadius="2">
+                                    <Path x:Name="Check"
+                                          Data="M 2 7 L 6 11 L 13 3"
+                                          Stroke="#4A6FE3"
+                                          StrokeThickness="2"
+                                          StrokeStartLineCap="Round"
+                                          StrokeEndLineCap="Round"
+                                          Visibility="Collapsed"
+                                          SnapsToDevicePixels="True"/>
+                                </Border>
+                                <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                  VerticalAlignment="Center"
+                                                  TextElement.Foreground="{TemplateBinding Foreground}"
+                                                  RecognizesAccessKey="True"/>
+                            </StackPanel>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="Check" Property="Visibility" Value="Visible"/>
+                                    <Setter TargetName="Box"   Property="BorderBrush" Value="#4A6FE3"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Box" Property="BorderBrush" Value="#4A6FE3"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="{DynamicResource ThemeTextoMuted}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ════════════════════════════════════════════════════════════ -->
+            <!-- TabControl / TabItem (implícito: para los que no tienen      -->
+            <!-- estilo explícito — ConsolaMovimientos define los suyos)      -->
+            <!-- ════════════════════════════════════════════════════════════ -->
+            <Style TargetType="{x:Type TabControl}">
+                <Setter Property="Background"  Value="{DynamicResource ThemeBgContenido}"/>
+                <Setter Property="Foreground"  Value="{DynamicResource ThemeTexto}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorde}"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type TabControl}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <TabPanel Grid.Row="0"
+                                          IsItemsHost="True"
+                                          Background="Transparent"
+                                          Margin="0"/>
+                                <Border Grid.Row="1"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}">
+                                    <ContentPresenter ContentSource="SelectedContent"
+                                                      Margin="{TemplateBinding Padding}"/>
+                                </Border>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style TargetType="{x:Type TabItem}">
+                <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Padding" Value="14,8"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type TabItem}">
+                            <Border x:Name="TabBd"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="Transparent"
+                                    BorderThickness="0,0,0,3"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter x:Name="TabContent"
+                                                  ContentSource="Header"
+                                                  VerticalAlignment="Center"
+                                                  HorizontalAlignment="Center"
+                                                  TextElement.Foreground="{TemplateBinding Foreground}"
+                                                  TextElement.FontSize="{TemplateBinding FontSize}"
+                                                  TextElement.FontWeight="{TemplateBinding FontWeight}"
+                                                  RecognizesAccessKey="True"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="TabBd" Property="Background"  Value="{DynamicResource ThemeTabSelBg}"/>
+                                    <Setter TargetName="TabBd" Property="BorderBrush" Value="#4A6FE3"/>
+                                    <Setter Property="Foreground" Value="#4A6FE3"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="TabBd" Property="Background" Value="{DynamicResource ThemeTabHoverBg}"/>
+                                    <Setter Property="Foreground" Value="#4A6FE3"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="{DynamicResource ThemeTextoMuted}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
 
             <!-- TreeView -->

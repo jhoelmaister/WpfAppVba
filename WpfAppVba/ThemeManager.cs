@@ -40,6 +40,13 @@ namespace WpfAppVba
 
             // Insertar el nuevo tema al inicio para que esté disponible para los siguientes
             app.Resources.MergedDictionaries.Insert(0, nuevoDic);
+
+            // Actualizar barra de título de todas las ventanas abiertas
+            WindowTheming.AplicarModoOscuroATodas(normalizado == TemaOscuro);
         }
+
+        /// <summary>Indica si el tema activo es oscuro (lee AppState.TemaActivo).</summary>
+        public static bool EsOscuroActivo =>
+            (Data.AppState.TemaActivo ?? "").Trim().ToLowerInvariant() == TemaOscuro;
     }
 }
