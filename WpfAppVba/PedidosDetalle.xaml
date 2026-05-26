@@ -273,7 +273,7 @@
                                       FontSize="11">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="70"/>
-                                    <DataGridTextColumn Header="Fecha"  Binding="{Binding Fecha}"  Width="95"/>
+                                    <DataGridTextColumn Header="Fecha"  Binding="{Binding Fecha}"  Width="*"/>
                                     <DataGridTextColumn Header="Precio" Binding="{Binding Precio, StringFormat=#\,##0.##}" Width="70"
                                                         ElementStyle="{StaticResource CeldaNumero}"/>
                                 </DataGrid.Columns>
@@ -294,7 +294,7 @@
                                       BorderBrush="#DDD" BorderThickness="1"
                                       FontSize="11">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Código"     Binding="{Binding Codigo}"     Width="80"/>
+                                    <DataGridTextColumn Header="Código"     Binding="{Binding Codigo}"     Width="*"/>
                                     <DataGridTextColumn Header="Disponible" Binding="{Binding Disponible, StringFormat=#\,##0.##}" Width="80"
                                                         ElementStyle="{StaticResource CeldaNumero}"/>
                                     <DataGridTextColumn Header="Stock"      Binding="{Binding Stock,      StringFormat=#\,##0.##}" Width="80"
