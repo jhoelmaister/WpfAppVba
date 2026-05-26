@@ -43,6 +43,16 @@ namespace WpfAppVba
                 typeof(FrameworkElement),
                 new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(tag)));
         }
+
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            // Aplicar el último tema usado en esta PC ANTES de mostrar la LoginWindow
+            string temaLocal = ThemeManager.CargarTemaLocal();
+            Data.AppState.TemaActivo = temaLocal;
+            ThemeManager.AplicarTema(temaLocal);
+
+            base.OnStartup(e);
+        }
     }
 
 }
