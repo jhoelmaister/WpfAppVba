@@ -18,6 +18,9 @@ namespace WpfAppVba
         // List en lugar de HashSet para conservar el orden de selección
         private readonly List<string> _seleccionados = new();
 
+        // Modo de filtro activo: "todos" (carga inicial) | "busqueda" (TxtBuscar) | "familia" (Tree1)
+        private string _modoFiltro = "todos";
+
         public bool ModoExportar => _callbackExportar != null;
         public bool ModoSingle   => _callbackSingle   != null;
 
@@ -132,8 +135,9 @@ namespace WpfAppVba
             int linea = 1;
             double totalDisp = 0, totalStock = 0;
 
-            string busqueda      = TxtBuscar.Text.Trim().ToLower();
-            string tagFiltro     = ObtenerTagFiltro();
+            // Filtros excluyentes: solo se aplica el del modo activo
+            string busqueda  = _modoFiltro == "busqueda" ? TxtBuscar.Text.Trim().ToLower() : "";
+            string tagFiltro = _modoFiltro == "familia"  ? ObtenerTagFiltro()              : "";
 
             int uf = Sql.ArticulosObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -214,15 +218,24 @@ namespace WpfAppVba
 
         // ─── Eventos árbol y búsqueda ─────────────────────────────────────────
         private void Tree1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
-            => CargarArticulos();
+        {
+            _modoFiltro = "familia";
+            TxtBuscar.Text = "";
+            CargarArticulos();
+        }
 
         private void TxtBuscar_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter) CargarArticulos();
+            if (e.Key != Key.Enter) return;
+            _modoFiltro = "busqueda";
+            CargarArticulos();
         }
 
         private void BtnBuscar_Click(object sender, RoutedEventArgs e)
-            => CargarArticulos();
+        {
+            _modoFiltro = "busqueda";
+            CargarArticulos();
+        }
 
         // ─── Doble clic ───────────────────────────────────────────────────────
         private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
