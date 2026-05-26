@@ -390,12 +390,20 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not ArticuloFila fila) return;
 
-            if (_seleccionados.Contains(fila.Id))
-                _seleccionados.Remove(fila.Id);   // deselecciona y reordena el resto
+            string idActual = fila.Id;   // guardar antes de recargar
+
+            if (_seleccionados.Contains(idActual))
+                _seleccionados.Remove(idActual);
             else
-                _seleccionados.Add(fila.Id);      // agrega al final de la cola
+                _seleccionados.Add(idActual);
 
             CargarArticulos();
+
+            // Restaurar selección y foco al mismo ítem
+            var item = (Grid1.ItemsSource as System.Collections.Generic.List<ArticuloFila>)
+                       ?.Find(x => x.Id == idActual);
+            if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+            Grid1.Focus();
         }
     }
 
