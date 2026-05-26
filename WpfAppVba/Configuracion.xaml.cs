@@ -146,6 +146,29 @@ namespace WpfAppVba
             win.ShowDialog();
         }
 
+        // ─── Guardar solo el tema ────────────────────────────────────────────
+        private void BtnGuardarTema_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string usuId = AppState.UsuarioActivo.ToString();
+                string tema  = (CmbTema.SelectedItem as ComboBoxItem)?.Content?.ToString()
+                               ?? ThemeManager.TemaClaro;
+
+                Sql.UsuariosObj.EstablecerItem("temaC", usuId, tema);
+                Sql.UsuariosObj.ExportarItems();
+                AppState.TemaActivo = tema;
+
+                MessageBox.Show("Tema guardado", "Configuración",
+                                MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al guardar el tema: {ex.Message}", "Configuración",
+                                MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         // ─── Guardar ─────────────────────────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
@@ -156,12 +179,6 @@ namespace WpfAppVba
                 // Actualizar nombres y apellidos en memoria / SQL
                 Sql.UsuariosObj.EstablecerItem("nombres",   usuId, TxtNombres.Text.Trim());
                 Sql.UsuariosObj.EstablecerItem("apellidos", usuId, TxtApellidos.Text.Trim());
-
-                // Persistir tema seleccionado
-                string temaSeleccionado = (CmbTema.SelectedItem as ComboBoxItem)?.Content?.ToString()
-                                          ?? ThemeManager.TemaClaro;
-                Sql.UsuariosObj.EstablecerItem("temaC", usuId, temaSeleccionado);
-                AppState.TemaActivo = temaSeleccionado;
 
                 // Actualizar sucursal activa
                 bool sucursalCambio = false;
