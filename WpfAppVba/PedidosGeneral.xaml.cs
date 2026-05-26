@@ -224,7 +224,11 @@ namespace WpfAppVba
                 if (Sql.PedidosObj.ObtenerItem("documentoP", id)?.ToString() != documentoP) continue;
 
                 string articuloId  = Sql.PedidosObj.ObtenerItem("articulo",  id)?.ToString() ?? "";
-                string descripcion = Sql.ArticulosObj.ObtenerItem("descripcion", articuloId)?.ToString() ?? articuloId;
+                string desc        = Sql.ArticulosObj.ObtenerItem("descripcion", articuloId)?.ToString() ?? "";
+                string famId       = Sql.ArticulosObj.ObtenerItem("familia",     articuloId)?.ToString() ?? "";
+                string famDesc     = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString() ?? "";
+                string modelo      = Sql.ArticulosObj.ObtenerItem("modelo",      articuloId)?.ToString() ?? "";
+                string descripcion = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
                 double cantidad    = Convert.ToDouble(Sql.PedidosObj.ObtenerItem("cantidad", id) ?? 0);
                 double importe     = Convert.ToDouble(Sql.PedidosObj.ObtenerItem("importe",  id) ?? 0);
 
