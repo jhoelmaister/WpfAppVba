@@ -460,6 +460,32 @@ namespace WpfAppVba
             };
         }
 
+        // ─── Notificación de stock insuficiente (solo ventas, modo nuevo) ─────
+        private void VerificarStockVenta()
+        {
+            if (AppState.TipoMovimiento.ToLower() != "venta") return;
+            if (AppState.EventoFormularioM != "nuevo") return;
+
+            var notificados = new HashSet<string>();
+
+            foreach (var item in _pedidos)
+            {
+                if (string.IsNullOrEmpty(item.ArticuloId)) continue;
+                if (notificados.Contains(item.ArticuloId)) continue;
+
+                double totalCant = _pedidos.Where(x => x.ArticuloId == item.ArticuloId)
+                                            .Sum(x => x.Cantidad);
+                double stock = StockCalculator.ContarStock(item.ArticuloId, AppState.DataFechaFinal);
+
+                if (stock < totalCant)
+                {
+                    notificados.Add(item.ArticuloId);
+                    MessageBox.Show($"{item.Descripcion}: stock insuficiente (disponible: {stock:F0}, solicitado: {totalCant:F0}).",
+                        "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+        }
+
         // ─── Eventos de campos del encabezado ─────────────────────────────────
         private void Campo_TextChanged(object sender, TextChangedEventArgs e)
         {
@@ -575,10 +601,13 @@ namespace WpfAppVba
             }
 
             _cambioPedido = true;
+            string colNombre = col;
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 RefrescarGridPedidos();
                 ActualizarTotales();
+                if (colNombre == "Código" || colNombre == "Cantidad")
+                    VerificarStockVenta();
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
@@ -606,6 +635,7 @@ namespace WpfAppVba
                 _cambioPedido = true;
                 RefrescarGridPedidos();
                 ActualizarTotales();
+                VerificarStockVenta();
             }, null);
         }
 
@@ -643,6 +673,7 @@ namespace WpfAppVba
                 _cambioPedido = true;
                 RefrescarGridPedidos();
                 ActualizarTotales();
+                VerificarStockVenta();
             });
         }
 
