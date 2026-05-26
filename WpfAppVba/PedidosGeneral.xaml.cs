@@ -293,6 +293,14 @@ namespace WpfAppVba
             AbrirEditar();
         }
 
+        // ─── Tecla Enter ──────────────────────────────────────────────────────
+        private void Grid1_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+            e.Handled = true;
+            AbrirEditar();
+        }
+
         // ─── Botones ──────────────────────────────────────────────────────────
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
