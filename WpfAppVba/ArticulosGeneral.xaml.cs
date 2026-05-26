@@ -358,6 +358,15 @@ namespace WpfAppVba
             CargarArticulos();
         }
 
+        private void BtnInformeExcel_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new InformeExcelArticulos
+            {
+                Owner = Window.GetWindow(this)
+            };
+            dlg.ShowDialog();
+        }
+
         private void BtnExportar_Click(object sender, RoutedEventArgs e)
         {
             if (_callbackExportar == null) return;
