@@ -262,10 +262,11 @@ namespace WpfAppVba
             detalle.ShowDialog();
             CargarArbol();
             CargarArticulos();
-            if (idSel != null)
+            string? enfocar = detalle.ItemCreadoId ?? idSel;
+            if (enfocar != null)
             {
                 var item = (Grid1.ItemsSource as System.Collections.Generic.List<ArticuloFila>)
-                           ?.Find(x => x.Id == idSel);
+                           ?.Find(x => x.Id == enfocar);
                 if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
             }
             Grid1.Focus();
@@ -274,11 +275,17 @@ namespace WpfAppVba
         private void BtnInsertar_Click(object sender, RoutedEventArgs e)
         {
             if (Grid1.SelectedItem is not ArticuloFila fila) return;
+            string idSel = fila.Id;
             AppState.EventoFormularioA = "insertar";
             var detalle = new ArticulosDetalle(this, fila.Id);
             detalle.ShowDialog();
             CargarArbol();
             CargarArticulos();
+            string enfocar = detalle.ItemCreadoId ?? idSel;
+            var item = (Grid1.ItemsSource as System.Collections.Generic.List<ArticuloFila>)
+                       ?.Find(x => x.Id == enfocar);
+            if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+            Grid1.Focus();
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)

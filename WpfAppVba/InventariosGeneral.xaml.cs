@@ -81,10 +81,11 @@ namespace WpfAppVba
             var detalle = new InventariosDetalle(this);
             detalle.ShowDialog();
             CargarInventarios();
-            if (idSel != null)
+            string? enfocar = detalle.ItemCreadoId ?? idSel;
+            if (enfocar != null)
             {
                 var item = (Grid1.ItemsSource as System.Collections.Generic.List<InventarioFila>)
-                           ?.Find(x => x.Id == idSel);
+                           ?.Find(x => x.Id == enfocar);
                 if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
             }
             Grid1.Focus();

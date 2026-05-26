@@ -42,6 +42,8 @@ namespace WpfAppVba.Data
             if (!_tabla.Columns.Contains(columna))  return;
             if (!_tabla.Columns.Contains("estadof")) return;
 
+            // Strings vacíos se persisten como NULL en SQL Server (consistente con INSERT).
+            if (valor is string s && s.Length == 0) valor = null;
             row[columna] = valor ?? DBNull.Value;
 
             var estadoActual = row["estadof"]?.ToString() ?? "";
@@ -235,7 +237,12 @@ namespace WpfAppVba.Data
                     using var cmd = new SqlCommand(sqlUpdate, conn);
                     cmd.Parameters.AddWithValue("@id", row["id"] ?? DBNull.Value);
                     for (int i = 0; i < cols.Count; i++)
-                        cmd.Parameters.AddWithValue($"@p{i}", row[cols[i]] ?? DBNull.Value);
+                    {
+                        var v = row[cols[i]];
+                        // strings vacíos → NULL en SQL Server
+                        if (v is string s && s.Length == 0) v = DBNull.Value;
+                        cmd.Parameters.AddWithValue($"@p{i}", v ?? DBNull.Value);
+                    }
                     cmd.ExecuteNonQuery();
                 }
             }

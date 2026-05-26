@@ -100,10 +100,11 @@ namespace WpfAppVba
             var detalle = new FamiliasDetalle(this);
             detalle.ShowDialog();
             CargarFamilias();
-            if (idSel != null)
+            string? enfocar = detalle.ItemCreadoId ?? idSel;
+            if (enfocar != null)
             {
                 var item = (Grid1.ItemsSource as System.Collections.Generic.List<FamiliaFila>)
-                           ?.Find(x => x.Id == idSel);
+                           ?.Find(x => x.Id == enfocar);
                 if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
             }
             Grid1.Focus();

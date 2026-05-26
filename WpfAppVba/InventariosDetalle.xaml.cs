@@ -19,6 +19,9 @@ namespace WpfAppVba
         private bool _cargando   = true;
         private List<InventarioItemFila> _items = new();
 
+        /// <summary>ID del documento de inventario recién creado.</summary>
+        public string? ItemCreadoId { get; private set; }
+
         public InventariosDetalle(InventariosGeneral? padre = null, string idEditar = "")
         {
             InitializeComponent();
@@ -415,6 +418,7 @@ namespace WpfAppVba
                 AppLoader.ConectarDocumentos(AppState.DataFechaInicio, AppState.DataFechaFinal);
 
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+                ItemCreadoId = docId;
                 return true;
             }
             catch (Exception ex)

@@ -16,6 +16,9 @@ namespace WpfAppVba
         private bool _hayCambios = false;
         private bool _cargando   = true;
 
+        /// <summary>ID de la sucursal recién creada (solo modo "nuevo").</summary>
+        public string? ItemCreadoId { get; private set; }
+
         public SucursalesDetalle(SucursalesGeneral padre, string idEditar = "")
         {
             InitializeComponent();
@@ -157,6 +160,7 @@ namespace WpfAppVba
 
                 Sql.SucursalesObj.OrdenarData(("id", false));
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+                ItemCreadoId = codigo;
                 return true;
             }
             catch (Exception ex)

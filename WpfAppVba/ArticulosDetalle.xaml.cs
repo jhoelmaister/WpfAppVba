@@ -16,6 +16,9 @@ namespace WpfAppVba
         private bool _hayCambios = false;
         private bool _cargando   = true;
 
+        /// <summary>ID del artículo recién creado (nuevo o insertado).</summary>
+        public string? ItemCreadoId { get; private set; }
+
         public ArticulosDetalle(ArticulosGeneral? padre = null, string idEditar = "")
         {
             InitializeComponent();
@@ -280,6 +283,7 @@ namespace WpfAppVba
                 AppState.ActualizarStocks();
 
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+                ItemCreadoId = id;
                 return true;
             }
             catch (Exception ex)
@@ -339,6 +343,7 @@ namespace WpfAppVba
                 AppState.ActualizarStocks();
 
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+                ItemCreadoId = id;
                 return true;
             }
             catch (Exception ex)
