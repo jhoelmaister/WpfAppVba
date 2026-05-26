@@ -216,6 +216,12 @@ namespace WpfAppVba
             });
             _hayCambios = true;
             RefrescarGrid();
+            int lastIdx = GridItems.Items.Count - 1;
+            if (lastIdx >= 0)
+            {
+                GridItems.SelectedIndex = lastIdx;
+                GridItems.ScrollIntoView(GridItems.SelectedItem);
+            }
         }
 
         // ─── Eliminar línea seleccionada ──────────────────────────────────────

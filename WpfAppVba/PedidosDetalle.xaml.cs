@@ -594,7 +594,6 @@ namespace WpfAppVba
             {
                 foreach (var art in arts)
                 {
-                    if (_pedidos.Any(x => x.ArticuloId == art.Id)) continue;
                     double precio = ObtenerPrecioArticulo(art.Id);
                     _pedidos.Add(new PedidoItemFila
                     {
@@ -657,6 +656,12 @@ namespace WpfAppVba
             _cambioPedido = true;
             RefrescarGridPedidos();
             ActualizarTotales();
+            int lastIdx = GridItems.Items.Count - 1;
+            if (lastIdx >= 0)
+            {
+                GridItems.SelectedIndex = lastIdx;
+                GridItems.ScrollIntoView(GridItems.SelectedItem);
+            }
         }
 
         private void BtnInsertar_Click(object sender, RoutedEventArgs e)
