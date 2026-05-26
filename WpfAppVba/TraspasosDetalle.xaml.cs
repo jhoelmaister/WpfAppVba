@@ -488,6 +488,14 @@ namespace WpfAppVba
                 e.Row.Item is TraspasoItemFila filaCant &&
                 e.EditingElement is TextBox tbCant)
             {
+                if (double.TryParse(tbCant.Text,
+                                    System.Globalization.NumberStyles.Any,
+                                    System.Globalization.CultureInfo.CurrentCulture,
+                                    out double nuevaCant))
+                {
+                    filaCant.Cantidad = nuevaCant;
+                }
+
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     RefrescarGrid();
