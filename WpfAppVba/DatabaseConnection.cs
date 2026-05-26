@@ -14,7 +14,7 @@ namespace WpfAppVba.Data
         private static string _server   = "MAISTER\\SQLEXPRESS";
         private static string _user     = "SA";
         private static string _password = "papa1122";
-        private static string _database = "20260512 edberBase";
+        private static string _database = "20260525 edberBase";
 
         private static string ConnectionString =>
             $"Server={_server};Database={_database};User Id={_user};Password={_password};" +
