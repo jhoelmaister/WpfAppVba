@@ -714,10 +714,6 @@
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Setter TargetName="MonBd" Property="Background" Value="{DynamicResource ThemeTabHoverBg}"/>
                                 </Trigger>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter TargetName="MonBd" Property="Background" Value="#4A6FE3"/>
-                                    <Setter Property="Foreground" Value="White"/>
-                                </Trigger>
                                 <Trigger Property="HasSelectedDays" Value="True">
                                     <Setter TargetName="MonBd" Property="Background" Value="#4A6FE3"/>
                                     <Setter Property="Foreground" Value="White"/>
