@@ -98,7 +98,7 @@ namespace WpfAppVba
         }
 
         // ─── Tecla Enter ──────────────────────────────────────────────────────
-        private void Grid1_KeyDown(object sender, KeyEventArgs e)
+        private void Grid1_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key != Key.Enter) return;
             e.Handled = true;

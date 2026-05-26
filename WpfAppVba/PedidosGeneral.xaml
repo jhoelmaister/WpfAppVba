@@ -115,7 +115,7 @@
                       FontSize="12"
                       SelectionChanged="Grid1_SelectionChanged"
                       MouseDoubleClick="Grid1_MouseDoubleClick"
-                      KeyDown="Grid1_KeyDown">
+                      PreviewKeyDown="Grid1_PreviewKeyDown">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Línea"             Binding="{Binding Linea}"       Width="55"/>
                     <DataGridTextColumn Header="DocumentoP"        Binding="{Binding DocumentoP}"  Width="70"/>
