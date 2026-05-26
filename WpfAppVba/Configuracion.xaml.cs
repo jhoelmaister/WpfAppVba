@@ -6,12 +6,12 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class DatosUsuario : System.Windows.Controls.UserControl
+    public partial class Configuracion : System.Windows.Controls.UserControl
     {
         private static SqlData Sql => SqlData.Instance;
         private bool _cargando;
 
-        public DatosUsuario()
+        public Configuracion()
         {
             InitializeComponent();
             Loaded += (_, _) => CargarDatos();
@@ -165,7 +165,7 @@ namespace WpfAppVba
                 if (periodoCambio || sucursalCambio)
                     AppLoader.ConectarDocumentos(AppState.DataFechaInicio, AppState.DataFechaFinal);
 
-                MessageBox.Show("Guardado exitoso", "Datos de Usuario",
+                MessageBox.Show("Guardado exitoso", "Configuración",
                                 MessageBoxButton.OK, MessageBoxImage.Information);
 
                 // Si está embebido en ConsolaMovimientos (tab), actualizar header; si es diálogo, cerrar
@@ -177,7 +177,7 @@ namespace WpfAppVba
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al guardar: {ex.Message}", "Datos de Usuario",
+                MessageBox.Show($"Error al guardar: {ex.Message}", "Configuración",
                                 MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }

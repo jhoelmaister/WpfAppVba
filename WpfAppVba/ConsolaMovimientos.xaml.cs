@@ -75,7 +75,7 @@ namespace WpfAppVba
                 Owner                 = this,
                 ResizeMode            = ResizeMode.NoResize,
                 Background            = System.Windows.Media.Brushes.Transparent,
-                Content               = new DatosUsuario()
+                Content               = new Configuracion()
             };
             WindowHelper.AjustarAlEcran(win);
             win.ShowDialog();
