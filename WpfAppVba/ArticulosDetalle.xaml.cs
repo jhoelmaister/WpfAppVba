@@ -194,9 +194,6 @@ namespace WpfAppVba
         private void Box_Numeros_PreviewTextInput(object sender, TextCompositionEventArgs e)
             => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
 
-        private void Box_Letras_PreviewTextInput(object sender, TextCompositionEventArgs e)
-            => FuncionesComunes.ValidarSoloLetras(sender, e, permitirEspacios: true);
-
         // ─── Ver familias (modo selector) ────────────────────────────────────
         private void BtnVerFamilias_Click(object sender, RoutedEventArgs e)
         {
