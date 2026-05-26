@@ -92,6 +92,146 @@
             </Style>
 
             <!-- ════════════════════════════════════════════════════════════ -->
+            <!-- Button (template para evitar flash blanco del tema system)  -->
+            <!-- ════════════════════════════════════════════════════════════ -->
+            <Style TargetType="{x:Type Button}">
+                <Setter Property="OverridesDefaultStyle"      Value="True"/>
+                <Setter Property="SnapsToDevicePixels"        Value="True"/>
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="VerticalContentAlignment"   Value="Center"/>
+                <Setter Property="FocusVisualStyle"           Value="{x:Null}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type Button}">
+                            <Border x:Name="Borde"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}"
+                                    CornerRadius="4"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Borde" Property="Opacity" Value="0.85"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Borde" Property="Opacity" Value="0.70"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="Borde" Property="Opacity" Value="0.45"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ════════════════════════════════════════════════════════════ -->
+            <!-- ScrollBar (template completo para que responda al tema)     -->
+            <!-- ════════════════════════════════════════════════════════════ -->
+
+            <!-- RepeatButton transparente para el área del track -->
+            <Style x:Key="SbPagBtn" TargetType="{x:Type RepeatButton}">
+                <Setter Property="OverridesDefaultStyle" Value="True"/>
+                <Setter Property="IsTabStop"             Value="False"/>
+                <Setter Property="Focusable"             Value="False"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type RepeatButton}">
+                            <Border Background="Transparent"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Thumb (la barra que se arrastra) -->
+            <Style x:Key="SbThumb" TargetType="{x:Type Thumb}">
+                <Setter Property="OverridesDefaultStyle" Value="True"/>
+                <Setter Property="IsTabStop"             Value="False"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type Thumb}">
+                            <Border x:Name="Borde" CornerRadius="3"
+                                    Background="{DynamicResource ThemeScrollThumb}"/>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Borde" Property="Background"
+                                            Value="{DynamicResource ThemeScrollThumbHover}"/>
+                                </Trigger>
+                                <Trigger Property="IsDragging" Value="True">
+                                    <Setter TargetName="Borde" Property="Background"
+                                            Value="{DynamicResource ThemeScrollThumbHover}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ScrollBar implícito -->
+            <Style TargetType="{x:Type ScrollBar}">
+                <Setter Property="OverridesDefaultStyle" Value="True"/>
+                <Setter Property="SnapsToDevicePixels"   Value="True"/>
+                <Style.Triggers>
+                    <!-- ── Vertical ── -->
+                    <Trigger Property="Orientation" Value="Vertical">
+                        <Setter Property="Width"    Value="10"/>
+                        <Setter Property="MinWidth" Value="10"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type ScrollBar}">
+                                    <Border Background="{DynamicResource ThemeScrollBg}" CornerRadius="4">
+                                        <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                            <Track.DecreaseRepeatButton>
+                                                <RepeatButton Style="{StaticResource SbPagBtn}"
+                                                              Command="ScrollBar.PageUpCommand"/>
+                                            </Track.DecreaseRepeatButton>
+                                            <Track.Thumb>
+                                                <Thumb Style="{StaticResource SbThumb}" Margin="2,0"/>
+                                            </Track.Thumb>
+                                            <Track.IncreaseRepeatButton>
+                                                <RepeatButton Style="{StaticResource SbPagBtn}"
+                                                              Command="ScrollBar.PageDownCommand"/>
+                                            </Track.IncreaseRepeatButton>
+                                        </Track>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Trigger>
+                    <!-- ── Horizontal ── -->
+                    <Trigger Property="Orientation" Value="Horizontal">
+                        <Setter Property="Height"    Value="10"/>
+                        <Setter Property="MinHeight" Value="10"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type ScrollBar}">
+                                    <Border Background="{DynamicResource ThemeScrollBg}" CornerRadius="4">
+                                        <Track x:Name="PART_Track" IsDirectionReversed="False">
+                                            <Track.DecreaseRepeatButton>
+                                                <RepeatButton Style="{StaticResource SbPagBtn}"
+                                                              Command="ScrollBar.PageLeftCommand"/>
+                                            </Track.DecreaseRepeatButton>
+                                            <Track.Thumb>
+                                                <Thumb Style="{StaticResource SbThumb}" Margin="0,2"/>
+                                            </Track.Thumb>
+                                            <Track.IncreaseRepeatButton>
+                                                <RepeatButton Style="{StaticResource SbPagBtn}"
+                                                              Command="ScrollBar.PageRightCommand"/>
+                                            </Track.IncreaseRepeatButton>
+                                        </Track>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- ════════════════════════════════════════════════════════════ -->
             <!-- ComboBox (template completo para que responda al tema)      -->
             <!-- ════════════════════════════════════════════════════════════ -->
             <ControlTemplate x:Key="ComboBoxToggleTpl" TargetType="ToggleButton">

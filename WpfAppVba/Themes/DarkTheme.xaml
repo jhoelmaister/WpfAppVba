@@ -30,4 +30,9 @@
     <SolidColorBrush x:Key="ThemeDataGridAltBg"   Color="#2D3152"/>
     <SolidColorBrush x:Key="ThemeFilaSeleccionada" Color="#1B3A2B"/>
 
+    <!-- ── ScrollBar ────────────────────────────────────────────────── -->
+    <SolidColorBrush x:Key="ThemeScrollBg"          Color="#252A3A"/>
+    <SolidColorBrush x:Key="ThemeScrollThumb"       Color="#4A5070"/>
+    <SolidColorBrush x:Key="ThemeScrollThumbHover"  Color="#6A75A0"/>
+
 </ResourceDictionary>
