@@ -41,7 +41,8 @@
                   GridLinesVisibility="Horizontal"
                   BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
                   FontSize="12"
-                  MouseDoubleClick="Grid1_MouseDoubleClick">
+                  MouseDoubleClick="Grid1_MouseDoubleClick"
+                  KeyDown="Grid1_KeyDown">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Línea"         Binding="{Binding Linea}"       Width="55"/>
                 <DataGridTextColumn Header="Identificador" Binding="{Binding Id}"           Width="90"/>

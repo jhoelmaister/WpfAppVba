@@ -97,6 +97,15 @@ namespace WpfAppVba
             else               AbrirEditar();
         }
 
+        // ─── Tecla Enter ──────────────────────────────────────────────────────
+        private void Grid1_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+            e.Handled = true;
+            if (_modoSelector) Seleccionar();
+            else               AbrirEditar();
+        }
+
         // ─── Modo selector ────────────────────────────────────────────────────
         private void Seleccionar()
         {

@@ -74,7 +74,8 @@
                       GridLinesVisibility="Horizontal"
                       BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
                       FontSize="12"
-                      MouseDoubleClick="Grid1_MouseDoubleClick">
+                      MouseDoubleClick="Grid1_MouseDoubleClick"
+                      KeyDown="Grid1_KeyDown">
 
                 <!-- Fila verde + negrita cuando está seleccionado -->
                 <DataGrid.RowStyle>

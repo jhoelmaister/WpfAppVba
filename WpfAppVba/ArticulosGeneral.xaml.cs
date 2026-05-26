@@ -228,9 +228,21 @@ namespace WpfAppVba
         private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             e.Handled = true;   // evita que eventos de ratón pendientes quiten el foco al cerrar el diálogo
+            EjecutarAccionFila();
+        }
+
+        // ─── Tecla Enter ──────────────────────────────────────────────────────
+        private void Grid1_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+            e.Handled = true;
+            EjecutarAccionFila();
+        }
+
+        private void EjecutarAccionFila()
+        {
             if (ModoSingle)
             {
-                // Retorna el artículo seleccionado al llamador y cierra
                 if (Grid1.SelectedItem is not ArticuloFila fila) return;
                 _callbackSingle!(new ArticuloExportado
                 {
