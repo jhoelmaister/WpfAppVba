@@ -81,7 +81,7 @@
                     <Style TargetType="DataGridRow">
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding Seleccionado}" Value="True">
-                                <Setter Property="Background" Value="#E8F5E9"/>
+                                <Setter Property="Background" Value="{DynamicResource ThemeFilaSeleccionada}"/>
                                 <Setter Property="FontWeight" Value="SemiBold"/>
                             </DataTrigger>
                         </Style.Triggers>

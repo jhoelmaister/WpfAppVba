@@ -148,8 +148,6 @@ namespace WpfAppVba
         private void Box_Referido_Codigo_PreviewTextInput(object sender, TextCompositionEventArgs e)
             => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
 
-        private void Box_Descripcion_PreviewTextInput(object sender, TextCompositionEventArgs e)
-            => FuncionesComunes.ValidarSoloLetras(sender, e, permitirEspacios: true);
 
         // ─── Al cerrar: preguntar si hay cambios ──────────────────────────────
         private void Window_Closing(object sender, CancelEventArgs e)

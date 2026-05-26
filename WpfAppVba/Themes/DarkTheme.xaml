@@ -26,7 +26,8 @@
     <SolidColorBrush x:Key="ThemeTabHoverBg"   Color="#2D3152"/>
 
     <!-- ── DataGrid ─────────────────────────────────────────────────── -->
-    <SolidColorBrush x:Key="ThemeDataGridBg"   Color="#252A40"/>
-    <SolidColorBrush x:Key="ThemeDataGridAltBg" Color="#2D3152"/>
+    <SolidColorBrush x:Key="ThemeDataGridBg"      Color="#252A40"/>
+    <SolidColorBrush x:Key="ThemeDataGridAltBg"   Color="#2D3152"/>
+    <SolidColorBrush x:Key="ThemeFilaSeleccionada" Color="#1B3A2B"/>
 
 </ResourceDictionary>

@@ -105,7 +105,7 @@
             <Grid Margin="16,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>   <!-- Logo + título -->
-                    <ColumnDefinition Width="*"/>      <!-- Botones de acción rápida -->
+                    <ColumnDefinition Width="*"/>      <!-- Espacio flexible -->
                     <ColumnDefinition Width="Auto"/>   <!-- Info usuario + Salir -->
                 </Grid.ColumnDefinitions>
 
@@ -122,23 +122,6 @@
                                FontSize="15" FontWeight="Bold"
                                Foreground="White"
                                VerticalAlignment="Center"/>
-                </StackPanel>
-
-                <!-- Botones de acción rápida -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal"
-                            HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Button Content="＋ Venta Rápida"  Margin="4,0"
-                            Background="#2E7D32"
-                            Style="{StaticResource BtnAccion}"
-                            Click="BtnVentaRapida_Click"/>
-                    <Button Content="＋ Entrada Rápida" Margin="4,0"
-                            Background="#1565C0"
-                            Style="{StaticResource BtnAccion}"
-                            Click="BtnEntradaRapida_Click"/>
-                    <Button Content="＋ Salida Rápida"  Margin="4,0"
-                            Background="#6A1B9A"
-                            Style="{StaticResource BtnAccion}"
-                            Click="BtnSalidaRapida_Click"/>
                 </StackPanel>
 
                 <!-- Info usuario + botones + Cerrar sesión -->
@@ -166,7 +149,7 @@
         <!-- ════════════════════════════════════════════════════════════ -->
         <!-- ÁREA PRINCIPAL CON TABS                                     -->
         <!-- ════════════════════════════════════════════════════════════ -->
-        <Border Grid.Row="1" Background="{DynamicResource ThemeBgContenido}">
+        <Grid Grid.Row="1" Background="{DynamicResource ThemeBgContenido}">
             <TabControl x:Name="MainTabs"
                         Style="{StaticResource ModernTabControl}"
                         Background="{DynamicResource ThemeBgContenido}"
@@ -198,7 +181,26 @@
                 </TabItem>
 
             </TabControl>
-        </Border>
+
+            <!-- Botones de acción rápida — esquina superior derecha del strip de tabs -->
+            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top"
+                        Orientation="Horizontal"
+                        Margin="0,4,8,0"
+                        Panel.ZIndex="10">
+                <Button Content="＋ Venta Rápida"  Margin="4,0"
+                        Background="#2E7D32"
+                        Style="{StaticResource BtnAccion}"
+                        Click="BtnVentaRapida_Click"/>
+                <Button Content="＋ Entrada Rápida" Margin="4,0"
+                        Background="#1565C0"
+                        Style="{StaticResource BtnAccion}"
+                        Click="BtnEntradaRapida_Click"/>
+                <Button Content="＋ Salida Rápida"  Margin="4,0,0,0"
+                        Background="#6A1B9A"
+                        Style="{StaticResource BtnAccion}"
+                        Click="BtnSalidaRapida_Click"/>
+            </StackPanel>
+        </Grid>
 
     </Grid>
 </Window>

@@ -147,8 +147,6 @@ namespace WpfAppVba
         private void Box_Telefono_PreviewTextInput(object sender, TextCompositionEventArgs e)
             => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
 
-        private void Box_Descripcion_PreviewTextInput(object sender, TextCompositionEventArgs e)
-            => FuncionesComunes.ValidarSoloLetras(sender, e, permitirEspacios: true);
 
         // ─── Al cerrar: preguntar si hay cambios (equivalente a UserForm_QueryClose)
         private void Window_Closing(object sender, CancelEventArgs e)
