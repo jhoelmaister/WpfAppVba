@@ -122,7 +122,7 @@
                        Click="BtnBuscarSucursal_Click"/>
 
             <TextBlock Grid.Column="4" x:Name="Box_Sucursal_Descripcion"
-                       FontSize="12" Foreground="#333" VerticalAlignment="Center"
+                       FontSize="12" Foreground="{DynamicResource ThemeTexto}" VerticalAlignment="Center"
                        TextTrimming="CharacterEllipsis"/>
         </Grid>
 

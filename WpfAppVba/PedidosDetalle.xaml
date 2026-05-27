@@ -135,7 +135,7 @@
                        Click="BtnBuscarTercero_Click"/>
 
             <TextBlock Grid.Column="4" x:Name="Box_Tercero_Descripcion"
-                       FontSize="12" Foreground="#333" VerticalAlignment="Center"
+                       FontSize="12" Foreground="{DynamicResource ThemeTexto}" VerticalAlignment="Center"
                        TextTrimming="CharacterEllipsis"/>
         </Grid>
 

@@ -36,7 +36,7 @@
                          BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,4"
                          TextChanged="Box_Referido_Codigo_TextChanged"
                          PreviewTextInput="Box_Referido_Codigo_PreviewTextInput"/>
-                <TextBlock x:Name="Box_Referido_Descripcion" FontSize="11" Foreground="{DynamicResource ThemeTextoMuted}"
+                <TextBlock x:Name="Box_Referido_Descripcion" FontSize="11" Foreground="{DynamicResource ThemeTexto}"
                            Margin="0,0,0,8"/>
 
                 <TextBlock Text="Observaciones:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>

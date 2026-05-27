@@ -10,7 +10,8 @@ namespace WpfAppVba
     public partial class PedidosGeneral : System.Windows.Controls.UserControl
     {
         private static SqlData Sql => SqlData.Instance;
-        private string _mesActivo = "";
+        private string _mesActivo  = "";
+        private string _modoFiltro = "filtros"; // "filtros" = Tree1 | "busquedas" = TxtBuscar
 
         /// <summary>
         /// Tipo de movimiento fijo para este control ("venta" o "compra").
@@ -64,10 +65,12 @@ namespace WpfAppVba
 
             string filtroEstado = ObtenerFiltroEstado();
             string filtroCuenta = ObtenerFiltroCuenta();
-            string busqueda     = TxtBuscar.Text.ToLower();
-            string tipoMov      = !string.IsNullOrEmpty(TipoMovimiento)
-                                  ? TipoMovimiento.ToLower()
-                                  : AppState.TipoMovimiento.ToLower();
+            // Cada modo aplica solo su propio filtro de contenido (igual que VBA llaveActualisar)
+            string busqueda = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
+            string mesFiltro = _modoFiltro == "filtros"  ? _mesActivo : "";
+            string tipoMov  = !string.IsNullOrEmpty(TipoMovimiento)
+                              ? TipoMovimiento.ToLower()
+                              : AppState.TipoMovimiento.ToLower();
 
             int uf = Sql.DocumentosPObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -83,14 +86,14 @@ namespace WpfAppVba
                 string sucursal = Sql.DocumentosPObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
                 if (sucursal != AppState.SucursalActiva.ToString()) continue;
 
-                // Filtro por mes
-                if (!string.IsNullOrEmpty(_mesActivo))
+                // Filtro por mes (solo en modo "filtros", independiente de TxtBuscar)
+                if (!string.IsNullOrEmpty(mesFiltro))
                 {
                     var fechaObj2 = Sql.DocumentosPObj.ObtenerItem("fecha", id);
                     if (fechaObj2 == null) continue;
                     DateTime fecha2 = Convert.ToDateTime(fechaObj2);
                     string mesDoc = ObtenerNombreMes(fecha2.Month);
-                    if (!string.Equals(mesDoc, _mesActivo, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (!string.Equals(mesDoc, mesFiltro, StringComparison.OrdinalIgnoreCase)) continue;
                 }
 
                 var fechaDocObj = Sql.DocumentosPObj.ObtenerItem("fecha", id);
@@ -259,6 +262,7 @@ namespace WpfAppVba
         {
             if (Tree1.SelectedItem is TreeViewItem ti)
                 _mesActivo = ti.Tag?.ToString() ?? "";
+            _modoFiltro = "filtros";   // Tree1 activo → ignora TxtBuscar
             CargarPedidos();
         }
 
@@ -277,14 +281,19 @@ namespace WpfAppVba
                 OcultarDetalle();
         }
 
-        // ─── Búsqueda ─────────────────────────────────────────────────────────
+        // ─── Búsqueda (independiente del Tree1) ──────────────────────────────
         private void TxtBuscar_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter) CargarPedidos();
+            if (e.Key != Key.Enter) return;
+            _modoFiltro = "busquedas"; // TxtBuscar activo → ignora Tree1
+            CargarPedidos();
         }
 
         private void BtnBuscar_Click(object sender, RoutedEventArgs e)
-            => CargarPedidos();
+        {
+            _modoFiltro = "busquedas"; // TxtBuscar activo → ignora Tree1
+            CargarPedidos();
+        }
 
         // ─── Doble clic ───────────────────────────────────────────────────────
         private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
