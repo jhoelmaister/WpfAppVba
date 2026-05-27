@@ -99,7 +99,7 @@ namespace WpfAppVba
 
             // ── Recolectar datos ──────────────────────────────────────────
             int uf = Sql.ArticulosObj.ContarFilas;
-            var datos = new List<(string id, string catDesc, string famDesc, string descCompleta, double stock)>();
+            var datos = new List<(string id, string prodDesc, string catDesc, string famDesc, string descCompleta, double stock)>();
 
             for (int i = 1; i <= uf; i++)
             {
@@ -107,24 +107,26 @@ namespace WpfAppVba
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
 
-                string desc   = Sql.ArticulosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
-                string modelo = Sql.ArticulosObj.ObtenerItem("modelo",      id)?.ToString() ?? "";
-                string famId   = Sql.ArticulosObj.ObtenerItem("familia",    id)?.ToString() ?? "";
-                string catId   = Sql.ArticulosObj.ObtenerItem("Categoria", id)?.ToString() ?? "";
+                string desc  = Sql.ArticulosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                string modelo = Sql.ArticulosObj.ObtenerItem("modelo",     id)?.ToString() ?? "";
+                string famId = Sql.ArticulosObj.ObtenerItem("familia",     id)?.ToString() ?? "";
+                string catId = Sql.ArticulosObj.ObtenerItem("Categoria",   id)?.ToString() ?? "";
 
-                string famDesc = Sql.FamiliasObj.ObtenerItem("descripcion",    famId)?.ToString() ?? "";
-                string catDesc = Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "";
+                string famDesc  = Sql.FamiliasObj.ObtenerItem("descripcion",   famId)?.ToString() ?? "";
+                string prodId   = Sql.FamiliasObj.ObtenerItem("producto",      famId)?.ToString() ?? "";
+                string prodDesc = Sql.ProductosObj.ObtenerItem("descripcion",  prodId)?.ToString() ?? "";
+                string catDesc  = Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "";
 
                 string descCompleta = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
                 double stock        = StockCalculator.ContarStock(id, fechaCorte);
 
-                datos.Add((id, catDesc, famDesc, descCompleta, stock));
+                datos.Add((id, prodDesc, catDesc, famDesc, descCompleta, stock));
             }
 
             // ── Ordenar por Producto → Familia → Id ──────────────────────
             datos.Sort((a, b) =>
             {
-                int cmp = string.Compare(a.catDesc, b.catDesc, StringComparison.OrdinalIgnoreCase);
+                int cmp = string.Compare(a.prodDesc, b.prodDesc, StringComparison.OrdinalIgnoreCase);
                 if (cmp != 0) return cmp;
                 cmp = string.Compare(a.famDesc, b.famDesc, StringComparison.OrdinalIgnoreCase);
                 if (cmp != 0) return cmp;
@@ -137,10 +139,10 @@ namespace WpfAppVba
 
             foreach (var item in datos)
             {
-                if (item.catDesc != currentProduct)
+                if (item.prodDesc != currentProduct)
                 {
-                    currentProduct = item.catDesc;
-                    ws.Cell(row, 1).Value = item.catDesc;
+                    currentProduct = item.prodDesc;
+                    ws.Cell(row, 1).Value = item.prodDesc;
                     row++;
                 }
 
