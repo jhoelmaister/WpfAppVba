@@ -1137,15 +1137,26 @@ namespace WpfAppVba
         // ─── Botones Guardar / Cancelar ───────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
+            CommitEdicionesPendientes();
             if (Guardar()) Close();
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
             => Close();
 
+        // Confirma cualquier celda en edición en los 3 grids editables
+        private void CommitEdicionesPendientes()
+        {
+            GridItems.CommitEdit(DataGridEditingUnit.Row, true);
+            GridTrasacciones.CommitEdit(DataGridEditingUnit.Row, true);
+            GridEntregas.CommitEdit(DataGridEditingUnit.Row, true);
+        }
+
         // ─── Al cerrar ────────────────────────────────────────────────────────
         private void Window_Closing(object sender, CancelEventArgs e)
         {
+            CommitEdicionesPendientes();
+
             if (!HayCambios) return;
 
             var res = MessageBox.Show("¿Guardar cambios?", "Consola",

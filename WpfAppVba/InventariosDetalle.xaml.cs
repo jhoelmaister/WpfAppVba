@@ -308,6 +308,7 @@ namespace WpfAppVba
         // ─── Botón Guardar ────────────────────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
+            GridItems.CommitEdit(DataGridEditingUnit.Row, true);
             bool ok = Guardar();
             if (ok) { _hayCambios = false; Close(); }
         }
@@ -448,6 +449,9 @@ namespace WpfAppVba
         // ─── Al cerrar: preguntar si hay cambios ──────────────────────────────
         private void Window_Closing(object sender, CancelEventArgs e)
         {
+            // Confirma cualquier celda en edición antes de chequear cambios pendientes
+            GridItems.CommitEdit(DataGridEditingUnit.Row, true);
+
             if (!_hayCambios) return;
 
             var res = MessageBox.Show("¿Guardar Cambios?", "Consola",
