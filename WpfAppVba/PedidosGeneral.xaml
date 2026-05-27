@@ -35,6 +35,7 @@
         <Border Grid.Column="0" Margin="0,0,8,0" BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1" Background="{DynamicResource ThemeBgSurface}">
             <TreeView x:Name="Tree1"
                       SelectedItemChanged="Tree1_SelectedItemChanged"
+                      PreviewMouseLeftButtonDown="Tree1_PreviewMouseLeftButtonDown"
                       FontSize="12"/>
         </Border>
 

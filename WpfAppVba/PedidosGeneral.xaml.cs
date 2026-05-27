@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
@@ -264,6 +265,20 @@ namespace WpfAppVba
                 _mesActivo = ti.Tag?.ToString() ?? "";
             _modoFiltro = "filtros";   // Tree1 activo → ignora TxtBuscar
             CargarPedidos();
+        }
+
+        private void Tree1_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            // Si el usuario hace clic en el item ya seleccionado, SelectedItemChanged no se dispara.
+            DependencyObject? source = e.OriginalSource as DependencyObject;
+            while (source != null && source is not TreeViewItem)
+                source = VisualTreeHelper.GetParent(source);
+
+            if (source is TreeViewItem tvi && tvi.IsSelected)
+            {
+                _modoFiltro = "filtros";
+                CargarPedidos();
+            }
         }
 
         private void FiltroEstado_Checked(object sender, RoutedEventArgs e)
