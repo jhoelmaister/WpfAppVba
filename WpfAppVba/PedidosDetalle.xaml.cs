@@ -1092,7 +1092,7 @@ namespace WpfAppVba
                 if (tabla.ObtenerItem(campo, id)?.ToString() == docP)
                     ids.Add(id);
             }
-            foreach (var id in ids) tabla.Ocultar(id);
+            foreach (var id in ids) tabla.Eliminar(id);
         }
 
         private void GuardarLineasPedido(string docP)
