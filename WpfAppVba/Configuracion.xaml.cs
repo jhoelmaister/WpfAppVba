@@ -130,10 +130,7 @@ namespace WpfAppVba
 
         private void CmbTema_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_cargando) return;
-            string tema = (CmbTema.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? ThemeManager.TemaClaro;
-            ThemeManager.AplicarTema(tema);
-            AppState.TemaActivo = tema;
+            // El tema solo se aplica al guardar con BtnGuardarTema
         }
 
         // ─── Cambiar contraseña ───────────────────────────────────────────────
@@ -155,9 +152,11 @@ namespace WpfAppVba
                 string tema  = (CmbTema.SelectedItem as ComboBoxItem)?.Content?.ToString()
                                ?? ThemeManager.TemaClaro;
 
+                ThemeManager.AplicarTema(tema);
+                AppState.TemaActivo = tema;
+
                 Sql.UsuariosObj.EstablecerItem("temaC", usuId, tema);
                 Sql.UsuariosObj.ExportarItems();
-                AppState.TemaActivo = tema;
 
                 MessageBox.Show("Tema guardado", "Configuración",
                                 MessageBoxButton.OK, MessageBoxImage.Information);
