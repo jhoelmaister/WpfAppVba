@@ -648,6 +648,7 @@ namespace WpfAppVba
             ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, null, art =>
             {
                 double precio = ObtenerPrecioArticulo(art.Id);
+                PedidoItemFila filaEnfocar;
 
                 if (filaActual != null && _pedidos.Contains(filaActual))
                 {
@@ -658,23 +659,46 @@ namespace WpfAppVba
                     filaActual.Precio      = precio;
                     filaActual.Importe     = precio * filaActual.Cantidad;
                     filaActual.Tipo        = "automatico";
+                    filaEnfocar = filaActual;
                 }
                 else
                 {
                     // Sin fila seleccionada → agregar nueva línea
-                    _pedidos.Add(new PedidoItemFila
+                    var nueva = new PedidoItemFila
                     {
                         PedidoId    = "", ArticuloId  = art.Id,
                         Codigo      = art.Codigo, Descripcion = art.Descripcion,
                         Cantidad    = 1, Forma = "sin factura", Contable = 0,
                         Precio      = precio, Importe = precio, Tipo = "automatico"
-                    });
+                    };
+                    _pedidos.Add(nueva);
+                    filaEnfocar = nueva;
                 }
                 _cambioPedido = true;
                 RefrescarGridPedidos();
                 ActualizarTotales();
                 VerificarStockVenta();
+
+                // Enfocar columna Cantidad de la fila e iniciar edición
+                EnfocarColumnaCantidad(filaEnfocar);
             });
+        }
+
+        // Posiciona el cursor en la celda Cantidad de la fila indicada e inicia edición
+        private void EnfocarColumnaCantidad(PedidoItemFila fila)
+        {
+            var colCantidad = GridItems.Columns
+                .FirstOrDefault(c => c.Header?.ToString() == "Cantidad");
+            if (colCantidad == null) return;
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                GridItems.SelectedItem = fila;
+                GridItems.CurrentCell  = new DataGridCellInfo(fila, colCantidad);
+                GridItems.ScrollIntoView(fila, colCantidad);
+                GridItems.Focus();
+                GridItems.BeginEdit();
+            }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
         private void BtnNuevaLinea_Click(object sender, RoutedEventArgs e)
