@@ -371,27 +371,50 @@ namespace WpfAppVba
             var filaActual = GridItems.SelectedItem as TraspasoItemFila;
             ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, null, art =>
             {
+                TraspasoItemFila filaEnfocar;
+
                 if (filaActual != null && _items.Contains(filaActual))
                 {
                     filaActual.ArticuloId  = art.Id;
                     filaActual.Codigo      = art.Codigo;
                     filaActual.Descripcion = art.Descripcion;
+                    filaEnfocar = filaActual;
                 }
                 else
                 {
-                    _items.Add(new TraspasoItemFila
+                    var nueva = new TraspasoItemFila
                     {
                         TraspasoId  = "",
                         ArticuloId  = art.Id,
                         Codigo      = art.Codigo,
                         Descripcion = art.Descripcion,
                         Cantidad    = 1
-                    });
+                    };
+                    _items.Add(nueva);
+                    filaEnfocar = nueva;
                 }
                 _hayCambios = true;
                 RefrescarGrid();
                 NotificarStockInsuficiente();
+                EnfocarColumnaCantidad(filaEnfocar);
             });
+        }
+
+        // Posiciona el cursor en la celda Cantidad de la fila indicada e inicia edición
+        private void EnfocarColumnaCantidad(TraspasoItemFila fila)
+        {
+            var colCantidad = GridItems.Columns
+                .FirstOrDefault(c => c.Header?.ToString() == "Cantidad");
+            if (colCantidad == null) return;
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                GridItems.SelectedItem = fila;
+                GridItems.CurrentCell  = new DataGridCellInfo(fila, colCantidad);
+                GridItems.ScrollIntoView(fila, colCantidad);
+                GridItems.Focus();
+                GridItems.BeginEdit();
+            }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
         // ─── Importar artículos ───────────────────────────────────────────────

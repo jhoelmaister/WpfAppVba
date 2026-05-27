@@ -180,26 +180,49 @@ namespace WpfAppVba
             var filaActual = GridItems.SelectedItem as InventarioItemFila;
             ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, null, art =>
             {
+                InventarioItemFila filaEnfocar;
+
                 if (filaActual != null && _items.Contains(filaActual))
                 {
                     filaActual.ArticuloId  = art.Id;
                     filaActual.Codigo      = art.Codigo;
                     filaActual.Descripcion = art.Descripcion;
+                    filaEnfocar = filaActual;
                 }
                 else
                 {
-                    _items.Add(new InventarioItemFila
+                    var nueva = new InventarioItemFila
                     {
                         InventarioId = "",
                         ArticuloId   = art.Id,
                         Codigo       = art.Codigo,
                         Descripcion  = art.Descripcion,
                         Cantidad     = 1
-                    });
+                    };
+                    _items.Add(nueva);
+                    filaEnfocar = nueva;
                 }
                 _hayCambios = true;
                 RefrescarGrid();
+                EnfocarColumnaCantidad(filaEnfocar);
             });
+        }
+
+        // Posiciona el cursor en la celda Cantidad de la fila indicada e inicia edición
+        private void EnfocarColumnaCantidad(InventarioItemFila fila)
+        {
+            var colCantidad = GridItems.Columns
+                .FirstOrDefault(c => c.Header?.ToString() == "Cantidad");
+            if (colCantidad == null) return;
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                GridItems.SelectedItem = fila;
+                GridItems.CurrentCell  = new DataGridCellInfo(fila, colCantidad);
+                GridItems.ScrollIntoView(fila, colCantidad);
+                GridItems.Focus();
+                GridItems.BeginEdit();
+            }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
         // ─── Nueva línea vacía ────────────────────────────────────────────────
@@ -275,7 +298,8 @@ namespace WpfAppVba
         // ─── Seleccionar todo al entrar al campo Código ───────────────────────
         private void GridItems_PreparingCellForEdit(object? sender, DataGridPreparingCellForEditEventArgs e)
         {
-            if (e.Column.Header?.ToString() == "Código" && e.EditingElement is TextBox tb)
+            if (e.Column.Header?.ToString() is "Código" or "Cantidad" &&
+                e.EditingElement is TextBox tb)
             {
                 tb.SelectAll();
                 tb.Focus();
