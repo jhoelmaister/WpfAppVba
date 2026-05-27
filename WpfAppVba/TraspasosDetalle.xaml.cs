@@ -19,6 +19,8 @@ namespace WpfAppVba
         private bool _editarFormulario = false;
         private List<TraspasoItemFila> _items = new();
 
+        private readonly HashSet<string> _articulosAlertados = new();
+
         /// <summary>
         /// ID del documento recién creado (solo en modo "nuevo").
         /// El padre lo lee después de ShowDialog() para enfocar la fila.
@@ -296,13 +298,10 @@ namespace WpfAppVba
             if (AppState.TipoMovimiento.ToLower() != "salida") return;
             if (AppState.EventoFormularioM != "nuevo") return;
 
-            // Agrupa artículos ya notificados para no repetir
-            var notificados = new HashSet<string>();
-
             foreach (var item in _items)
             {
                 if (string.IsNullOrEmpty(item.ArticuloId)) continue;
-                if (notificados.Contains(item.ArticuloId)) continue;
+                if (_articulosAlertados.Contains(item.ArticuloId)) continue;
 
                 double totalCant = _items.Where(x => x.ArticuloId == item.ArticuloId)
                                           .Sum(x => x.Cantidad);
@@ -310,7 +309,7 @@ namespace WpfAppVba
 
                 if (stock < totalCant)
                 {
-                    notificados.Add(item.ArticuloId);
+                    _articulosAlertados.Add(item.ArticuloId);
                     MessageBox.Show($"{item.Descripcion}: stock insuficiente (disponible: {stock:F0}, solicitado: {totalCant:F0}).",
                         "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }

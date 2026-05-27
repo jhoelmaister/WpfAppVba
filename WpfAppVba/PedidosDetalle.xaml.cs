@@ -25,6 +25,8 @@ namespace WpfAppVba
         private List<PedidoItemFila>     _pedidos       = new();
         private List<TrasaccionItemFila> _trasacciones  = new();
         private List<EntregaItemFila>    _entregas      = new();
+
+        private readonly HashSet<string> _articulosAlertados = new();
         private string                   _observaciones = "";
 
         /// <summary>
@@ -466,12 +468,10 @@ namespace WpfAppVba
             if (AppState.TipoMovimiento.ToLower() != "venta") return;
             if (AppState.EventoFormularioM != "nuevo") return;
 
-            var notificados = new HashSet<string>();
-
             foreach (var item in _pedidos)
             {
                 if (string.IsNullOrEmpty(item.ArticuloId)) continue;
-                if (notificados.Contains(item.ArticuloId)) continue;
+                if (_articulosAlertados.Contains(item.ArticuloId)) continue;
 
                 double totalCant = _pedidos.Where(x => x.ArticuloId == item.ArticuloId)
                                             .Sum(x => x.Cantidad);
@@ -479,7 +479,7 @@ namespace WpfAppVba
 
                 if (stock < totalCant)
                 {
-                    notificados.Add(item.ArticuloId);
+                    _articulosAlertados.Add(item.ArticuloId);
                     MessageBox.Show($"{item.Descripcion}: stock insuficiente (disponible: {stock:F0}, solicitado: {totalCant:F0}).",
                         "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
