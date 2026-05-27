@@ -359,19 +359,19 @@ namespace WpfAppVba
                 Sql.DocumentosIObj.EstablecerItem("edicion",     docId, DateTime.Now);
                 Sql.DocumentosIObj.EstablecerItem("usuario",     docId, AppState.UsuarioActivo);
 
-                // Ocultar inventarios existentes de esta apertura
+                // Eliminar inventarios existentes de esta apertura
                 int uf = Sql.InventariosObj.ContarFilas;
-                var idsOcultar = new List<string>();
+                var idsEliminar = new List<string>();
                 for (int i = 1; i <= uf; i++)
                 {
                     var idObj = Sql.InventariosObj.Mover(i);
                     if (idObj == null) continue;
                     string id = idObj.ToString()!;
                     if (Sql.InventariosObj.ObtenerItem("documentoI", id)?.ToString() == docId)
-                        idsOcultar.Add(id);
+                        idsEliminar.Add(id);
                 }
-                foreach (string id in idsOcultar)
-                    Sql.InventariosObj.Ocultar(id);
+                foreach (string id in idsEliminar)
+                    Sql.InventariosObj.Eliminar(id);
 
                 // Re-crear inventarios desde _items
                 long maxInv = Convert.ToInt64(Sql.InventariosObj.Maximo("id") ?? 0);
