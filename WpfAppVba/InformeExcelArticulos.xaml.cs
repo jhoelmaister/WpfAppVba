@@ -109,11 +109,11 @@ namespace WpfAppVba
 
                 string desc   = Sql.ArticulosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
                 string modelo = Sql.ArticulosObj.ObtenerItem("modelo",      id)?.ToString() ?? "";
-                string famId  = Sql.ArticulosObj.ObtenerItem("familia",     id)?.ToString() ?? "";
+                string famId   = Sql.ArticulosObj.ObtenerItem("familia",    id)?.ToString() ?? "";
+                string catId   = Sql.ArticulosObj.ObtenerItem("Categoria", id)?.ToString() ?? "";
 
-                string famDesc = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? "";
-                string prodId  = Sql.FamiliasObj.ObtenerItem("producto",    famId)?.ToString() ?? "";
-                string catDesc = Sql.ProductosObj.ObtenerItem("descripcion", prodId)?.ToString() ?? "";
+                string famDesc = Sql.FamiliasObj.ObtenerItem("descripcion",    famId)?.ToString() ?? "";
+                string catDesc = Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "";
 
                 string descCompleta = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
                 double stock        = StockCalculator.ContarStock(id, fechaCorte);
