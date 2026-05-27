@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
@@ -221,6 +222,21 @@ namespace WpfAppVba
         {
             _modoFiltro = "familia";
             CargarArticulos();
+        }
+
+        private void Tree1_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            // Si el usuario hace clic en el item ya seleccionado, SelectedItemChanged no se dispara.
+            // Detectamos ese caso y recargamos manualmente.
+            DependencyObject? source = e.OriginalSource as DependencyObject;
+            while (source != null && source is not TreeViewItem)
+                source = VisualTreeHelper.GetParent(source);
+
+            if (source is TreeViewItem tvi && tvi.IsSelected)
+            {
+                _modoFiltro = "familia";
+                CargarArticulos();
+            }
         }
 
         private void TxtBuscar_KeyDown(object sender, KeyEventArgs e)
