@@ -573,7 +573,6 @@ namespace WpfAppVba
                 {
                     fila.Cantidad = cant;
                     fila.Importe  = cant * fila.Precio;
-                    fila.Tipo     = "manual";
                 }
             }
             else if (col == "Precio" && e.EditingElement is TextBox tbPrecio)
