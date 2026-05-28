@@ -200,6 +200,7 @@ namespace WpfAppVba
                     TrasaccionId = id,
                     Linea        = lineaT++,
                     FechaStr     = ft.ToString("d"),
+                    FechaDate    = ft.Date,
                     HoraStr      = ft.ToString("HH:mm:ss"),
                     Descripcion  = Sql.TrasaccionesObj.ObtenerItem("descripcion", id)?.ToString() ?? "",
                     Forma        = Sql.TrasaccionesObj.ObtenerItem("forma",       id)?.ToString() ?? "efectivo",
@@ -231,6 +232,7 @@ namespace WpfAppVba
                     Descripcion = ObtenerDescripcionArticulo(artId),
                     Cantidad    = Convert.ToDouble(Sql.EntregasObj.ObtenerItem("cantidad", id) ?? 0),
                     FechaStr    = fe.ToString("d"),
+                    FechaDate   = fe.Date,
                     HoraStr     = fe.ToString("HH:mm:ss")
                 });
             }
@@ -763,6 +765,8 @@ namespace WpfAppVba
         private void GridTrasacciones_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
         {
             if (e.EditAction != DataGridEditAction.Commit) return;
+            if (e.Row.Item is TrasaccionItemFila fila && e.Column.Header?.ToString() == "Fecha")
+                fila.FechaStr = fila.FechaDate?.ToString("d") ?? fila.FechaStr;
             _cambioTrasaccion = true;
             Dispatcher.BeginInvoke(new Action(() =>
             {
@@ -848,6 +852,9 @@ namespace WpfAppVba
             if (e.EditAction != DataGridEditAction.Commit) return;
             if (e.Row.Item is not EntregaItemFila fila) return;
 
+            if (e.Column.Header?.ToString() == "Fecha")
+                fila.FechaStr = fila.FechaDate?.ToString("d") ?? fila.FechaStr;
+
             if (e.Column.Header?.ToString() == "Código" && e.EditingElement is TextBox tbCod)
             {
                 string codigo = tbCod.Text.Trim();
@@ -900,6 +907,54 @@ namespace WpfAppVba
                 RefrescarGridEntregas();
                 if (AppState.TipoPedido.ToLower() == "normal") CargarEstados();
             }, null);
+        }
+
+        private void BtnBuscarArticuloEntregas_Click(object sender, RoutedEventArgs e)
+        {
+            var filaActual = GridEntregas.SelectedItem as EntregaItemFila;
+            DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
+
+            ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, null, art =>
+            {
+                EntregaItemFila filaEnfocar;
+
+                if (filaActual != null && _entregas.Contains(filaActual))
+                {
+                    filaActual.ArticuloId  = art.Id;
+                    filaActual.Codigo      = art.Codigo;
+                    filaActual.Descripcion = art.Descripcion;
+                    filaEnfocar = filaActual;
+                }
+                else
+                {
+                    var nueva = new EntregaItemFila
+                    {
+                        EntregaId = "", ArticuloId = art.Id,
+                        Codigo = art.Codigo, Descripcion = art.Descripcion,
+                        Cantidad = 1,
+                        FechaStr = fechaDoc.ToString("d"),
+                        FechaDate = fechaDoc.Date,
+                        HoraStr  = DateTime.Now.ToString("HH:mm:ss")
+                    };
+                    _entregas.Add(nueva);
+                    filaEnfocar = nueva;
+                }
+                _cambioEntrega = true;
+                RefrescarGridEntregas();
+                if (AppState.TipoPedido.ToLower() == "normal") CargarEstados();
+
+                var colCantidad = GridEntregas.Columns
+                    .FirstOrDefault(c => c.Header?.ToString() == "Cantidad");
+                if (colCantidad != null)
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        GridEntregas.SelectedItem = filaEnfocar;
+                        GridEntregas.CurrentCell  = new DataGridCellInfo(filaEnfocar, colCantidad);
+                        GridEntregas.ScrollIntoView(filaEnfocar, colCantidad);
+                        GridEntregas.Focus();
+                        GridEntregas.BeginEdit();
+                    }), System.Windows.Threading.DispatcherPriority.Background);
+            });
         }
 
         private void BtnNuevaLineaEntrega_Click(object sender, RoutedEventArgs e)
@@ -1214,25 +1269,27 @@ namespace WpfAppVba
 
     public class TrasaccionItemFila
     {
-        public string TrasaccionId { get; set; } = "";
-        public int    Linea        { get; set; }
-        public string FechaStr     { get; set; } = "";
-        public string HoraStr      { get; set; } = "";
-        public string Descripcion  { get; set; } = "";
-        public string Forma        { get; set; } = "efectivo";
-        public double Importe      { get; set; }
+        public string    TrasaccionId { get; set; } = "";
+        public int       Linea        { get; set; }
+        public string    FechaStr     { get; set; } = "";
+        public DateTime? FechaDate    { get; set; }
+        public string    HoraStr      { get; set; } = "";
+        public string    Descripcion  { get; set; } = "";
+        public string    Forma        { get; set; } = "efectivo";
+        public double    Importe      { get; set; }
     }
 
     public class EntregaItemFila
     {
-        public string EntregaId   { get; set; } = "";
-        public int    Linea       { get; set; }
-        public string ArticuloId  { get; set; } = "";
-        public string Codigo      { get; set; } = "";
-        public string Descripcion { get; set; } = "";
-        public double Cantidad    { get; set; }
-        public string FechaStr    { get; set; } = "";
-        public string HoraStr     { get; set; } = "";
+        public string    EntregaId   { get; set; } = "";
+        public int       Linea       { get; set; }
+        public string    ArticuloId  { get; set; } = "";
+        public string    Codigo      { get; set; } = "";
+        public string    Descripcion { get; set; } = "";
+        public double    Cantidad    { get; set; }
+        public string    FechaStr    { get; set; } = "";
+        public DateTime? FechaDate   { get; set; }
+        public string    HoraStr     { get; set; } = "";
     }
 
     public class PrecioFila

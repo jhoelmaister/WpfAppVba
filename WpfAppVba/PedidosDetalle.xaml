@@ -357,7 +357,19 @@
                               CellEditEnding="GridTrasacciones_CellEditEnding">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Línea"       Binding="{Binding Linea}"       Width="50"  IsReadOnly="True"/>
-                            <DataGridTextColumn Header="Fecha"       Binding="{Binding FechaStr}"    Width="95"/>
+                            <DataGridTemplateColumn Header="Fecha" Width="110">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding FechaStr}" Margin="4,0"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <DatePicker SelectedDate="{Binding FechaDate, UpdateSourceTrigger=PropertyChanged}"
+                                                    FontSize="12"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Hora"        Binding="{Binding HoraStr}"     Width="75"/>
                             <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
 
@@ -401,6 +413,8 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Content="Importar Artículos"  Style="{StaticResource BtnPrimario}"
                                     Margin="0,0,5,0" Click="BtnImportarArticulosEntregas_Click"/>
+                            <Button Content="Buscar Artículo"     Style="{StaticResource BtnSecundario}"
+                                    Margin="0,0,5,0" Click="BtnBuscarArticuloEntregas_Click"/>
                             <Button Content="Insertar"            Style="{StaticResource BtnSecundario}"
                                     Margin="0,0,5,0" Click="BtnInsertarEntrega_Click"/>
                             <Button Content="Nueva Línea"         Style="{StaticResource BtnSecundario}"
@@ -430,7 +444,19 @@
                             <DataGridTextColumn Header="Cantidad"    Binding="{Binding Cantidad, StringFormat=#\,##0.##}" Width="70"
                                                 ElementStyle="{StaticResource CeldaNumero}"
                                                 EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
-                            <DataGridTextColumn Header="Fecha"       Binding="{Binding FechaStr}"    Width="95"/>
+                            <DataGridTemplateColumn Header="Fecha" Width="110">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding FechaStr}" Margin="4,0"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <DatePicker SelectedDate="{Binding FechaDate, UpdateSourceTrigger=PropertyChanged}"
+                                                    FontSize="12"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Hora"        Binding="{Binding HoraStr}"     Width="75"/>
                         </DataGrid.Columns>
                     </DataGrid>
