@@ -140,7 +140,7 @@
 
                 <!-- Panel inferior izquierdo -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="Informe Excel" Style="{StaticResource BtnSecundario}"
+                    <Button x:Name="BtnInformeExcel" Content="Informe Excel" Style="{StaticResource BtnSecundario}"
                             Margin="0,0,8,0" Click="BtnInformeExcel_Click"/>
                     <!-- Panel exportar (oculto por defecto) -->
                     <StackPanel x:Name="PanelExportar" Orientation="Horizontal"

@@ -61,7 +61,10 @@ namespace WpfAppVba
         // ─── Configurar modo exportar ─────────────────────────────────────────
         private void ConfigurarModo()
         {
-            PanelExportar.Visibility = ModoExportar ? Visibility.Visible : Visibility.Collapsed;
+            bool esDialog = ModoExportar || ModoSingle;
+
+            PanelExportar.Visibility  = ModoExportar ? Visibility.Visible  : Visibility.Collapsed;
+            BtnInformeExcel.Visibility = esDialog     ? Visibility.Collapsed : Visibility.Visible;
 
             // Columna checkbox (✓) y columna "#" solo visibles en modo importar
             var visibilidad = ModoExportar ? Visibility.Visible : Visibility.Collapsed;
