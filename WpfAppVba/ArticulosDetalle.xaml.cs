@@ -275,6 +275,7 @@ namespace WpfAppVba
                 Sql.ArticulosObj.EstablecerItem("emision",    id, DateTime.Now);
                 Sql.ArticulosObj.EstablecerItem("edicion",    id, DateTime.Now);
                 Sql.ArticulosObj.EstablecerItem("usuario",    id, AppState.UsuarioActivo);
+                Sql.ArticulosObj.EstablecerItem("estado",     id, "mostrar");
 
                 Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
                 AppState.ActualizarStocks();
@@ -349,6 +350,15 @@ namespace WpfAppVba
                 return false;
             }
         }
+
+        // ─── Botones Guardar / Cancelar ───────────────────────────────────────
+        private void BtnGuardar_Click(object sender, RoutedEventArgs e)
+        {
+            if (Guardar()) { _hayCambios = false; Close(); }
+        }
+
+        private void BtnCancelar_Click(object sender, RoutedEventArgs e)
+            => Close();
 
         // ─── Al cerrar: preguntar si hay cambios ──────────────────────────────
         private void Window_Closing(object sender, CancelEventArgs e)

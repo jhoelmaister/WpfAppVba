@@ -114,14 +114,26 @@
             </StackPanel>
         </ScrollViewer>
 
-        <!-- Botón Ver Movimientos (solo visible en modo editar) -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-            <Button x:Name="BtnVerMovimientos" Content="📊 Ver Movimientos"
+        <!-- Guardar / Cancelar / Ver Movimientos -->
+        <DockPanel Grid.Row="2" Margin="0,10,0,0">
+            <Button x:Name="BtnVerMovimientos" DockPanel.Dock="Right"
+                    Content="📊 Ver Movimientos"
                     Height="32" Padding="14,0" FontSize="12"
                     Background="{DynamicResource ThemeBtnSecBg}" Foreground="#1A73E8"
                     BorderThickness="0" Cursor="Hand"
                     Visibility="Collapsed"
                     Click="BtnVerMovimientos_Click"/>
-        </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Guardar" Height="32" Padding="14,0" FontSize="12"
+                        Background="#1A73E8" Foreground="White"
+                        BorderThickness="0" Cursor="Hand"
+                        Margin="0,0,8,0"
+                        Click="BtnGuardar_Click"/>
+                <Button Content="Cancelar" Height="32" Padding="14,0" FontSize="12"
+                        Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
+                        BorderThickness="0" Cursor="Hand"
+                        Click="BtnCancelar_Click"/>
+            </StackPanel>
+        </DockPanel>
     </Grid>
 </Window>

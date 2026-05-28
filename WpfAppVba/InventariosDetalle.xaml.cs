@@ -329,13 +329,16 @@ namespace WpfAppVba
             }
         }
 
-        // ─── Botón Guardar ────────────────────────────────────────────────────
+        // ─── Botones Guardar / Cancelar ───────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
             GridItems.CommitEdit(DataGridEditingUnit.Row, true);
             bool ok = Guardar();
             if (ok) { _hayCambios = false; Close(); }
         }
+
+        private void BtnCancelar_Click(object sender, RoutedEventArgs e)
+            => Close();
 
         // ─── Guardar ─────────────────────────────────────────────────────────
         private bool Guardar()
