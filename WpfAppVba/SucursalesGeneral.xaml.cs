@@ -101,7 +101,7 @@ namespace WpfAppVba
 
             string? idSel = (Grid1.SelectedItem as SucursalFila)?.Id;
             AppState.EventoFormularioI = "nuevo";
-            var detalle = new SucursalesDetalle(this);
+            var detalle = new SucursalesDetalle(this) { Owner = this };
             detalle.ShowDialog();
             CargarSucursales();
             string? enfocar = detalle.ItemCreadoId ?? idSel;
@@ -157,7 +157,7 @@ namespace WpfAppVba
             if (Grid1.SelectedItem is not SucursalFila fila) return;
             string idSel = fila.Id;
             AppState.EventoFormularioI = "modificar";
-            var detalle = new SucursalesDetalle(this, fila.Id);
+            var detalle = new SucursalesDetalle(this, fila.Id) { Owner = this };
             detalle.ShowDialog();
             CargarSucursales();
             var item = (Grid1.ItemsSource as System.Collections.Generic.List<SucursalFila>)

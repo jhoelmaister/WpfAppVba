@@ -110,7 +110,7 @@ namespace WpfAppVba
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
             AppState.EventoFormularioI = "nuevo";
-            var detalle = new InventariosDetalle(this);
+            var detalle = new InventariosDetalle(this) { Owner = Window.GetWindow(this) };
             detalle.ShowDialog();
             if (detalle.ItemCreadoId == null) return;   // cancelado
 
@@ -200,7 +200,7 @@ namespace WpfAppVba
 
             string idSel = fila.Id;
             AppState.EventoFormularioI = "editar";
-            var detalle = new InventariosDetalle(this, fila.Id);
+            var detalle = new InventariosDetalle(this, fila.Id) { Owner = Window.GetWindow(this) };
             detalle.ShowDialog();
 
             var lista = FilasGrid;

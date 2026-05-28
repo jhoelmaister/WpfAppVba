@@ -4,6 +4,7 @@
         xmlns:local="clr-namespace:WpfAppVba"
         Title="Detalle de Pedido" Height="760" Width="1060"
         WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="False"
         ResizeMode="CanResizeWithGrip"
         Background="{DynamicResource ThemeBgPrincipal}"
         Closing="Window_Closing">

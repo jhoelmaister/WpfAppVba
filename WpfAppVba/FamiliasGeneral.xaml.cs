@@ -130,7 +130,7 @@ namespace WpfAppVba
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
             AppState.EventoFormularioF = "nuevo";
-            var detalle = new FamiliasDetalle(this);
+            var detalle = new FamiliasDetalle(this) { Owner = this };
             detalle.ShowDialog();
             if (detalle.ItemCreadoId == null) return;   // cancelado
 
@@ -179,7 +179,7 @@ namespace WpfAppVba
             if (Grid1.SelectedItem is not FamiliaFila fila) return;
             string idSel = fila.Id;
             AppState.EventoFormularioF = "modificar";
-            var detalle = new FamiliasDetalle(this, fila.Id);
+            var detalle = new FamiliasDetalle(this, fila.Id) { Owner = this };
             detalle.ShowDialog();
 
             var lista = FilasGrid;

@@ -4,6 +4,7 @@
         Title="Generar Informe Excel — Artículos"
         Width="380" Height="230"
         WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
         ResizeMode="NoResize"
         Background="{DynamicResource ThemeBgPrincipal}">
 

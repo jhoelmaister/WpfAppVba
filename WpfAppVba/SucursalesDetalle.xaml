@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Sucursal" Height="550" Width="420"
         WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="False"
         ResizeMode="NoResize"
         Background="{DynamicResource ThemeBgPrincipal}"
         Closing="Window_Closing">

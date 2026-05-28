@@ -44,6 +44,7 @@ namespace WpfAppVba
                 Height                   = 543,
                 WindowStartupLocation    = WindowStartupLocation.CenterOwner,
                 Owner                    = owner,
+                ShowInTaskbar            = false,
                 Background               = System.Windows.Media.Brushes.WhiteSmoke,
                 ResizeMode               = ResizeMode.CanResize
             };
@@ -146,7 +147,7 @@ namespace WpfAppVba
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
             AppState.EventoFormularioL = "nuevo";
-            var detalle = new TercerosDetalle();
+            var detalle = new TercerosDetalle() { Owner = Window.GetWindow(this) };
             detalle.ShowDialog();
             if (detalle.ItemCreadoId == null) return;   // cancelado
 
@@ -195,7 +196,7 @@ namespace WpfAppVba
             if (Grid1.SelectedItem is not TerceroFila fila) return;
             string idSel = fila.Id;
             AppState.EventoFormularioL = "modificar";
-            var detalle = new TercerosDetalle(fila.Id);
+            var detalle = new TercerosDetalle(fila.Id) { Owner = Window.GetWindow(this) };
             detalle.ShowDialog();
 
             var lista = FilasGrid;

@@ -198,7 +198,7 @@ namespace WpfAppVba
         private void BtnVerFamilias_Click(object sender, RoutedEventArgs e)
         {
             FamiliasGeneral.FamiliaSeleccionada = null;
-            new FamiliasGeneral(modoSelector: true).ShowDialog();
+            new FamiliasGeneral(modoSelector: true) { Owner = this }.ShowDialog();
 
             if (!string.IsNullOrEmpty(FamiliasGeneral.FamiliaSeleccionada))
             {
@@ -210,7 +210,7 @@ namespace WpfAppVba
         // ─── Ver movimientos del artículo ─────────────────────────────────────
         private void BtnVerMovimientos_Click(object sender, RoutedEventArgs e)
         {
-            new MovimientosWindow(Box_Codigo.Text.Trim()).Show();
+            new MovimientosWindow(Box_Codigo.Text.Trim()) { Owner = this }.ShowDialog();
         }
 
         // ─── Guardar ─────────────────────────────────────────────────────────

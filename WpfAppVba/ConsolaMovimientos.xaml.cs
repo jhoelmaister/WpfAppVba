@@ -24,7 +24,7 @@ namespace WpfAppVba
             AppState.EventoFormularioM = "nuevo";
             AppState.TipoMovimiento    = "venta";
             AppState.TipoPedido        = "rapido";
-            new PedidosDetalle().ShowDialog();
+            new PedidosDetalle { Owner = this }.ShowDialog();
             TabVentas.CargarPedidos();
         }
 
@@ -32,7 +32,7 @@ namespace WpfAppVba
         {
             AppState.EventoFormularioM = "nuevo";
             AppState.TipoMovimiento    = "entrada";
-            new TraspasosDetalle().ShowDialog();
+            new TraspasosDetalle { Owner = this }.ShowDialog();
             TabEntradas.CargarTraspasos();
         }
 
@@ -40,7 +40,7 @@ namespace WpfAppVba
         {
             AppState.EventoFormularioM = "nuevo";
             AppState.TipoMovimiento    = "salida";
-            new TraspasosDetalle().ShowDialog();
+            new TraspasosDetalle { Owner = this }.ShowDialog();
             TabSalidas.CargarTraspasos();
         }
 
@@ -55,6 +55,7 @@ namespace WpfAppVba
                 Height                = 380,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Owner                 = this,
+                ShowInTaskbar         = false,
                 Background            = System.Windows.Media.Brushes.Transparent,
                 Content               = new InventariosGeneral()
             };
@@ -73,6 +74,7 @@ namespace WpfAppVba
                 Height                = 620,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Owner                 = this,
+                ShowInTaskbar         = false,
                 ResizeMode            = ResizeMode.NoResize,
                 Background            = System.Windows.Media.Brushes.Transparent,
                 Content               = new Configuracion()

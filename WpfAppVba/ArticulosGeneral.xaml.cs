@@ -51,6 +51,7 @@ namespace WpfAppVba
                 Height                = 560,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Owner                 = owner,
+                ShowInTaskbar         = false,
                 Background            = System.Windows.Media.Brushes.WhiteSmoke,
                 ResizeMode            = ResizeMode.CanResize
             };
@@ -357,7 +358,7 @@ namespace WpfAppVba
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
             AppState.EventoFormularioA = "nuevo";
-            var detalle = new ArticulosDetalle(this);
+            var detalle = new ArticulosDetalle(this) { Owner = Window.GetWindow(this) };
             detalle.ShowDialog();
             if (detalle.ItemCreadoId == null) return;   // cancelado
 
@@ -371,7 +372,7 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not ArticuloFila fila) return;
             AppState.EventoFormularioA = "insertar";
-            var detalle = new ArticulosDetalle(this, fila.Id);
+            var detalle = new ArticulosDetalle(this, fila.Id) { Owner = Window.GetWindow(this) };
             detalle.ShowDialog();
             if (detalle.ItemCreadoId == null) return;   // cancelado
 
@@ -477,7 +478,7 @@ namespace WpfAppVba
             if (Grid1.SelectedItem is not ArticuloFila fila) return;
             string idSel = fila.Id;
             AppState.EventoFormularioA = "modificar";
-            var detalle = new ArticulosDetalle(this, fila.Id);
+            var detalle = new ArticulosDetalle(this, fila.Id) { Owner = Window.GetWindow(this) };
             detalle.ShowDialog();
 
             // Reconstruir solo esta fila en su lugar (el Id interno no cambia)

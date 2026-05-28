@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Detalle de Traspaso" Height="740" Width="860"
         WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="False"
         ResizeMode="CanResizeWithGrip"
         Background="{DynamicResource ThemeBgPrincipal}"
         Closing="Window_Closing">

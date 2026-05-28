@@ -374,7 +374,7 @@ namespace WpfAppVba
             AppState.TipoPedido        = "normal";
             if (!string.IsNullOrEmpty(TipoMovimiento))
                 AppState.TipoMovimiento = TipoMovimiento;
-            var dlg = new PedidosDetalle(this);
+            var dlg = new PedidosDetalle(this) { Owner = Window.GetWindow(this) };
             dlg.ShowDialog();
             if (dlg.DocumentoCreadoId == null) return;   // cancelado
 
@@ -449,7 +449,7 @@ namespace WpfAppVba
             AppState.EventoFormularioM = "editar";
             if (!string.IsNullOrEmpty(TipoMovimiento))
                 AppState.TipoMovimiento = TipoMovimiento;
-            new PedidosDetalle(this, fila.DocumentoP).ShowDialog();
+            new PedidosDetalle(this, fila.DocumentoP) { Owner = Window.GetWindow(this) }.ShowDialog();
 
             var lista = FilasGrid;
             int idx   = lista.IndexOf(fila);

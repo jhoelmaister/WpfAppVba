@@ -337,7 +337,7 @@ namespace WpfAppVba
             AppState.EventoFormularioM = "nuevo";
             if (!string.IsNullOrEmpty(TipoMovimiento))
                 AppState.TipoMovimiento = TipoMovimiento;
-            var dlg = new TraspasosDetalle(this);
+            var dlg = new TraspasosDetalle(this) { Owner = Window.GetWindow(this) };
             dlg.ShowDialog();
             if (dlg.DocumentoCreadoId == null) return;   // cancelado
 
@@ -411,7 +411,7 @@ namespace WpfAppVba
             AppState.EventoFormularioM = "editar";
             if (!string.IsNullOrEmpty(TipoMovimiento))
                 AppState.TipoMovimiento = TipoMovimiento;
-            new TraspasosDetalle(this, fila.DocumentoT).ShowDialog();
+            new TraspasosDetalle(this, fila.DocumentoT) { Owner = Window.GetWindow(this) }.ShowDialog();
 
             var lista = FilasGrid;
             int idx   = lista.IndexOf(fila);
