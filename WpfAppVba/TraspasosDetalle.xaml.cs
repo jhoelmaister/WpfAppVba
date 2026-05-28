@@ -425,7 +425,6 @@ namespace WpfAppVba
             {
                 foreach (var art in arts)
                 {
-                    if (_items.Any(x => x.ArticuloId == art.Id)) continue;
                     _items.Add(new TraspasoItemFila
                     {
                         TraspasoId  = "",
