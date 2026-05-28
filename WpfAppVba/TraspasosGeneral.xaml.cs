@@ -159,6 +159,53 @@ namespace WpfAppVba
             return mes >= 1 && mes <= 12 ? meses[mes - 1] : "";
         }
 
+        // ─── Helpers de actualización incremental del Grid1 ───────────────────
+        private List<TraspasoFila> FilasGrid =>
+            Grid1.ItemsSource as List<TraspasoFila> ?? new List<TraspasoFila>();
+
+        private TraspasoFila ConstruirFilaTraspaso(string id, int linea)
+        {
+            string tipoMov = !string.IsNullOrEmpty(TipoMovimiento)
+                             ? TipoMovimiento.ToLower()
+                             : AppState.TipoMovimiento.ToLower();
+            string campOtro = tipoMov == "salida" ? "destino" : "origen";
+
+            var fechaDocObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
+            DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
+
+            string otroSucId   = Sql.DocumentosTObj.ObtenerItem(campOtro, id)?.ToString() ?? "";
+            string otroSucDesc = Sql.SucursalesObj.ObtenerItem("descripcion", otroSucId)?.ToString() ?? otroSucId;
+
+            string estado  = Sql.DocumentosTObj.ObtenerItem("estado",  id)?.ToString() ?? "";
+            string emitido = Sql.DocumentosTObj.ObtenerItem("emitido", id)?.ToString() ?? "";
+            if (emitido != AppState.SucursalActiva.ToString() && estado == "pendiente")
+                estado = "pendiente revisar";
+
+            return new TraspasoFila
+            {
+                Linea        = linea,
+                DocumentoT   = id,
+                FechaStr     = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
+                SucursalDesc = otroSucDesc,
+                Estado       = estado,
+                Cantidad     = CalcularCantidad(id)
+            };
+        }
+
+        private void RenumerarYTotales()
+        {
+            var lista = FilasGrid;
+            int n = 1;
+            double totalCant = 0;
+            foreach (var f in lista)
+            {
+                f.Linea    = n++;
+                totalCant += f.Cantidad;
+            }
+            TxtTotalCantidad.Text = totalCant.ToString("N0");
+            Grid1.Items.Refresh();
+        }
+
         // ─── Sumar cantidad de artículos del documentoT ───────────────────────
         private static double CalcularCantidad(string documentoT)
         {
@@ -287,22 +334,17 @@ namespace WpfAppVba
         // ─── Botones ──────────────────────────────────────────────────────────
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
-            string? docSel = (Grid1.SelectedItem as TraspasoFila)?.DocumentoT;
             AppState.EventoFormularioM = "nuevo";
             if (!string.IsNullOrEmpty(TipoMovimiento))
                 AppState.TipoMovimiento = TipoMovimiento;
             var dlg = new TraspasosDetalle(this);
             dlg.ShowDialog();
-            CargarTraspasos();
-            var lista = Grid1.ItemsSource as System.Collections.Generic.List<TraspasoFila>;
-            // Bug 3: si se creó un nuevo documento, enfocarlo; si no, restaurar selección previa.
-            string? enfocar = dlg.DocumentoCreadoId ?? docSel;
-            if (enfocar != null)
-            {
-                var item = lista?.Find(x => x.DocumentoT == enfocar);
-                if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
-            }
-            Grid1.Focus();
+            if (dlg.DocumentoCreadoId == null) return;   // cancelado
+
+            var nueva = ConstruirFilaTraspaso(dlg.DocumentoCreadoId, 0);
+            FilasGrid.Add(nueva);
+            RenumerarYTotales();
+            Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva); Grid1.Focus();
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -335,7 +377,18 @@ namespace WpfAppVba
 
                 Sql.DocumentosTObj.OrdenarData(("fecha", false));
                 Sql.TraspasosObj.OrdenarData(("documentoT", false), ("indice", false));
-                CargarTraspasos();
+
+                var lista = FilasGrid;
+                int idx   = lista.IndexOf(fila);
+                if (idx >= 0) lista.RemoveAt(idx);
+                RenumerarYTotales();
+
+                if (lista.Count > 0)
+                {
+                    var sel = lista[Math.Min(idx, lista.Count - 1)];
+                    Grid1.SelectedItem = sel; Grid1.ScrollIntoView(sel);
+                }
+                else OcultarDetalle();
             }
             catch (Exception ex)
             {
@@ -359,10 +412,16 @@ namespace WpfAppVba
             if (!string.IsNullOrEmpty(TipoMovimiento))
                 AppState.TipoMovimiento = TipoMovimiento;
             new TraspasosDetalle(this, fila.DocumentoT).ShowDialog();
-            CargarTraspasos();
-            var item = (Grid1.ItemsSource as System.Collections.Generic.List<TraspasoFila>)
-                       ?.Find(x => x.DocumentoT == docSel);
-            if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+
+            var lista = FilasGrid;
+            int idx   = lista.IndexOf(fila);
+            if (idx >= 0)
+            {
+                var actualizada = ConstruirFilaTraspaso(docSel, fila.Linea);
+                lista[idx] = actualizada;
+                RenumerarYTotales();
+                Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
+            }
             Grid1.Focus();
         }
     }

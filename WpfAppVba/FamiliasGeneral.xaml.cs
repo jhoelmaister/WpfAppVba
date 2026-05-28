@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
@@ -68,6 +69,30 @@ namespace WpfAppVba
             Grid1.ItemsSource = filas;
         }
 
+        // ─── Helpers de actualización incremental del Grid1 ───────────────────
+        private List<FamiliaFila> FilasGrid =>
+            Grid1.ItemsSource as List<FamiliaFila> ?? new List<FamiliaFila>();
+
+        private FamiliaFila ConstruirFilaFamilia(string id, int linea)
+        {
+            string productoId   = Sql.FamiliasObj.ObtenerItem("producto",    id)?.ToString() ?? "";
+            string productoDesc = Sql.ProductosObj.ObtenerItem("descripcion", productoId)?.ToString() ?? "";
+            return new FamiliaFila
+            {
+                Linea       = linea,
+                Id          = id,
+                Descripcion = Sql.FamiliasObj.ObtenerItem("descripcion", id)?.ToString() ?? "",
+                Producto    = productoDesc
+            };
+        }
+
+        private void Renumerar()
+        {
+            int n = 1;
+            foreach (var f in FilasGrid) f.Linea = n++;
+            Grid1.Items.Refresh();
+        }
+
         // ─── Búsqueda en tiempo real ───────────────────────────────────────────
         private void TxtBuscar_TextChanged(object sender, TextChangedEventArgs e)
             => CargarFamilias();
@@ -104,19 +129,15 @@ namespace WpfAppVba
 
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
-            string? idSel = (Grid1.SelectedItem as FamiliaFila)?.Id;
             AppState.EventoFormularioF = "nuevo";
             var detalle = new FamiliasDetalle(this);
             detalle.ShowDialog();
-            CargarFamilias();
-            string? enfocar = detalle.ItemCreadoId ?? idSel;
-            if (enfocar != null)
-            {
-                var item = (Grid1.ItemsSource as System.Collections.Generic.List<FamiliaFila>)
-                           ?.Find(x => x.Id == enfocar);
-                if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
-            }
-            Grid1.Focus();
+            if (detalle.ItemCreadoId == null) return;   // cancelado
+
+            var nueva = ConstruirFilaFamilia(detalle.ItemCreadoId, 0);
+            FilasGrid.Add(nueva);
+            Renumerar();
+            Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva); Grid1.Focus();
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -133,7 +154,17 @@ namespace WpfAppVba
             {
                 Sql.FamiliasObj.Ocultar(fila.Id);
                 Sql.FamiliasObj.OrdenarData(("id", false));
-                CargarFamilias();
+
+                var lista = FilasGrid;
+                int idx   = lista.IndexOf(fila);
+                if (idx >= 0) lista.RemoveAt(idx);
+                Renumerar();
+
+                if (lista.Count > 0)
+                {
+                    var sel = lista[Math.Min(idx, lista.Count - 1)];
+                    Grid1.SelectedItem = sel; Grid1.ScrollIntoView(sel);
+                }
             }
         }
 
@@ -150,10 +181,16 @@ namespace WpfAppVba
             AppState.EventoFormularioF = "modificar";
             var detalle = new FamiliasDetalle(this, fila.Id);
             detalle.ShowDialog();
-            CargarFamilias();
-            var item = (Grid1.ItemsSource as System.Collections.Generic.List<FamiliaFila>)
-                       ?.Find(x => x.Id == idSel);
-            if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+
+            var lista = FilasGrid;
+            int idx   = lista.IndexOf(fila);
+            if (idx >= 0)
+            {
+                var actualizada = ConstruirFilaFamilia(idSel, fila.Linea);
+                lista[idx] = actualizada;
+                Renumerar();
+                Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
+            }
             Grid1.Focus();
         }
     }

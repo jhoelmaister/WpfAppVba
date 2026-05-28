@@ -47,6 +47,31 @@ namespace WpfAppVba
             Grid1.ItemsSource = lista;
         }
 
+        // ─── Helpers de actualización incremental del Grid1 ───────────────────
+        private List<InventarioFila> FilasGrid =>
+            Grid1.ItemsSource as List<InventarioFila> ?? new List<InventarioFila>();
+
+        private InventarioFila ConstruirFilaInventario(string id, int linea)
+        {
+            var fechaObj = Sql.DocumentosIObj.ObtenerItem("fecha", id);
+            DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : default;
+            return new InventarioFila
+            {
+                Linea         = linea,
+                Id            = id,
+                Fecha         = fecha,
+                FechaStr      = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
+                CantidadTotal = CalcularCantidad(id)
+            };
+        }
+
+        private void Renumerar()
+        {
+            int n = 1;
+            foreach (var f in FilasGrid) f.Linea = n++;
+            Grid1.Items.Refresh();
+        }
+
         // ─── Calcula la cantidad total de un documento de inventario ──────────
         private double CalcularCantidad(string documentoI)
         {
@@ -84,19 +109,15 @@ namespace WpfAppVba
         // ─── Botones ──────────────────────────────────────────────────────────
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
-            string? idSel = (Grid1.SelectedItem as InventarioFila)?.Id;
             AppState.EventoFormularioI = "nuevo";
             var detalle = new InventariosDetalle(this);
             detalle.ShowDialog();
-            CargarInventarios();
-            string? enfocar = detalle.ItemCreadoId ?? idSel;
-            if (enfocar != null)
-            {
-                var item = (Grid1.ItemsSource as System.Collections.Generic.List<InventarioFila>)
-                           ?.Find(x => x.Id == enfocar);
-                if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
-            }
-            Grid1.Focus();
+            if (detalle.ItemCreadoId == null) return;   // cancelado
+
+            var nueva = ConstruirFilaInventario(detalle.ItemCreadoId, 0);
+            FilasGrid.Add(nueva);
+            Renumerar();
+            Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva); Grid1.Focus();
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -147,7 +168,16 @@ namespace WpfAppVba
                 AppState.ActualizarBase(periodo);
                 AppLoader.ConectarDocumentos(AppState.DataFechaInicio, AppState.DataFechaFinal);
 
-                CargarInventarios();
+                var lista = FilasGrid;
+                int idx   = lista.IndexOf(fila);
+                if (idx >= 0) lista.RemoveAt(idx);
+                Renumerar();
+
+                if (lista.Count > 0)
+                {
+                    var sel = lista[Math.Min(idx, lista.Count - 1)];
+                    Grid1.SelectedItem = sel; Grid1.ScrollIntoView(sel);
+                }
             }
             catch (Exception ex)
             {
@@ -172,10 +202,16 @@ namespace WpfAppVba
             AppState.EventoFormularioI = "editar";
             var detalle = new InventariosDetalle(this, fila.Id);
             detalle.ShowDialog();
-            CargarInventarios();
-            var item = (Grid1.ItemsSource as System.Collections.Generic.List<InventarioFila>)
-                       ?.Find(x => x.Id == idSel);
-            if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+
+            var lista = FilasGrid;
+            int idx   = lista.IndexOf(fila);
+            if (idx >= 0)
+            {
+                var actualizada = ConstruirFilaInventario(idSel, fila.Linea);
+                lista[idx] = actualizada;
+                Renumerar();
+                Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
+            }
             Grid1.Focus();
         }
     }

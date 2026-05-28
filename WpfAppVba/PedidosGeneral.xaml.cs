@@ -180,6 +180,48 @@ namespace WpfAppVba
             return mes >= 1 && mes <= 12 ? meses[mes - 1] : "";
         }
 
+        // ─── Helpers de actualización incremental del Grid1 ───────────────────
+        private List<PedidoFila> FilasGrid =>
+            Grid1.ItemsSource as List<PedidoFila> ?? new List<PedidoFila>();
+
+        private PedidoFila ConstruirFilaPedido(string id, int linea)
+        {
+            var fechaDocObj = Sql.DocumentosPObj.ObtenerItem("fecha", id);
+            DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
+            string terceroId   = Sql.DocumentosPObj.ObtenerItem("tercero", id)?.ToString() ?? "";
+            string terceroDesc = Sql.TercerosObj.ObtenerItem("descripcion", terceroId)?.ToString() ?? terceroId;
+            string estado  = Sql.DocumentosPObj.ObtenerItem("estado",  id)?.ToString() ?? "";
+            string estadoC = Sql.DocumentosPObj.ObtenerItem("estadoC", id)?.ToString() ?? "";
+
+            return new PedidoFila
+            {
+                Linea       = linea,
+                DocumentoP  = id,
+                FechaStr    = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
+                TerceroDesc = terceroDesc,
+                Estado      = estado,
+                Cuenta      = estadoC,
+                Cantidad    = CalcularCantidad(id),
+                Importe     = CalcularImporte(id)
+            };
+        }
+
+        private void RenumerarYTotales()
+        {
+            var lista = FilasGrid;
+            int n = 1;
+            double totalCant = 0, totalImporte = 0;
+            foreach (var f in lista)
+            {
+                f.Linea       = n++;
+                totalCant    += f.Cantidad;
+                totalImporte += f.Importe;
+            }
+            TxtTotalCantidad.Text = totalCant.ToString("N0");
+            TxtTotalImporte.Text  = totalImporte.ToString("N2");
+            Grid1.Items.Refresh();
+        }
+
         // ─── Calcular totales de un documentoP ───────────────────────────────
         private static double CalcularCantidad(string documentoP)
         {
@@ -328,23 +370,18 @@ namespace WpfAppVba
         // ─── Botones ──────────────────────────────────────────────────────────
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
-            string? idSel = (Grid1.SelectedItem as PedidoFila)?.DocumentoP;
             AppState.EventoFormularioM = "nuevo";
             AppState.TipoPedido        = "normal";
             if (!string.IsNullOrEmpty(TipoMovimiento))
                 AppState.TipoMovimiento = TipoMovimiento;
             var dlg = new PedidosDetalle(this);
             dlg.ShowDialog();
-            CargarPedidos();
-            var lista = Grid1.ItemsSource as System.Collections.Generic.List<PedidoFila>;
-            // Bug 3: si se creó un nuevo documento, enfocarlo; si no, restaurar selección previa.
-            string? enfocar = dlg.DocumentoCreadoId ?? idSel;
-            if (enfocar != null)
-            {
-                var item = lista?.Find(x => x.DocumentoP == enfocar);
-                if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
-            }
-            Grid1.Focus();
+            if (dlg.DocumentoCreadoId == null) return;   // cancelado
+
+            var nueva = ConstruirFilaPedido(dlg.DocumentoCreadoId, 0);
+            FilasGrid.Add(nueva);
+            RenumerarYTotales();
+            Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva); Grid1.Focus();
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -378,7 +415,18 @@ namespace WpfAppVba
 
                 Sql.DocumentosPObj.OrdenarData(("fecha", false));
                 Sql.PedidosObj.OrdenarData(("documentoP", false), ("indice", false));
-                CargarPedidos();
+
+                var lista = FilasGrid;
+                int idx   = lista.IndexOf(fila);
+                if (idx >= 0) lista.RemoveAt(idx);
+                RenumerarYTotales();
+
+                if (lista.Count > 0)
+                {
+                    var sel = lista[Math.Min(idx, lista.Count - 1)];
+                    Grid1.SelectedItem = sel; Grid1.ScrollIntoView(sel);
+                }
+                else OcultarDetalle();
             }
             catch (Exception ex)
             {
@@ -402,10 +450,16 @@ namespace WpfAppVba
             if (!string.IsNullOrEmpty(TipoMovimiento))
                 AppState.TipoMovimiento = TipoMovimiento;
             new PedidosDetalle(this, fila.DocumentoP).ShowDialog();
-            CargarPedidos();
-            var item = (Grid1.ItemsSource as System.Collections.Generic.List<PedidoFila>)
-                       ?.Find(x => x.DocumentoP == docSel);
-            if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+
+            var lista = FilasGrid;
+            int idx   = lista.IndexOf(fila);
+            if (idx >= 0)
+            {
+                var actualizada = ConstruirFilaPedido(docSel, fila.Linea);
+                lista[idx] = actualizada;
+                RenumerarYTotales();
+                Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
+            }
             Grid1.Focus();
         }
     }

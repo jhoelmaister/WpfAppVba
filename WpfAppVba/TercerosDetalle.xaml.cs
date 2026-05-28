@@ -14,6 +14,8 @@ namespace WpfAppVba
         private bool _hayCambios  = false;
         private bool _cargando    = true;    // evita disparar cambios al cargar
 
+        public string? ItemCreadoId { get; private set; }
+
         public TercerosDetalle(string idEditar = "")
         {
             InitializeComponent();
@@ -130,6 +132,7 @@ namespace WpfAppVba
                 Sql.TercerosObj.EstablecerItem("usuario",     codigo, AppState.UsuarioActivo);
 
                 Sql.TercerosObj.OrdenarData(("id", false));
+                ItemCreadoId = codigo;
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
             }
