@@ -1219,7 +1219,7 @@ namespace WpfAppVba
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
-        { _hayCambios = false; Close(); }
+        { _cambioDocumento = false; _cambioPedido = false; _cambioTrasaccion = false; _cambioEntrega = false; Close(); }
 
         // Confirma cualquier celda en edición en los 3 grids editables
         private void CommitEdicionesPendientes()
