@@ -158,7 +158,7 @@ namespace WpfAppVba
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
-            => Close();
+        { _hayCambios = false; Close(); }
 
         // ─── Al cerrar: preguntar si hay cambios (equivalente a UserForm_QueryClose)
         private void Window_Closing(object sender, CancelEventArgs e)

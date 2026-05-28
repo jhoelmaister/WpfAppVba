@@ -181,6 +181,13 @@ namespace WpfAppVba
             => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
 
 
+        // ─── Botones ──────────────────────────────────────────────────────────
+        private void BtnGuardar_Click(object sender, RoutedEventArgs e)
+        { if (Guardar()) { _hayCambios = false; Close(); } }
+
+        private void BtnCancelar_Click(object sender, RoutedEventArgs e)
+        { _hayCambios = false; Close(); }
+
         // ─── Al cerrar: preguntar si hay cambios ──────────────────────────────
         private void Window_Closing(object sender, CancelEventArgs e)
         {
