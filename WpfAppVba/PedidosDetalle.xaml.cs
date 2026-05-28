@@ -887,7 +887,6 @@ namespace WpfAppVba
                 DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
                 foreach (var art in arts)
                 {
-                    if (_entregas.Any(x => x.ArticuloId == art.Id)) continue;
                     _entregas.Add(new EntregaItemFila
                     {
                         EntregaId = "", ArticuloId = art.Id,
