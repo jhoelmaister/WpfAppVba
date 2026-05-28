@@ -220,6 +220,63 @@ namespace WpfAppVba
             return "todos";
         }
 
+        // ─── Helpers de actualización incremental del Grid1 ───────────────────
+        private List<ArticuloFila> FilasGrid =>
+            Grid1.ItemsSource as List<ArticuloFila> ?? new List<ArticuloFila>();
+
+        // Construye una sola fila para un artículo (incluye cálculo de stock).
+        private ArticuloFila ConstruirFila(string id, int linea)
+        {
+            string famId  = Sql.ArticulosObj.ObtenerItem("familia",     id)?.ToString() ?? "";
+            string codigo = Sql.ArticulosObj.ObtenerItem("codigo",      id)?.ToString() ?? "";
+            string desc   = Sql.ArticulosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+            string modelo = Sql.ArticulosObj.ObtenerItem("modelo",      id)?.ToString() ?? "";
+            string famDesc = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? "";
+            string descCompleta = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
+
+            double stock  = StockCalculator.ContarStock(id,  DateTime.Now);
+            double stock2 = StockCalculator.ContarStock2(id, DateTime.Now);
+            int ordenIdx  = _seleccionados.IndexOf(id);
+
+            return new ArticuloFila
+            {
+                Linea          = linea,
+                Id             = id,
+                Codigo         = codigo,
+                Descripcion    = descCompleta,
+                Disponible     = stock2,
+                Stock          = stock,
+                Seleccionado   = ordenIdx >= 0,
+                OrdenSeleccion = ordenIdx >= 0 ? ordenIdx + 1 : 0
+            };
+        }
+
+        // Renumera la columna Línea, recalcula totales desde el grid y refresca.
+        private void RenumerarYActualizarTotales()
+        {
+            var lista = FilasGrid;
+            int n = 1;
+            double totalDisp = 0, totalStock = 0;
+            foreach (var f in lista)
+            {
+                f.Linea     = n++;
+                totalDisp  += f.Disponible;
+                totalStock += f.Stock;
+            }
+            TxtTotalDisponible.Text = totalDisp.ToString("N0");
+            TxtTotalStock.Text      = totalStock.ToString("N0");
+            if (ModoExportar)
+                LblSeleccionados.Text = $"Seleccionados: {_seleccionados.Count}";
+            Grid1.Items.Refresh();
+        }
+
+        private void EnfocarFila(ArticuloFila item)
+        {
+            Grid1.SelectedItem = item;
+            Grid1.ScrollIntoView(item);
+            Grid1.Focus();
+        }
+
         // ─── Eventos árbol y búsqueda ─────────────────────────────────────────
         private void Tree1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
@@ -299,36 +356,31 @@ namespace WpfAppVba
         // ─── Botones ──────────────────────────────────────────────────────────
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
-            string? idSel = (Grid1.SelectedItem as ArticuloFila)?.Id;
             AppState.EventoFormularioA = "nuevo";
             var detalle = new ArticulosDetalle(this);
             detalle.ShowDialog();
-            CargarArbol();
-            CargarArticulos();
-            string? enfocar = detalle.ItemCreadoId ?? idSel;
-            if (enfocar != null)
-            {
-                var item = (Grid1.ItemsSource as System.Collections.Generic.List<ArticuloFila>)
-                           ?.Find(x => x.Id == enfocar);
-                if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
-            }
-            Grid1.Focus();
+            if (detalle.ItemCreadoId == null) return;   // cancelado
+
+            var nueva = ConstruirFila(detalle.ItemCreadoId, 0);
+            FilasGrid.Add(nueva);
+            RenumerarYActualizarTotales();
+            EnfocarFila(nueva);
         }
 
         private void BtnInsertar_Click(object sender, RoutedEventArgs e)
         {
             if (Grid1.SelectedItem is not ArticuloFila fila) return;
-            string idSel = fila.Id;
             AppState.EventoFormularioA = "insertar";
             var detalle = new ArticulosDetalle(this, fila.Id);
             detalle.ShowDialog();
-            CargarArbol();
-            CargarArticulos();
-            string enfocar = detalle.ItemCreadoId ?? idSel;
-            var item = (Grid1.ItemsSource as System.Collections.Generic.List<ArticuloFila>)
-                       ?.Find(x => x.Id == enfocar);
-            if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
-            Grid1.Focus();
+            if (detalle.ItemCreadoId == null) return;   // cancelado
+
+            var lista = FilasGrid;
+            int idx   = lista.IndexOf(fila);
+            var nueva = ConstruirFila(detalle.ItemCreadoId, 0);
+            if (idx >= 0) lista.Insert(idx + 1, nueva); else lista.Add(nueva);
+            RenumerarYActualizarTotales();
+            EnfocarFila(nueva);
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -367,7 +419,16 @@ namespace WpfAppVba
 
             AppState.ActualizarStocks();
             Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
-            CargarArticulos();
+
+            // Quitar solo la fila eliminada del grid (sin recargar todo)
+            _seleccionados.Remove(fila.Id);
+            var lista = FilasGrid;
+            int idx   = lista.IndexOf(fila);
+            if (idx >= 0) lista.RemoveAt(idx);
+            RenumerarYActualizarTotales();
+
+            if (lista.Count > 0)
+                EnfocarFila(lista[Math.Min(idx, lista.Count - 1)]);
         }
 
         private void BtnActualizar_Click(object sender, RoutedEventArgs e)
@@ -418,12 +479,17 @@ namespace WpfAppVba
             AppState.EventoFormularioA = "modificar";
             var detalle = new ArticulosDetalle(this, fila.Id);
             detalle.ShowDialog();
-            CargarArticulos();
-            // Restaurar selección y foco después de recargar la lista
-            var item = (Grid1.ItemsSource as System.Collections.Generic.List<ArticuloFila>)
-                       ?.Find(x => x.Id == idSel);
-            if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
-            Grid1.Focus();
+
+            // Reconstruir solo esta fila en su lugar (el Id interno no cambia)
+            var lista = FilasGrid;
+            int idx   = lista.IndexOf(fila);
+            if (idx >= 0)
+            {
+                var actualizada = ConstruirFila(idSel, fila.Linea);
+                lista[idx] = actualizada;
+                RenumerarYActualizarTotales();
+                EnfocarFila(actualizada);
+            }
         }
 
         private void ToggleSeleccion()
