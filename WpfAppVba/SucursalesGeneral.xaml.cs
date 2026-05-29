@@ -23,14 +23,19 @@ namespace WpfAppVba
             InitializeComponent();
             WindowHelper.AjustarAlEcran(this);
             _modoSelector = modoSelector;
-            Loaded += (_, _) => CargarSucursales();
+            Loaded += (_, _) =>
+            {
+                if (_modoSelector)
+                    Title = "Seleccionar Sucursal";
+                CargarSucursales();
+            };
         }
 
         // ─── Verificación de administrador ─────────────────────────────────────
         private bool EsAdmin()
             => Sql.UsuariosObj.ObtenerItem("tipo", AppState.UsuarioActivo.ToString())?.ToString() == "admin";
 
-        // ─── Carga la lista ────────────────────────────────────────────────────
+        // ─── Carga la lista completa ───────────────────────────────────────────
         public void CargarSucursales()
         {
             string busqueda = TxtBuscar.Text.Trim().ToLower();
@@ -68,6 +73,31 @@ namespace WpfAppVba
             Grid1.ItemsSource = filas;
         }
 
+        // ─── Helpers de actualización incremental ──────────────────────────────
+        private List<SucursalFila> FilasGrid =>
+            Grid1.ItemsSource as List<SucursalFila> ?? new List<SucursalFila>();
+
+        private SucursalFila ConstruirFilaSucursal(string id, int linea)
+        {
+            string regionId   = Sql.SucursalesObj.ObtenerItem("region", id)?.ToString() ?? "";
+            string regionDesc = Sql.RegionesObj.ObtenerItem("descripcion", regionId)?.ToString() ?? "";
+            return new SucursalFila
+            {
+                Linea       = linea,
+                Id          = id,
+                Nit         = Sql.SucursalesObj.ObtenerItem("nit",         id)?.ToString() ?? "",
+                Descripcion = Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "",
+                Region      = regionDesc
+            };
+        }
+
+        private void Renumerar()
+        {
+            int n = 1;
+            foreach (var f in FilasGrid) f.Linea = n++;
+            Grid1.Items.Refresh();
+        }
+
         // ─── Búsqueda en tiempo real ───────────────────────────────────────────
         private void TxtBuscar_TextChanged(object sender, TextChangedEventArgs e)
             => CargarSucursales();
@@ -76,16 +106,25 @@ namespace WpfAppVba
         private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             e.Handled = true;
-            if (_modoSelector)
-            {
-                if (Grid1.SelectedItem is not SucursalFila fila) return;
-                SucursalSeleccionada = fila.Id;
-                Close();
-            }
-            else
-            {
-                AbrirEditar();
-            }
+            if (_modoSelector) Seleccionar();
+            else               AbrirEditar();
+        }
+
+        // ─── Tecla Enter ───────────────────────────────────────────────────────
+        private void Grid1_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+            e.Handled = true;
+            if (_modoSelector) Seleccionar();
+            else               AbrirEditar();
+        }
+
+        // ─── Modo selector ─────────────────────────────────────────────────────
+        private void Seleccionar()
+        {
+            if (Grid1.SelectedItem is not SucursalFila fila) return;
+            SucursalSeleccionada = fila.Id;
+            Close();
         }
 
         // ─── Botones ───────────────────────────────────────────────────────────
@@ -99,18 +138,15 @@ namespace WpfAppVba
                 return;
             }
 
-            string? idSel = (Grid1.SelectedItem as SucursalFila)?.Id;
             AppState.EventoFormularioI = "nuevo";
             var detalle = new SucursalesDetalle(this) { Owner = this };
             detalle.ShowDialog();
-            CargarSucursales();
-            string? enfocar = detalle.ItemCreadoId ?? idSel;
-            if (enfocar != null)
-            {
-                var item = (Grid1.ItemsSource as System.Collections.Generic.List<SucursalFila>)
-                           ?.Find(x => x.Id == enfocar);
-                if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
-            }
+            if (detalle.ItemCreadoId == null) return;
+
+            var nueva = ConstruirFilaSucursal(detalle.ItemCreadoId, 0);
+            FilasGrid.Add(nueva);
+            Renumerar();
+            Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
             GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
 
@@ -135,7 +171,18 @@ namespace WpfAppVba
             {
                 Sql.SucursalesObj.Ocultar(fila.Id);
                 Sql.SucursalesObj.OrdenarData(("id", false));
-                CargarSucursales();
+
+                var lista = FilasGrid;
+                int idx   = lista.IndexOf(fila);
+                if (idx >= 0) lista.RemoveAt(idx);
+                Renumerar();
+
+                if (lista.Count > 0)
+                {
+                    var sel = lista[System.Math.Min(idx, lista.Count - 1)];
+                    Grid1.SelectedItem = sel; Grid1.ScrollIntoView(sel);
+                }
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             }
         }
 
@@ -159,10 +206,16 @@ namespace WpfAppVba
             AppState.EventoFormularioI = "modificar";
             var detalle = new SucursalesDetalle(this, fila.Id) { Owner = this };
             detalle.ShowDialog();
-            CargarSucursales();
-            var item = (Grid1.ItemsSource as System.Collections.Generic.List<SucursalFila>)
-                       ?.Find(x => x.Id == idSel);
-            if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
+
+            var lista = FilasGrid;
+            int idx   = lista.IndexOf(fila);
+            if (idx >= 0)
+            {
+                var actualizada = ConstruirFilaSucursal(idSel, fila.Linea);
+                lista[idx] = actualizada;
+                Renumerar();
+                Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
+            }
             GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
     }
