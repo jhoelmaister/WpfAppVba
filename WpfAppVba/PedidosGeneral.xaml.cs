@@ -460,7 +460,20 @@ namespace WpfAppVba
                 RenumerarYTotales();
                 Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
             }
-            Grid1.Focus();
+
+            // Tras cerrar el diálogo, WPF restaura el foco de forma asíncrona y
+            // sobrescribe un Grid1.Focus() síncrono, dejando la fila seleccionada
+            // pero sin foco de teclado (las flechas dejan de navegar). Diferimos el
+            // enfoque a la fila seleccionada para recuperarlo.
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (Grid1.SelectedItem == null) { Grid1.Focus(); return; }
+                Grid1.ScrollIntoView(Grid1.SelectedItem);
+                Grid1.UpdateLayout();
+                var row = Grid1.ItemContainerGenerator
+                              .ContainerFromItem(Grid1.SelectedItem) as DataGridRow;
+                if (row != null) row.Focus(); else Grid1.Focus();
+            }), System.Windows.Threading.DispatcherPriority.Input);
         }
     }
 
