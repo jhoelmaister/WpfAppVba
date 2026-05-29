@@ -609,6 +609,7 @@ namespace WpfAppVba
                 ActualizarTotales();
                 if (colNombre == "Código" || colNombre == "Cantidad")
                     VerificarStockVenta();
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
@@ -637,6 +638,13 @@ namespace WpfAppVba
                 RefrescarGridPedidos();
                 ActualizarTotales();
                 VerificarStockVenta();
+                if (_pedidos.Count > 0)
+                {
+                    var ultimo = _pedidos[_pedidos.Count - 1];
+                    GridItems.SelectedItem = ultimo;
+                    GridItems.ScrollIntoView(ultimo);
+                }
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
             }, null);
         }
 
@@ -718,6 +726,7 @@ namespace WpfAppVba
                 GridItems.SelectedIndex = lastIdx;
                 GridItems.ScrollIntoView(GridItems.SelectedItem);
             }
+            GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
         }
 
         private void BtnInsertar_Click(object sender, RoutedEventArgs e)
@@ -735,6 +744,7 @@ namespace WpfAppVba
             if (idx < GridItems.Items.Count)
             { GridItems.SelectedIndex = idx; GridItems.ScrollIntoView(GridItems.SelectedItem); }
             ActualizarTotales();
+            GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
         }
 
         private void BtnEliminarLinea_Click(object sender, RoutedEventArgs e)
@@ -781,6 +791,7 @@ namespace WpfAppVba
                 RefrescarGridTrasacciones();
                 CargarTotalesDivisas();
                 CargarEstadosCuenta();
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridTrasacciones);
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
@@ -894,6 +905,7 @@ namespace WpfAppVba
             {
                 RefrescarGridEntregas();
                 if (AppState.TipoPedido.ToLower() == "normal") CargarEstados();
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridEntregas);
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
@@ -922,6 +934,13 @@ namespace WpfAppVba
                 _cambioEntrega = true;
                 RefrescarGridEntregas();
                 if (AppState.TipoPedido.ToLower() == "normal") CargarEstados();
+                if (_entregas.Count > 0)
+                {
+                    var ultimo = _entregas[_entregas.Count - 1];
+                    GridEntregas.SelectedItem = ultimo;
+                    GridEntregas.ScrollIntoView(ultimo);
+                }
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridEntregas);
             }, null);
         }
 
@@ -985,6 +1004,13 @@ namespace WpfAppVba
             });
             _cambioEntrega = true;
             RefrescarGridEntregas();
+            if (_entregas.Count > 0)
+            {
+                var ultimo = _entregas[_entregas.Count - 1];
+                GridEntregas.SelectedItem = ultimo;
+                GridEntregas.ScrollIntoView(ultimo);
+            }
+            GridFocusHelper.EnfocarCeldaSeleccionada(GridEntregas);
         }
 
         private void BtnInsertarEntrega_Click(object sender, RoutedEventArgs e)
@@ -1002,6 +1028,12 @@ namespace WpfAppVba
             });
             _cambioEntrega = true;
             RefrescarGridEntregas();
+            if (idx < GridEntregas.Items.Count)
+            {
+                GridEntregas.SelectedIndex = idx;
+                GridEntregas.ScrollIntoView(GridEntregas.SelectedItem);
+            }
+            GridFocusHelper.EnfocarCeldaSeleccionada(GridEntregas);
         }
 
         private void BtnEliminarLineaEntrega_Click(object sender, RoutedEventArgs e)
