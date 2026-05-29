@@ -111,7 +111,7 @@ namespace WpfAppVba
                            ?.Find(x => x.Id == enfocar);
                 if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
             }
-            Grid1.Focus();
+            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -163,7 +163,7 @@ namespace WpfAppVba
             var item = (Grid1.ItemsSource as System.Collections.Generic.List<SucursalFila>)
                        ?.Find(x => x.Id == idSel);
             if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
-            Grid1.Focus();
+            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
     }
 

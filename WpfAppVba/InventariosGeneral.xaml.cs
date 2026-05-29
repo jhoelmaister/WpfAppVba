@@ -117,7 +117,8 @@ namespace WpfAppVba
             var nueva = ConstruirFilaInventario(detalle.ItemCreadoId, 0);
             FilasGrid.Add(nueva);
             Renumerar();
-            Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva); Grid1.Focus();
+            Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
+            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -212,7 +213,7 @@ namespace WpfAppVba
                 Renumerar();
                 Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
             }
-            Grid1.Focus();
+            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
     }
 

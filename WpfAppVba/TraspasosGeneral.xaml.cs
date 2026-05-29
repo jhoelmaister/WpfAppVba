@@ -344,7 +344,8 @@ namespace WpfAppVba
             var nueva = ConstruirFilaTraspaso(dlg.DocumentoCreadoId, 0);
             FilasGrid.Add(nueva);
             RenumerarYTotales();
-            Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva); Grid1.Focus();
+            Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
+            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -422,7 +423,7 @@ namespace WpfAppVba
                 RenumerarYTotales();
                 Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
             }
-            Grid1.Focus();
+            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
     }
 

@@ -274,8 +274,7 @@ namespace WpfAppVba
         private void EnfocarFila(ArticuloFila item)
         {
             Grid1.SelectedItem = item;
-            Grid1.ScrollIntoView(item);
-            Grid1.Focus();
+            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
 
         // ─── Eventos árbol y búsqueda ─────────────────────────────────────────
@@ -510,7 +509,7 @@ namespace WpfAppVba
             var item = (Grid1.ItemsSource as System.Collections.Generic.List<ArticuloFila>)
                        ?.Find(x => x.Id == idActual);
             if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
-            Grid1.Focus();
+            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
     }
 
