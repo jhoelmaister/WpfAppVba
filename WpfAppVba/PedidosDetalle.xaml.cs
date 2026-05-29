@@ -740,10 +740,18 @@ namespace WpfAppVba
         private void BtnEliminarLinea_Click(object sender, RoutedEventArgs e)
         {
             if (GridItems.SelectedItem is not PedidoItemFila fila) return;
+            int idx = _pedidos.IndexOf(fila);
             _pedidos.Remove(fila);
             _cambioPedido = true;
             RefrescarGridPedidos();
             ActualizarTotales();
+            if (_pedidos.Count > 0)
+            {
+                var siguiente = _pedidos[Math.Min(idx, _pedidos.Count - 1)];
+                GridItems.SelectedItem = siguiente;
+                GridItems.ScrollIntoView(siguiente);
+            }
+            GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
         }
 
         private void BtnActualizarPrecios_Click(object sender, RoutedEventArgs e)
@@ -817,11 +825,19 @@ namespace WpfAppVba
         private void BtnEliminarLineaTrasaccion_Click(object sender, RoutedEventArgs e)
         {
             if (GridTrasacciones.SelectedItem is not TrasaccionItemFila fila) return;
+            int idx = _trasacciones.IndexOf(fila);
             _trasacciones.Remove(fila);
             _cambioTrasaccion = true;
             RefrescarGridTrasacciones();
             CargarTotalesDivisas();
             CargarEstadosCuenta();
+            if (_trasacciones.Count > 0)
+            {
+                var siguiente = _trasacciones[Math.Min(idx, _trasacciones.Count - 1)];
+                GridTrasacciones.SelectedItem = siguiente;
+                GridTrasacciones.ScrollIntoView(siguiente);
+            }
+            GridFocusHelper.EnfocarCeldaSeleccionada(GridTrasacciones);
         }
 
         private void BtnCobrarDocumento_Click(object sender, RoutedEventArgs e)
@@ -991,10 +1007,18 @@ namespace WpfAppVba
         private void BtnEliminarLineaEntrega_Click(object sender, RoutedEventArgs e)
         {
             if (GridEntregas.SelectedItem is not EntregaItemFila fila) return;
+            int idx = _entregas.IndexOf(fila);
             _entregas.Remove(fila);
             _cambioEntrega = true;
             RefrescarGridEntregas();
             if (AppState.TipoPedido.ToLower() == "normal") CargarEstados();
+            if (_entregas.Count > 0)
+            {
+                var siguiente = _entregas[Math.Min(idx, _entregas.Count - 1)];
+                GridEntregas.SelectedItem = siguiente;
+                GridEntregas.ScrollIntoView(siguiente);
+            }
+            GridFocusHelper.EnfocarCeldaSeleccionada(GridEntregas);
         }
 
         private void BtnRegistrarEntregas_Click(object sender, RoutedEventArgs e)
