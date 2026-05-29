@@ -26,10 +26,13 @@ namespace WpfAppVba
                 var row = grid.ItemContainerGenerator.ContainerFromItem(item) as DataGridRow;
                 if (row == null) { grid.Focus(); return; }
 
-                var cell = ObtenerCelda(row, 0);
-                if (cell != null)
+                // Buscar la primera celda VISIBLE (algunos grids ocultan la columna 0,
+                // p. ej. el checkbox de ArticulosGeneral en modo pestaña). No se puede
+                // enfocar la celda de una columna oculta.
+                var cell = ObtenerPrimeraCeldaVisible(row);
+                if (cell != null && cell.Column != null)
                 {
-                    grid.CurrentCell = new DataGridCellInfo(item, grid.Columns[0]);
+                    grid.CurrentCell = new DataGridCellInfo(item, cell.Column);
                     cell.Focus();
                     Keyboard.Focus(cell);
                 }
@@ -40,10 +43,22 @@ namespace WpfAppVba
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
-        private static DataGridCell? ObtenerCelda(DataGridRow row, int columna)
+        private static DataGridCell? ObtenerPrimeraCeldaVisible(DataGridRow row)
         {
             var presenter = BuscarHijoVisual<DataGridCellsPresenter>(row);
-            return presenter?.ItemContainerGenerator.ContainerFromIndex(columna) as DataGridCell;
+            if (presenter == null) return null;
+
+            int count = presenter.Items.Count;
+            for (int i = 0; i < count; i++)
+            {
+                if (presenter.ItemContainerGenerator.ContainerFromIndex(i) is DataGridCell cell
+                    && cell.Column != null
+                    && cell.Column.Visibility == Visibility.Visible)
+                {
+                    return cell;
+                }
+            }
+            return null;
         }
 
         private static T? BuscarHijoVisual<T>(DependencyObject parent) where T : DependencyObject
