@@ -390,6 +390,7 @@ namespace WpfAppVba
                     Grid1.SelectedItem = sel; Grid1.ScrollIntoView(sel);
                 }
                 else OcultarDetalle();
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             }
             catch (Exception ex)
             {

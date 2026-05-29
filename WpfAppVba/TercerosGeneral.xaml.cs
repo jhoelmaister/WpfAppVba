@@ -173,6 +173,7 @@ namespace WpfAppVba
                     var sel = lista[Math.Min(idx, lista.Count - 1)];
                     Grid1.SelectedItem = sel; Grid1.ScrollIntoView(sel);
                 }
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             }
         }
 
