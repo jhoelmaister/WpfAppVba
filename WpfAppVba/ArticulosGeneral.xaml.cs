@@ -274,6 +274,7 @@ namespace WpfAppVba
         private void EnfocarFila(ArticuloFila item)
         {
             Grid1.SelectedItem = item;
+            Grid1.ScrollIntoView(item);
             GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
 
