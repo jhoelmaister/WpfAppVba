@@ -437,6 +437,13 @@ namespace WpfAppVba
                 _hayCambios = true;
                 RefrescarGrid();
                 NotificarStockInsuficiente();
+                if (_items.Count > 0)
+                {
+                    var ultimo = _items[_items.Count - 1];
+                    GridItems.SelectedItem = ultimo;
+                    GridItems.ScrollIntoView(ultimo);
+                }
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
             }, null);
         }
 
@@ -458,6 +465,7 @@ namespace WpfAppVba
                 GridItems.SelectedIndex = lastIdx;
                 GridItems.ScrollIntoView(GridItems.SelectedItem);
             }
+            GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
         }
 
         // ─── Eliminar línea seleccionada ──────────────────────────────────────
@@ -465,9 +473,17 @@ namespace WpfAppVba
         {
             if (!_editarFormulario) return;
             if (GridItems.SelectedItem is not TraspasoItemFila fila) return;
+            int idx = _items.IndexOf(fila);
             _items.Remove(fila);
             _hayCambios = true;
             RefrescarGrid();
+            if (_items.Count > 0)
+            {
+                var siguiente = _items[Math.Min(idx, _items.Count - 1)];
+                GridItems.SelectedItem = siguiente;
+                GridItems.ScrollIntoView(siguiente);
+            }
+            GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
         }
 
         // ─── Edición de celda ─────────────────────────────────────────────────
@@ -500,6 +516,7 @@ namespace WpfAppVba
                 {
                     RefrescarGrid();
                     NotificarStockInsuficiente(fila);
+                    GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
                 }), System.Windows.Threading.DispatcherPriority.Background);
                 return;
             }
@@ -521,12 +538,16 @@ namespace WpfAppVba
                 {
                     RefrescarGrid();
                     NotificarStockInsuficiente(filaCant);
+                    GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
                 }), System.Windows.Threading.DispatcherPriority.Background);
                 return;
             }
 
-            Dispatcher.BeginInvoke(new Action(RefrescarGrid),
-                System.Windows.Threading.DispatcherPriority.Background);
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                RefrescarGrid();
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
+            }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
         // ─── Seleccionar todo al entrar al campo Código ───────────────────────
@@ -563,6 +584,7 @@ namespace WpfAppVba
                 GridItems.SelectedIndex = idx;
                 GridItems.ScrollIntoView(GridItems.SelectedItem);
             }
+            GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
         }
 
         // ─── Guardar ──────────────────────────────────────────────────────────

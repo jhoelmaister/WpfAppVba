@@ -171,6 +171,13 @@ namespace WpfAppVba
                 }
                 _hayCambios = true;
                 RefrescarGrid();
+                if (_items.Count > 0)
+                {
+                    var ultimo = _items[_items.Count - 1];
+                    GridItems.SelectedItem = ultimo;
+                    GridItems.ScrollIntoView(ultimo);
+                }
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
             }, null);
         }
 
@@ -245,6 +252,7 @@ namespace WpfAppVba
                 GridItems.SelectedIndex = lastIdx;
                 GridItems.ScrollIntoView(GridItems.SelectedItem);
             }
+            GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
         }
 
         // ─── Eliminar línea seleccionada ──────────────────────────────────────
@@ -257,9 +265,17 @@ namespace WpfAppVba
 
             if (res == MessageBoxResult.Yes)
             {
+                int idx = _items.IndexOf(fila);
                 _items.Remove(fila);
                 _hayCambios = true;
                 RefrescarGrid();
+                if (_items.Count > 0)
+                {
+                    var siguiente = _items[Math.Min(idx, _items.Count - 1)];
+                    GridItems.SelectedItem = siguiente;
+                    GridItems.ScrollIntoView(siguiente);
+                }
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
             }
         }
 
@@ -291,8 +307,11 @@ namespace WpfAppVba
                 }
             }
 
-            Dispatcher.BeginInvoke(new Action(RefrescarGrid),
-                System.Windows.Threading.DispatcherPriority.Background);
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                RefrescarGrid();
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
+            }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
         // ─── Seleccionar todo al entrar al campo Código ───────────────────────
@@ -327,6 +346,7 @@ namespace WpfAppVba
                 GridItems.SelectedIndex = idx;
                 GridItems.ScrollIntoView(GridItems.SelectedItem);
             }
+            GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
         }
 
         // ─── Botones Guardar / Cancelar ───────────────────────────────────────
