@@ -25,10 +25,7 @@ namespace WpfAppVba
             Loaded += (_, _) =>
             {
                 if (_modoSelector)
-                {
-                    Title                     = "Seleccionar Familia";
-                    BtnSeleccionar.Visibility = Visibility.Visible;
-                }
+                    Title = "Seleccionar Familia";
                 CargarFamilias();
             };
         }
@@ -121,9 +118,6 @@ namespace WpfAppVba
             FamiliaSeleccionada = fila.Id;
             Close();
         }
-
-        private void BtnSeleccionar_Click(object sender, RoutedEventArgs e)
-            => Seleccionar();
 
         // ─── Botones ───────────────────────────────────────────────────────────
 

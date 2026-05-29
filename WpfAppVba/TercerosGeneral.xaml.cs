@@ -22,14 +22,7 @@ namespace WpfAppVba
         {
             InitializeComponent();
             _modoSelector = modoSelector;
-            Loaded += (_, _) =>
-            {
-                if (_modoSelector)
-                {
-                    BtnSeleccionar.Visibility = Visibility.Visible;
-                }
-                CargarTerceros();
-            };
+            Loaded += (_, _) => CargarTerceros();
         }
 
         /// <summary>Abre TercerosGeneral como diálogo modal dentro de una ventana temporal.</summary>
@@ -138,9 +131,6 @@ namespace WpfAppVba
             TerceroSeleccionado = fila.Id;
             Window.GetWindow(this)?.Close();
         }
-
-        private void BtnSeleccionar_Click(object sender, RoutedEventArgs e)
-            => Seleccionar();
 
         // ─── Botones ──────────────────────────────────────────────────────────
 
