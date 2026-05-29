@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using WpfAppVba.Data;
@@ -461,19 +462,60 @@ namespace WpfAppVba
                 Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
             }
 
-            // Tras cerrar el diálogo, WPF restaura el foco de forma asíncrona y
-            // sobrescribe un Grid1.Focus() síncrono, dejando la fila seleccionada
-            // pero sin foco de teclado (las flechas dejan de navegar). Diferimos el
-            // enfoque a la fila seleccionada para recuperarlo.
+            // Tras cerrar el diálogo, WPF restaura el foco de forma asíncrona hacia
+            // la ventana/TabControl, dejando la fila seleccionada pero sin foco de
+            // teclado dentro del grid (las flechas dejan de navegar). Diferimos el
+            // enfoque a la CELDA seleccionada (prioridad Background, para correr tras
+            // la restauración de WPF), que es lo que reactiva la navegación.
+            EnfocarCeldaSeleccionada();
+        }
+
+        // ─── Devuelve el foco de teclado a la celda seleccionada del grid ────────
+        private void EnfocarCeldaSeleccionada()
+        {
             Dispatcher.BeginInvoke(new Action(() =>
             {
-                if (Grid1.SelectedItem == null) { Grid1.Focus(); return; }
-                Grid1.ScrollIntoView(Grid1.SelectedItem);
+                var item = Grid1.SelectedItem;
+                if (item == null) { Grid1.Focus(); return; }
+
+                Grid1.ScrollIntoView(item);
                 Grid1.UpdateLayout();
-                var row = Grid1.ItemContainerGenerator
-                              .ContainerFromItem(Grid1.SelectedItem) as DataGridRow;
-                if (row != null) row.Focus(); else Grid1.Focus();
-            }), System.Windows.Threading.DispatcherPriority.Input);
+
+                var row = Grid1.ItemContainerGenerator.ContainerFromItem(item) as DataGridRow;
+                if (row == null) { Grid1.Focus(); return; }
+
+                var cell = ObtenerCelda(row, 0);
+                if (cell != null)
+                {
+                    Grid1.CurrentCell = new DataGridCellInfo(item, Grid1.Columns[0]);
+                    cell.Focus();
+                    Keyboard.Focus(cell);
+                }
+                else
+                {
+                    row.Focus();
+                }
+            }), System.Windows.Threading.DispatcherPriority.Background);
+        }
+
+        // ─── Helpers de árbol visual para localizar una celda del DataGrid ───────
+        private static DataGridCell? ObtenerCelda(DataGridRow row, int columna)
+        {
+            var presenter = BuscarHijoVisual<DataGridCellsPresenter>(row);
+            return presenter?.ItemContainerGenerator.ContainerFromIndex(columna) as DataGridCell;
+        }
+
+        private static T? BuscarHijoVisual<T>(DependencyObject parent) where T : DependencyObject
+        {
+            int n = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < n; i++)
+            {
+                var hijo = VisualTreeHelper.GetChild(parent, i);
+                if (hijo is T encontrado) return encontrado;
+                var resultado = BuscarHijoVisual<T>(hijo);
+                if (resultado != null) return resultado;
+            }
+            return null;
         }
     }
 
