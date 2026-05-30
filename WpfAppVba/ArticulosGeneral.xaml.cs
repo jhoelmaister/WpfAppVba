@@ -155,8 +155,8 @@ namespace WpfAppVba
                 {
                     if (tagFiltro == "sinclasificar")
                     {
-                        string famDesc = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? "";
-                        if (!string.IsNullOrEmpty(famId) && !string.IsNullOrEmpty(famDesc)) continue;
+                        string famDescCheck = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? "";
+                        if (!string.IsNullOrEmpty(famId) && !string.IsNullOrEmpty(famDescCheck)) continue;
                     }
                     else if (tagFiltro.StartsWith("familia:"))
                     {
