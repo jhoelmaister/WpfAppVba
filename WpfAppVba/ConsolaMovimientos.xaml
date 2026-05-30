@@ -134,6 +134,10 @@
                             Background="#0277BD" Margin="0,0,6,0"
                             Style="{StaticResource BtnAccion}"
                             Click="BtnInventarios_Click"/>
+                    <Button Content="💲 Precios"
+                            Background="#00796B" Margin="0,0,6,0"
+                            Style="{StaticResource BtnAccion}"
+                            Click="BtnPrecios_Click"/>
                     <Button Content="⚙ Configuración"
                             Background="#4527A0" Margin="0,0,6,0"
                             Style="{StaticResource BtnAccion}"

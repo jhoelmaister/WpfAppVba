@@ -1,0 +1,63 @@
+<Window x:Class="WpfAppVba.PreciosDetalle"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Precio" Height="400" Width="420"
+        WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        Background="{DynamicResource ThemeBgPrincipal}"
+        Closing="Window_Closing">
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Título -->
+        <TextBlock x:Name="LblTitulo" Grid.Row="0" FontSize="15" FontWeight="Bold"
+                   Foreground="{DynamicResource ThemeTexto}" Margin="0,0,0,12"/>
+
+        <!-- Campos -->
+        <StackPanel Grid.Row="1">
+
+            <TextBlock Text="Artículo:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
+            <TextBox x:Name="Box_Articulo" Height="30" FontSize="12" Padding="6,4"
+                     BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8" IsEnabled="False"
+                     Background="{DynamicResource ThemeBgReadOnly}" Foreground="{DynamicResource ThemeTextoMuted}"/>
+
+            <TextBlock Text="Fecha:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
+            <DatePicker x:Name="Box_Fecha" Height="30" FontSize="12" Margin="0,0,0,8"
+                        SelectedDateChanged="Box_Fecha_SelectedDateChanged"/>
+
+            <TextBlock Text="Región (Código):" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
+            <TextBox x:Name="Box_Region_Codigo" Height="30" FontSize="12" Padding="6,4"
+                     BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,4"
+                     TextChanged="Box_Region_Codigo_TextChanged"
+                     PreviewTextInput="Box_Numeros_PreviewTextInput"/>
+            <TextBlock x:Name="Box_Region_Descripcion" FontSize="11" Foreground="{DynamicResource ThemeTexto}"
+                       Margin="0,0,0,8"/>
+
+            <TextBlock Text="Precio:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
+            <TextBox x:Name="Box_Precio" Height="30" FontSize="12" Padding="6,4"
+                     BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
+                     TextChanged="Campo_TextChanged"
+                     PreviewTextInput="Box_Decimales_PreviewTextInput"/>
+
+        </StackPanel>
+
+        <!-- Guardar / Cancelar -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
+            <Button Content="Guardar" Height="32" Padding="14,0" FontSize="12"
+                    Background="#1A73E8" Foreground="White"
+                    BorderThickness="0" Cursor="Hand"
+                    Margin="0,0,8,0"
+                    Click="BtnGuardar_Click"/>
+            <Button Content="Cancelar" Height="32" Padding="14,0" FontSize="12"
+                    Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
+                    BorderThickness="0" Cursor="Hand"
+                    Click="BtnCancelar_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

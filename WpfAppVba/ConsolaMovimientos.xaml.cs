@@ -63,6 +63,13 @@ namespace WpfAppVba
             win.ShowDialog();
         }
 
+        // ─── PRECIOS ──────────────────────────────────────────────────────────
+
+        private void BtnPrecios_Click(object sender, RoutedEventArgs e)
+        {
+            new PreciosGeneral { Owner = this }.ShowDialog();
+        }
+
         // ─── MI CUENTA ────────────────────────────────────────────────────────
 
         private void BtnMiCuenta_Click(object sender, RoutedEventArgs e)
