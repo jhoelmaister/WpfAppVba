@@ -90,11 +90,25 @@
                 </DataGrid.Columns>
             </DataGrid>
 
-            <!-- Etiqueta historial -->
-            <TextBlock x:Name="LblHistorial" Grid.Row="2" Margin="0,8,0,4"
-                       FontSize="12" FontWeight="SemiBold"
-                       Foreground="{DynamicResource ThemeTexto}"
-                       Text="Historial de precios:"/>
+            <!-- Etiqueta historial + filtro de región -->
+            <Grid Grid.Row="2" Margin="0,8,0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="LblHistorial" Grid.Column="0"
+                           VerticalAlignment="Center"
+                           FontSize="12" FontWeight="SemiBold"
+                           Foreground="{DynamicResource ThemeTexto}"
+                           Text="Historial de precios:"/>
+                <TextBlock Grid.Column="1" Text="Región:" VerticalAlignment="Center"
+                           FontSize="12" Margin="0,0,6,0"
+                           Foreground="{DynamicResource ThemeTextoSec}"/>
+                <ComboBox x:Name="CmbRegion" Grid.Column="2" Width="200" Height="26" FontSize="12"
+                          DisplayMemberPath="Descripcion" SelectedValuePath="Id"
+                          SelectionChanged="CmbRegion_SelectionChanged"/>
+            </Grid>
 
             <!-- Grid de precios (historial) -->
             <DataGrid x:Name="GridPrecios" Grid.Row="3"
@@ -109,7 +123,8 @@
                       PreviewKeyDown="GridPrecios_PreviewKeyDown">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Línea"  Binding="{Binding Linea}"    Width="55"/>
-                    <DataGridTextColumn Header="Fecha"  Binding="{Binding FechaStr}" Width="150"/>
+                    <DataGridTextColumn Header="Fecha"  Binding="{Binding FechaStr}" Width="110"/>
+                    <DataGridTextColumn Header="Hora"   Binding="{Binding HoraStr}"  Width="90"/>
                     <DataGridTextColumn Header="Región" Binding="{Binding Region}"   Width="*"/>
                     <DataGridTextColumn Header="Precio" Binding="{Binding Precio, StringFormat=#\,##0.##}" Width="120"
                                         ElementStyle="{StaticResource CeldaNumero}"/>

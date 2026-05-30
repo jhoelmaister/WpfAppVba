@@ -14,6 +14,8 @@ namespace WpfAppVba
 
         private readonly string _articuloId;
         private readonly string _idEditar;
+        private readonly string _regionId;
+        private readonly string _regionDesc;
         private readonly bool   _modoEditar;
         private bool _hayCambios = false;
         private bool _cargando   = true;
@@ -22,12 +24,14 @@ namespace WpfAppVba
         public string? ItemCreadoId { get; private set; }
 
         public PreciosDetalle(string articuloId, string articuloCodigo, string articuloDescripcion,
-                              string idEditar = "")
+                              string idEditar = "", string regionId = "", string regionDesc = "")
         {
             InitializeComponent();
             WindowHelper.AjustarAlEcran(this);
             _articuloId = articuloId;
             _idEditar   = idEditar;
+            _regionId   = regionId;
+            _regionDesc = regionDesc;
             _modoEditar = !string.IsNullOrEmpty(idEditar);
 
             Loaded += (_, _) =>
@@ -50,7 +54,11 @@ namespace WpfAppVba
             else
             {
                 LblTitulo.Text = "Nuevo Precio";
-                Box_Fecha.SelectedDate = DateTime.Today;
+                var ahora = DateTime.Now;
+                Box_Fecha.SelectedDate = ahora.Date;
+                Box_Hora.Text          = ahora.ToString("HH:mm:ss");
+                Box_Region_Codigo.Text = _regionId;
+                ActualizarDescripcionRegion();
             }
 
             _cargando   = false;
@@ -62,7 +70,9 @@ namespace WpfAppVba
             string id = _idEditar;
 
             var fechaObj = Sql.PreciosObj.ObtenerItem("fecha", id);
-            Box_Fecha.SelectedDate = fechaObj != null ? Convert.ToDateTime(fechaObj) : DateTime.Today;
+            DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : DateTime.Now;
+            Box_Fecha.SelectedDate = fecha.Date;
+            Box_Hora.Text          = fecha.ToString("HH:mm:ss");
 
             Box_Region_Codigo.Text = Sql.PreciosObj.ObtenerItem("region", id)?.ToString() ?? "";
             ActualizarDescripcionRegion();
@@ -116,7 +126,7 @@ namespace WpfAppVba
             string id = _idEditar;
             try
             {
-                Sql.PreciosObj.EstablecerItem("fecha",    id, Box_Fecha.SelectedDate ?? DateTime.Today);
+                Sql.PreciosObj.EstablecerItem("fecha",    id, ObtenerFechaHora());
                 Sql.PreciosObj.EstablecerItem("region",   id, Box_Region_Codigo.Text);
                 Sql.PreciosObj.EstablecerItem("precio",   id, ParsearPrecio());
                 Sql.PreciosObj.EstablecerItem("edicion",  id, DateTime.Now);
@@ -142,7 +152,7 @@ namespace WpfAppVba
 
                 Sql.PreciosObj.Nuevo(id);
                 Sql.PreciosObj.EstablecerItem("articulo", id, _articuloId);
-                Sql.PreciosObj.EstablecerItem("fecha",    id, Box_Fecha.SelectedDate ?? DateTime.Today);
+                Sql.PreciosObj.EstablecerItem("fecha",    id, ObtenerFechaHora());
                 Sql.PreciosObj.EstablecerItem("region",   id, Box_Region_Codigo.Text);
                 Sql.PreciosObj.EstablecerItem("precio",   id, ParsearPrecio());
                 Sql.PreciosObj.EstablecerItem("emision",  id, DateTime.Now);
@@ -160,6 +170,15 @@ namespace WpfAppVba
                 MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
+        }
+
+        // ─── Combina la fecha (DatePicker) con la hora (TextBox) ──────────────
+        private DateTime ObtenerFechaHora()
+        {
+            DateTime fecha = Box_Fecha.SelectedDate ?? DateTime.Today;
+            if (TimeSpan.TryParse(Box_Hora.Text.Trim(), CultureInfo.InvariantCulture, out var ts))
+                return fecha.Date + ts;
+            return fecha.Date;
         }
 
         private double ParsearPrecio()

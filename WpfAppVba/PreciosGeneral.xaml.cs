@@ -19,7 +19,35 @@ namespace WpfAppVba
         {
             InitializeComponent();
             WindowHelper.AjustarAlEcran(this);
-            Loaded += (_, _) => { CargarArbol(); CargarArticulos(); };
+            Loaded += (_, _) => { CargarRegiones(); CargarArbol(); CargarArticulos(); };
+        }
+
+        // ─── Carga el selector de regiones ───────────────────────────────────
+        private void CargarRegiones()
+        {
+            var lista = new List<RegionItem>();
+            int uf = Sql.RegionesObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.RegionesObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                string desc = Sql.RegionesObj.ObtenerItem("descripcion", id)?.ToString() ?? id;
+                lista.Add(new RegionItem { Id = id, Descripcion = desc });
+            }
+            CmbRegion.ItemsSource = lista;
+            if (lista.Count > 0) CmbRegion.SelectedIndex = 0;
+        }
+
+        // ─── Región actualmente seleccionada en el filtro ─────────────────────
+        private RegionItem? RegionSeleccionada => CmbRegion.SelectedItem as RegionItem;
+        private string RegionSeleccionadaId   => RegionSeleccionada?.Id ?? "";
+        private string RegionSeleccionadaDesc => RegionSeleccionada?.Descripcion ?? "";
+
+        private void CmbRegion_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ArticuloSeleccionado is PrecioArticuloFila fila)
+                CargarPrecios(fila.Id);
         }
 
         // ─── Árbol de productos/familias (igual a ArticulosGeneral) ───────────
@@ -155,6 +183,7 @@ namespace WpfAppVba
         {
             var lista = new List<PrecioHistFila>();
             int linea = 1;
+            string regionFiltro = RegionSeleccionadaId;
 
             int uf = Sql.PreciosObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -164,6 +193,8 @@ namespace WpfAppVba
                 string id = idObj.ToString()!;
 
                 if (Sql.PreciosObj.ObtenerItem("articulo", id)?.ToString() != articuloId) continue;
+                if (!string.IsNullOrEmpty(regionFiltro) &&
+                    (Sql.PreciosObj.ObtenerItem("region", id)?.ToString() ?? "") != regionFiltro) continue;
 
                 lista.Add(ConstruirFilaPrecio(id, linea++));
             }
@@ -184,6 +215,7 @@ namespace WpfAppVba
                 Id       = id,
                 Fecha    = fecha,
                 FechaStr = fecha != default ? $"{fecha:d}" : "",
+                HoraStr  = fecha != default ? $"{fecha:HH:mm:ss}" : "",
                 Region   = regionDesc,
                 Precio   = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0)
             };
@@ -287,7 +319,15 @@ namespace WpfAppVba
                 return;
             }
 
-            var detalle = new PreciosDetalle(fila.Id, fila.Codigo, fila.Descripcion) { Owner = this };
+            if (string.IsNullOrEmpty(RegionSeleccionadaId))
+            {
+                MessageBox.Show("Seleccione una región primero.", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var detalle = new PreciosDetalle(fila.Id, fila.Codigo, fila.Descripcion,
+                                             "", RegionSeleccionadaId, RegionSeleccionadaDesc) { Owner = this };
             detalle.ShowDialog();
             if (detalle.ItemCreadoId == null) return;
 
@@ -392,7 +432,14 @@ namespace WpfAppVba
         public string   Id       { get; set; } = "";
         public DateTime Fecha    { get; set; }
         public string   FechaStr { get; set; } = "";
+        public string   HoraStr  { get; set; } = "";
         public string   Region   { get; set; } = "";
         public double   Precio   { get; set; }
+    }
+
+    public class RegionItem
+    {
+        public string Id          { get; set; } = "";
+        public string Descripcion { get; set; } = "";
     }
 }

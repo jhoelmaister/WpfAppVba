@@ -27,15 +27,30 @@
                      BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8" IsEnabled="False"
                      Background="{DynamicResource ThemeBgReadOnly}" Foreground="{DynamicResource ThemeTextoMuted}"/>
 
-            <TextBlock Text="Fecha:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-            <DatePicker x:Name="Box_Fecha" Height="30" FontSize="12" Margin="0,0,0,8"
-                        SelectedDateChanged="Box_Fecha_SelectedDateChanged"/>
+            <Grid Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="120"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                    <TextBlock Text="Fecha:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
+                    <DatePicker x:Name="Box_Fecha" Height="30" FontSize="12"
+                                SelectedDateChanged="Box_Fecha_SelectedDateChanged"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="Hora (HH:mm:ss):" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
+                    <TextBox x:Name="Box_Hora" Height="30" FontSize="12" Padding="6,4"
+                             BorderBrush="{DynamicResource ThemeBordeInput}"
+                             TextChanged="Campo_TextChanged"/>
+                </StackPanel>
+            </Grid>
 
-            <TextBlock Text="Región (Código):" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
+            <TextBlock Text="Región:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
             <TextBox x:Name="Box_Region_Codigo" Height="30" FontSize="12" Padding="6,4"
                      BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,4"
-                     TextChanged="Box_Region_Codigo_TextChanged"
-                     PreviewTextInput="Box_Numeros_PreviewTextInput"/>
+                     IsEnabled="False"
+                     Background="{DynamicResource ThemeBgReadOnly}" Foreground="{DynamicResource ThemeTextoMuted}"
+                     TextChanged="Box_Region_Codigo_TextChanged"/>
             <TextBlock x:Name="Box_Region_Descripcion" FontSize="11" Foreground="{DynamicResource ThemeTexto}"
                        Margin="0,0,0,8"/>
 
