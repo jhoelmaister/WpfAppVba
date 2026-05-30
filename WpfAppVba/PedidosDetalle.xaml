@@ -116,13 +116,16 @@
             </ComboBox>
         </Grid>
 
-        <!-- ══ Row 2: Tercero ════════════════════════════════════════════ -->
+        <!-- ══ Row 2: Tercero + Referencia ══════════════════════════════════ -->
         <Grid Grid.Row="2" Margin="0,0,0,6">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="80"/>
                 <ColumnDefinition Width="32"/>
                 <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
@@ -138,25 +141,22 @@
             <TextBlock Grid.Column="4" x:Name="Box_Tercero_Descripcion"
                        FontSize="12" Foreground="{DynamicResource ThemeTexto}" VerticalAlignment="Center"
                        TextTrimming="CharacterEllipsis"/>
+
+            <TextBlock Grid.Column="6" Text="Referencia:" Style="{StaticResource Lbl}"/>
+            <TextBox   Grid.Column="7" x:Name="Box_Referencia"
+                       Height="28" FontSize="12" Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
+                       TextChanged="Campo_TextChanged"/>
         </Grid>
 
-        <!-- ══ Row 3: Referencia / Cuenta ════════════════════════════════ -->
+        <!-- ══ Row 3: Cuenta ═════════════════════════════════════════════ -->
         <Grid Grid.Row="3" Margin="0,0,0,6">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="20"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="110"/>
             </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="0" Text="Referencia:" Style="{StaticResource Lbl}"/>
-            <TextBox   Grid.Column="1" x:Name="Box_Referencia"
-                       Height="28" FontSize="12" Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
-                       TextChanged="Campo_TextChanged"/>
-
-            <TextBlock Grid.Column="3" Text="Cuenta:" Style="{StaticResource Lbl}"/>
-            <TextBox   Grid.Column="4" x:Name="Box_Cuenta"
+            <TextBlock Grid.Column="0" Text="Cuenta:" Style="{StaticResource Lbl}"/>
+            <TextBox   Grid.Column="1" x:Name="Box_Cuenta"
                        Height="28" FontSize="12" Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
                        IsReadOnly="True" Background="{DynamicResource ThemeBgReadOnly}" Foreground="{DynamicResource ThemeTextoSec}"/>
         </Grid>

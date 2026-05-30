@@ -90,29 +90,33 @@
                 </DataGrid.Columns>
             </DataGrid>
 
-            <!-- Etiqueta historial + filtro de región -->
+            <!-- Filtro de región + etiqueta historial -->
             <Grid Grid.Row="2" Margin="0,8,0,4">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock x:Name="LblHistorial" Grid.Column="0"
-                           VerticalAlignment="Center"
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Fila 0: selector de región -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,4">
+                    <TextBlock Text="Región:" VerticalAlignment="Center"
+                               FontSize="12" Margin="0,0,6,0"
+                               Foreground="{DynamicResource ThemeTextoSec}"/>
+                    <ComboBox x:Name="CmbRegion" Width="200" Height="26" FontSize="12"
+                              DisplayMemberPath="Descripcion" SelectedValuePath="Id"
+                              SelectionChanged="CmbRegion_SelectionChanged"/>
+                    <Button Content="Gestionar Regiones" Margin="6,0,0,0" Height="26"
+                            Padding="10,0" FontSize="11" BorderThickness="0" Cursor="Hand"
+                            Background="#0277BD" Foreground="White"
+                            Click="BtnGestionarRegiones_Click"/>
+                </StackPanel>
+
+                <!-- Fila 1: etiqueta historial (ancho completo, blanco) -->
+                <TextBlock x:Name="LblHistorial" Grid.Row="1"
                            FontSize="12" FontWeight="SemiBold"
-                           Foreground="{DynamicResource ThemeTexto}"
-                           Text="Historial de precios:"/>
-                <TextBlock Grid.Column="1" Text="Región:" VerticalAlignment="Center"
-                           FontSize="12" Margin="0,0,6,0"
-                           Foreground="{DynamicResource ThemeTextoSec}"/>
-                <ComboBox x:Name="CmbRegion" Grid.Column="2" Width="200" Height="26" FontSize="12"
-                          DisplayMemberPath="Descripcion" SelectedValuePath="Id"
-                          SelectionChanged="CmbRegion_SelectionChanged"/>
-                <Button Grid.Column="3" Content="Gestionar Regiones" Margin="6,0,0,0" Height="26"
-                        Padding="10,0" FontSize="11" BorderThickness="0" Cursor="Hand"
-                        Background="#0277BD" Foreground="White"
-                        Click="BtnGestionarRegiones_Click"/>
+                           Foreground="White"
+                           Text="Historial de precios:"
+                           TextTrimming="CharacterEllipsis"/>
             </Grid>
 
             <!-- Grid de precios (historial) -->
