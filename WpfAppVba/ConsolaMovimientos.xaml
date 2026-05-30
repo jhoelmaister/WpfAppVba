@@ -159,6 +159,11 @@
                         Background="{DynamicResource ThemeBgContenido}"
                         BorderThickness="0">
 
+                <!-- ── Pestaña Artículos ───────────────────────────── -->
+                <TabItem Header="📋 Artículos" Style="{StaticResource ModernTabItem}">
+                    <local:ArticulosGeneral x:Name="TabArticulos"/>
+                </TabItem>
+
                 <!-- ── Pestaña Ventas ──────────────────────────────── -->
                 <TabItem Header="💰 Ventas" Style="{StaticResource ModernTabItem}">
                     <local:PedidosGeneral x:Name="TabVentas" TipoMovimiento="venta"/>
@@ -177,11 +182,6 @@
                 <!-- ── Pestaña Salidas ─────────────────────────────── -->
                 <TabItem Header="📤 Salidas" Style="{StaticResource ModernTabItem}">
                     <local:TraspasosGeneral x:Name="TabSalidas" TipoMovimiento="salida"/>
-                </TabItem>
-
-                <!-- ── Pestaña Artículos ───────────────────────────── -->
-                <TabItem Header="📋 Artículos" Style="{StaticResource ModernTabItem}">
-                    <local:ArticulosGeneral x:Name="TabArticulos"/>
                 </TabItem>
 
             </TabControl>
