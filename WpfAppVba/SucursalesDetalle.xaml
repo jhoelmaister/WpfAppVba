@@ -40,8 +40,9 @@
                          TextChanged="Campo_TextChanged"/>
 
                 <TextBlock Text="Región (Código):" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-                <Grid Margin="0,0,0,4">
+                <Grid Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="90"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
@@ -49,13 +50,14 @@
                              BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,6,0"
                              TextChanged="Box_Referido_Codigo_TextChanged"
                              PreviewTextInput="Box_Referido_Codigo_PreviewTextInput"/>
-                    <Button x:Name="BtnVerRegiones" Grid.Column="1" Content="Ver Regiones" Height="30" Padding="8,0"
+                    <TextBlock x:Name="Box_Referido_Descripcion" Grid.Column="1" FontSize="11"
+                               Foreground="{DynamicResource ThemeTextoMuted}"
+                               VerticalAlignment="Center" Margin="0,0,6,0" TextTrimming="CharacterEllipsis"/>
+                    <Button x:Name="BtnVerRegiones" Grid.Column="2" Content="Ver Regiones" Height="30" Padding="8,0"
                             FontSize="11" BorderThickness="0" Cursor="Hand"
                             Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
                             Click="BtnVerRegiones_Click"/>
                 </Grid>
-                <TextBlock x:Name="Box_Referido_Descripcion" FontSize="11" Foreground="{DynamicResource ThemeTextoMuted}"
-                           Margin="0,0,0,8"/>
 
                 <TextBlock Text="Teléfono:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
                 <TextBox x:Name="Box_Telefono" Height="30" FontSize="12" Padding="6,4"
