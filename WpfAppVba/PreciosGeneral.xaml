@@ -96,6 +96,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="LblHistorial" Grid.Column="0"
                            VerticalAlignment="Center"
@@ -108,6 +109,10 @@
                 <ComboBox x:Name="CmbRegion" Grid.Column="2" Width="200" Height="26" FontSize="12"
                           DisplayMemberPath="Descripcion" SelectedValuePath="Id"
                           SelectionChanged="CmbRegion_SelectionChanged"/>
+                <Button Grid.Column="3" Content="Gestionar Regiones" Margin="6,0,0,0" Height="26"
+                        Padding="10,0" FontSize="11" BorderThickness="0" Cursor="Hand"
+                        Background="#0277BD" Foreground="White"
+                        Click="BtnGestionarRegiones_Click"/>
             </Grid>
 
             <!-- Grid de precios (historial) -->

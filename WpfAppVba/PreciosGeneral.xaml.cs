@@ -414,6 +414,22 @@ namespace WpfAppVba
             CargarArbol();
             CargarArticulos();
         }
+
+        private void BtnGestionarRegiones_Click(object sender, RoutedEventArgs e)
+        {
+            new RegionesGeneral { Owner = this }.ShowDialog();
+            string? regionActualId = RegionSeleccionadaId;
+            Sql.RegionesObj.Actualizar();
+            CargarRegiones();
+            // Restaurar selección previa si sigue existiendo
+            if (!string.IsNullOrEmpty(regionActualId))
+            {
+                foreach (RegionItem item in CmbRegion.Items)
+                {
+                    if (item.Id == regionActualId) { CmbRegion.SelectedItem = item; break; }
+                }
+            }
+        }
     }
 
     // ─── Modelos de fila ──────────────────────────────────────────────────────
