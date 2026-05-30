@@ -214,8 +214,7 @@ namespace WpfAppVba
                 Linea    = linea,
                 Id       = id,
                 Fecha    = fecha,
-                FechaStr = fecha != default ? $"{fecha:d}" : "",
-                HoraStr  = fecha != default ? $"{fecha:HH:mm:ss}" : "",
+                FechaStr = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                 Region   = regionDesc,
                 Precio   = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0)
             };
@@ -448,7 +447,6 @@ namespace WpfAppVba
         public string   Id       { get; set; } = "";
         public DateTime Fecha    { get; set; }
         public string   FechaStr { get; set; } = "";
-        public string   HoraStr  { get; set; } = "";
         public string   Region   { get; set; } = "";
         public double   Precio   { get; set; }
     }

@@ -595,6 +595,13 @@ namespace WpfAppVba
                     fila.Tipo    = "manual";
                 }
             }
+            else if (col == "Forma")
+            {
+                if (fila.Forma == "sin factura")
+                    fila.Contable = 0;
+                else if (fila.Forma == "con factura")
+                    fila.Contable = 100;
+            }
             else if (col == "Contable" && e.EditingElement is TextBox tbCont)
             {
                 if (double.TryParse(tbCont.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double cont))
@@ -616,6 +623,16 @@ namespace WpfAppVba
         private void GridItems_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
         {
             if (e.EditingElement is TextBox tb) { tb.SelectAll(); tb.Focus(); }
+        }
+
+        private void GridItems_BeginningEdit(object sender, DataGridBeginningEditEventArgs e)
+        {
+            if (e.Column.Header?.ToString() == "Contable" &&
+                e.Row.Item is PedidoItemFila fila &&
+                fila.Forma == "sin factura")
+            {
+                e.Cancel = true;
+            }
         }
 
         // ─── Botones Pedidos ──────────────────────────────────────────────────

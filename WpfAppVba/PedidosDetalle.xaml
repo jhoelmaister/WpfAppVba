@@ -212,6 +212,7 @@
                               FontSize="12"
                               CellEditEnding="GridItems_CellEditEnding"
                               PreparingCellForEdit="GridItems_PreparingCellForEdit"
+                              BeginningEdit="GridItems_BeginningEdit"
                               SelectionChanged="GridItems_SelectionChanged">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Línea"    Binding="{Binding Linea}"       Width="48"  IsReadOnly="True"/>

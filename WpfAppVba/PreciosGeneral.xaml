@@ -128,8 +128,7 @@
                       PreviewKeyDown="GridPrecios_PreviewKeyDown">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Línea"  Binding="{Binding Linea}"    Width="55"/>
-                    <DataGridTextColumn Header="Fecha"  Binding="{Binding FechaStr}" Width="110"/>
-                    <DataGridTextColumn Header="Hora"   Binding="{Binding HoraStr}"  Width="90"/>
+                    <DataGridTextColumn Header="Fecha"  Binding="{Binding FechaStr}" Width="160"/>
                     <DataGridTextColumn Header="Región" Binding="{Binding Region}"   Width="*"/>
                     <DataGridTextColumn Header="Precio" Binding="{Binding Precio, StringFormat=#\,##0.##}" Width="120"
                                         ElementStyle="{StaticResource CeldaNumero}"/>
