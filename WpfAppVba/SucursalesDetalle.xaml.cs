@@ -89,6 +89,16 @@ namespace WpfAppVba
                 : Sql.RegionesObj.ObtenerItem("descripcion", regionId)?.ToString() ?? "";
         }
 
+        // ─── Ver regiones (modo selector) ─────────────────────────────────────
+        private void BtnVerRegiones_Click(object sender, RoutedEventArgs e)
+        {
+            RegionesGeneral.RegionSeleccionadaStatic = null;
+            new RegionesGeneral(modoSelector: true) { Owner = this }.ShowDialog();
+
+            if (!string.IsNullOrEmpty(RegionesGeneral.RegionSeleccionadaStatic))
+                Box_Referido_Codigo.Text = RegionesGeneral.RegionSeleccionadaStatic;
+        }
+
         // ─── Detectar cambios en cualquier campo ──────────────────────────────
         private void Campo_TextChanged(object sender, TextChangedEventArgs e)
         {

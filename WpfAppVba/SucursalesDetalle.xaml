@@ -40,10 +40,20 @@
                          TextChanged="Campo_TextChanged"/>
 
                 <TextBlock Text="Región (Código):" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-                <TextBox x:Name="Box_Referido_Codigo" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,4"
-                         TextChanged="Box_Referido_Codigo_TextChanged"
-                         PreviewTextInput="Box_Referido_Codigo_PreviewTextInput"/>
+                <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="Box_Referido_Codigo" Grid.Column="0" Height="30" FontSize="12" Padding="6,4"
+                             BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,6,0"
+                             TextChanged="Box_Referido_Codigo_TextChanged"
+                             PreviewTextInput="Box_Referido_Codigo_PreviewTextInput"/>
+                    <Button x:Name="BtnVerRegiones" Grid.Column="1" Content="Ver Regiones" Height="30" Padding="8,0"
+                            FontSize="11" BorderThickness="0" Cursor="Hand"
+                            Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
+                            Click="BtnVerRegiones_Click"/>
+                </Grid>
                 <TextBlock x:Name="Box_Referido_Descripcion" FontSize="11" Foreground="{DynamicResource ThemeTextoMuted}"
                            Margin="0,0,0,8"/>
 
