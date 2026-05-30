@@ -237,7 +237,6 @@ namespace WpfAppVba
                 Sql.ArticulosObj.EstablecerItem("modelo",     codigo, Box_Modelo.Text);
                 Sql.ArticulosObj.EstablecerItem("observacion",codigo, Box_Observacion.Text);
                 Sql.ArticulosObj.EstablecerItem("edicion",    codigo, DateTime.Now);
-                Sql.ArticulosObj.EstablecerItem("usuario",    codigo, AppState.UsuarioActivo);
                 Sql.ArticulosObj.EstablecerItem("usuarioE",   codigo, AppState.UsuarioActivo);
 
                 Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));

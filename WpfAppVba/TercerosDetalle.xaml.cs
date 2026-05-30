@@ -94,6 +94,7 @@ namespace WpfAppVba
                 Sql.TercerosObj.EstablecerItem("telefono2",   codigo, Box_Telefono2.Text);
                 Sql.TercerosObj.EstablecerItem("observacion", codigo, Box_Observacion.Text);
                 Sql.TercerosObj.EstablecerItem("edicion",     codigo, DateTime.Now);
+                Sql.TercerosObj.EstablecerItem("usuarioE",    codigo, AppState.UsuarioActivo);
 
                 Sql.TercerosObj.OrdenarData(("id", false));
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);

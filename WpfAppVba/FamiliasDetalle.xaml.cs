@@ -100,6 +100,7 @@ namespace WpfAppVba
                 Sql.FamiliasObj.EstablecerItem("producto",    codigo, Box_Referido_Codigo.Text);
                 Sql.FamiliasObj.EstablecerItem("observacion", codigo, Box_Observacion.Text);
                 Sql.FamiliasObj.EstablecerItem("edicion",     codigo, DateTime.Now);
+                Sql.FamiliasObj.EstablecerItem("usuarioE",    codigo, AppState.UsuarioActivo);
 
                 Sql.FamiliasObj.OrdenarData(("id", false));
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
