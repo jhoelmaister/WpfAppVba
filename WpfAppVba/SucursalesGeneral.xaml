@@ -31,13 +31,15 @@
         <!-- Buscador -->
         <Grid Grid.Row="1" Margin="0,0,0,8">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Text="Buscar:" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12"/>
-            <TextBox x:Name="TxtBuscar" Grid.Column="1" Height="28" FontSize="12"
-                     Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}"
+            <TextBox x:Name="TxtBuscar" Grid.Column="0" Height="28" FontSize="12"
+                     Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,6,0"
                      TextChanged="TxtBuscar_TextChanged"/>
+            <Button Content="Buscar" Grid.Column="1"
+                    Style="{StaticResource BtnSecundario}"
+                    Click="BtnBuscar_Click"/>
         </Grid>
 
         <!-- Lista -->

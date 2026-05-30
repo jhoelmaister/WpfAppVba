@@ -103,8 +103,11 @@ namespace WpfAppVba
             Grid1.Items.Refresh();
         }
 
-        // ─── Búsqueda en tiempo real ──────────────────────────────────────────
+        // ─── Búsqueda ─────────────────────────────────────────────────────────
         private void TxtBuscar_TextChanged(object sender, TextChangedEventArgs e)
+            => CargarTerceros();
+
+        private void BtnBuscar_Click(object sender, RoutedEventArgs e)
             => CargarTerceros();
 
         // ─── Doble clic ───────────────────────────────────────────────────────
