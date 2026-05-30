@@ -81,13 +81,13 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="75"/>
-                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="100"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="130"/>
                 <ColumnDefinition Width="10"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="90"/>
-                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="100"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="150"/>
                 <ColumnDefinition Width="10"/>
