@@ -69,6 +69,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="100"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBox x:Name="Box_Identificador_Industria" Grid.Column="0" Height="30" FontSize="12"
                              Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,6,0"
@@ -76,6 +77,10 @@
                              PreviewTextInput="Box_Numeros_PreviewTextInput"/>
                     <TextBlock x:Name="Box_Industria_Descripcion" Grid.Column="1"
                                VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource ThemeTextoMuted}"/>
+                    <Button x:Name="BtnVerIndustrias" Grid.Column="2" Content="Ver Industrias" Height="30" Padding="8,0"
+                            FontSize="11" BorderThickness="0" Cursor="Hand"
+                            Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
+                            Click="BtnVerIndustrias_Click"/>
                 </Grid>
 
                 <!-- Categoría -->
@@ -84,6 +89,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="100"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBox x:Name="Box_Identificador_Categoria" Grid.Column="0" Height="30" FontSize="12"
                              Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,6,0"
@@ -91,6 +97,10 @@
                              PreviewTextInput="Box_Numeros_PreviewTextInput"/>
                     <TextBlock x:Name="Box_Categoria_Descripcion" Grid.Column="1"
                                VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource ThemeTextoMuted}"/>
+                    <Button x:Name="BtnVerCategorias" Grid.Column="2" Content="Ver Categorías" Height="30" Padding="8,0"
+                            FontSize="11" BorderThickness="0" Cursor="Hand"
+                            Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
+                            Click="BtnVerCategorias_Click"/>
                 </Grid>
 
                 <!-- Descripción -->

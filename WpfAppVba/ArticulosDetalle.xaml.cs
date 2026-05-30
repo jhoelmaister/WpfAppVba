@@ -207,6 +207,26 @@ namespace WpfAppVba
             }
         }
 
+        // ─── Ver industrias (modo selector) ──────────────────────────────────
+        private void BtnVerIndustrias_Click(object sender, RoutedEventArgs e)
+        {
+            IndustriasGeneral.IndustriaSeleccionada = null;
+            new IndustriasGeneral(modoSelector: true) { Owner = this }.ShowDialog();
+
+            if (!string.IsNullOrEmpty(IndustriasGeneral.IndustriaSeleccionada))
+                Box_Identificador_Industria.Text = IndustriasGeneral.IndustriaSeleccionada;
+        }
+
+        // ─── Ver categorías (modo selector) ───────────────────────────────────
+        private void BtnVerCategorias_Click(object sender, RoutedEventArgs e)
+        {
+            CategoriasGeneral.CategoriaSeleccionada = null;
+            new CategoriasGeneral(modoSelector: true) { Owner = this }.ShowDialog();
+
+            if (!string.IsNullOrEmpty(CategoriasGeneral.CategoriaSeleccionada))
+                Box_Identificador_Categoria.Text = CategoriasGeneral.CategoriaSeleccionada;
+        }
+
         // ─── Ver movimientos del artículo ─────────────────────────────────────
         private void BtnVerMovimientos_Click(object sender, RoutedEventArgs e)
         {

@@ -146,6 +146,16 @@ namespace WpfAppVba
             }
         }
 
+        // ─── Ver productos (modo selector) ────────────────────────────────────
+        private void BtnVerProductos_Click(object sender, RoutedEventArgs e)
+        {
+            ProductosGeneral.ProductoSeleccionado = null;
+            new ProductosGeneral(modoSelector: true) { Owner = this }.ShowDialog();
+
+            if (!string.IsNullOrEmpty(ProductosGeneral.ProductoSeleccionado))
+                Box_Referido_Codigo.Text = ProductosGeneral.ProductoSeleccionado;
+        }
+
         // ─── Validación de entrada ────────────────────────────────────────────
         private void Box_Referido_Codigo_PreviewTextInput(object sender, TextCompositionEventArgs e)
             => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
