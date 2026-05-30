@@ -628,6 +628,7 @@ namespace WpfAppVba
                 Sql.DocumentosTObj.EstablecerItem("emision",     docT, DateTime.Now);
                 Sql.DocumentosTObj.EstablecerItem("edicion",     docT, DateTime.Now);
                 Sql.DocumentosTObj.EstablecerItem("usuario",     docT, AppState.UsuarioActivo);
+                Sql.DocumentosTObj.EstablecerItem("usuarioE",    docT, AppState.UsuarioActivo);
                 Sql.DocumentosTObj.EstablecerItem("emitido",     docT, AppState.SucursalActiva);
 
                 // ── Crear líneas con ID = documentoT + indice 3 dígitos (igual VBA) ──
@@ -678,6 +679,7 @@ namespace WpfAppVba
                 Sql.DocumentosTObj.EstablecerItem("referencia",  docT, Box_Referencia.Text.Trim());
                 Sql.DocumentosTObj.EstablecerItem("observacion", docT, Box_Observaciones.Text.Trim());
                 Sql.DocumentosTObj.EstablecerItem("edicion",     docT, DateTime.Now);
+                Sql.DocumentosTObj.EstablecerItem("usuarioE",    docT, AppState.UsuarioActivo);
 
                 // ── Eliminar líneas existentes (igual VBA: .eliminar, no .ocultar) ──
                 int uf = Sql.TraspasosObj.ContarFilas;

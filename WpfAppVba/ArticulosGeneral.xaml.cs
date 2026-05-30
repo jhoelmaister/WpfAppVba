@@ -400,6 +400,7 @@ namespace WpfAppVba
             string famEliminada = Sql.ArticulosObj.ObtenerItem("familia", fila.Id)?.ToString() ?? "";
             int    indEliminado = Convert.ToInt32(Sql.ArticulosObj.ObtenerItem("indice", fila.Id) ?? 0);
 
+            Sql.ArticulosObj.EstablecerItem("usuarioE", fila.Id, AppState.UsuarioActivo);
             Sql.ArticulosObj.Ocultar(fila.Id);
 
             // Rellenar el hueco: restar 1 a los índices > indEliminado dentro de la misma familia

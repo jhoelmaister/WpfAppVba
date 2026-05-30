@@ -122,6 +122,7 @@ namespace WpfAppVba
                 Sql.SucursalesObj.EstablecerItem("fecha",       codigo, Box_Fecha.SelectedDate ?? DateTime.Today);
                 Sql.SucursalesObj.EstablecerItem("edicion",     codigo, DateTime.Now);
                 Sql.SucursalesObj.EstablecerItem("usuario",     codigo, AppState.UsuarioActivo);
+                Sql.SucursalesObj.EstablecerItem("usuarioE",    codigo, AppState.UsuarioActivo);
 
                 Sql.SucursalesObj.OrdenarData(("id", false));
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -157,6 +158,7 @@ namespace WpfAppVba
                 Sql.SucursalesObj.EstablecerItem("emision",     codigo, DateTime.Now);
                 Sql.SucursalesObj.EstablecerItem("edicion",     codigo, DateTime.Now);
                 Sql.SucursalesObj.EstablecerItem("usuario",     codigo, AppState.UsuarioActivo);
+                Sql.SucursalesObj.EstablecerItem("usuarioE",    codigo, AppState.UsuarioActivo);
 
                 Sql.SucursalesObj.OrdenarData(("id", false));
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);

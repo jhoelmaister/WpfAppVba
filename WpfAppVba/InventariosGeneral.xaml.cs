@@ -158,6 +158,7 @@ namespace WpfAppVba
                     Sql.InventariosObj.Ocultar(id);
 
                 // Ocultar el documento de inventario
+                Sql.DocumentosIObj.EstablecerItem("usuarioE", fila.Id, AppState.UsuarioActivo);
                 Sql.DocumentosIObj.Ocultar(fila.Id);
 
                 Sql.InventariosObj.OrdenarData(("documentoI", false), ("indice", false));

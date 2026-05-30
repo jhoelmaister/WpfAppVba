@@ -1128,6 +1128,7 @@ namespace WpfAppVba
                 Sql.DocumentosPObj.EstablecerItem("edicion",     docP, DateTime.Now);
                 Sql.DocumentosPObj.EstablecerItem("emitido",     docP, AppState.SucursalActiva);
                 Sql.DocumentosPObj.EstablecerItem("usuario",     docP, AppState.UsuarioActivo);
+                Sql.DocumentosPObj.EstablecerItem("usuarioE",    docP, AppState.UsuarioActivo);
 
                 GuardarLineasPedido(docP);
                 GuardarLineasTrasaccion(docP);
@@ -1160,6 +1161,7 @@ namespace WpfAppVba
                 Sql.DocumentosPObj.EstablecerItem("estadoC",     docP, cuenta);
                 Sql.DocumentosPObj.EstablecerItem("edicion",     docP, DateTime.Now);
                 Sql.DocumentosPObj.EstablecerItem("usuario",     docP, AppState.UsuarioActivo);
+                Sql.DocumentosPObj.EstablecerItem("usuarioE",    docP, AppState.UsuarioActivo);
 
                 // Solo eliminar y recrear las líneas que realmente cambiaron.
                 // EliminarLineas sin su correspondiente Guardar ocultaría

@@ -238,6 +238,7 @@ namespace WpfAppVba
                 Sql.ArticulosObj.EstablecerItem("observacion",codigo, Box_Observacion.Text);
                 Sql.ArticulosObj.EstablecerItem("edicion",    codigo, DateTime.Now);
                 Sql.ArticulosObj.EstablecerItem("usuario",    codigo, AppState.UsuarioActivo);
+                Sql.ArticulosObj.EstablecerItem("usuarioE",   codigo, AppState.UsuarioActivo);
 
                 Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -275,6 +276,7 @@ namespace WpfAppVba
                 Sql.ArticulosObj.EstablecerItem("emision",    id, DateTime.Now);
                 Sql.ArticulosObj.EstablecerItem("edicion",    id, DateTime.Now);
                 Sql.ArticulosObj.EstablecerItem("usuario",    id, AppState.UsuarioActivo);
+                Sql.ArticulosObj.EstablecerItem("usuarioE",   id, AppState.UsuarioActivo);
                 Sql.ArticulosObj.EstablecerItem("estado",     id, "mostrar");
 
                 Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
@@ -336,6 +338,7 @@ namespace WpfAppVba
                 Sql.ArticulosObj.EstablecerItem("emision",    id, DateTime.Now);
                 Sql.ArticulosObj.EstablecerItem("edicion",    id, DateTime.Now);
                 Sql.ArticulosObj.EstablecerItem("usuario",    id, AppState.UsuarioActivo);
+                Sql.ArticulosObj.EstablecerItem("usuarioE",   id, AppState.UsuarioActivo);
 
                 Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
                 AppState.ActualizarStocks();

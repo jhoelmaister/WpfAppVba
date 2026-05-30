@@ -150,6 +150,7 @@ namespace WpfAppVba
 
             if (res == MessageBoxResult.Yes)
             {
+                Sql.FamiliasObj.EstablecerItem("usuarioE", fila.Id, AppState.UsuarioActivo);
                 Sql.FamiliasObj.Ocultar(fila.Id);
                 Sql.FamiliasObj.OrdenarData(("id", false));
 

@@ -381,6 +381,7 @@ namespace WpfAppVba
                 Sql.DocumentosIObj.EstablecerItem("observacion", docId, Box_Observacion.Text);
                 Sql.DocumentosIObj.EstablecerItem("edicion",     docId, DateTime.Now);
                 Sql.DocumentosIObj.EstablecerItem("usuario",     docId, AppState.UsuarioActivo);
+                Sql.DocumentosIObj.EstablecerItem("usuarioE",    docId, AppState.UsuarioActivo);
 
                 // Eliminar inventarios existentes de esta apertura
                 int uf = Sql.InventariosObj.ContarFilas;
@@ -449,6 +450,7 @@ namespace WpfAppVba
                 Sql.DocumentosIObj.EstablecerItem("emision",     docId, DateTime.Now);
                 Sql.DocumentosIObj.EstablecerItem("edicion",     docId, DateTime.Now);
                 Sql.DocumentosIObj.EstablecerItem("usuario",     docId, AppState.UsuarioActivo);
+                Sql.DocumentosIObj.EstablecerItem("usuarioE",    docId, AppState.UsuarioActivo);
 
                 long maxInv = Convert.ToInt64(Sql.InventariosObj.Maximo("id") ?? 0);
                 for (int i = 0; i < _items.Count; i++)

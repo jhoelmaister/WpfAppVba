@@ -361,6 +361,7 @@ namespace WpfAppVba
 
             try
             {
+                Sql.DocumentosTObj.EstablecerItem("usuarioE", fila.DocumentoT, AppState.UsuarioActivo);
                 Sql.DocumentosTObj.Ocultar(fila.DocumentoT);
 
                 int uf = Sql.TraspasosObj.ContarFilas;
