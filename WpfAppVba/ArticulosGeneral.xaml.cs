@@ -120,7 +120,7 @@ namespace WpfAppVba
             }
 
             // Nodo "Sin Clasificar"
-            var nodoSin = new TreeViewItem { Header = "Sin Clasificar", Tag = "familia:" };
+            var nodoSin = new TreeViewItem { Header = "Sin Clasificar", Tag = "sinclasificar" };
             nodoTodos.Items.Add(nodoSin);
 
             nodoTodos.IsExpanded = true;
@@ -153,7 +153,12 @@ namespace WpfAppVba
                 // Filtro de árbol
                 if (!string.IsNullOrEmpty(tagFiltro))
                 {
-                    if (tagFiltro.StartsWith("familia:"))
+                    if (tagFiltro == "sinclasificar")
+                    {
+                        string famDesc = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? "";
+                        if (!string.IsNullOrEmpty(famId) && !string.IsNullOrEmpty(famDesc)) continue;
+                    }
+                    else if (tagFiltro.StartsWith("familia:"))
                     {
                         string famFiltro = tagFiltro.Substring("familia:".Length);
                         if (famId != famFiltro) continue;
