@@ -56,9 +56,8 @@
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Línea"        Binding="{Binding Linea}"       Width="60"/>
                 <DataGridTextColumn Header="Identificador" Binding="{Binding Id}"         Width="80"/>
-                <DataGridTextColumn Header="Nit"          Binding="{Binding Nit}"         Width="100"/>
                 <DataGridTextColumn Header="Descripción"  Binding="{Binding Descripcion}" Width="*"/>
-                <DataGridTextColumn Header="Región"       Binding="{Binding Region}"      Width="120"/>
+                <DataGridTextColumn Header="Fecha"        Binding="{Binding FechaStr}"    Width="160"/>
             </DataGrid.Columns>
         </DataGrid>
 

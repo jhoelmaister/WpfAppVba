@@ -66,16 +66,33 @@ namespace WpfAppVba
 
             var fechaObj = Sql.SucursalesObj.ObtenerItem("fecha", id);
             if (fechaObj != null && DateTime.TryParse(fechaObj.ToString(), out DateTime fecha))
-                Box_Fecha.SelectedDate = fecha;
+            {
+                Box_Fecha.SelectedDate = fecha.Date;
+                Box_Hora.Text          = fecha.ToString("HH:mm:ss");
+            }
             else
+            {
                 Box_Fecha.SelectedDate = DateTime.Today;
+                Box_Hora.Text          = "00:00:00";
+            }
         }
 
         private void CargarParaNuevo()
         {
             long siguiente = Convert.ToInt64(Sql.SucursalesObj.Maximo("id") ?? 0) + 1;
             Box_Codigo.Text        = siguiente.ToString();
-            Box_Fecha.SelectedDate = DateTime.Today;
+            var ahora = DateTime.Now;
+            Box_Fecha.SelectedDate = ahora.Date;
+            Box_Hora.Text          = ahora.ToString("HH:mm:ss");
+        }
+
+        // ─── Combina la fecha (DatePicker) con la hora (TextBox) ───────────────
+        private DateTime ObtenerFechaHora()
+        {
+            DateTime fecha = Box_Fecha.SelectedDate ?? DateTime.Today;
+            if (TimeSpan.TryParse(Box_Hora.Text.Trim(), System.Globalization.CultureInfo.InvariantCulture, out var ts))
+                return fecha.Date + ts;
+            return fecha.Date;
         }
 
         // ─── Actualizar descripción de la región referida ─────────────────────
@@ -129,7 +146,7 @@ namespace WpfAppVba
                 Sql.SucursalesObj.EstablecerItem("region",      codigo, Box_Referido_Codigo.Text);
                 Sql.SucursalesObj.EstablecerItem("direccion",   codigo, Box_Direccion.Text);
                 Sql.SucursalesObj.EstablecerItem("observacion", codigo, Box_Observacion.Text);
-                Sql.SucursalesObj.EstablecerItem("fecha",       codigo, Box_Fecha.SelectedDate ?? DateTime.Today);
+                Sql.SucursalesObj.EstablecerItem("fecha",       codigo, ObtenerFechaHora());
                 Sql.SucursalesObj.EstablecerItem("edicion",     codigo, DateTime.Now);
                 Sql.SucursalesObj.EstablecerItem("usuarioE",    codigo, AppState.UsuarioActivo);
 
@@ -163,7 +180,7 @@ namespace WpfAppVba
                 Sql.SucursalesObj.EstablecerItem("region",      codigo, Box_Referido_Codigo.Text);
                 Sql.SucursalesObj.EstablecerItem("direccion",   codigo, Box_Direccion.Text);
                 Sql.SucursalesObj.EstablecerItem("observacion", codigo, Box_Observacion.Text);
-                Sql.SucursalesObj.EstablecerItem("fecha",       codigo, Box_Fecha.SelectedDate ?? DateTime.Today);
+                Sql.SucursalesObj.EstablecerItem("fecha",       codigo, ObtenerFechaHora());
                 Sql.SucursalesObj.EstablecerItem("emision",     codigo, DateTime.Now);
                 Sql.SucursalesObj.EstablecerItem("edicion",     codigo, DateTime.Now);
                 Sql.SucursalesObj.EstablecerItem("usuario",     codigo, AppState.UsuarioActivo);

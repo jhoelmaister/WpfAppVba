@@ -50,22 +50,16 @@ namespace WpfAppVba
                 string id = idObj.ToString()!;
 
                 string desc = Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
-                string nit  = Sql.SucursalesObj.ObtenerItem("nit",         id)?.ToString() ?? "";
-                string regionId   = Sql.SucursalesObj.ObtenerItem("region", id)?.ToString() ?? "";
-                string regionDesc = Sql.RegionesObj.ObtenerItem("descripcion", regionId)?.ToString() ?? "";
 
                 if (busqueda == "" ||
-                    desc.ToLower().Contains(busqueda) ||
-                    nit.ToLower().Contains(busqueda) ||
-                    regionDesc.ToLower().Contains(busqueda))
+                    desc.ToLower().Contains(busqueda))
                 {
                     filas.Add(new SucursalFila
                     {
                         Linea       = linea++,
                         Id          = id,
-                        Nit         = nit,
                         Descripcion = desc,
-                        Region      = regionDesc
+                        FechaStr    = FormatearFecha(id)
                     });
                 }
             }
@@ -79,16 +73,22 @@ namespace WpfAppVba
 
         private SucursalFila ConstruirFilaSucursal(string id, int linea)
         {
-            string regionId   = Sql.SucursalesObj.ObtenerItem("region", id)?.ToString() ?? "";
-            string regionDesc = Sql.RegionesObj.ObtenerItem("descripcion", regionId)?.ToString() ?? "";
             return new SucursalFila
             {
                 Linea       = linea,
                 Id          = id,
-                Nit         = Sql.SucursalesObj.ObtenerItem("nit",         id)?.ToString() ?? "",
                 Descripcion = Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "",
-                Region      = regionDesc
+                FechaStr    = FormatearFecha(id)
             };
+        }
+
+        // ─── Formatea la fecha completa (fecha + hora) de una sucursal ─────────
+        private string FormatearFecha(string id)
+        {
+            var fechaObj = Sql.SucursalesObj.ObtenerItem("fecha", id);
+            if (fechaObj != null && System.DateTime.TryParse(fechaObj.ToString(), out System.DateTime fecha))
+                return $"{fecha:d} {fecha:HH:mm:ss}";
+            return "";
         }
 
         private void Renumerar()
@@ -230,8 +230,7 @@ namespace WpfAppVba
     {
         public int    Linea       { get; set; }
         public string Id          { get; set; } = "";
-        public string Nit         { get; set; } = "";
         public string Descripcion { get; set; } = "";
-        public string Region      { get; set; } = "";
+        public string FechaStr    { get; set; } = "";
     }
 }
