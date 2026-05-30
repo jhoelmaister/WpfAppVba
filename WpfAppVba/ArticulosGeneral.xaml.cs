@@ -120,10 +120,7 @@ namespace WpfAppVba
             }
 
             // Nodo "Sin Clasificar"
-            var nodoSin = new TreeViewItem { Header = "Sin Clasificar", Tag = "sinclasificar" };
-            var nodoSinFam = new TreeViewItem { Header = "Sin Familia", Tag = "familia:" };
-            nodoSin.Items.Add(nodoSinFam);
-            nodoSin.IsExpanded = true;
+            var nodoSin = new TreeViewItem { Header = "Sin Clasificar", Tag = "familia:" };
             nodoTodos.Items.Add(nodoSin);
 
             nodoTodos.IsExpanded = true;
