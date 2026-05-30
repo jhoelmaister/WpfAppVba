@@ -76,7 +76,7 @@
                    FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTexto}"
                    Margin="0,0,0,8"/>
 
-        <!-- ══ Row 1: Doc · Fecha · Hora · Estado ════════════════════════ -->
+        <!-- ══ Row 1: Doc · Fecha · Hora · Estado · Cuenta ═════════════════ -->
         <Grid Grid.Row="1" Margin="0,0,0,6">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -89,7 +89,10 @@
                 <ColumnDefinition Width="90"/>
                 <ColumnDefinition Width="10"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="120"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="110"/>
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Column="0"  Text="Doc. Pedido:" Style="{StaticResource Lbl}"/>
@@ -114,6 +117,11 @@
                 <ComboBoxItem Content="entregado"/>
                 <ComboBoxItem Content="entrega parcial"/>
             </ComboBox>
+
+            <TextBlock Grid.Column="12" Text="Cuenta:" Style="{StaticResource Lbl}"/>
+            <TextBox   Grid.Column="13" x:Name="Box_Cuenta"
+                       Height="28" FontSize="12" Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
+                       IsReadOnly="True" Background="{DynamicResource ThemeBgReadOnly}" Foreground="{DynamicResource ThemeTextoSec}"/>
         </Grid>
 
         <!-- ══ Row 2: Tercero + Referencia ══════════════════════════════════ -->
@@ -148,18 +156,7 @@
                        TextChanged="Campo_TextChanged"/>
         </Grid>
 
-        <!-- ══ Row 3: Cuenta ═════════════════════════════════════════════ -->
-        <Grid Grid.Row="3" Margin="0,0,0,6">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="110"/>
-            </Grid.ColumnDefinitions>
-
-            <TextBlock Grid.Column="0" Text="Cuenta:" Style="{StaticResource Lbl}"/>
-            <TextBox   Grid.Column="1" x:Name="Box_Cuenta"
-                       Height="28" FontSize="12" Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
-                       IsReadOnly="True" Background="{DynamicResource ThemeBgReadOnly}" Foreground="{DynamicResource ThemeTextoSec}"/>
-        </Grid>
+        <!-- ══ Row 3: (vacío — Cuenta se movió a Row 1) ════════════════════ -->
 
         <!-- ══ Row 4: Emisión / Edición ══════════════════════════════════ -->
         <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,0,0,6">
