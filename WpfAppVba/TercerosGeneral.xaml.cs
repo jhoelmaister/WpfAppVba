@@ -163,6 +163,7 @@ namespace WpfAppVba
 
             if (res == MessageBoxResult.Yes)
             {
+                Sql.TercerosObj.EstablecerItem("edicion",  fila.Id, DateTime.Now);
                 Sql.TercerosObj.EstablecerItem("usuarioE", fila.Id, AppState.UsuarioActivo);
                 Sql.TercerosObj.Ocultar(fila.Id);
                 Sql.TercerosObj.OrdenarData(("id", false));

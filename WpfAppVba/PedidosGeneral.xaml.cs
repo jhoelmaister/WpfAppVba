@@ -399,6 +399,7 @@ namespace WpfAppVba
 
             try
             {
+                Sql.DocumentosPObj.EstablecerItem("edicion",  fila.DocumentoP, DateTime.Now);
                 Sql.DocumentosPObj.EstablecerItem("usuarioE", fila.DocumentoP, AppState.UsuarioActivo);
                 Sql.DocumentosPObj.Ocultar(fila.DocumentoP);
 

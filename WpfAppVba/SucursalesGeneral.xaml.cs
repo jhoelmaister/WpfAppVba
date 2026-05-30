@@ -172,6 +172,7 @@ namespace WpfAppVba
 
             if (res == MessageBoxResult.Yes)
             {
+                Sql.SucursalesObj.EstablecerItem("edicion",  fila.Id, DateTime.Now);
                 Sql.SucursalesObj.EstablecerItem("usuarioE", fila.Id, AppState.UsuarioActivo);
                 Sql.SucursalesObj.Ocultar(fila.Id);
                 Sql.SucursalesObj.OrdenarData(("id", false));
