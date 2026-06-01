@@ -167,7 +167,6 @@ namespace WpfAppVba
 
             Grid1.ItemsSource = lista;
             GridPrecios.ItemsSource = null;
-            LblHistorial.Text = "Historial de precios:";
         }
 
         // ─── Obtener filtro del árbol ─────────────────────────────────────────
@@ -273,10 +272,8 @@ namespace WpfAppVba
             if (ArticuloSeleccionado is not PrecioArticuloFila fila)
             {
                 GridPrecios.ItemsSource = null;
-                LblHistorial.Text = "Historial de precios:";
                 return;
             }
-            LblHistorial.Text = $"Historial de precios: {fila.Codigo} - {fila.Descripcion}";
             CargarPrecios(fila.Id);
         }
 
