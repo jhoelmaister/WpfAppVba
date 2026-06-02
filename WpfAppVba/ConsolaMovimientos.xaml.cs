@@ -25,23 +25,17 @@ namespace WpfAppVba
         // ─── Mostrar panel de contenido ───────────────────────────────────────
         private void MostrarPanel(string nombre)
         {
-            TabArticulos.Visibility            = Visibility.Collapsed;
-            TabVentas.Visibility               = Visibility.Collapsed;
-            TabCompras.Visibility              = Visibility.Collapsed;
-            TabEntradas.Visibility             = Visibility.Collapsed;
-            TabSalidas.Visibility              = Visibility.Collapsed;
-            TabCorreccionesIngresos.Visibility = Visibility.Collapsed;
-            TabCorreccionesEgresos.Visibility  = Visibility.Collapsed;
+            TabArticulos.Visibility      = Visibility.Collapsed;
+            PanelPedidos.Visibility      = Visibility.Collapsed;
+            PanelTraspasos.Visibility    = Visibility.Collapsed;
+            PanelCorrecciones.Visibility = Visibility.Collapsed;
 
             switch (nombre)
             {
-                case "articulos": TabArticulos.Visibility            = Visibility.Visible; break;
-                case "ventas":    TabVentas.Visibility               = Visibility.Visible; break;
-                case "compras":   TabCompras.Visibility              = Visibility.Visible; break;
-                case "entradas":  TabEntradas.Visibility             = Visibility.Visible; break;
-                case "salidas":   TabSalidas.Visibility              = Visibility.Visible; break;
-                case "ingresos":  TabCorreccionesIngresos.Visibility = Visibility.Visible; break;
-                case "egresos":   TabCorreccionesEgresos.Visibility  = Visibility.Visible; break;
+                case "articulos":    TabArticulos.Visibility      = Visibility.Visible; break;
+                case "pedidos":      PanelPedidos.Visibility      = Visibility.Visible; break;
+                case "traspasos":    PanelTraspasos.Visibility    = Visibility.Visible; break;
+                case "correcciones": PanelCorrecciones.Visibility = Visibility.Visible; break;
             }
         }
 
@@ -54,10 +48,10 @@ namespace WpfAppVba
                 _btnActivo.BorderBrush = Brushes.Transparent;
                 _btnActivo.Foreground  = new SolidColorBrush(Color.FromRgb(0x9A, 0xA3, 0xB8));
             }
-            _btnActivo       = btn;
-            btn.Background   = new SolidColorBrush(Color.FromRgb(0x25, 0x2A, 0x40));
-            btn.BorderBrush  = new SolidColorBrush(Color.FromRgb(0x4A, 0x6F, 0xE3));
-            btn.Foreground   = Brushes.White;
+            _btnActivo      = btn;
+            btn.Background  = new SolidColorBrush(Color.FromRgb(0x25, 0x2A, 0x40));
+            btn.BorderBrush = new SolidColorBrush(Color.FromRgb(0x4A, 0x6F, 0xE3));
+            btn.Foreground  = Brushes.White;
         }
 
         // ─── Navegación lateral ───────────────────────────────────────────────
@@ -70,59 +64,20 @@ namespace WpfAppVba
 
         private void BtnNav_Pedidos_Click(object sender, RoutedEventArgs e)
         {
-            bool expandir = PanelPedidosSub.Visibility == Visibility.Collapsed;
-            PanelPedidosSub.Visibility = expandir ? Visibility.Visible : Visibility.Collapsed;
-            if (expandir) { MostrarPanel("ventas"); MarcarActivo(BtnNav_Ventas); }
-        }
-
-        private void BtnNav_Ventas_Click(object sender, RoutedEventArgs e)
-        {
-            MostrarPanel("ventas");
-            MarcarActivo(BtnNav_Ventas);
-        }
-
-        private void BtnNav_Compras_Click(object sender, RoutedEventArgs e)
-        {
-            MostrarPanel("compras");
-            MarcarActivo(BtnNav_Compras);
+            MostrarPanel("pedidos");
+            MarcarActivo(BtnNav_Pedidos);
         }
 
         private void BtnNav_Traspasos_Click(object sender, RoutedEventArgs e)
         {
-            bool expandir = PanelTraspasosSub.Visibility == Visibility.Collapsed;
-            PanelTraspasosSub.Visibility = expandir ? Visibility.Visible : Visibility.Collapsed;
-            if (expandir) { MostrarPanel("entradas"); MarcarActivo(BtnNav_Entradas); }
-        }
-
-        private void BtnNav_Entradas_Click(object sender, RoutedEventArgs e)
-        {
-            MostrarPanel("entradas");
-            MarcarActivo(BtnNav_Entradas);
-        }
-
-        private void BtnNav_Salidas_Click(object sender, RoutedEventArgs e)
-        {
-            MostrarPanel("salidas");
-            MarcarActivo(BtnNav_Salidas);
+            MostrarPanel("traspasos");
+            MarcarActivo(BtnNav_Traspasos);
         }
 
         private void BtnNav_Correcciones_Click(object sender, RoutedEventArgs e)
         {
-            bool expandir = PanelCorrencionesSub.Visibility == Visibility.Collapsed;
-            PanelCorrencionesSub.Visibility = expandir ? Visibility.Visible : Visibility.Collapsed;
-            if (expandir) { MostrarPanel("ingresos"); MarcarActivo(BtnNav_Ingresos); }
-        }
-
-        private void BtnNav_Ingresos_Click(object sender, RoutedEventArgs e)
-        {
-            MostrarPanel("ingresos");
-            MarcarActivo(BtnNav_Ingresos);
-        }
-
-        private void BtnNav_Egresos_Click(object sender, RoutedEventArgs e)
-        {
-            MostrarPanel("egresos");
-            MarcarActivo(BtnNav_Egresos);
+            MostrarPanel("correcciones");
+            MarcarActivo(BtnNav_Correcciones);
         }
 
         private void BtnNav_Inventarios_Click(object sender, RoutedEventArgs e)
