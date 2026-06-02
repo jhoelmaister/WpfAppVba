@@ -164,24 +164,32 @@
                     <local:ArticulosGeneral x:Name="TabArticulos"/>
                 </TabItem>
 
-                <!-- ── Pestaña Ventas ──────────────────────────────── -->
-                <TabItem Header="💰 Ventas" Style="{StaticResource ModernTabItem}">
-                    <local:PedidosGeneral x:Name="TabVentas" TipoMovimiento="venta"/>
+                <!-- ── Pestaña Pedidos (con sub-pestañas) ──────────── -->
+                <TabItem Header="📑 Pedidos" Style="{StaticResource ModernTabItem}">
+                    <TabControl Style="{StaticResource ModernTabControl}"
+                                Background="{DynamicResource ThemeBgContenido}"
+                                BorderThickness="0">
+                        <TabItem Header="💰 Ventas" Style="{StaticResource ModernTabItem}">
+                            <local:PedidosGeneral x:Name="TabVentas" TipoMovimiento="venta"/>
+                        </TabItem>
+                        <TabItem Header="🛒 Compras" Style="{StaticResource ModernTabItem}">
+                            <local:PedidosGeneral x:Name="TabCompras" TipoMovimiento="compra"/>
+                        </TabItem>
+                    </TabControl>
                 </TabItem>
 
-                <!-- ── Pestaña Compras ─────────────────────────────── -->
-                <TabItem Header="🛒 Compras" Style="{StaticResource ModernTabItem}">
-                    <local:PedidosGeneral x:Name="TabCompras" TipoMovimiento="compra"/>
-                </TabItem>
-
-                <!-- ── Pestaña Entradas ────────────────────────────── -->
-                <TabItem Header="📦 Entradas" Style="{StaticResource ModernTabItem}">
-                    <local:TraspasosGeneral x:Name="TabEntradas" TipoMovimiento="entrada"/>
-                </TabItem>
-
-                <!-- ── Pestaña Salidas ─────────────────────────────── -->
-                <TabItem Header="📤 Salidas" Style="{StaticResource ModernTabItem}">
-                    <local:TraspasosGeneral x:Name="TabSalidas" TipoMovimiento="salida"/>
+                <!-- ── Pestaña Traspasos (con sub-pestañas) ─────────── -->
+                <TabItem Header="🔄 Traspasos" Style="{StaticResource ModernTabItem}">
+                    <TabControl Style="{StaticResource ModernTabControl}"
+                                Background="{DynamicResource ThemeBgContenido}"
+                                BorderThickness="0">
+                        <TabItem Header="📦 Entradas" Style="{StaticResource ModernTabItem}">
+                            <local:TraspasosGeneral x:Name="TabEntradas" TipoMovimiento="entrada"/>
+                        </TabItem>
+                        <TabItem Header="📤 Salidas" Style="{StaticResource ModernTabItem}">
+                            <local:TraspasosGeneral x:Name="TabSalidas" TipoMovimiento="salida"/>
+                        </TabItem>
+                    </TabControl>
                 </TabItem>
 
                 <!-- ── Pestaña Correcciones (con sub-pestañas) ─────── -->
