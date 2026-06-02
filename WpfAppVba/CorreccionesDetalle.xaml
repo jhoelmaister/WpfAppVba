@@ -71,19 +71,21 @@
                      TextChanged="Campo_TextChanged"/>
         </Grid>
 
-        <!-- Fila: Movimiento / Motivo -->
+        <!-- Fila: Movimiento (oculto, automático) / Motivo -->
         <Grid Grid.Row="2" Margin="0,0,0,8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="150"/>
-                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="0"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Column="0" Text="Movimiento:" Style="{StaticResource Lbl}"
+                       Visibility="Collapsed"
                        VerticalAlignment="Center" Margin="0,0,6,0"/>
             <ComboBox x:Name="Box_Movimiento" Grid.Column="1" Height="28" FontSize="12"
+                      Visibility="Collapsed"
                       SelectionChanged="Box_Movimiento_SelectionChanged">
                 <ComboBoxItem Content="egreso"/>
                 <ComboBoxItem Content="ingreso"/>

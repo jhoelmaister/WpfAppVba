@@ -38,12 +38,16 @@ namespace WpfAppVba
 
             if (AppState.EventoFormularioC == "editar")
             {
-                LblTitulo.Text = "Editar Corrección de Stock";
+                string movEdit   = Sql.DocumentosCObj.ObtenerItem("movimiento", _idEditar)?.ToString() ?? "egreso";
+                string tipoLabel = movEdit == "ingreso" ? "Ingreso" : "Egreso";
+                LblTitulo.Text   = $"Editar Corrección de {tipoLabel}";
                 CargarParaEditar();
             }
             else
             {
-                LblTitulo.Text = "Nueva Corrección de Stock";
+                string tipo      = string.IsNullOrEmpty(AppState.TipoCorreccion) ? "egreso" : AppState.TipoCorreccion;
+                string tipoLabel = tipo == "ingreso" ? "Ingreso" : "Egreso";
+                LblTitulo.Text   = $"Nueva Corrección de {tipoLabel}";
                 CargarParaNuevo();
             }
 
