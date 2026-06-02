@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
@@ -10,22 +11,60 @@ namespace WpfAppVba
     public partial class CorreccionesGeneral : System.Windows.Controls.UserControl
     {
         private static SqlData Sql => SqlData.Instance;
-        private string _filtroMovimiento = "";  // "" = todos
-        private string _busqueda          = "";
+        private string _mesActivo  = "";
+        private string _modoFiltro = "filtros"; // "filtros" = Tree1 | "busquedas" = TxtBuscar
+
+        /// <summary>
+        /// Tipo de movimiento fijo para este control ("ingreso" o "egreso").
+        /// Lo establece la sub-pestaña (Ingresos / Egresos).
+        /// </summary>
+        public string TipoMovimiento { get; set; } = "";
 
         public CorreccionesGeneral()
         {
             InitializeComponent();
-            Loaded += (_, _) => CargarCorrecciones();
+            Loaded += (_, _) => { CargarMeses(); CargarCorrecciones(); };
         }
 
-        // ─── Carga la lista ────────────────────────────────────────────────────
+        // ─── Carga el árbol de meses ──────────────────────────────────────────
+        private void CargarMeses()
+        {
+            Tree1.Items.Clear();
+            string[] meses = { "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+                                "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre" };
+
+            // Nodo padre "General" → muestra todos los meses (Tag vacío = sin filtro)
+            var nodoGeneral = new TreeViewItem
+            {
+                Header     = "General",
+                Tag        = "",
+                IsExpanded = true
+            };
+            foreach (var mes in meses)
+                nodoGeneral.Items.Add(new TreeViewItem { Header = mes, Tag = mes });
+
+            Tree1.Items.Add(nodoGeneral);
+
+            // Selección por defecto: mes actual
+            int mesActual = DateTime.Now.Month - 1;
+            if (nodoGeneral.Items[mesActual] is TreeViewItem ti)
+            {
+                ti.IsSelected = true;
+                _mesActivo = meses[mesActual];
+            }
+        }
+
+        // ─── Carga la lista de correcciones ───────────────────────────────────
         public void CargarCorrecciones()
         {
-            if (Grid1 == null) return;
+            if (TxtBuscar == null || Grid1 == null) return;
 
             var lista = new List<CorreccionFila>();
             int linea = 1;
+            double totalCant = 0;
+            string busqueda  = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
+            string mesFiltro = _modoFiltro == "filtros"   ? _mesActivo : "";
+            string tipoMov   = TipoMovimiento.ToLower();
 
             int uf = Sql.DocumentosCObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -38,36 +77,58 @@ namespace WpfAppVba
                 string suc = Sql.DocumentosCObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
                 if (suc != AppState.SucursalActiva.ToString()) continue;
 
+                // Filtrar por tipo de movimiento (ingreso / egreso)
                 string movimiento = Sql.DocumentosCObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
-                string motivo     = Sql.DocumentosCObj.ObtenerItem("motivo",     id)?.ToString() ?? "";
-
-                // Filtro por movimiento
-                if (!string.IsNullOrEmpty(_filtroMovimiento) &&
-                    !string.Equals(movimiento, _filtroMovimiento, StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrEmpty(tipoMov) &&
+                    !string.Equals(movimiento, tipoMov, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                // Filtro por búsqueda (id o motivo)
-                if (!string.IsNullOrEmpty(_busqueda) &&
-                    !id.ToLower().Contains(_busqueda) &&
-                    !motivo.ToLower().Contains(_busqueda))
-                    continue;
+                // Filtro por mes (solo en modo "filtros", independiente de TxtBuscar)
+                var fechaDocObj = Sql.DocumentosCObj.ObtenerItem("fecha", id);
+                DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
+                if (!string.IsNullOrEmpty(mesFiltro))
+                {
+                    if (fechaDocObj == null) continue;
+                    string mesDoc = ObtenerNombreMes(fechaDoc.Month);
+                    if (!string.Equals(mesDoc, mesFiltro, StringComparison.OrdinalIgnoreCase)) continue;
+                }
 
-                var fechaObj = Sql.DocumentosCObj.ObtenerItem("fecha", id);
-                DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : default;
+                string motivo = Sql.DocumentosCObj.ObtenerItem("motivo", id)?.ToString() ?? "";
 
+                // Filtro por búsqueda
+                if (!string.IsNullOrEmpty(busqueda))
+                    if (!id.ToLower().Contains(busqueda) && !motivo.ToLower().Contains(busqueda))
+                        continue;
+
+                double cant = CalcularCantidad(id);
                 lista.Add(new CorreccionFila
                 {
                     Linea         = linea++,
                     Id            = id,
-                    Fecha         = fecha,
-                    FechaStr      = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
+                    Fecha         = fechaDoc,
+                    FechaStr      = fechaDoc != default ? $"{fechaDoc:d} {fechaDoc:HH:mm:ss}" : "",
                     Movimiento    = movimiento,
                     Motivo        = motivo,
-                    CantidadTotal = CalcularCantidad(id)
+                    CantidadTotal = cant
                 });
+                totalCant += cant;
             }
 
             Grid1.ItemsSource = lista;
+            TxtTotalCantidad.Text = totalCant.ToString("N0");
+            LblTipoMovimiento.Text = tipoMov == "egreso"
+                ? "Egresos de Stock (pérdida, merma, hurto, consumo interno)"
+                : "Ingresos de Stock (error de registro, registros omitidos)";
+
+            OcultarDetalle();
+        }
+
+        // ─── Nombre de mes ────────────────────────────────────────────────────
+        private static string ObtenerNombreMes(int mes)
+        {
+            string[] meses = { "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+                                "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre" };
+            return mes >= 1 && mes <= 12 ? meses[mes - 1] : "";
         }
 
         // ─── Helpers de actualización incremental del Grid1 ───────────────────
@@ -90,10 +151,17 @@ namespace WpfAppVba
             };
         }
 
-        private void Renumerar()
+        private void RenumerarYTotales()
         {
+            var lista = FilasGrid;
             int n = 1;
-            foreach (var f in FilasGrid) f.Linea = n++;
+            double totalCant = 0;
+            foreach (var f in lista)
+            {
+                f.Linea    = n++;
+                totalCant += f.CantidadTotal;
+            }
+            TxtTotalCantidad.Text = totalCant.ToString("N0");
             Grid1.Items.Refresh();
         }
 
@@ -107,45 +175,108 @@ namespace WpfAppVba
                 var idObj = Sql.CorreccionesObj.Mover(i);
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
-
-                if (Sql.CorreccionesObj.ObtenerItem("documentoC", id)?.ToString() != documentoC)
-                    continue;
-
+                if (Sql.CorreccionesObj.ObtenerItem("documentoC", id)?.ToString() != documentoC) continue;
                 cant += Convert.ToDouble(Sql.CorreccionesObj.ObtenerItem("cantidad", id) ?? 0);
             }
             return cant;
         }
 
-        // ─── Filtros / búsqueda ───────────────────────────────────────────────
-        private void CboFiltroMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        // ─── Panel de detalle artículos (Lista2) ─────────────────────────────
+        private void MostrarDetalle(string documentoC)
         {
-            if (Grid1 == null) return;
-            string val = (CboFiltroMovimiento.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Todos";
-            _filtroMovimiento = val == "Todos" ? "" : val;
+            var detalles = new List<CorreccionDetalleFila>();
+            int linea = 1;
+
+            int uf = Sql.CorreccionesObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.CorreccionesObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                if (Sql.CorreccionesObj.ObtenerItem("documentoC", id)?.ToString() != documentoC) continue;
+
+                string artId  = Sql.CorreccionesObj.ObtenerItem("articulo", id)?.ToString() ?? "";
+                string codigo = Sql.ArticulosObj.ObtenerItem("codigo", artId)?.ToString() ?? artId;
+
+                string desc     = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString() ?? "";
+                string famId    = Sql.ArticulosObj.ObtenerItem("familia", artId)?.ToString() ?? "";
+                string famDesc  = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? "";
+                string modelo   = Sql.ArticulosObj.ObtenerItem("modelo", artId)?.ToString() ?? "";
+                string descFull = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
+
+                double cantidad = Convert.ToDouble(Sql.CorreccionesObj.ObtenerItem("cantidad", id) ?? 0);
+
+                detalles.Add(new CorreccionDetalleFila
+                {
+                    Linea       = linea++,
+                    Codigo      = codigo,
+                    Descripcion = descFull,
+                    Cantidad    = cantidad
+                });
+            }
+
+            Lista2.ItemsSource = detalles;
+            PanelDetalle.Visibility = detalles.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void OcultarDetalle()
+        {
+            PanelDetalle.Visibility = Visibility.Collapsed;
+            Lista2.ItemsSource = null;
+        }
+
+        // ─── Selección en Grid1 → mostrar detalle ────────────────────────────
+        private void Grid1_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (Grid1.SelectedItem is CorreccionFila fila)
+                MostrarDetalle(fila.Id);
+            else
+                OcultarDetalle();
+        }
+
+        // ─── Eventos de árbol ─────────────────────────────────────────────────
+        private void Tree1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (Tree1.SelectedItem is TreeViewItem ti)
+                _mesActivo = ti.Tag?.ToString() ?? "";
+            _modoFiltro = "filtros";   // Tree1 activo → ignora TxtBuscar
             CargarCorrecciones();
         }
 
+        private void Tree1_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            DependencyObject? source = e.OriginalSource as DependencyObject;
+            while (source != null && source is not TreeViewItem)
+                source = VisualTreeHelper.GetParent(source);
+
+            if (source is TreeViewItem tvi && tvi.IsSelected)
+            {
+                _modoFiltro = "filtros";
+                CargarCorrecciones();
+            }
+        }
+
+        // ─── Búsqueda (independiente del Tree1) ──────────────────────────────
         private void TxtBuscar_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key != Key.Enter) return;
-            _busqueda = TxtBuscar.Text.Trim().ToLower();
+            _modoFiltro = "busquedas";
             CargarCorrecciones();
         }
 
         private void BtnBuscar_Click(object sender, RoutedEventArgs e)
         {
-            _busqueda = TxtBuscar.Text.Trim().ToLower();
+            _modoFiltro = "busquedas";
             CargarCorrecciones();
         }
 
-        // ─── Doble clic = editar ───────────────────────────────────────────────
+        // ─── Doble clic / Enter = editar ──────────────────────────────────────
         private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             e.Handled = true;
             AbrirEditar();
         }
 
-        // ─── Tecla Enter = editar ─────────────────────────────────────────────
         private void Grid1_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key != Key.Enter) return;
@@ -157,13 +288,16 @@ namespace WpfAppVba
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
             AppState.EventoFormularioC = "nuevo";
+            if (!string.IsNullOrEmpty(TipoMovimiento))
+                AppState.TipoCorreccion = TipoMovimiento;
+
             var detalle = new CorreccionesDetalle(this) { Owner = Window.GetWindow(this) };
             detalle.ShowDialog();
             if (detalle.ItemCreadoId == null) return;   // cancelado
 
             var nueva = ConstruirFila(detalle.ItemCreadoId, 0);
             FilasGrid.Add(nueva);
-            Renumerar();
+            RenumerarYTotales();
             Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
             GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
@@ -206,19 +340,27 @@ namespace WpfAppVba
                 var lista = FilasGrid;
                 int idx   = lista.IndexOf(fila);
                 if (idx >= 0) lista.RemoveAt(idx);
-                Renumerar();
+                RenumerarYTotales();
 
                 if (lista.Count > 0)
                 {
                     var sel = lista[Math.Min(idx, lista.Count - 1)];
                     Grid1.SelectedItem = sel; Grid1.ScrollIntoView(sel);
                 }
+                else OcultarDetalle();
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void BtnActualizar_Click(object sender, RoutedEventArgs e)
+        {
+            Sql.DocumentosCObj.Actualizar();
+            Sql.CorreccionesObj.Actualizar();
+            CargarCorrecciones();
         }
 
         // ─── Helper ───────────────────────────────────────────────────────────
@@ -228,6 +370,9 @@ namespace WpfAppVba
 
             string idSel = fila.Id;
             AppState.EventoFormularioC = "editar";
+            if (!string.IsNullOrEmpty(TipoMovimiento))
+                AppState.TipoCorreccion = TipoMovimiento;
+
             var detalle = new CorreccionesDetalle(this, fila.Id) { Owner = Window.GetWindow(this) };
             detalle.ShowDialog();
 
@@ -237,14 +382,14 @@ namespace WpfAppVba
             {
                 var actualizada = ConstruirFila(idSel, fila.Linea);
                 lista[idx] = actualizada;
-                Renumerar();
+                RenumerarYTotales();
                 Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
             }
             GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
     }
 
-    // ─── Modelo de fila para el DataGrid ──────────────────────────────────────
+    // ─── Modelos ──────────────────────────────────────────────────────────────
     public class CorreccionFila
     {
         public int      Linea         { get; set; }
@@ -254,5 +399,13 @@ namespace WpfAppVba
         public string   Movimiento    { get; set; } = "";
         public string   Motivo        { get; set; } = "";
         public double   CantidadTotal { get; set; }
+    }
+
+    public class CorreccionDetalleFila
+    {
+        public int    Linea       { get; set; }
+        public string Codigo      { get; set; } = "";
+        public string Descripcion { get; set; } = "";
+        public double Cantidad    { get; set; }
     }
 }

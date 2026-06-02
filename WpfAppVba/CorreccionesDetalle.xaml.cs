@@ -61,7 +61,7 @@ namespace WpfAppVba
             Box_Fecha.SelectedDate = fecha;
             Box_Hora.Text          = fecha.ToString("HH:mm:ss");
 
-            string movimiento = Sql.DocumentosCObj.ObtenerItem("movimiento",  _idEditar)?.ToString() ?? "descontar";
+            string movimiento = Sql.DocumentosCObj.ObtenerItem("movimiento",  _idEditar)?.ToString() ?? "egreso";
             string motivo     = Sql.DocumentosCObj.ObtenerItem("motivo",      _idEditar)?.ToString() ?? "";
             SeleccionarMovimiento(movimiento);
             ActualizarMotivos(motivo);
@@ -107,7 +107,11 @@ namespace WpfAppVba
             Box_DocumentoC.Text    = siguiente.ToString();
             Box_Fecha.SelectedDate = DateTime.Today;
             Box_Hora.Text          = DateTime.Now.ToString("HH:mm:ss");
-            Box_Movimiento.SelectedIndex = 0;   // descontar → dispara ActualizarMotivos
+
+            // Preseleccionar el movimiento según la sub-pestaña (Ingresos / Egresos)
+            string tipo = string.IsNullOrEmpty(AppState.TipoCorreccion) ? "egreso" : AppState.TipoCorreccion;
+            SeleccionarMovimiento(tipo);   // dispara ActualizarMotivos
+
             _items.Clear();
             RefrescarGrid();
         }
@@ -126,7 +130,7 @@ namespace WpfAppVba
 
             string mov = (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "";
 
-            string[] motivos = mov == "ingresar"
+            string[] motivos = mov == "ingreso"
                 ? new[] { "error de registro", "registros omitidos" }
                 : new[] { "pérdida", "merma", "hurto", "consumo interno" };
 
@@ -456,7 +460,7 @@ namespace WpfAppVba
         }
 
         private string MovimientoSeleccionado =>
-            (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "descontar";
+            (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "egreso";
 
         private string MotivoSeleccionado =>
             (Box_Motivo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";

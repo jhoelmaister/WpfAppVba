@@ -184,9 +184,18 @@
                     <local:TraspasosGeneral x:Name="TabSalidas" TipoMovimiento="salida"/>
                 </TabItem>
 
-                <!-- ── Pestaña Correcciones ────────────────────────── -->
+                <!-- ── Pestaña Correcciones (con sub-pestañas) ─────── -->
                 <TabItem Header="🔧 Correcciones" Style="{StaticResource ModernTabItem}">
-                    <local:CorreccionesGeneral x:Name="TabCorrecciones"/>
+                    <TabControl Style="{StaticResource ModernTabControl}"
+                                Background="{DynamicResource ThemeBgContenido}"
+                                BorderThickness="0">
+                        <TabItem Header="⬆ Ingresos" Style="{StaticResource ModernTabItem}">
+                            <local:CorreccionesGeneral x:Name="TabCorreccionesIngresos" TipoMovimiento="ingreso"/>
+                        </TabItem>
+                        <TabItem Header="⬇ Egresos" Style="{StaticResource ModernTabItem}">
+                            <local:CorreccionesGeneral x:Name="TabCorreccionesEgresos" TipoMovimiento="egreso"/>
+                        </TabItem>
+                    </TabControl>
                 </TabItem>
 
             </TabControl>

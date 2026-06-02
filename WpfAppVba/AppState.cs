@@ -27,6 +27,7 @@ namespace WpfAppVba.Data
         // ─── Tipos de operación ───────────────────────────────────────────────
         public static string TipoPedido      { get; set; } = "";
         public static string TipoMovimiento  { get; set; } = "";
+        public static string TipoCorreccion  { get; set; } = "";
         public static string TipoValido      { get; set; } = "";
 
         // ─── Eventos de formularios (equivalente a eventoFormularioX) ─────────

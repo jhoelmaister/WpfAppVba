@@ -97,7 +97,7 @@ namespace WpfAppVba.Data
                 if (destino == sucursal && origen != sucursal) entradas += cantidad;
             }
 
-            // ── Correcciones (ingresar suma, descontar resta) ────────────────
+            // ── Correcciones (ingreso suma, egreso resta) ────────────────────
             int ufCorr = Sql.CorreccionesObj.ContarFilas;
             for (int ciclo = 1; ciclo <= ufCorr; ciclo++)
             {
@@ -121,8 +121,8 @@ namespace WpfAppVba.Data
                 string movimiento = Sql.DocumentosCObj.ObtenerItem("movimiento", documentoC)?.ToString()?.ToLower() ?? "";
                 double cantidad   = Convert.ToDouble(Sql.CorreccionesObj.ObtenerItem("cantidad", id) ?? 0);
 
-                if (movimiento == "ingresar")  ingresos   += cantidad;
-                if (movimiento == "descontar") descuentos += cantidad;
+                if (movimiento == "ingreso") ingresos   += cantidad;
+                if (movimiento == "egreso")  descuentos += cantidad;
             }
 
             return (aperturas + entradas + compras + ingresos) - (salidas + ventas + descuentos);
@@ -209,7 +209,7 @@ namespace WpfAppVba.Data
                 if (destino == sucursal && origen != sucursal) entradas += cantidad;
             }
 
-            // ── Correcciones (ingresar suma, descontar resta) ────────────────
+            // ── Correcciones (ingreso suma, egreso resta) ────────────────────
             int ufCorr = Sql.CorreccionesObj.ContarFilas;
             for (int ciclo = 1; ciclo <= ufCorr; ciclo++)
             {
@@ -233,8 +233,8 @@ namespace WpfAppVba.Data
                 string movimiento = Sql.DocumentosCObj.ObtenerItem("movimiento", documentoC)?.ToString()?.ToLower() ?? "";
                 double cantidad   = Convert.ToDouble(Sql.CorreccionesObj.ObtenerItem("cantidad", id) ?? 0);
 
-                if (movimiento == "ingresar")  ingresos   += cantidad;
-                if (movimiento == "descontar") descuentos += cantidad;
+                if (movimiento == "ingreso") ingresos   += cantidad;
+                if (movimiento == "egreso")  descuentos += cantidad;
             }
 
             return (aperturas + entradas + compras + ingresos) - (salidas + ventas + descuentos);
