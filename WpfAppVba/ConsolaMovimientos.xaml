@@ -9,7 +9,7 @@
 
     <Window.Resources>
 
-        <!-- ── Estilo de botón de acción rápida (toolbar) ─────────────── -->
+        <!-- ── Botón de acción rápida (top bar) ───────────────────────── -->
         <Style x:Key="BtnAccion" TargetType="Button">
             <Setter Property="Height" Value="32"/>
             <Setter Property="Padding" Value="14,0"/>
@@ -41,48 +41,34 @@
             </Setter>
         </Style>
 
-        <!-- ── Estilo del TabControl ──────────────────────────────────── -->
-        <Style x:Key="ModernTabControl" TargetType="TabControl">
-            <Setter Property="Background" Value="{DynamicResource ThemeBgContenido}"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="TabStripPlacement" Value="Top"/>
-        </Style>
-
-        <!-- ── Estilo del TabItem ─────────────────────────────────────── -->
-        <Style x:Key="ModernTabItem" TargetType="TabItem">
-            <Setter Property="FontSize" Value="12"/>
+        <!-- ── Ítem de navegación lateral (principal) ────────────────── -->
+        <Style x:Key="NavBtn" TargetType="Button">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Padding" Value="14,0,12,0"/>
+            <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="3,0,0,0"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="Foreground" Value="#9AA3B8"/>
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="18,10"/>
-            <Setter Property="Margin" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="TabItem">
-                        <Border x:Name="TabBorder"
-                                Background="Transparent"
-                                BorderThickness="0,0,0,3"
-                                BorderBrush="Transparent"
-                                Padding="{TemplateBinding Padding}">
-                            <TextBlock x:Name="TabText"
-                                       Text="{TemplateBinding Header}"
-                                       Foreground="{TemplateBinding Foreground}"
-                                       FontSize="{TemplateBinding FontSize}"
-                                       FontWeight="{TemplateBinding FontWeight}"
-                                       VerticalAlignment="Center"/>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Borde"
+                                Background="{TemplateBinding Background}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                BorderBrush="{TemplateBinding BorderBrush}">
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="TabBorder" Property="BorderBrush" Value="#4A6FE3"/>
-                                <Setter TargetName="TabBorder" Property="Background" Value="{DynamicResource ThemeTabSelBg}"/>
-                                <Setter TargetName="TabText"   Property="Foreground"  Value="#4A6FE3"/>
-                            </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="TabBorder" Property="Background" Value="{DynamicResource ThemeTabHoverBg}"/>
-                                <Setter TargetName="TabText"   Property="Foreground"  Value="#4A6FE3"/>
+                                <Setter TargetName="Borde" Property="Background" Value="#232840"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Borde" Property="Background" Value="#2D3350"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -90,30 +76,38 @@
             </Setter>
         </Style>
 
+        <!-- ── Ítem de navegación lateral (sub-ítem) ─────────────────── -->
+        <Style x:Key="NavBtnSub" TargetType="Button" BasedOn="{StaticResource NavBtn}">
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Padding" Value="30,0,12,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+        </Style>
+
     </Window.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="60"/>   <!-- Header -->
-            <RowDefinition Height="*"/>    <!-- Contenido principal -->
+            <RowDefinition Height="52"/>   <!-- Top bar -->
+            <RowDefinition Height="*"/>    <!-- Sidebar + Contenido -->
         </Grid.RowDefinitions>
 
         <!-- ════════════════════════════════════════════════════════════ -->
-        <!-- HEADER                                                       -->
+        <!-- TOP BAR                                                      -->
         <!-- ════════════════════════════════════════════════════════════ -->
         <Border Grid.Row="0" Background="#252A40">
             <Grid Margin="16,0">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>   <!-- Logo + título -->
-                    <ColumnDefinition Width="*"/>      <!-- Espacio flexible -->
-                    <ColumnDefinition Width="Auto"/>   <!-- Info usuario + Salir -->
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Logo y título -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="36" Height="36" CornerRadius="8"
+                    <Border Width="34" Height="34" CornerRadius="8"
                             Background="#4A6FE3" Margin="0,0,10,0">
-                        <TextBlock Text="SG" FontSize="14" FontWeight="Bold"
+                        <TextBlock Text="SG" FontSize="13" FontWeight="Bold"
                                    Foreground="White"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"/>
@@ -124,108 +118,159 @@
                                VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <!-- Info usuario + botones + Cerrar sesión -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal"
-                            VerticalAlignment="Center" HorizontalAlignment="Right">
+                <!-- Usuario + botones de acción rápida -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock x:Name="LblUsuario"
                                FontSize="11" Foreground="#9AA3B8"
-                               VerticalAlignment="Center" Margin="0,0,16,0"/>
-                    <Button Content="📊 Inventarios"
-                            Background="#0277BD" Margin="0,0,6,0"
+                               VerticalAlignment="Center" Margin="0,0,20,0"/>
+                    <Button Content="＋ Venta Rápida"
+                            Background="#2E7D32" Margin="0,0,6,0"
                             Style="{StaticResource BtnAccion}"
-                            Click="BtnInventarios_Click"/>
-                    <Button Content="💲 Precios"
-                            Background="#00796B" Margin="0,0,6,0"
+                            Click="BtnVentaRapida_Click"/>
+                    <Button Content="＋ Entrada Rápida"
+                            Background="#1565C0" Margin="0,0,6,0"
                             Style="{StaticResource BtnAccion}"
-                            Click="BtnPrecios_Click"/>
-                    <Button Content="⚙ Configuración"
-                            Background="#4527A0" Margin="0,0,6,0"
+                            Click="BtnEntradaRapida_Click"/>
+                    <Button Content="＋ Salida Rápida"
+                            Background="#6A1B9A"
                             Style="{StaticResource BtnAccion}"
-                            Click="BtnMiCuenta_Click"/>
-                    <Button Content="Cerrar Sesión"
-                            Background="#C62828"
-                            Style="{StaticResource BtnAccion}"
-                            Click="BtnCerrarSesion_Click"/>
+                            Click="BtnSalidaRapida_Click"/>
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- ════════════════════════════════════════════════════════════ -->
-        <!-- ÁREA PRINCIPAL CON TABS                                     -->
+        <!-- SIDEBAR + CONTENIDO                                         -->
         <!-- ════════════════════════════════════════════════════════════ -->
-        <Grid Grid.Row="1" Background="{DynamicResource ThemeBgContenido}">
-            <TabControl x:Name="MainTabs"
-                        Style="{StaticResource ModernTabControl}"
-                        Background="{DynamicResource ThemeBgContenido}"
-                        BorderThickness="0">
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-                <!-- ── Pestaña Artículos ───────────────────────────── -->
-                <TabItem Header="📋 Artículos" Style="{StaticResource ModernTabItem}">
-                    <local:ArticulosGeneral x:Name="TabArticulos"/>
-                </TabItem>
+            <!-- ── BARRA LATERAL ──────────────────────────────────── -->
+            <Border Grid.Column="0" Background="#1A1E2E">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                <!-- ── Pestaña Pedidos (con sub-pestañas) ──────────── -->
-                <TabItem Header="📑 Pedidos" Style="{StaticResource ModernTabItem}">
-                    <TabControl Style="{StaticResource ModernTabControl}"
-                                Background="{DynamicResource ThemeBgContenido}"
-                                BorderThickness="0">
-                        <TabItem Header="💰 Ventas" Style="{StaticResource ModernTabItem}">
-                            <local:PedidosGeneral x:Name="TabVentas" TipoMovimiento="venta"/>
-                        </TabItem>
-                        <TabItem Header="🛒 Compras" Style="{StaticResource ModernTabItem}">
-                            <local:PedidosGeneral x:Name="TabCompras" TipoMovimiento="compra"/>
-                        </TabItem>
-                    </TabControl>
-                </TabItem>
+                    <!-- Ítems de navegación (scrollable) -->
+                    <ScrollViewer Grid.Row="0"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="0,8,0,8">
 
-                <!-- ── Pestaña Traspasos (con sub-pestañas) ─────────── -->
-                <TabItem Header="🔄 Traspasos" Style="{StaticResource ModernTabItem}">
-                    <TabControl Style="{StaticResource ModernTabControl}"
-                                Background="{DynamicResource ThemeBgContenido}"
-                                BorderThickness="0">
-                        <TabItem Header="📦 Entradas" Style="{StaticResource ModernTabItem}">
-                            <local:TraspasosGeneral x:Name="TabEntradas" TipoMovimiento="entrada"/>
-                        </TabItem>
-                        <TabItem Header="📤 Salidas" Style="{StaticResource ModernTabItem}">
-                            <local:TraspasosGeneral x:Name="TabSalidas" TipoMovimiento="salida"/>
-                        </TabItem>
-                    </TabControl>
-                </TabItem>
+                            <!-- Artículos -->
+                            <Button x:Name="BtnNav_Articulos"
+                                    Content="📋  Artículos"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Articulos_Click"/>
 
-                <!-- ── Pestaña Correcciones (con sub-pestañas) ─────── -->
-                <TabItem Header="🔧 Correcciones" Style="{StaticResource ModernTabItem}">
-                    <TabControl Style="{StaticResource ModernTabControl}"
-                                Background="{DynamicResource ThemeBgContenido}"
-                                BorderThickness="0">
-                        <TabItem Header="⬆ Ingresos" Style="{StaticResource ModernTabItem}">
-                            <local:CorreccionesGeneral x:Name="TabCorreccionesIngresos" TipoMovimiento="ingreso"/>
-                        </TabItem>
-                        <TabItem Header="⬇ Egresos" Style="{StaticResource ModernTabItem}">
-                            <local:CorreccionesGeneral x:Name="TabCorreccionesEgresos" TipoMovimiento="egreso"/>
-                        </TabItem>
-                    </TabControl>
-                </TabItem>
+                            <!-- Pedidos (expandible) -->
+                            <Button x:Name="BtnNav_Pedidos"
+                                    Content="📑  Pedidos"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Pedidos_Click"/>
+                            <StackPanel x:Name="PanelPedidosSub" Visibility="Visible">
+                                <Button x:Name="BtnNav_Ventas"
+                                        Content="💰  Ventas"
+                                        Style="{StaticResource NavBtnSub}"
+                                        Click="BtnNav_Ventas_Click"/>
+                                <Button x:Name="BtnNav_Compras"
+                                        Content="🛒  Compras"
+                                        Style="{StaticResource NavBtnSub}"
+                                        Click="BtnNav_Compras_Click"/>
+                            </StackPanel>
 
-            </TabControl>
+                            <!-- Traspasos (expandible) -->
+                            <Button x:Name="BtnNav_Traspasos"
+                                    Content="🔄  Traspasos"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Traspasos_Click"/>
+                            <StackPanel x:Name="PanelTraspasosSub" Visibility="Visible">
+                                <Button x:Name="BtnNav_Entradas"
+                                        Content="📦  Entradas"
+                                        Style="{StaticResource NavBtnSub}"
+                                        Click="BtnNav_Entradas_Click"/>
+                                <Button x:Name="BtnNav_Salidas"
+                                        Content="📤  Salidas"
+                                        Style="{StaticResource NavBtnSub}"
+                                        Click="BtnNav_Salidas_Click"/>
+                            </StackPanel>
 
-            <!-- Botones de acción rápida — esquina superior derecha del strip de tabs -->
-            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top"
-                        Orientation="Horizontal"
-                        Margin="0,4,8,0"
-                        Panel.ZIndex="10">
-                <Button Content="＋ Venta Rápida"  Margin="4,0"
-                        Background="#2E7D32"
-                        Style="{StaticResource BtnAccion}"
-                        Click="BtnVentaRapida_Click"/>
-                <Button Content="＋ Entrada Rápida" Margin="4,0"
-                        Background="#1565C0"
-                        Style="{StaticResource BtnAccion}"
-                        Click="BtnEntradaRapida_Click"/>
-                <Button Content="＋ Salida Rápida"  Margin="4,0,0,0"
-                        Background="#6A1B9A"
-                        Style="{StaticResource BtnAccion}"
-                        Click="BtnSalidaRapida_Click"/>
-            </StackPanel>
+                            <!-- Correcciones (expandible) -->
+                            <Button x:Name="BtnNav_Correcciones"
+                                    Content="🔧  Correcciones"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Correcciones_Click"/>
+                            <StackPanel x:Name="PanelCorrencionesSub" Visibility="Visible">
+                                <Button x:Name="BtnNav_Ingresos"
+                                        Content="⬆  Ingresos"
+                                        Style="{StaticResource NavBtnSub}"
+                                        Click="BtnNav_Ingresos_Click"/>
+                                <Button x:Name="BtnNav_Egresos"
+                                        Content="⬇  Egresos"
+                                        Style="{StaticResource NavBtnSub}"
+                                        Click="BtnNav_Egresos_Click"/>
+                            </StackPanel>
+
+                            <!-- Separador -->
+                            <Rectangle Height="1" Fill="#252A40" Margin="12,6"/>
+
+                            <!-- Ítems directos -->
+                            <Button x:Name="BtnNav_Inventarios"
+                                    Content="📊  Inventarios"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Inventarios_Click"/>
+                            <Button x:Name="BtnNav_Precios"
+                                    Content="💲  Precios"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Precios_Click"/>
+                            <Button x:Name="BtnNav_Configuracion"
+                                    Content="⚙  Configuración"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Configuracion_Click"/>
+
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Cerrar sesión (fijo al fondo) -->
+                    <Border Grid.Row="1"
+                            BorderThickness="0,1,0,0"
+                            BorderBrush="#252A40">
+                        <Button Content="⏻  Cerrar Sesión"
+                                Style="{StaticResource NavBtn}"
+                                Foreground="#EF5350"
+                                Click="BtnCerrarSesion_Click"/>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- ── ÁREA DE CONTENIDO ──────────────────────────────── -->
+            <Grid Grid.Column="1" Background="{DynamicResource ThemeBgContenido}">
+                <local:ArticulosGeneral    x:Name="TabArticulos"
+                                           Visibility="Visible"/>
+                <local:PedidosGeneral      x:Name="TabVentas"
+                                           TipoMovimiento="venta"
+                                           Visibility="Collapsed"/>
+                <local:PedidosGeneral      x:Name="TabCompras"
+                                           TipoMovimiento="compra"
+                                           Visibility="Collapsed"/>
+                <local:TraspasosGeneral    x:Name="TabEntradas"
+                                           TipoMovimiento="entrada"
+                                           Visibility="Collapsed"/>
+                <local:TraspasosGeneral    x:Name="TabSalidas"
+                                           TipoMovimiento="salida"
+                                           Visibility="Collapsed"/>
+                <local:CorreccionesGeneral x:Name="TabCorreccionesIngresos"
+                                           TipoMovimiento="ingreso"
+                                           Visibility="Collapsed"/>
+                <local:CorreccionesGeneral x:Name="TabCorreccionesEgresos"
+                                           TipoMovimiento="egreso"
+                                           Visibility="Collapsed"/>
+            </Grid>
         </Grid>
 
     </Grid>
