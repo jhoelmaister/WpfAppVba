@@ -32,6 +32,7 @@ namespace WpfAppVba.Data
         // ─── Eventos de formularios (equivalente a eventoFormularioX) ─────────
         public static string EventoFormularioI { get; set; } = "";
         public static string EventoFormularioM { get; set; } = "";
+        public static string EventoFormularioC { get; set; } = "";
         public static string EventoFormularioA { get; set; } = "";
         public static string EventoFormularioL { get; set; } = "";
         public static string EventoFormularioF { get; set; } = "";

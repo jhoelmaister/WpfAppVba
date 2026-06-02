@@ -144,6 +144,23 @@ namespace WpfAppVba.Data
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
                 $"AND (vg.origen = '{suc}' OR vg.destino = '{suc}') " +
                 $"ORDER BY vd.documentoT ASC, vd.indice ASC");
+
+            // ── DocumentosC (correcciones de stock) ───────────────────────────
+            Sql.DocumentosCObj.Conectar("documentosC",
+                $"SELECT * FROM documentosC " +
+                $"WHERE estadof = 'normal' " +
+                $"AND fecha >= '{aper}' AND fecha <= '{cier}' " +
+                $"AND sucursal = '{suc}' " +
+                $"ORDER BY fecha ASC");
+
+            // ── Correcciones ──────────────────────────────────────────────────
+            Sql.CorreccionesObj.Conectar("correcciones",
+                $"SELECT vd.* FROM correcciones AS vd " +
+                $"INNER JOIN documentosC AS vg ON vd.documentoC = vg.id " +
+                $"WHERE vg.estadof = 'normal' " +
+                $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
+                $"AND vg.sucursal = '{suc}' " +
+                $"ORDER BY vd.documentoC ASC, vd.indice ASC");
         }
     }
 }

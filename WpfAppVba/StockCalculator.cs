@@ -23,6 +23,7 @@ namespace WpfAppVba.Data
         public static double ContarStock(string codigo, DateTime fechaFinal)
         {
             double aperturas = 0, entradas = 0, ventas = 0, salidas = 0, compras = 0;
+            double ingresos = 0, descuentos = 0;
             DateTime fechaInicio = AppState.DataFechaInicio;
 
             // ── Apertura ─────────────────────────────────────────────────────
@@ -96,7 +97,35 @@ namespace WpfAppVba.Data
                 if (destino == sucursal && origen != sucursal) entradas += cantidad;
             }
 
-            return (aperturas + entradas + compras) - (salidas + ventas);
+            // ── Correcciones (ingresar suma, descontar resta) ────────────────
+            int ufCorr = Sql.CorreccionesObj.ContarFilas;
+            for (int ciclo = 1; ciclo <= ufCorr; ciclo++)
+            {
+                var idObj = Sql.CorreccionesObj.Mover(ciclo);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+
+                var docCIdObj = Sql.CorreccionesObj.ObtenerItem("documentoC", id);
+                if (docCIdObj == null) continue;
+                string documentoC = docCIdObj.ToString()!;
+
+                var fechaObj = Sql.DocumentosCObj.ObtenerItem("fecha", documentoC);
+                if (fechaObj == null) continue;
+                DateTime fecha = Convert.ToDateTime(fechaObj);
+
+                if (fecha < fechaInicio || fecha > fechaFinal) continue;
+
+                var articuloObj = Sql.CorreccionesObj.ObtenerItem("articulo", id);
+                if (articuloObj?.ToString() != codigo) continue;
+
+                string movimiento = Sql.DocumentosCObj.ObtenerItem("movimiento", documentoC)?.ToString()?.ToLower() ?? "";
+                double cantidad   = Convert.ToDouble(Sql.CorreccionesObj.ObtenerItem("cantidad", id) ?? 0);
+
+                if (movimiento == "ingresar")  ingresos   += cantidad;
+                if (movimiento == "descontar") descuentos += cantidad;
+            }
+
+            return (aperturas + entradas + compras + ingresos) - (salidas + ventas + descuentos);
         }
 
         // ─── contarStock2 ─────────────────────────────────────────────────────
@@ -109,6 +138,7 @@ namespace WpfAppVba.Data
         public static double ContarStock2(string codigo, DateTime fechaFinal)
         {
             double aperturas = 0, entradas = 0, ventas = 0, salidas = 0, compras = 0;
+            double ingresos = 0, descuentos = 0;
             DateTime fechaInicio = AppState.DataFechaInicio;
 
             // ── Apertura ─────────────────────────────────────────────────────
@@ -179,7 +209,35 @@ namespace WpfAppVba.Data
                 if (destino == sucursal && origen != sucursal) entradas += cantidad;
             }
 
-            return (aperturas + entradas + compras) - (salidas + ventas);
+            // ── Correcciones (ingresar suma, descontar resta) ────────────────
+            int ufCorr = Sql.CorreccionesObj.ContarFilas;
+            for (int ciclo = 1; ciclo <= ufCorr; ciclo++)
+            {
+                var idObj = Sql.CorreccionesObj.Mover(ciclo);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+
+                var docCIdObj = Sql.CorreccionesObj.ObtenerItem("documentoC", id);
+                if (docCIdObj == null) continue;
+                string documentoC = docCIdObj.ToString()!;
+
+                var fechaObj = Sql.DocumentosCObj.ObtenerItem("fecha", documentoC);
+                if (fechaObj == null) continue;
+                DateTime fecha = Convert.ToDateTime(fechaObj);
+
+                if (fecha < fechaInicio || fecha > fechaFinal) continue;
+
+                var articuloObj = Sql.CorreccionesObj.ObtenerItem("articulo", id);
+                if (articuloObj?.ToString() != codigo) continue;
+
+                string movimiento = Sql.DocumentosCObj.ObtenerItem("movimiento", documentoC)?.ToString()?.ToLower() ?? "";
+                double cantidad   = Convert.ToDouble(Sql.CorreccionesObj.ObtenerItem("cantidad", id) ?? 0);
+
+                if (movimiento == "ingresar")  ingresos   += cantidad;
+                if (movimiento == "descontar") descuentos += cantidad;
+            }
+
+            return (aperturas + entradas + compras + ingresos) - (salidas + ventas + descuentos);
         }
     }
 

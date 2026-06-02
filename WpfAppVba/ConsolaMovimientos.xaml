@@ -184,6 +184,11 @@
                     <local:TraspasosGeneral x:Name="TabSalidas" TipoMovimiento="salida"/>
                 </TabItem>
 
+                <!-- ── Pestaña Correcciones ────────────────────────── -->
+                <TabItem Header="🔧 Correcciones" Style="{StaticResource ModernTabItem}">
+                    <local:CorreccionesGeneral x:Name="TabCorrecciones"/>
+                </TabItem>
+
             </TabControl>
 
             <!-- Botones de acción rápida — esquina superior derecha del strip de tabs -->
