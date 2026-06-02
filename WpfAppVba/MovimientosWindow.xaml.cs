@@ -158,6 +158,38 @@ namespace WpfAppVba
                 });
             }
 
+            // 4. Correcciones — ingreso suma, egreso resta
+            uf = Sql.CorreccionesObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.CorreccionesObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+
+                if (Sql.CorreccionesObj.ObtenerItem("articulo", id)?.ToString() != _identificadorArticulo) continue;
+
+                string docC      = Sql.CorreccionesObj.ObtenerItem("documentoC", id)?.ToString() ?? "";
+                string movimiento = Sql.DocumentosCObj.ObtenerItem("movimiento", docC)?.ToString()?.ToLower() ?? "";
+                string motivo     = Sql.DocumentosCObj.ObtenerItem("motivo",     docC)?.ToString() ?? "";
+
+                var fechaObj   = Sql.DocumentosCObj.ObtenerItem("fecha", docC);
+                DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : default;
+                double cantidad = Convert.ToDouble(Sql.CorreccionesObj.ObtenerItem("cantidad", id) ?? 0);
+
+                datos.Add(new MovimientoDato
+                {
+                    Fecha      = fecha,
+                    Documento  = docC,
+                    Movimiento = movimiento,
+                    Estado     = motivo,
+                    Cantidad   = cantidad,
+                    Unitario   = "-",
+                    SubTotal   = "-",
+                    Forma      = "-",
+                    Contable   = "-"
+                });
+            }
+
             // ── Ordenar por fecha y luego por documento ───────────────────────
             datos = datos
                 .OrderBy(d => d.Fecha)
@@ -169,6 +201,7 @@ namespace WpfAppVba
             int linea = 1;
             double stock = 0;
             double totalCompras = 0, totalVentas = 0, totalEntradas = 0, totalSalidas = 0;
+            double totalIngresos = 0, totalEgresos = 0;
 
             foreach (var d in datos)
             {
@@ -179,6 +212,8 @@ namespace WpfAppVba
                     case "venta":    stock -= d.Cantidad; totalVentas   += d.Cantidad; break;
                     case "entrada":  stock += d.Cantidad; totalEntradas += d.Cantidad; break;
                     case "salida":   stock -= d.Cantidad; totalSalidas  += d.Cantidad; break;
+                    case "ingreso":  stock += d.Cantidad; totalIngresos += d.Cantidad; break;
+                    case "egreso":   stock -= d.Cantidad; totalEgresos  += d.Cantidad; break;
                 }
 
                 lista.Add(new MovimientoFila
@@ -204,6 +239,8 @@ namespace WpfAppVba
             TxtTotalVentas.Text   = totalVentas.ToString("N0");
             TxtTotalEntradas.Text = totalEntradas.ToString("N0");
             TxtTotalSalidas.Text  = totalSalidas.ToString("N0");
+            TxtTotalIngresos.Text = totalIngresos.ToString("N0");
+            TxtTotalEgresos.Text  = totalEgresos.ToString("N0");
         }
 
         // ─── Eventos ─────────────────────────────────────────────────────────

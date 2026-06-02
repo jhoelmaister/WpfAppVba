@@ -104,7 +104,11 @@
                 <TextBlock Text="Total Entradas:" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}" VerticalAlignment="Center" Margin="0,0,4,0"/>
                 <TextBlock x:Name="TxtTotalEntradas" FontSize="12" FontWeight="Bold" Foreground="#2E7D32" VerticalAlignment="Center" Margin="0,0,24,0"/>
                 <TextBlock Text="Total Salidas:"  FontSize="12" Foreground="{DynamicResource ThemeTextoSec}" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <TextBlock x:Name="TxtTotalSalidas" FontSize="12" FontWeight="Bold" Foreground="#E65100" VerticalAlignment="Center"/>
+                <TextBlock x:Name="TxtTotalSalidas" FontSize="12" FontWeight="Bold" Foreground="#E65100" VerticalAlignment="Center" Margin="0,0,24,0"/>
+                <TextBlock Text="Total Ingresos:" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <TextBlock x:Name="TxtTotalIngresos" FontSize="12" FontWeight="Bold" Foreground="#00897B" VerticalAlignment="Center" Margin="0,0,24,0"/>
+                <TextBlock Text="Total Egresos:"  FontSize="12" Foreground="{DynamicResource ThemeTextoSec}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <TextBlock x:Name="TxtTotalEgresos" FontSize="12" FontWeight="Bold" Foreground="#6A1B9A" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
 
