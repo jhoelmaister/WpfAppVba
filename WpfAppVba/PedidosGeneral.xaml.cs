@@ -69,9 +69,7 @@ namespace WpfAppVba
             // Cada modo aplica solo su propio filtro de contenido (igual que VBA llaveActualisar)
             string busqueda = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
             string mesFiltro = _modoFiltro == "filtros"  ? _mesActivo : "";
-            string tipoMov  = !string.IsNullOrEmpty(TipoMovimiento)
-                              ? TipoMovimiento.ToLower()
-                              : AppState.TipoMovimiento.ToLower();
+            string tipoMov = ObtenerFiltroTipo();
 
             int uf = Sql.DocumentosPObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -82,7 +80,8 @@ namespace WpfAppVba
 
                 // Filtrar por tipo de movimiento y sucursal activa
                 string movDoc = Sql.DocumentosPObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
-                if (!string.Equals(movDoc, tipoMov, StringComparison.OrdinalIgnoreCase)) continue;
+                if (!string.IsNullOrEmpty(tipoMov) &&
+                    !string.Equals(movDoc, tipoMov, StringComparison.OrdinalIgnoreCase)) continue;
 
                 string sucursal = Sql.DocumentosPObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
                 if (sucursal != AppState.SucursalActiva.ToString()) continue;
@@ -147,9 +146,12 @@ namespace WpfAppVba
             TxtTotalImporte.Text  = totalImporte.ToString("N2");
 
             // ── Título correcto según VBA ─────────────────────────────────────
-            LblTipoMovimiento.Text = tipoMov == "venta"
-                ? "Ventas de Productos"
-                : "Compras de Productos";
+            LblTipoMovimiento.Text = tipoMov switch
+            {
+                "venta"  => "Ventas de Productos",
+                "compra" => "Compras de Productos",
+                _        => "Pedidos (Ventas y Compras)"
+            };
 
             // Ocultar el panel de detalle al recargar
             OcultarDetalle();
@@ -170,6 +172,16 @@ namespace WpfAppVba
             if (BtnCuentaCancelado?.IsChecked == true) return "cancelado";
             if (BtnCuentaParcial?.IsChecked   == true) return "pendiente parcial";  // ← correcto
             return "";
+        }
+
+        private string ObtenerFiltroTipo()
+        {
+            return (CboTipoMovimiento?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() switch
+            {
+                "ventas"  => "venta",
+                "compras" => "compra",
+                _         => ""
+            };
         }
 
         // ─── Nombre de mes ────────────────────────────────────────────────────
@@ -329,6 +341,9 @@ namespace WpfAppVba
         private void FiltroCuenta_Checked(object sender, RoutedEventArgs e)
             => CargarPedidos();
 
+        private void CboTipoMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
+            => CargarPedidos();
+
         // ─── Selección en Grid1 → mostrar detalle ────────────────────────────
         private void Grid1_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -372,8 +387,8 @@ namespace WpfAppVba
         {
             AppState.EventoFormularioM = "nuevo";
             AppState.TipoPedido        = "normal";
-            if (!string.IsNullOrEmpty(TipoMovimiento))
-                AppState.TipoMovimiento = TipoMovimiento;
+            string filtroTipo = ObtenerFiltroTipo();
+            AppState.TipoMovimiento = string.IsNullOrEmpty(filtroTipo) ? "venta" : filtroTipo;
             var dlg = new PedidosDetalle(this) { Owner = Window.GetWindow(this) };
             dlg.ShowDialog();
             if (dlg.DocumentoCreadoId == null) return;   // cancelado
@@ -451,8 +466,7 @@ namespace WpfAppVba
             if (Grid1.SelectedItem is not PedidoFila fila) return;
             string docSel = fila.DocumentoP;
             AppState.EventoFormularioM = "editar";
-            if (!string.IsNullOrEmpty(TipoMovimiento))
-                AppState.TipoMovimiento = TipoMovimiento;
+            AppState.TipoMovimiento = Sql.DocumentosPObj.ObtenerItem("movimiento", docSel)?.ToString() ?? "venta";
             new PedidosDetalle(this, fila.DocumentoP) { Owner = Window.GetWindow(this) }.ShowDialog();
 
             var lista = FilasGrid;

@@ -72,9 +72,23 @@
         </Grid.RowDefinitions>
 
         <!-- ══ Row 0: Título ══════════════════════════════════════════════ -->
-        <TextBlock x:Name="LblTitulo" Grid.Row="0"
-                   FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTexto}"
-                   Margin="0,0,0,8"/>
+        <Grid Grid.Row="0" Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="LblTitulo" Grid.Column="0"
+                       FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTexto}"
+                       VerticalAlignment="Center"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Tipo:" Style="{StaticResource Lbl}" Margin="0,0,6,0"/>
+                <ComboBox x:Name="CboMovimiento" Width="90" Height="26" FontSize="12"
+                          SelectionChanged="CboMovimiento_SelectionChanged">
+                    <ComboBoxItem Content="Venta"/>
+                    <ComboBoxItem Content="Compra"/>
+                </ComboBox>
+            </StackPanel>
+        </Grid>
 
         <!-- ══ Row 1: Doc · Fecha · Hora · Estado · Cuenta ═════════════════ -->
         <Grid Grid.Row="1" Margin="0,0,0,6">

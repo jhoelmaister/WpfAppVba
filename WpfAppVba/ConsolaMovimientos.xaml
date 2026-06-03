@@ -256,47 +256,12 @@
                 <!-- Panel Artículos -->
                 <local:ArticulosGeneral x:Name="TabArticulos" Visibility="Visible"/>
 
-                <!-- Panel Pedidos -->
-                <TabControl x:Name="PanelPedidos"
-                            Style="{StaticResource ModernTabControl}"
-                            Background="{DynamicResource ThemeBgContenido}"
-                            BorderThickness="0"
-                            Visibility="Collapsed">
-                    <TabItem Header="💰 Ventas" Style="{StaticResource ModernTabItem}">
-                        <local:PedidosGeneral x:Name="TabVentas" TipoMovimiento="venta"/>
-                    </TabItem>
-                    <TabItem Header="🛒 Compras" Style="{StaticResource ModernTabItem}">
-                        <local:PedidosGeneral x:Name="TabCompras" TipoMovimiento="compra"/>
-                    </TabItem>
-                </TabControl>
-
-                <!-- Panel Traspasos -->
-                <TabControl x:Name="PanelTraspasos"
-                            Style="{StaticResource ModernTabControl}"
-                            Background="{DynamicResource ThemeBgContenido}"
-                            BorderThickness="0"
-                            Visibility="Collapsed">
-                    <TabItem Header="📦 Entradas" Style="{StaticResource ModernTabItem}">
-                        <local:TraspasosGeneral x:Name="TabEntradas" TipoMovimiento="entrada"/>
-                    </TabItem>
-                    <TabItem Header="📤 Salidas" Style="{StaticResource ModernTabItem}">
-                        <local:TraspasosGeneral x:Name="TabSalidas" TipoMovimiento="salida"/>
-                    </TabItem>
-                </TabControl>
-
-                <!-- Panel Correcciones -->
-                <TabControl x:Name="PanelCorrecciones"
-                            Style="{StaticResource ModernTabControl}"
-                            Background="{DynamicResource ThemeBgContenido}"
-                            BorderThickness="0"
-                            Visibility="Collapsed">
-                    <TabItem Header="⬆ Ingresos" Style="{StaticResource ModernTabItem}">
-                        <local:CorreccionesGeneral x:Name="TabCorreccionesIngresos" TipoMovimiento="ingreso"/>
-                    </TabItem>
-                    <TabItem Header="⬇ Egresos" Style="{StaticResource ModernTabItem}">
-                        <local:CorreccionesGeneral x:Name="TabCorreccionesEgresos" TipoMovimiento="egreso"/>
-                    </TabItem>
-                </TabControl>
+                <local:PedidosGeneral      x:Name="TabPedidos"
+                                           Visibility="Collapsed"/>
+                <local:TraspasosGeneral    x:Name="TabTraspasos"
+                                           Visibility="Collapsed"/>
+                <local:CorreccionesGeneral x:Name="TabCorrecciones"
+                                           Visibility="Collapsed"/>
 
             </Grid>
         </Grid>

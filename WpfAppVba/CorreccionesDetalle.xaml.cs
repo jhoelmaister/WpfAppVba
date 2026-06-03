@@ -124,7 +124,14 @@ namespace WpfAppVba
         private void Box_Movimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             ActualizarMotivos();
-            if (!_cargando) _hayCambios = true;
+            if (!_cargando)
+            {
+                string mov = (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "egreso";
+                string tipoLabel = mov == "ingreso" ? "Ingreso" : "Egreso";
+                string prefijo = AppState.EventoFormularioC == "editar" ? "Editar" : "Nueva";
+                LblTitulo.Text = $"{prefijo} Corrección de {tipoLabel}";
+                _hayCambios = true;
+            }
         }
 
         /// <summary>Repuebla la lista de motivos según el movimiento seleccionado.</summary>

@@ -66,13 +66,16 @@ namespace WpfAppVba
             // Cada modo aplica solo su propio filtro de contenido (igual que VBA llaveActualisar)
             string busqueda  = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
             string mesFiltro = _modoFiltro == "filtros"   ? _mesActivo : "";
-            string tipoMov   = !string.IsNullOrEmpty(TipoMovimiento)
-                               ? TipoMovimiento.ToLower()
-                               : AppState.TipoMovimiento.ToLower();
+            string tipoMov = ObtenerFiltroTipo();
 
-            // ── Actualizar header de columna "Destino"/"Origen" (índice 3) ────
+            // ── Actualizar header de columna "Destino"/"Origen"/"Sucursal" (índice 3) ────
             if (Grid1.Columns.Count > 3)
-                Grid1.Columns[3].Header = tipoMov == "salida" ? "Destino" : "Origen";
+                Grid1.Columns[3].Header = tipoMov switch
+                {
+                    "salida"  => "Destino",
+                    "entrada" => "Origen",
+                    _         => "Sucursal"
+                };
 
             int uf = Sql.DocumentosTObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -82,11 +85,28 @@ namespace WpfAppVba
                 string id = idObj.ToString()!;
 
                 // Filtrar por sucursal activa según tipo de movimiento
-                string campo   = tipoMov == "salida" ? "origen" : "destino";
-                string campOtro = tipoMov == "salida" ? "destino" : "origen";
+                string origen  = Sql.DocumentosTObj.ObtenerItem("origen",  id)?.ToString() ?? "";
+                string destino = Sql.DocumentosTObj.ObtenerItem("destino", id)?.ToString() ?? "";
+                bool esSalida  = origen  == AppState.SucursalActiva.ToString();
+                bool esEntrada = destino == AppState.SucursalActiva.ToString();
 
-                string sucursal = Sql.DocumentosTObj.ObtenerItem(campo, id)?.ToString() ?? "";
-                if (sucursal != AppState.SucursalActiva.ToString()) continue;
+                string movActual;
+                if (tipoMov == "salida")
+                {
+                    if (!esSalida) continue;
+                    movActual = "salida";
+                }
+                else if (tipoMov == "entrada")
+                {
+                    if (!esEntrada) continue;
+                    movActual = "entrada";
+                }
+                else
+                {
+                    if (!esSalida && !esEntrada) continue;
+                    movActual = esSalida ? "salida" : "entrada";
+                }
+                string campOtro = movActual == "salida" ? "destino" : "origen";
 
                 // Filtro por mes (solo en modo "filtros", independiente de TxtBuscar)
                 if (!string.IsNullOrEmpty(mesFiltro))
@@ -136,10 +156,25 @@ namespace WpfAppVba
 
             Grid1.ItemsSource = lista;
             TxtTotalCantidad.Text = totalCant.ToString("N0");
-            LblTipoMovimiento.Text = tipoMov == "salida" ? "Salidas de Productos" : "Entradas de Productos";
+            LblTipoMovimiento.Text = tipoMov switch
+            {
+                "salida"  => "Salidas de Productos",
+                "entrada" => "Entradas de Productos",
+                _         => "Traspasos (Entradas y Salidas)"
+            };
 
             // Ocultar el panel de detalle al recargar
             OcultarDetalle();
+        }
+
+        private string ObtenerFiltroTipo()
+        {
+            return (CboTipoMovimiento?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() switch
+            {
+                "entradas" => "entrada",
+                "salidas"  => "salida",
+                _          => ""
+            };
         }
 
         // ─── Filtro de estado (4 opciones igual que VBA) ─────────────────────
@@ -165,10 +200,9 @@ namespace WpfAppVba
 
         private TraspasoFila ConstruirFilaTraspaso(string id, int linea)
         {
-            string tipoMov = !string.IsNullOrEmpty(TipoMovimiento)
-                             ? TipoMovimiento.ToLower()
-                             : AppState.TipoMovimiento.ToLower();
-            string campOtro = tipoMov == "salida" ? "destino" : "origen";
+            string origen   = Sql.DocumentosTObj.ObtenerItem("origen",  id)?.ToString() ?? "";
+            bool esSalida   = origen == AppState.SucursalActiva.ToString();
+            string campOtro = esSalida ? "destino" : "origen";
 
             var fechaDocObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
             DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
@@ -302,6 +336,9 @@ namespace WpfAppVba
         private void FiltroEstado_Checked(object sender, RoutedEventArgs e)
             => CargarTraspasos();
 
+        private void CboTipoMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
+            => CargarTraspasos();
+
         // ─── Búsqueda (independiente del Tree1) ──────────────────────────────
         private void TxtBuscar_KeyDown(object sender, KeyEventArgs e)
         {
@@ -335,8 +372,8 @@ namespace WpfAppVba
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
             AppState.EventoFormularioM = "nuevo";
-            if (!string.IsNullOrEmpty(TipoMovimiento))
-                AppState.TipoMovimiento = TipoMovimiento;
+            string filtroTipo = ObtenerFiltroTipo();
+            AppState.TipoMovimiento = string.IsNullOrEmpty(filtroTipo) ? "entrada" : filtroTipo;
             var dlg = new TraspasosDetalle(this) { Owner = Window.GetWindow(this) };
             dlg.ShowDialog();
             if (dlg.DocumentoCreadoId == null) return;   // cancelado
@@ -413,8 +450,8 @@ namespace WpfAppVba
             if (Grid1.SelectedItem is not TraspasoFila fila) return;
             string docSel = fila.DocumentoT;
             AppState.EventoFormularioM = "editar";
-            if (!string.IsNullOrEmpty(TipoMovimiento))
-                AppState.TipoMovimiento = TipoMovimiento;
+            string origenDoc = Sql.DocumentosTObj.ObtenerItem("origen", docSel)?.ToString() ?? "";
+            AppState.TipoMovimiento = origenDoc == AppState.SucursalActiva.ToString() ? "salida" : "entrada";
             new TraspasosDetalle(this, fila.DocumentoT) { Owner = Window.GetWindow(this) }.ShowDialog();
 
             var lista = FilasGrid;

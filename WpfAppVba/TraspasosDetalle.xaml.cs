@@ -45,6 +45,7 @@ namespace WpfAppVba
             LblTitulo.Text = tipo == "salida"
                 ? "Salida de Productos Detalle"
                 : "Entrada de Productos Detalle";
+            CboMovimiento.SelectedIndex = tipo == "salida" ? 1 : 0;
 
             if (AppState.EventoFormularioM == "editar")
                 CargarParaEditar();
@@ -314,6 +315,16 @@ namespace WpfAppVba
                         "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
+        }
+
+        // ─── Cambio de tipo de movimiento (ComboBox superior) ────────────────
+        private void CboMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_cargando) return;
+            string tipo = (CboMovimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "entrada";
+            AppState.TipoMovimiento = tipo;
+            LblTitulo.Text = tipo == "salida" ? "Salida de Productos Detalle" : "Entrada de Productos Detalle";
+            _hayCambios = true;
         }
 
         // ─── Eventos de campos ────────────────────────────────────────────────

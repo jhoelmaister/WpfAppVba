@@ -64,7 +64,7 @@ namespace WpfAppVba
             double totalCant = 0;
             string busqueda  = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
             string mesFiltro = _modoFiltro == "filtros"   ? _mesActivo : "";
-            string tipoMov   = TipoMovimiento.ToLower();
+            string tipoMov = ObtenerFiltroTipo();
 
             int uf = Sql.DocumentosCObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -116,11 +116,24 @@ namespace WpfAppVba
 
             Grid1.ItemsSource = lista;
             TxtTotalCantidad.Text = totalCant.ToString("N0");
-            LblTipoMovimiento.Text = tipoMov == "egreso"
-                ? "Egresos de Stock (pérdida, merma, hurto, consumo interno)"
-                : "Ingresos de Stock (error de registro, registros omitidos)";
+            LblTipoMovimiento.Text = tipoMov switch
+            {
+                "egreso"  => "Egresos de Stock (pérdida, merma, hurto, consumo interno)",
+                "ingreso" => "Ingresos de Stock (error de registro, registros omitidos)",
+                _         => "Correcciones de Stock (Ingresos y Egresos)"
+            };
 
             OcultarDetalle();
+        }
+
+        private string ObtenerFiltroTipo()
+        {
+            return (CboTipoMovimiento?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() switch
+            {
+                "ingresos" => "ingreso",
+                "egresos"  => "egreso",
+                _          => ""
+            };
         }
 
         // ─── Nombre de mes ────────────────────────────────────────────────────
@@ -256,6 +269,9 @@ namespace WpfAppVba
             }
         }
 
+        private void CboTipoMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
+            => CargarCorrecciones();
+
         // ─── Búsqueda (independiente del Tree1) ──────────────────────────────
         private void TxtBuscar_KeyDown(object sender, KeyEventArgs e)
         {
@@ -288,8 +304,8 @@ namespace WpfAppVba
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
             AppState.EventoFormularioC = "nuevo";
-            if (!string.IsNullOrEmpty(TipoMovimiento))
-                AppState.TipoCorreccion = TipoMovimiento;
+            string filtroTipo = ObtenerFiltroTipo();
+            AppState.TipoCorreccion = string.IsNullOrEmpty(filtroTipo) ? "egreso" : filtroTipo;
 
             var detalle = new CorreccionesDetalle(this) { Owner = Window.GetWindow(this) };
             detalle.ShowDialog();
@@ -370,8 +386,7 @@ namespace WpfAppVba
 
             string idSel = fila.Id;
             AppState.EventoFormularioC = "editar";
-            if (!string.IsNullOrEmpty(TipoMovimiento))
-                AppState.TipoCorreccion = TipoMovimiento;
+            AppState.TipoCorreccion = Sql.DocumentosCObj.ObtenerItem("movimiento", idSel)?.ToString() ?? "egreso";
 
             var detalle = new CorreccionesDetalle(this, fila.Id) { Owner = Window.GetWindow(this) };
             detalle.ShowDialog();

@@ -52,10 +52,26 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Título tipo movimiento -->
-            <TextBlock x:Name="LblTipoMovimiento" Grid.Row="0"
-                       FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTexto}"
-                       Margin="0,0,0,6"/>
+            <!-- Título tipo movimiento + filtro -->
+            <Grid Grid.Row="0" Margin="0,0,0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="LblTipoMovimiento" Grid.Column="0"
+                           FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTexto}"
+                           VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Tipo:" FontSize="12" VerticalAlignment="Center"
+                               Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,6,0"/>
+                    <ComboBox x:Name="CboTipoMovimiento" Width="90" Height="26" FontSize="12"
+                              SelectionChanged="CboTipoMovimiento_SelectionChanged">
+                        <ComboBoxItem Content="Todos" IsSelected="True"/>
+                        <ComboBoxItem Content="Ventas"/>
+                        <ComboBoxItem Content="Compras"/>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
 
             <!-- Filtro estado -->
             <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,6">

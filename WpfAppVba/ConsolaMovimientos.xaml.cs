@@ -25,17 +25,17 @@ namespace WpfAppVba
         // ─── Mostrar panel de contenido ───────────────────────────────────────
         private void MostrarPanel(string nombre)
         {
-            TabArticulos.Visibility      = Visibility.Collapsed;
-            PanelPedidos.Visibility      = Visibility.Collapsed;
-            PanelTraspasos.Visibility    = Visibility.Collapsed;
-            PanelCorrecciones.Visibility = Visibility.Collapsed;
+            TabArticulos.Visibility    = Visibility.Collapsed;
+            TabPedidos.Visibility      = Visibility.Collapsed;
+            TabTraspasos.Visibility    = Visibility.Collapsed;
+            TabCorrecciones.Visibility = Visibility.Collapsed;
 
             switch (nombre)
             {
-                case "articulos":    TabArticulos.Visibility      = Visibility.Visible; break;
-                case "pedidos":      PanelPedidos.Visibility      = Visibility.Visible; break;
-                case "traspasos":    PanelTraspasos.Visibility    = Visibility.Visible; break;
-                case "correcciones": PanelCorrecciones.Visibility = Visibility.Visible; break;
+                case "articulos":    TabArticulos.Visibility    = Visibility.Visible; break;
+                case "pedidos":      TabPedidos.Visibility      = Visibility.Visible; break;
+                case "traspasos":    TabTraspasos.Visibility    = Visibility.Visible; break;
+                case "correcciones": TabCorrecciones.Visibility = Visibility.Visible; break;
             }
         }
 
@@ -129,7 +129,7 @@ namespace WpfAppVba
             AppState.TipoMovimiento    = "venta";
             AppState.TipoPedido        = "rapido";
             new PedidosDetalle { Owner = this }.ShowDialog();
-            TabVentas.CargarPedidos();
+            TabPedidos.CargarPedidos();
         }
 
         private void BtnEntradaRapida_Click(object sender, RoutedEventArgs e)
@@ -137,7 +137,7 @@ namespace WpfAppVba
             AppState.EventoFormularioM = "nuevo";
             AppState.TipoMovimiento    = "entrada";
             new TraspasosDetalle { Owner = this }.ShowDialog();
-            TabEntradas.CargarTraspasos();
+            TabTraspasos.CargarTraspasos();
         }
 
         private void BtnSalidaRapida_Click(object sender, RoutedEventArgs e)
@@ -145,7 +145,7 @@ namespace WpfAppVba
             AppState.EventoFormularioM = "nuevo";
             AppState.TipoMovimiento    = "salida";
             new TraspasosDetalle { Owner = this }.ShowDialog();
-            TabSalidas.CargarTraspasos();
+            TabTraspasos.CargarTraspasos();
         }
 
         // ─── Cerrar sesión ────────────────────────────────────────────────────
