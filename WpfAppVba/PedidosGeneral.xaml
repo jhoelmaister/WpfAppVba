@@ -31,19 +31,60 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Panel izquierdo: TreeView meses -->
-        <Border Grid.Column="0" Margin="0,0,8,0" BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1" Background="{DynamicResource ThemeBgSurface}">
-            <TreeView x:Name="Tree1"
-                      SelectedItemChanged="Tree1_SelectedItemChanged"
-                      PreviewMouseLeftButtonDown="Tree1_PreviewMouseLeftButtonDown"
-                      FontSize="12"/>
-        </Border>
+        <!-- Panel izquierdo: TreeView meses + filtros -->
+        <Grid Grid.Column="0" Margin="0,0,8,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1" Background="{DynamicResource ThemeBgSurface}">
+                <TreeView x:Name="Tree1"
+                          SelectedItemChanged="Tree1_SelectedItemChanged"
+                          PreviewMouseLeftButtonDown="Tree1_PreviewMouseLeftButtonDown"
+                          FontSize="12"/>
+            </Border>
+
+            <!-- Filtros Estado / Cuenta -->
+            <Border Grid.Row="1" Margin="0,8,0,0" BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
+                    Background="{DynamicResource ThemeBgSurface}" Padding="8,6">
+                <StackPanel>
+                    <TextBlock Text="Estado" FontSize="12" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeTexto}" Margin="0,0,0,4"/>
+                    <RadioButton x:Name="BtnFiltroTodos" Content="Todos" IsChecked="True"
+                                 GroupName="EstadoP" FontSize="12" Margin="0,0,0,3"
+                                 Checked="FiltroEstado_Checked"/>
+                    <RadioButton x:Name="BtnFiltroPendiente" Content="Pendiente"
+                                 GroupName="EstadoP" FontSize="12" Margin="0,0,0,3"
+                                 Checked="FiltroEstado_Checked"/>
+                    <RadioButton x:Name="BtnFiltroEntregado" Content="Entregado"
+                                 GroupName="EstadoP" FontSize="12" Margin="0,0,0,3"
+                                 Checked="FiltroEstado_Checked"/>
+                    <RadioButton x:Name="BtnFiltroEntregaParcial" Content="Entrega Parcial"
+                                 GroupName="EstadoP" FontSize="12"
+                                 Checked="FiltroEstado_Checked"/>
+
+                    <TextBlock Text="Cuenta" FontSize="12" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeTexto}" Margin="0,10,0,4"/>
+                    <RadioButton x:Name="BtnCuentaTodos" Content="Todos" IsChecked="True"
+                                 GroupName="CuentaP" FontSize="12" Margin="0,0,0,3"
+                                 Checked="FiltroCuenta_Checked"/>
+                    <RadioButton x:Name="BtnCuentaPendiente" Content="Pendiente"
+                                 GroupName="CuentaP" FontSize="12" Margin="0,0,0,3"
+                                 Checked="FiltroCuenta_Checked"/>
+                    <RadioButton x:Name="BtnCuentaCancelado" Content="Cancelado"
+                                 GroupName="CuentaP" FontSize="12" Margin="0,0,0,3"
+                                 Checked="FiltroCuenta_Checked"/>
+                    <RadioButton x:Name="BtnCuentaParcial" Content="Pendiente Parcial"
+                                 GroupName="CuentaP" FontSize="12"
+                                 Checked="FiltroCuenta_Checked"/>
+                </StackPanel>
+            </Border>
+        </Grid>
 
         <!-- Panel derecho -->
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*" MinHeight="120"/>
@@ -73,42 +114,8 @@
                 </StackPanel>
             </Grid>
 
-            <!-- Filtro estado -->
-            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,6">
-                <TextBlock Text="Estado:" VerticalAlignment="Center" FontSize="12" Margin="0,0,6,0"/>
-                <RadioButton x:Name="BtnFiltroTodos" Content="Todos" IsChecked="True"
-                             VerticalAlignment="Center" FontSize="12" Margin="0,0,10,0"
-                             Checked="FiltroEstado_Checked"/>
-                <RadioButton x:Name="BtnFiltroPendiente" Content="Pendiente"
-                             VerticalAlignment="Center" FontSize="12" Margin="0,0,10,0"
-                             Checked="FiltroEstado_Checked"/>
-                <RadioButton x:Name="BtnFiltroEntregado" Content="Entregado"
-                             VerticalAlignment="Center" FontSize="12" Margin="0,0,10,0"
-                             Checked="FiltroEstado_Checked"/>
-                <RadioButton x:Name="BtnFiltroEntregaParcial" Content="Entrega Parcial"
-                             VerticalAlignment="Center" FontSize="12"
-                             Checked="FiltroEstado_Checked"/>
-            </StackPanel>
-
-            <!-- Filtro cuenta -->
-            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,6">
-                <TextBlock Text="Cuenta:" VerticalAlignment="Center" FontSize="12" Margin="0,0,6,0"/>
-                <RadioButton x:Name="BtnCuentaTodos" Content="Todos" IsChecked="True"
-                             VerticalAlignment="Center" FontSize="12" Margin="0,0,10,0"
-                             Checked="FiltroCuenta_Checked"/>
-                <RadioButton x:Name="BtnCuentaPendiente" Content="Pendiente"
-                             VerticalAlignment="Center" FontSize="12" Margin="0,0,10,0"
-                             Checked="FiltroCuenta_Checked"/>
-                <RadioButton x:Name="BtnCuentaCancelado" Content="Cancelado"
-                             VerticalAlignment="Center" FontSize="12" Margin="0,0,10,0"
-                             Checked="FiltroCuenta_Checked"/>
-                <RadioButton x:Name="BtnCuentaParcial" Content="Pendiente Parcial"
-                             VerticalAlignment="Center" FontSize="12"
-                             Checked="FiltroCuenta_Checked"/>
-            </StackPanel>
-
             <!-- Buscador -->
-            <Grid Grid.Row="3" Margin="0,0,0,8">
+            <Grid Grid.Row="1" Margin="0,0,0,8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -122,7 +129,7 @@
             </Grid>
 
             <!-- DataGrid principal (Lista1) -->
-            <DataGrid x:Name="Grid1" Grid.Row="4"
+            <DataGrid x:Name="Grid1" Grid.Row="2"
                       AutoGenerateColumns="False"
                       IsReadOnly="True"
                       SelectionMode="Single"
@@ -137,6 +144,7 @@
                     <DataGridTextColumn Header="Línea"             Binding="{Binding Linea}"       Width="55"/>
                     <DataGridTextColumn Header="DocumentoP"        Binding="{Binding DocumentoP}"  Width="70"/>
                     <DataGridTextColumn Header="Fecha"             Binding="{Binding FechaStr}"     Width="120"/>
+                    <DataGridTextColumn Header="Movimiento"        Binding="{Binding Movimiento}"   Width="80"/>
                     <DataGridTextColumn Header="Cliente/Proveedor" Binding="{Binding TerceroDesc}"  Width="*"/>
                     <DataGridTextColumn Header="Estado"            Binding="{Binding Estado}"       Width="90"/>
                     <DataGridTextColumn Header="Cuenta"            Binding="{Binding Cuenta}"       Width="90"/>
@@ -148,7 +156,7 @@
             </DataGrid>
 
             <!-- Panel detalle artículos (Lista2) — visible cuando hay fila seleccionada -->
-            <Border x:Name="PanelDetalle" Grid.Row="5"
+            <Border x:Name="PanelDetalle" Grid.Row="3"
                     Visibility="Collapsed"
                     Margin="0,4,0,0"
                     BorderBrush="#1A73E8" BorderThickness="1"
@@ -183,7 +191,7 @@
             </Border>
 
             <!-- Totales -->
-            <StackPanel Grid.Row="6" Orientation="Horizontal" Margin="0,6,0,0">
+            <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,6,0,0">
                 <TextBlock Text="Total Cantidad:" VerticalAlignment="Center" FontSize="12" Margin="0,0,4,0"/>
                 <TextBlock x:Name="TxtTotalCantidad" VerticalAlignment="Center" FontSize="12"
                            FontWeight="SemiBold" Margin="0,0,16,0"/>
@@ -193,7 +201,7 @@
             </StackPanel>
 
             <!-- Botones -->
-            <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
                 <Button Content="Nuevo"      Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"   Click="BtnNuevo_Click"/>
                 <Button Content="Editar"     Margin="0,0,6,0" Style="{StaticResource BtnSecundario}" Click="BtnEditar_Click"/>
                 <Button Content="Eliminar"   Margin="0,0,6,0" Style="{StaticResource BtnPeligro}"    Click="BtnEliminar_Click"/>

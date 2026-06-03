@@ -68,9 +68,9 @@ namespace WpfAppVba
             string mesFiltro = _modoFiltro == "filtros"   ? _mesActivo : "";
             string tipoMov = ObtenerFiltroTipo();
 
-            // ── Actualizar header de columna "Destino"/"Origen"/"Sucursal" (índice 3) ────
-            if (Grid1.Columns.Count > 3)
-                Grid1.Columns[3].Header = tipoMov switch
+            // ── Actualizar header de columna "Destino"/"Origen"/"Sucursal" (índice 4) ────
+            if (Grid1.Columns.Count > 4)
+                Grid1.Columns[4].Header = tipoMov switch
                 {
                     "salida"  => "Destino",
                     "entrada" => "Origen",
@@ -147,6 +147,7 @@ namespace WpfAppVba
                     Linea        = linea++,
                     DocumentoT   = id,
                     FechaStr     = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
+                    Movimiento   = movActual,
                     SucursalDesc = otroSucDesc,
                     Estado       = estado,
                     Cantidad     = cant
@@ -220,6 +221,7 @@ namespace WpfAppVba
                 Linea        = linea,
                 DocumentoT   = id,
                 FechaStr     = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
+                Movimiento   = esSalida ? "salida" : "entrada",
                 SucursalDesc = otroSucDesc,
                 Estado       = estado,
                 Cantidad     = CalcularCantidad(id)
@@ -473,6 +475,7 @@ namespace WpfAppVba
         public int    Linea        { get; set; }
         public string DocumentoT   { get; set; } = "";
         public string FechaStr     { get; set; } = "";
+        public string Movimiento   { get; set; } = "";
         public string SucursalDesc { get; set; } = "";
         public string Estado       { get; set; } = "";
         public double Cantidad     { get; set; }

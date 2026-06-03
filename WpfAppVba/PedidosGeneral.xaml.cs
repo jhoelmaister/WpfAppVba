@@ -130,6 +130,7 @@ namespace WpfAppVba
                     Linea       = linea++,
                     DocumentoP  = id,
                     FechaStr    = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
+                    Movimiento  = movDoc,
                     TerceroDesc = terceroDesc,
                     Estado      = estado,
                     Cuenta      = estadoC,
@@ -204,12 +205,14 @@ namespace WpfAppVba
             string terceroDesc = Sql.TercerosObj.ObtenerItem("descripcion", terceroId)?.ToString() ?? terceroId;
             string estado  = Sql.DocumentosPObj.ObtenerItem("estado",  id)?.ToString() ?? "";
             string estadoC = Sql.DocumentosPObj.ObtenerItem("estadoC", id)?.ToString() ?? "";
+            string movDoc  = Sql.DocumentosPObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
 
             return new PedidoFila
             {
                 Linea       = linea,
                 DocumentoP  = id,
                 FechaStr    = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
+                Movimiento  = movDoc,
                 TerceroDesc = terceroDesc,
                 Estado      = estado,
                 Cuenta      = estadoC,
@@ -494,6 +497,7 @@ namespace WpfAppVba
         public int    Linea       { get; set; }
         public string DocumentoP  { get; set; } = "";
         public string FechaStr    { get; set; } = "";
+        public string Movimiento  { get; set; } = "";
         public string TerceroDesc { get; set; } = "";
         public string Estado      { get; set; } = "";
         public string Cuenta      { get; set; } = "";

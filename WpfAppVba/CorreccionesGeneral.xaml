@@ -101,6 +101,7 @@
                     <DataGridTextColumn Header="Línea"      Binding="{Binding Linea}"       Width="60"/>
                     <DataGridTextColumn Header="DocumentoC" Binding="{Binding Id}"          Width="80"/>
                     <DataGridTextColumn Header="Fecha"      Binding="{Binding FechaStr}"    Width="120"/>
+                    <DataGridTextColumn Header="Movimiento" Binding="{Binding Movimiento}"  Width="80"/>
                     <DataGridTextColumn Header="Motivo"     Binding="{Binding Motivo}"      Width="*"/>
                     <DataGridTextColumn Header="Cantidad"   Binding="{Binding CantidadTotal, StringFormat=#\,##0.##}"  Width="80"
                                         ElementStyle="{StaticResource CeldaNumero}"/>
