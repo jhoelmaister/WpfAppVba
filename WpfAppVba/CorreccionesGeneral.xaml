@@ -60,7 +60,7 @@
                            FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTexto}"
                            VerticalAlignment="Center"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Tipo:" FontSize="12" VerticalAlignment="Center"
+                    <TextBlock Text="Movimiento:" FontSize="12" VerticalAlignment="Center"
                                Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,6,0"/>
                     <ComboBox x:Name="CboTipoMovimiento" Width="100" Height="26" FontSize="12"
                               SelectionChanged="CboTipoMovimiento_SelectionChanged">
@@ -99,9 +99,9 @@
                       PreviewKeyDown="Grid1_PreviewKeyDown">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Línea"      Binding="{Binding Linea}"       Width="60"/>
-                    <DataGridTextColumn Header="DocumentoC" Binding="{Binding Id}"          Width="80"/>
-                    <DataGridTextColumn Header="Fecha"      Binding="{Binding FechaStr}"    Width="120"/>
-                    <DataGridTextColumn Header="Movimiento" Binding="{Binding Movimiento}"  Width="80"/>
+                    <DataGridTextColumn Header="DocumentoC" Binding="{Binding Id}"          Width="90"/>
+                    <DataGridTextColumn Header="Fecha"      Binding="{Binding FechaStr}"    Width="150"/>
+                    <DataGridTextColumn Header="Movimiento" Binding="{Binding Movimiento}"  Width="100"/>
                     <DataGridTextColumn Header="Motivo"     Binding="{Binding Motivo}"      Width="*"/>
                     <DataGridTextColumn Header="Cantidad"   Binding="{Binding CantidadTotal, StringFormat=#\,##0.##}"  Width="80"
                                         ElementStyle="{StaticResource CeldaNumero}"/>

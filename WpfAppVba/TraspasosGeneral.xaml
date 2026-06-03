@@ -34,8 +34,8 @@
         <!-- Panel izquierdo: TreeView meses + filtros -->
         <Grid Grid.Column="0" Margin="0,0,8,0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0" BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1" Background="{DynamicResource ThemeBgSurface}">
@@ -88,7 +88,7 @@
                            FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTexto}"
                            VerticalAlignment="Center"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Tipo:" FontSize="12" VerticalAlignment="Center"
+                    <TextBlock Text="Movimiento:" FontSize="12" VerticalAlignment="Center"
                                Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,6,0"/>
                     <ComboBox x:Name="CboTipoMovimiento" Width="100" Height="26" FontSize="12"
                               SelectionChanged="CboTipoMovimiento_SelectionChanged">
@@ -127,12 +127,12 @@
                       PreviewKeyDown="Grid1_PreviewKeyDown">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Línea"      Binding="{Binding Linea}"        Width="60"/>
-                    <DataGridTextColumn Header="DocumentoT" Binding="{Binding DocumentoT}"   Width="70"/>
-                    <DataGridTextColumn Header="Fecha"      Binding="{Binding FechaStr}"      Width="120"/>
-                    <DataGridTextColumn Header="Movimiento" Binding="{Binding Movimiento}"    Width="80"/>
+                    <DataGridTextColumn Header="DocumentoT" Binding="{Binding DocumentoT}"   Width="90"/>
+                    <DataGridTextColumn Header="Fecha"      Binding="{Binding FechaStr}"      Width="150"/>
+                    <DataGridTextColumn Header="Movimiento" Binding="{Binding Movimiento}"    Width="100"/>
                     <!-- Header "Destino"/"Origen" se actualiza desde código (index=4) -->
                     <DataGridTextColumn Header="Sucursal"   Binding="{Binding SucursalDesc}"  Width="*"/>
-                    <DataGridTextColumn Header="Estado"     Binding="{Binding Estado}"        Width="100"/>
+                    <DataGridTextColumn Header="Estado"     Binding="{Binding Estado}"        Width="120"/>
                     <DataGridTextColumn Header="Cantidad"   Binding="{Binding Cantidad, StringFormat=#\,##0.##}"  Width="70"
                                         ElementStyle="{StaticResource CeldaNumero}"/>
                 </DataGrid.Columns>
