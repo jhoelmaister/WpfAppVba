@@ -150,9 +150,9 @@
 
             <!-- Botones -->
             <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-                <Button Content="Nuevo"      Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"   Click="BtnNuevo_Click"/>
-                <Button Content="Editar"     Margin="0,0,6,0" Style="{StaticResource BtnSecundario}" Click="BtnEditar_Click"/>
-                <Button Content="Eliminar"   Margin="0,0,6,0" Style="{StaticResource BtnPeligro}"    Click="BtnEliminar_Click"/>
+                <Button Content="Nueva Corrección"      Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"   Click="BtnNuevo_Click"/>
+                <Button Content="Editar Corrección"     Margin="0,0,6,0" Style="{StaticResource BtnSecundario}" Click="BtnEditar_Click"/>
+                <Button Content="Eliminar Corrección"   Margin="0,0,6,0" Style="{StaticResource BtnPeligro}"    Click="BtnEliminar_Click"/>
                 <Button Content="Actualizar" Margin="0,0,0,0" Style="{StaticResource BtnSecundario}" Click="BtnActualizar_Click"/>
             </StackPanel>
         </Grid>

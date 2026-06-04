@@ -204,8 +204,8 @@
             <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
                 <Button Content="Nuevo Pedido Rápido" Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"   Click="BtnNuevoRapido_Click"/>
                 <Button Content="Nuevo Pedido Normal" Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"   Click="BtnNuevoNormal_Click"/>
-                <Button Content="Editar"     Margin="0,0,6,0" Style="{StaticResource BtnSecundario}" Click="BtnEditar_Click"/>
-                <Button Content="Eliminar"   Margin="0,0,6,0" Style="{StaticResource BtnPeligro}"    Click="BtnEliminar_Click"/>
+                <Button Content="Editar Pedido"     Margin="0,0,6,0" Style="{StaticResource BtnSecundario}" Click="BtnEditar_Click"/>
+                <Button Content="Eliminar Pedido"   Margin="0,0,6,0" Style="{StaticResource BtnPeligro}"    Click="BtnEliminar_Click"/>
                 <Button Content="Actualizar" Margin="0,0,0,0" Style="{StaticResource BtnSecundario}" Click="BtnActualizar_Click"/>
             </StackPanel>
         </Grid>

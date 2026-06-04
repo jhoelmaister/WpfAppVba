@@ -154,10 +154,10 @@
 
                 <!-- Botones de gestión -->
                 <StackPanel x:Name="PanelBotonesGestion" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button x:Name="BtnNuevo"    Content="Nuevo"      Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"  Click="BtnNuevo_Click"/>
-                    <Button x:Name="BtnInsertar" Content="Insertar"   Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"  Click="BtnInsertar_Click"/>
-                    <Button x:Name="BtnEditar"   Content="Editar"     Margin="0,0,6,0" Style="{StaticResource BtnSecundario}" Click="BtnEditar_Click"/>
-                    <Button x:Name="BtnEliminar" Content="Eliminar"   Margin="0,0,6,0" Style="{StaticResource BtnPeligro}"   Click="BtnEliminar_Click"/>
+                    <Button x:Name="BtnNuevo"    Content="Nuevo Artículo"      Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"  Click="BtnNuevo_Click"/>
+                    <Button x:Name="BtnInsertar" Content="Insertar Artículo"   Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"  Click="BtnInsertar_Click"/>
+                    <Button x:Name="BtnEditar"   Content="Editar Artículo"     Margin="0,0,6,0" Style="{StaticResource BtnSecundario}" Click="BtnEditar_Click"/>
+                    <Button x:Name="BtnEliminar" Content="Eliminar Artículo"   Margin="0,0,6,0" Style="{StaticResource BtnPeligro}"   Click="BtnEliminar_Click"/>
                     <Button Content="Actualizar" Margin="0,0,0,0" Style="{StaticResource BtnSecundario}" Click="BtnActualizar_Click"/>
                 </StackPanel>
             </Grid>

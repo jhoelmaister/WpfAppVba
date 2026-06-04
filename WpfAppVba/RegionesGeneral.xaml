@@ -66,13 +66,13 @@
                     Background="#2E7D32" Foreground="White"
                     Click="BtnSeleccionar_Click" Style="{StaticResource Btn}"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button x:Name="BtnNuevo" Content="Nuevo" Margin="0,0,6,0"
+                <Button x:Name="BtnNuevo" Content="Nueva Región" Margin="0,0,6,0"
                         Background="#1A73E8" Foreground="White"
                         Click="BtnNuevo_Click" Style="{StaticResource Btn}"/>
-                <Button x:Name="BtnEditar" Content="Editar" Margin="0,0,6,0"
+                <Button x:Name="BtnEditar" Content="Editar Región" Margin="0,0,6,0"
                         Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeTexto}"
                         Click="BtnEditar_Click" Style="{StaticResource Btn}"/>
-                <Button x:Name="BtnEliminar" Content="Eliminar" Margin="0,0,6,0"
+                <Button x:Name="BtnEliminar" Content="Eliminar Región" Margin="0,0,6,0"
                         Background="#D93025" Foreground="White"
                         Click="BtnEliminar_Click" Style="{StaticResource Btn}"/>
                 <Button x:Name="BtnActualizar" Content="Actualizar" Margin="0,0,0,0"
