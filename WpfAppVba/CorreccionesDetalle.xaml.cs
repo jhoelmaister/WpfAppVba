@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,8 +8,10 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class CorreccionesDetalle : Window
+    public partial class CorreccionesDetalle : UserControl
     {
+        public event Action? Cerrando;
+
         private static SqlData Sql => SqlData.Instance;
 
         private readonly CorreccionesGeneral? _padre;
@@ -19,16 +20,19 @@ namespace WpfAppVba
         private bool _cargando   = true;
         private List<CorreccionItemFila> _items = new();
 
+        private bool _iniciado = false;
+        private readonly string _tituloTab;
+
         /// <summary>ID del documento de corrección recién creado.</summary>
         public string? ItemCreadoId { get; private set; }
 
-        public CorreccionesDetalle(CorreccionesGeneral? padre = null, string idEditar = "")
+        public CorreccionesDetalle(CorreccionesGeneral? padre = null, string idEditar = "", string tituloTab = "")
         {
             InitializeComponent();
-            WindowHelper.AjustarAlEcran(this);
-            _padre    = padre;
-            _idEditar = idEditar;
-            Loaded   += (_, _) => CargarUserform();
+            _padre     = padre;
+            _idEditar  = idEditar;
+            _tituloTab = tituloTab;
+            Loaded    += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
@@ -232,7 +236,7 @@ namespace WpfAppVba
         // ─── Buscar artículos (multi-select) ──────────────────────────────────
         private void BtnBuscarArticulos_Click(object sender, RoutedEventArgs e)
         {
-            ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, arts =>
+            ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, arts =>
             {
                 foreach (var art in arts)
                 {
@@ -257,14 +261,14 @@ namespace WpfAppVba
                     GridItems.ScrollIntoView(ultimo);
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
-            }, null);
+            }, null, contexto: _tituloTab, llamador: this);
         }
 
         // ─── Buscar artículo (single-select) ─────────────────────────────────
         private void BtnBuscarArticulo_Click(object sender, RoutedEventArgs e)
         {
             var filaActual = GridItems.SelectedItem as CorreccionItemFila;
-            ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, null, art =>
+            ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, null, art =>
             {
                 CorreccionItemFila filaEnfocar;
 
@@ -291,7 +295,7 @@ namespace WpfAppVba
                 _hayCambios = true;
                 RefrescarGrid();
                 EnfocarColumnaCantidad(filaEnfocar);
-            });
+            }, contexto: _tituloTab, llamador: this);
         }
 
         // Posiciona el cursor en la celda Cantidad de la fila indicada e inicia edición
@@ -433,11 +437,23 @@ namespace WpfAppVba
         {
             GridItems.CommitEdit(DataGridEditingUnit.Row, true);
             bool ok = Guardar();
-            if (ok) { _hayCambios = false; Close(); }
+            if (ok) { _hayCambios = false; Cerrando?.Invoke(); }
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
-        { _hayCambios = false; Close(); }
+        { _hayCambios = false; Cerrando?.Invoke(); }
+
+        public void IntentarCerrar()
+        {
+            GridItems.CommitEdit(DataGridEditingUnit.Row, true);
+            if (!_hayCambios) { Cerrando?.Invoke(); return; }
+
+            var res = MessageBox.Show("¿Guardar cambios?", "Consola",
+                MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+
+            if (res == MessageBoxResult.Yes && Guardar()) Cerrando?.Invoke();
+            else if (res == MessageBoxResult.No) Cerrando?.Invoke();
+        }
 
         // ─── Guardar ─────────────────────────────────────────────────────────
         private bool Guardar()
@@ -599,26 +615,6 @@ namespace WpfAppVba
             return fecha.Date + DateTime.Now.TimeOfDay;
         }
 
-        // ─── Al cerrar: preguntar si hay cambios ──────────────────────────────
-        private void Window_Closing(object sender, CancelEventArgs e)
-        {
-            GridItems.CommitEdit(DataGridEditingUnit.Row, true);
-
-            if (!_hayCambios) return;
-
-            var res = MessageBox.Show("¿Guardar Cambios?", "Consola",
-                MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-
-            if (res == MessageBoxResult.Yes)
-            {
-                bool ok = Guardar();
-                e.Cancel = !ok;
-            }
-            else if (res == MessageBoxResult.Cancel)
-            {
-                e.Cancel = true;
-            }
-        }
     }
 
     // ─── Modelo de ítem ───────────────────────────────────────────────────────

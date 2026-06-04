@@ -309,15 +309,22 @@ namespace WpfAppVba
             string filtroTipo = ObtenerFiltroTipo();
             AppState.TipoCorreccion = string.IsNullOrEmpty(filtroTipo) ? "egreso" : filtroTipo;
 
-            var detalle = new CorreccionesDetalle(this) { Owner = Window.GetWindow(this) };
-            detalle.ShowDialog();
-            if (detalle.ItemCreadoId == null) return;   // cancelado
-
-            var nueva = ConstruirFila(detalle.ItemCreadoId, 0);
-            FilasGrid.Add(nueva);
-            RenumerarYTotales();
-            Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
-            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            string titulo = "Nueva Corrección";
+            string clave  = "nueva-correccion";
+            var dlg = new CorreccionesDetalle(this, tituloTab: titulo);
+            dlg.Cerrando += () =>
+            {
+                consola.CerrarPestaña(dlg);
+                if (dlg.ItemCreadoId == null) return;
+                var nueva = ConstruirFila(dlg.ItemCreadoId, 0);
+                FilasGrid.Add(nueva);
+                RenumerarYTotales();
+                Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            };
+            consola.AbrirPestaña(titulo, dlg, clave);
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -387,22 +394,29 @@ namespace WpfAppVba
             if (Grid1.SelectedItem is not CorreccionFila fila) return;
 
             string idSel = fila.Id;
+            int    linea = fila.Linea;
             AppState.EventoFormularioC = "editar";
             AppState.TipoCorreccion = Sql.DocumentosCObj.ObtenerItem("movimiento", idSel)?.ToString() ?? "egreso";
 
-            var detalle = new CorreccionesDetalle(this, fila.Id) { Owner = Window.GetWindow(this) };
-            detalle.ShowDialog();
-
-            var lista = FilasGrid;
-            int idx   = lista.IndexOf(fila);
-            if (idx >= 0)
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            string titulo = $"Corrección {idSel}";
+            var dlg = new CorreccionesDetalle(this, idSel, tituloTab: titulo);
+            dlg.Cerrando += () =>
             {
-                var actualizada = ConstruirFila(idSel, fila.Linea);
-                lista[idx] = actualizada;
-                RenumerarYTotales();
-                Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
-            }
-            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+                consola.CerrarPestaña(dlg);
+                var lista = FilasGrid;
+                int idx   = lista.IndexOf(fila);
+                if (idx >= 0)
+                {
+                    var actualizada = ConstruirFila(idSel, linea);
+                    lista[idx] = actualizada;
+                    RenumerarYTotales();
+                    Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
+                }
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            };
+            consola.AbrirPestaña(titulo, dlg, $"correccion-{idSel}");
         }
     }
 
