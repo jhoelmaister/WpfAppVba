@@ -10,7 +10,7 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class PedidosDetalle : Window
+    public partial class PedidosDetalle : VentanaFija
     {
         private static SqlData Sql => SqlData.Instance;
         private readonly PedidosGeneral? _padre;
