@@ -22,10 +22,19 @@ namespace WpfAppVba
         {
             InitializeComponent();
             _modoSelector = modoSelector;
-            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarTerceros(); };
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarTerceros(); };
         }
 
         public void IntentarCerrar() => Cerrando?.Invoke();
+
+        private void ConfigurarModo()
+        {
+            if (!_modoSelector) return;
+            BtnNuevo.Visibility       = Visibility.Collapsed;
+            BtnEditar.Visibility      = Visibility.Collapsed;
+            BtnEliminar.Visibility    = Visibility.Collapsed;
+            BtnSeleccionar.Visibility = Visibility.Visible;
+        }
 
         public static void OpenAsDialog(Window owner, bool modoSelector = false, string contexto = "", Action? onCerrado = null, UIElement? llamador = null)
         {
@@ -140,6 +149,9 @@ namespace WpfAppVba
             TerceroSeleccionado = fila.Id;
             Cerrando?.Invoke();
         }
+
+        private void BtnSeleccionar_Click(object sender, RoutedEventArgs e)
+            => Seleccionar();
 
         // ─── Botones ──────────────────────────────────────────────────────────
 

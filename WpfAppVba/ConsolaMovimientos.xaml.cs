@@ -26,6 +26,13 @@ namespace WpfAppVba
             ["traspasos"]    = new List<TabItem>(),
             ["correcciones"] = new List<TabItem>(),
         };
+        private readonly Dictionary<string, TabItem?> _pestañaSeleccionadaPorSeccion = new()
+        {
+            ["articulos"]    = null,
+            ["pedidos"]      = null,
+            ["traspasos"]    = null,
+            ["correcciones"] = null,
+        };
 
         public ConsolaMovimientos()
         {
@@ -50,7 +57,8 @@ namespace WpfAppVba
                 return;
             }
 
-            // 1. Guardar las pestañas dinámicas de la sección actual y quitarlas de la vista
+            // 1. Guardar la pestaña activa y las pestañas dinámicas de la sección actual
+            _pestañaSeleccionadaPorSeccion[_seccionActiva] = TabContenido.SelectedItem as TabItem;
             var guardadas = _pestañasPorSeccion[_seccionActiva];
             guardadas.Clear();
             for (int i = TabContenido.Items.Count - 1; i >= 0; i--)
@@ -78,7 +86,11 @@ namespace WpfAppVba
                 TabContenido.Items.Add(t);
             restaurar.Clear();
 
-            TabContenido.SelectedItem = TabFijo;
+            // 4. Restaurar la pestaña que estaba activa al salir de esta sección
+            var selAnterior = _pestañaSeleccionadaPorSeccion[nombre];
+            TabContenido.SelectedItem = (selAnterior != null && TabContenido.Items.Contains(selAnterior))
+                ? selAnterior
+                : TabFijo;
         }
 
         public void AbrirPestaña(string titulo, UIElement contenido, string? clave = null)
