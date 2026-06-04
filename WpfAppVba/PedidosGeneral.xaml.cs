@@ -401,7 +401,7 @@ namespace WpfAppVba
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
             string titulo = tipoPedido == "rapido" ? "Nuevo Pedido Rápido" : "Nuevo Pedido Normal";
-            string clave  = tipoPedido == "rapido" ? "nuevo-pedido-rapido"  : "nuevo-pedido-normal";
+            string clave  = "nuevo-pedido";
             var dlg = new PedidosDetalle(this, tituloTab: titulo);
             dlg.Cerrando += () =>
             {

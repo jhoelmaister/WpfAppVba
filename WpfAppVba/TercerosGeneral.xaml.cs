@@ -26,12 +26,12 @@ namespace WpfAppVba
 
         public void IntentarCerrar() => Cerrando?.Invoke();
 
-        public static void OpenAsDialog(Window owner, bool modoSelector = false, string contexto = "", Action? onCerrado = null)
+        public static void OpenAsDialog(Window owner, bool modoSelector = false, string contexto = "", Action? onCerrado = null, UIElement? llamador = null)
         {
             var consola = owner as ConsolaMovimientos;
             if (consola == null) return;
             var ctrl = new TercerosGeneral(modoSelector);
-            ctrl.Cerrando += () => { consola.CerrarPestaña(ctrl); onCerrado?.Invoke(); };
+            ctrl.Cerrando += () => { consola.CerrarPestaña(ctrl); onCerrado?.Invoke(); consola.SeleccionarPestaña(llamador); };
             string titulo = !modoSelector ? "Terceros"
                 : string.IsNullOrEmpty(contexto) ? "Seleccionar Tercero"
                 : $"Seleccionar Tercero ({contexto})";

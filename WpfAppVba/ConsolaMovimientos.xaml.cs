@@ -91,6 +91,13 @@ namespace WpfAppVba
                 TabContenido.SelectedIndex = Math.Max(0, idx - 1);
         }
 
+        public void SeleccionarPestaña(UIElement? contenido)
+        {
+            if (contenido == null) return;
+            foreach (TabItem t in TabContenido.Items)
+                if (t.Content == contenido) { TabContenido.SelectedItem = t; return; }
+        }
+
         // ─── Resaltar ítem activo en la barra lateral ─────────────────────────
         private void MarcarActivo(Button btn)
         {

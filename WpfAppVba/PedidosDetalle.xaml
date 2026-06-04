@@ -67,23 +67,9 @@
         </Grid.RowDefinitions>
 
         <!-- ══ Row 0: Título ══════════════════════════════════════════════ -->
-        <Grid Grid.Row="0" Margin="0,0,0,8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock x:Name="LblTitulo" Grid.Column="0"
-                       FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTexto}"
-                       VerticalAlignment="Center"/>
-            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="Tipo:" Style="{StaticResource Lbl}" Margin="0,0,6,0"/>
-                <ComboBox x:Name="CboMovimiento" Width="90" Height="26" FontSize="12"
-                          SelectionChanged="CboMovimiento_SelectionChanged">
-                    <ComboBoxItem Content="Venta"/>
-                    <ComboBoxItem Content="Compra"/>
-                </ComboBox>
-            </StackPanel>
-        </Grid>
+        <TextBlock x:Name="LblTitulo" Grid.Row="0" Margin="0,0,0,8"
+                   FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTexto}"
+                   VerticalAlignment="Center"/>
 
         <!-- ══ Row 1: Doc · Fecha · Hora · Estado · Cuenta ═════════════════ -->
         <Grid Grid.Row="1" Margin="0,0,0,6">
@@ -102,6 +88,9 @@
                 <ColumnDefinition Width="10"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="90"/>
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Column="0"  Text="Doc. Pedido:" Style="{StaticResource Lbl}"/>
@@ -120,17 +109,21 @@
                        TextChanged="Campo_TextChanged"/>
 
             <TextBlock Grid.Column="9"  Text="Estado:" Style="{StaticResource Lbl}"/>
-            <ComboBox  Grid.Column="10" x:Name="Box_Estado" Height="28" FontSize="12"
-                       SelectionChanged="Campo_SelectionChanged">
-                <ComboBoxItem Content="pendiente"/>
-                <ComboBoxItem Content="entregado"/>
-                <ComboBoxItem Content="entrega parcial"/>
-            </ComboBox>
+            <TextBox   Grid.Column="10" x:Name="Box_Estado" Height="28" FontSize="12"
+                       Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
+                       IsReadOnly="True" Background="{DynamicResource ThemeBgReadOnly}" Foreground="{DynamicResource ThemeTextoSec}"/>
 
             <TextBlock Grid.Column="12" Text="Cuenta:" Style="{StaticResource Lbl}"/>
             <TextBox   Grid.Column="13" x:Name="Box_Cuenta"
                        Height="28" FontSize="12" Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
                        IsReadOnly="True" Background="{DynamicResource ThemeBgReadOnly}" Foreground="{DynamicResource ThemeTextoSec}"/>
+
+            <TextBlock Grid.Column="15" Text="Tipo:" Style="{StaticResource Lbl}"/>
+            <ComboBox  Grid.Column="16" x:Name="CboMovimiento" Height="26" FontSize="12"
+                       SelectionChanged="CboMovimiento_SelectionChanged">
+                <ComboBoxItem Content="Venta"/>
+                <ComboBoxItem Content="Compra"/>
+            </ComboBox>
         </Grid>
 
         <!-- ══ Row 2: Tercero + Referencia ══════════════════════════════════ -->
@@ -278,7 +271,8 @@
                                       HeadersVisibility="Column"
                                       GridLinesVisibility="Horizontal"
                                       BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
-                                      FontSize="11">
+                                      FontSize="11"
+                                      MouseDoubleClick="GridPrecios_MouseDoubleClick">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="70"/>
                                     <DataGridTextColumn Header="Fecha"  Binding="{Binding Fecha}"  Width="*"/>

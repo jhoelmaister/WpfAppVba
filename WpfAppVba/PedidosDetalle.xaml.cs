@@ -244,15 +244,7 @@ namespace WpfAppVba
         }
 
         // ─── Helpers ──────────────────────────────────────────────────────────
-        private void SeleccionarEstado(string valor)
-        {
-            foreach (ComboBoxItem item in Box_Estado.Items)
-            {
-                if (item.Content?.ToString() == valor)
-                { Box_Estado.SelectedItem = item; return; }
-            }
-            if (Box_Estado.Items.Count > 0) Box_Estado.SelectedIndex = 0;
-        }
+        private void SeleccionarEstado(string valor) => Box_Estado.Text = valor;
 
         private void ActualizarDescripcionTercero()
         {
@@ -539,7 +531,7 @@ namespace WpfAppVba
         private void BtnBuscarTercero_Click(object sender, RoutedEventArgs e)
         {
             TercerosGeneral.TerceroSeleccionado = null;
-            TercerosGeneral.OpenAsDialog(Window.GetWindow(this)!, modoSelector: true, contexto: _tituloTab, onCerrado: () =>
+            TercerosGeneral.OpenAsDialog(Window.GetWindow(this)!, modoSelector: true, contexto: _tituloTab, llamador: this, onCerrado: () =>
             {
                 if (!string.IsNullOrEmpty(TercerosGeneral.TerceroSeleccionado))
                     Box_Tercero_Identificador.Text = TercerosGeneral.TerceroSeleccionado;
@@ -550,6 +542,18 @@ namespace WpfAppVba
         private void GridItems_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             CargarStockYPrecios(GridItems.SelectedItem as PedidoItemFila);
+        }
+
+        // ─── Doble clic en GridPrecios → cargar precio en fila seleccionada ──
+        private void GridPrecios_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (GridPrecios.SelectedItem is not PrecioFila precioFila) return;
+            if (GridItems.SelectedItem  is not PedidoItemFila itemFila) return;
+            if (!double.TryParse(precioFila.Precio, NumberStyles.Any, CultureInfo.CurrentCulture, out double precio)) return;
+            itemFila.Precio  = precio;
+            itemFila.Importe = Math.Round(itemFila.Cantidad * precio, 2);
+            _cambioPedido = true;
+            Dispatcher.BeginInvoke(() => { RefrescarGridPedidos(); ActualizarTotales(); });
         }
 
         // ─── CellEditEnding – Pedidos ─────────────────────────────────────────
@@ -1142,7 +1146,7 @@ namespace WpfAppVba
                 { MessageBox.Show("El número de documento ya existe.", "Consola", MessageBoxButton.OK, MessageBoxImage.Warning); return false; }
 
                 DateTime fechaFinal = CombinarFechaHora(Box_Fecha.SelectedDate ?? DateTime.Today, Box_Hora.Text);
-                string estado  = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "pendiente";
+                string estado  = Box_Estado.Text;
                 string cuenta  = Box_Cuenta.Text;
                 string tipoPed = AppState.TipoPedido.ToLower();
 
@@ -1182,7 +1186,7 @@ namespace WpfAppVba
             try
             {
                 DateTime fechaFinal = CombinarFechaHora(Box_Fecha.SelectedDate ?? DateTime.Today, Box_Hora.Text);
-                string estado = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "pendiente";
+                string estado = Box_Estado.Text;
                 string cuenta = Box_Cuenta.Text;
 
                 Sql.DocumentosPObj.EstablecerItem("tercero",     docP, Box_Tercero_Identificador.Text.Trim());
