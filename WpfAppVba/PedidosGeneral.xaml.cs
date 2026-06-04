@@ -486,6 +486,7 @@ namespace WpfAppVba
             int    linea   = fila.Linea;
             AppState.EventoFormularioM = "editar";
             AppState.TipoMovimiento = Sql.DocumentosPObj.ObtenerItem("movimiento", docSel)?.ToString() ?? "venta";
+            AppState.TipoPedido     = Sql.DocumentosPObj.ObtenerItem("tipo",       docSel)?.ToString() ?? "rapido";
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
             var dlg = new PedidosDetalle(this, docSel, tituloTab: $"Pedido {docSel}");
@@ -503,7 +504,7 @@ namespace WpfAppVba
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña($"Pedido {docSel}", dlg);
+            consola.AbrirPestaña($"Pedido {docSel}", dlg, $"pedido-{docSel}");
         }
     }
 
