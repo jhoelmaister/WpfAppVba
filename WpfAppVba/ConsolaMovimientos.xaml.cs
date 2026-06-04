@@ -16,9 +16,6 @@ namespace WpfAppVba
         private readonly TraspasosGeneral    _panelTraspasos    = new();
         private readonly CorreccionesGeneral _panelCorrecciones = new();
 
-        private PedidosGeneral   TabPedidos   => _panelPedidos;
-        private TraspasosGeneral TabTraspasos => _panelTraspasos;
-
         public ConsolaMovimientos()
         {
             InitializeComponent();
@@ -171,34 +168,6 @@ namespace WpfAppVba
             WindowHelper.AjustarAlEcran(win);
             win.ShowDialog();
             ActualizarInfoUsuario();
-        }
-
-        // ─── Acciones rápidas ─────────────────────────────────────────────────
-
-        private void BtnVentaRapida_Click(object sender, RoutedEventArgs e)
-        {
-            AppState.EventoFormularioM = "nuevo";
-            AppState.TipoMovimiento    = "venta";
-            AppState.TipoPedido        = "rapido";
-            var dlg = new PedidosDetalle();
-            dlg.Cerrando += () => { CerrarPestaña(dlg); TabPedidos.CargarPedidos(); };
-            AbrirPestaña("Venta Rápida", dlg);
-        }
-
-        private void BtnEntradaRapida_Click(object sender, RoutedEventArgs e)
-        {
-            AppState.EventoFormularioM = "nuevo";
-            AppState.TipoMovimiento    = "entrada";
-            new TraspasosDetalle { Owner = this }.ShowDialog();
-            TabTraspasos.CargarTraspasos();
-        }
-
-        private void BtnSalidaRapida_Click(object sender, RoutedEventArgs e)
-        {
-            AppState.EventoFormularioM = "nuevo";
-            AppState.TipoMovimiento    = "salida";
-            new TraspasosDetalle { Owner = this }.ShowDialog();
-            TabTraspasos.CargarTraspasos();
         }
 
         // ─── Cerrar sesión ────────────────────────────────────────────────────

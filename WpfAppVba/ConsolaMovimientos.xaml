@@ -9,38 +9,6 @@
 
     <Window.Resources>
 
-        <!-- ── Botón de acción rápida (top bar) ───────────────────────── -->
-        <Style x:Key="BtnAccion" TargetType="Button">
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="Padding" Value="14,0"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Borde"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="6"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Borde" Property="Opacity" Value="0.85"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Borde" Property="Opacity" Value="0.7"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <!-- ── Ítem de navegación lateral ─────────────────────────────── -->
         <Style x:Key="NavBtn" TargetType="Button">
             <Setter Property="Height" Value="42"/>
@@ -159,23 +127,11 @@
                                VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <!-- Usuario + botones de acción rápida -->
+                <!-- Usuario -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock x:Name="LblUsuario"
                                FontSize="11" Foreground="#9AA3B8"
-                               VerticalAlignment="Center" Margin="0,0,20,0"/>
-                    <Button Content="＋ Venta Rápida"
-                            Background="#2E7D32" Margin="0,0,6,0"
-                            Style="{StaticResource BtnAccion}"
-                            Click="BtnVentaRapida_Click"/>
-                    <Button Content="＋ Entrada Rápida"
-                            Background="#1565C0" Margin="0,0,6,0"
-                            Style="{StaticResource BtnAccion}"
-                            Click="BtnEntradaRapida_Click"/>
-                    <Button Content="＋ Salida Rápida"
-                            Background="#6A1B9A"
-                            Style="{StaticResource BtnAccion}"
-                            Click="BtnSalidaRapida_Click"/>
+                               VerticalAlignment="Center"/>
                 </StackPanel>
             </Grid>
         </Border>
