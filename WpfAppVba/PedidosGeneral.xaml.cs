@@ -386,10 +386,16 @@ namespace WpfAppVba
         }
 
         // ─── Botones ──────────────────────────────────────────────────────────
-        private void BtnNuevo_Click(object sender, RoutedEventArgs e)
+        private void BtnNuevoRapido_Click(object sender, RoutedEventArgs e)
+            => AbrirNuevoPedido("rapido");
+
+        private void BtnNuevoNormal_Click(object sender, RoutedEventArgs e)
+            => AbrirNuevoPedido("normal");
+
+        private void AbrirNuevoPedido(string tipoPedido)
         {
             AppState.EventoFormularioM = "nuevo";
-            AppState.TipoPedido        = "normal";
+            AppState.TipoPedido        = tipoPedido;
             string filtroTipo = ObtenerFiltroTipo();
             AppState.TipoMovimiento = string.IsNullOrEmpty(filtroTipo) ? "venta" : filtroTipo;
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
@@ -405,7 +411,8 @@ namespace WpfAppVba
                 Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña("Nuevo Pedido", dlg);
+            string titulo = tipoPedido == "rapido" ? "Nuevo Pedido Rápido" : "Nuevo Pedido Normal";
+            consola.AbrirPestaña(titulo, dlg);
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
