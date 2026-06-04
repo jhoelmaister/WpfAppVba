@@ -24,10 +24,10 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 ### Secciones del sidebar (orden visual)
 | Botón | Panel fijo | Detalle en pestaña | Selector en pestaña |
 |-------|-----------|-------------------|---------------------|
-| 📋 Artículos | `ArticulosGeneral` | `ArticulosDetalle` (modal Window) | — |
+| 📋 Artículos | `ArticulosGeneral` | `ArticulosDetalle` (pestaña) | — |
 | 📑 Pedidos | `PedidosGeneral` | `PedidosDetalle` (pestaña) | TercerosGeneral, ArticulosGeneral |
 | 🔄 Traspasos | `TraspasosGeneral` | `TraspasosDetalle` (pestaña) | SucursalesGeneral, ArticulosGeneral |
-| 🔧 Correcciones | `CorreccionesGeneral` | `CorreccionesDetalle` (modal Window) | ArticulosGeneral (modal) |
+| 🔧 Correcciones | `CorreccionesGeneral` | `CorreccionesDetalle` (pestaña) | ArticulosGeneral (pestaña) |
 | *(separador)* | | | |
 | 👥 Terceros | `TercerosGeneral` | `TercerosDetalle` (pestaña) | — |
 | 🏢 Sucursales | `SucursalesGeneral` | `SucursalesDetalle` (pestaña) | RegionesGeneral (pestaña-selector) |
@@ -70,7 +70,7 @@ private readonly Configuracion       _panelConfiguracion = new();
 ## Decisiones de Arquitectura Importantes
 
 ### 1. Ventana única (Single-Window UI)
-`ConsolaMovimientos` es la **única ventana OS**. Todo se embebe en pestañas. No hay ventanas secundarias de gestión principal. Excepción: `ArticulosDetalle` y `CorreccionesDetalle` siguen siendo modal Windows (pendiente de migrar).
+`ConsolaMovimientos` es la **única ventana OS**. Todo se embebe en pestañas. No hay ventanas secundarias de gestión principal. Todos los detalles están embebidos en pestañas; no hay ventanas secundarias de gestión principal.
 
 ### 2. Patrón `Cerrando` + `IntentarCerrar`
 ```csharp
@@ -144,12 +144,12 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 ## Lo Que Falta Por Hacer
 
 ### Alta prioridad
-- [ ] **CorreccionesDetalle → lógica de pestañas**: aún se abre con `ShowDialog()`. Aplicar el mismo patrón que Traspasos (Window → UserControl, `Cerrando`, tab en ConsolaMovimientos). Su selector de artículos también usa modal.
-- [ ] **ArticulosDetalle → lógica de pestañas**: aún es modal Window. Migrar a pestaña igual que los demás detalles.
+- [x] **CorreccionesDetalle → lógica de pestañas**: migrado a UserControl con `Cerrando` + `IntentarCerrar`; selectores usan `OpenAsTab`.
+- [x] **ArticulosDetalle → lógica de pestañas**: migrado a UserControl con `Cerrando` + `IntentarCerrar`; selectores usan `OpenAsTab`.
 - [ ] Verificar compilación y prueba completa del sistema (no hay herramientas de build en el entorno cloud — debe hacerse en máquina local).
 
 ### Media prioridad
-- [ ] Botón X de las pestañas dinámicas debería llamar `IntentarCerrar()` si el contenido lo implementa, en vez de cerrar directamente (actualmente `CerrarPestaña` cierra sin consultar).
+- [x] Botón X de las pestañas dinámicas llama `IntentarCerrar()` si el contenido lo implementa (via reflexión), en vez de cerrar directamente.
 - [ ] Exportación de datos en otras secciones (actualmente solo ArticulosGeneral tiene "Informe Excel").
 
 ### Baja prioridad / Futuro
@@ -160,7 +160,7 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 
 - **Sin herramientas de build en el entorno cloud**: todos los cambios se aplican siguiendo patrones existentes, pero no pueden compilarse ni ejecutarse remotamente. Siempre verificar localmente antes de merge a producción.
 - **`AppState.TipoPedido` y `AppState.TipoMovimiento` son globales**: en `PedidosGeneral.AbrirEditar` se leen del DB antes de abrir la pestaña para garantizar el valor correcto. Si se abrieran dos pestañas de edición simultáneas muy rápido, podría haber condición de carrera (actualmente no es un problema práctico).
-- **`CorreccionesDetalle` sigue siendo modal**: usa `OpenAsDialog` de ArticulosGeneral (modal window) para buscar artículos. Esto es inconsistente con el patrón de Pedidos/Traspasos pero funciona.
+- **`CorreccionesDetalle` ya es pestaña**: usa `OpenAsTab` de ArticulosGeneral para buscar artículos, igual que Pedidos/Traspasos.
 - **Rama de trabajo**: todos los cambios van a `sistemaControl_1.5`. Los commits se generan primero en una rama de sesión (`claude/...`) y luego se pasan a `sistemaControl_1.5` por fast-forward.
 
 ## Historial de Cambios por Sesión
@@ -172,10 +172,13 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - Inventarios migrado a panel sidebar + pestañas (`InventariosGeneral`, `InventariosDetalle`); selección de artículos vía `ArticulosGeneral.OpenAsTab`.
 - Configuración: ya tenía soporte embedded en `BtnGuardar_Click`; no requirió cambios de código.
 
-### Sesión actual
+### Sesión anterior (antes de compactación)
 - **SucursalesDetalle**: botones Guardar/Cancelar movidos a inferior izquierda con estilo uniforme (`#1A73E8`, `ThemeBtnSecBg`/`ThemeBtnSecFg`, `Cursor="Hand"`), igual a TercerosDetalle.
 - **Todos los formularios General**: botones CRUD renombrados para incluir el nombre de la entidad (e.g., "Nuevo Traspaso", "Editar Corrección", "Eliminar Artículo").
-- **Rama**: todos los cambios en `sistemaControl_1.5` (fast-forward desde `claude/awesome-turing-SBiHH`).
+
+### Sesión actual
+- **Botón X de pestañas dinámicas**: ahora llama `IntentarCerrar()` vía reflexión si el contenido lo implementa, protegiendo cambios no guardados antes de cerrar.
+- **CONTEXT.md**: actualizado para reflejar que `CorreccionesDetalle` y `ArticulosDetalle` ya estaban migrados a pestañas en sesiones anteriores.
 
 ## Comandos Importantes
 

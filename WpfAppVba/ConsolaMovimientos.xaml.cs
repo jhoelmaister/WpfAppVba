@@ -163,7 +163,13 @@ namespace WpfAppVba
             header.Children.Add(btnCerrar);
 
             var tab = new TabItem { Header = header, Content = contenido, Tag = clave };
-            btnCerrar.Click += (s, e) => { e.Handled = true; CerrarPestaña(contenido); };
+            btnCerrar.Click += (s, e) =>
+            {
+                e.Handled = true;
+                var intentar = contenido.GetType().GetMethod("IntentarCerrar", Type.EmptyTypes);
+                if (intentar != null) intentar.Invoke(contenido, null);
+                else CerrarPestaña(contenido);
+            };
 
             TabContenido.Items.Add(tab);
             TabContenido.SelectedItem = tab;
