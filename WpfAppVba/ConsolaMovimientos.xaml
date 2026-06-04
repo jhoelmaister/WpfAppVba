@@ -266,36 +266,36 @@
             </Grid>
         </Grid>
 
-    </Grid>
+        <!-- ════════════════════════════════════════════════════════════ -->
+        <!-- OVERLAY MODAL                                                -->
+        <!-- ════════════════════════════════════════════════════════════ -->
+        <Grid x:Name="OverlayFondo" Visibility="Collapsed" Grid.RowSpan="2"
+              Panel.ZIndex="100" Background="#BB000000">
+            <Border Background="{DynamicResource ThemeBgPrincipal}"
+                    CornerRadius="10" Margin="40"
+                    MaxWidth="960" MaxHeight="840"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-    <!-- ════════════════════════════════════════════════════════════ -->
-    <!-- OVERLAY MODAL                                                -->
-    <!-- ════════════════════════════════════════════════════════════ -->
-    <Grid x:Name="OverlayFondo" Visibility="Collapsed" Grid.RowSpan="2"
-          Panel.ZIndex="100" Background="#BB000000">
-        <Border Background="{DynamicResource ThemeBgPrincipal}"
-                CornerRadius="10" Margin="40"
-                MaxWidth="960" MaxHeight="840"
-                HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+                    <!-- Barra superior del overlay con botón cerrar -->
+                    <Grid Grid.Row="0" Background="#252A40" x:Name="OverlayTopBar">
+                        <Button Content="✕" HorizontalAlignment="Right"
+                                Margin="8,4" Padding="10,4"
+                                FontSize="13" FontWeight="Bold"
+                                Background="Transparent" Foreground="#9AA3B8"
+                                BorderThickness="0" Cursor="Hand"
+                                Click="BtnCerrarOverlay_Click"/>
+                    </Grid>
 
-                <!-- Barra superior del overlay con botón cerrar -->
-                <Grid Grid.Row="0" Background="#252A40" x:Name="OverlayTopBar">
-                    <Button Content="✕" HorizontalAlignment="Right"
-                            Margin="8,4" Padding="10,4"
-                            FontSize="13" FontWeight="Bold"
-                            Background="Transparent" Foreground="#9AA3B8"
-                            BorderThickness="0" Cursor="Hand"
-                            Click="BtnCerrarOverlay_Click"/>
+                    <ContentControl x:Name="OverlayContenido" Grid.Row="1"/>
                 </Grid>
+            </Border>
+        </Grid>
 
-                <ContentControl x:Name="OverlayContenido" Grid.Row="1"/>
-            </Grid>
-        </Border>
     </Grid>
 
 </Window>
