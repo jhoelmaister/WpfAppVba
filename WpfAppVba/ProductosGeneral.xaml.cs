@@ -7,30 +7,60 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class ProductosGeneral : Window
+    public partial class ProductosGeneral : UserControl
     {
         private static SqlData Sql => SqlData.Instance;
-        private readonly bool _modoSelector;
 
-        /// <summary>Cuando se abre en modo selector, aquí queda el ID del producto elegido.</summary>
-        public static string? ProductoSeleccionado { get; set; }
+        public event Action? Cerrando;
+        public void IntentarCerrar() => Cerrando?.Invoke();
 
-        public ProductosGeneral(bool modoSelector = false)
+        // Modo selector: cuando se abre desde un detalle para elegir un producto.
+        private readonly Action<string>? _callbackSeleccion;
+        public bool ModoSelector => _callbackSeleccion != null;
+
+        private bool _iniciado = false;
+
+        /// <summary>Constructor sin parámetros requerido por el compilador XAML y el panel del sidebar.</summary>
+        public ProductosGeneral() : this(null) { }
+
+        public ProductosGeneral(Action<string>? callbackSeleccion)
         {
             InitializeComponent();
-            WindowHelper.AjustarAlEcran(this);
-            _modoSelector = modoSelector;
-            Loaded += (_, _) =>
-            {
-                if (_modoSelector)
-                    Title = "Seleccionar Producto";
-                CargarProductos();
-            };
+            _callbackSeleccion = callbackSeleccion;
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarProductos(); ConfigurarModo(); };
+        }
+
+        /// <summary>Abre ProductosGeneral como pestaña selector dentro de ConsolaMovimientos.</summary>
+        public static void OpenAsTab(Window owner, Action<string>? callbackSeleccion = null,
+                                     string contexto = "", UIElement? llamador = null)
+        {
+            var consola = owner as ConsolaMovimientos;
+            if (consola == null) return;
+
+            string titulo = string.IsNullOrEmpty(contexto) ? "Seleccionar Producto" : $"Seleccionar Producto ({contexto})";
+            string clave  = $"seleccionar-producto|{contexto}";
+
+            var ctrl = new ProductosGeneral(callbackSeleccion);
+            ctrl.Cerrando += () => { consola.CerrarPestaña(ctrl); consola.SeleccionarPestaña(llamador); };
+
+            consola.CerrarPestañaPorClave(clave);
+            consola.AbrirPestaña(titulo, ctrl, clave);
+        }
+
+        // ─── Configurar modo (selector vs normal) ─────────────────────────────
+        private void ConfigurarModo()
+        {
+            BtnSeleccionar.Visibility = ModoSelector ? Visibility.Visible   : Visibility.Collapsed;
+            BtnNuevo.Visibility       = ModoSelector ? Visibility.Collapsed : Visibility.Visible;
+            BtnEditar.Visibility      = ModoSelector ? Visibility.Collapsed : Visibility.Visible;
+            BtnEliminar.Visibility    = ModoSelector ? Visibility.Collapsed : Visibility.Visible;
         }
 
         // ─── Carga la lista ────────────────────────────────────────────────────
         public void CargarProductos()
         {
+            if (TxtBuscar == null || Grid1 == null) return;
+
             string busqueda = TxtBuscar.Text.Trim().ToLower();
             var filas = new List<ProductoFila>();
             int linea = 1;
@@ -92,8 +122,8 @@ namespace WpfAppVba
         private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             e.Handled = true;
-            if (_modoSelector) Seleccionar();
-            else               AbrirEditar();
+            if (ModoSelector) Seleccionar();
+            else              AbrirEditar();
         }
 
         // ─── Tecla Enter ──────────────────────────────────────────────────────
@@ -101,30 +131,39 @@ namespace WpfAppVba
         {
             if (e.Key != Key.Enter) return;
             e.Handled = true;
-            if (_modoSelector) Seleccionar();
-            else               AbrirEditar();
+            if (ModoSelector) Seleccionar();
+            else              AbrirEditar();
         }
 
         // ─── Modo selector ─────────────────────────────────────────────────────
+        private void BtnSeleccionar_Click(object sender, RoutedEventArgs e)
+            => Seleccionar();
+
         private void Seleccionar()
         {
             if (Grid1.SelectedItem is not ProductoFila fila) return;
-            ProductoSeleccionado = fila.Id;
-            Close();
+            _callbackSeleccion?.Invoke(fila.Id);
+            Cerrando?.Invoke();
         }
 
         // ─── Botones ───────────────────────────────────────────────────────────
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
-            var detalle = new ProductosDetalle() { Owner = this };
-            detalle.ShowDialog();
-            if (detalle.ItemCreadoId == null) return;   // cancelado
-
-            var nueva = ConstruirFila(detalle.ItemCreadoId, 0);
-            FilasGrid.Add(nueva);
-            Renumerar();
-            Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
-            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            string titulo = "Nuevo Producto";
+            var dlg = new ProductosDetalle(tituloTab: titulo);
+            dlg.Cerrando += () =>
+            {
+                consola.CerrarPestaña(dlg);
+                if (dlg.ItemCreadoId == null) return;
+                var nueva = ConstruirFila(dlg.ItemCreadoId, 0);
+                FilasGrid.Add(nueva);
+                Renumerar();
+                Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            };
+            consola.AbrirPestaña(titulo, dlg, "nuevo-producto");
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -168,19 +207,26 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not ProductoFila fila) return;
             string idSel = fila.Id;
-            var detalle = new ProductosDetalle(fila.Id) { Owner = this };
-            detalle.ShowDialog();
-
-            var lista = FilasGrid;
-            int idx   = lista.IndexOf(fila);
-            if (idx >= 0)
+            int    linea = fila.Linea;
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            string titulo = $"Producto {idSel}";
+            var dlg = new ProductosDetalle(idSel, tituloTab: titulo);
+            dlg.Cerrando += () =>
             {
-                var actualizada = ConstruirFila(idSel, fila.Linea);
-                lista[idx] = actualizada;
-                Renumerar();
-                Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
-            }
-            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+                consola.CerrarPestaña(dlg);
+                var lista = FilasGrid;
+                int idx   = lista.IndexOf(fila);
+                if (idx >= 0)
+                {
+                    var actualizada = ConstruirFila(idSel, linea);
+                    lista[idx] = actualizada;
+                    Renumerar();
+                    Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
+                }
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            };
+            consola.AbrirPestaña(titulo, dlg, $"producto-{idSel}");
         }
     }
 

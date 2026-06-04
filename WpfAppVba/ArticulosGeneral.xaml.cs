@@ -398,30 +398,42 @@ namespace WpfAppVba
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
             AppState.EventoFormularioA = "nuevo";
-            var detalle = new ArticulosDetalle(this) { Owner = Window.GetWindow(this) };
-            detalle.ShowDialog();
-            if (detalle.ItemCreadoId == null) return;   // cancelado
-
-            var nueva = ConstruirFila(detalle.ItemCreadoId, 0);
-            FilasGrid.Add(nueva);
-            RenumerarYActualizarTotales();
-            EnfocarFila(nueva);
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            string titulo = "Nuevo Artículo";
+            var dlg = new ArticulosDetalle(this, tituloTab: titulo);
+            dlg.Cerrando += () =>
+            {
+                consola.CerrarPestaña(dlg);
+                if (dlg.ItemCreadoId == null) return;   // cancelado
+                var nueva = ConstruirFila(dlg.ItemCreadoId, 0);
+                FilasGrid.Add(nueva);
+                RenumerarYActualizarTotales();
+                EnfocarFila(nueva);
+            };
+            consola.AbrirPestaña(titulo, dlg, "nuevo-articulo");
         }
 
         private void BtnInsertar_Click(object sender, RoutedEventArgs e)
         {
             if (Grid1.SelectedItem is not ArticuloFila fila) return;
             AppState.EventoFormularioA = "insertar";
-            var detalle = new ArticulosDetalle(this, fila.Id) { Owner = Window.GetWindow(this) };
-            detalle.ShowDialog();
-            if (detalle.ItemCreadoId == null) return;   // cancelado
-
-            var lista = FilasGrid;
-            int idx   = lista.IndexOf(fila);
-            var nueva = ConstruirFila(detalle.ItemCreadoId, 0);
-            if (idx >= 0) lista.Insert(idx + 1, nueva); else lista.Add(nueva);
-            RenumerarYActualizarTotales();
-            EnfocarFila(nueva);
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            string titulo = "Insertar Artículo";
+            var dlg = new ArticulosDetalle(this, fila.Id, tituloTab: titulo);
+            dlg.Cerrando += () =>
+            {
+                consola.CerrarPestaña(dlg);
+                if (dlg.ItemCreadoId == null) return;   // cancelado
+                var lista = FilasGrid;
+                int idx   = lista.IndexOf(fila);
+                var nueva = ConstruirFila(dlg.ItemCreadoId, 0);
+                if (idx >= 0) lista.Insert(idx + 1, nueva); else lista.Add(nueva);
+                RenumerarYActualizarTotales();
+                EnfocarFila(nueva);
+            };
+            consola.AbrirPestaña(titulo, dlg, "insertar-articulo");
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -519,20 +531,27 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not ArticuloFila fila) return;
             string idSel = fila.Id;
+            int    linea = fila.Linea;
             AppState.EventoFormularioA = "modificar";
-            var detalle = new ArticulosDetalle(this, fila.Id) { Owner = Window.GetWindow(this) };
-            detalle.ShowDialog();
-
-            // Reconstruir solo esta fila en su lugar (el Id interno no cambia)
-            var lista = FilasGrid;
-            int idx   = lista.IndexOf(fila);
-            if (idx >= 0)
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            string titulo = $"Artículo {fila.Codigo}";
+            var dlg = new ArticulosDetalle(this, idSel, tituloTab: titulo);
+            dlg.Cerrando += () =>
             {
-                var actualizada = ConstruirFila(idSel, fila.Linea);
-                lista[idx] = actualizada;
-                RenumerarYActualizarTotales();
-                EnfocarFila(actualizada);
-            }
+                consola.CerrarPestaña(dlg);
+                // Reconstruir solo esta fila en su lugar (el Id interno no cambia)
+                var lista = FilasGrid;
+                int idx   = lista.IndexOf(fila);
+                if (idx >= 0)
+                {
+                    var actualizada = ConstruirFila(idSel, linea);
+                    lista[idx] = actualizada;
+                    RenumerarYActualizarTotales();
+                    EnfocarFila(actualizada);
+                }
+            };
+            consola.AbrirPestaña(titulo, dlg, $"articulo-{idSel}");
         }
 
         private void ToggleSeleccion()

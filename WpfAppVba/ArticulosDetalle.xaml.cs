@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -7,8 +6,10 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class ArticulosDetalle : Window
+    public partial class ArticulosDetalle : UserControl
     {
+        public event Action? Cerrando;
+
         private static SqlData Sql => SqlData.Instance;
 
         private readonly ArticulosGeneral? _padre;
@@ -16,16 +17,19 @@ namespace WpfAppVba
         private bool _hayCambios = false;
         private bool _cargando   = true;
 
+        private bool _iniciado = false;
+        private readonly string _tituloTab;
+
         /// <summary>ID del artículo recién creado (nuevo o insertado).</summary>
         public string? ItemCreadoId { get; private set; }
 
-        public ArticulosDetalle(ArticulosGeneral? padre = null, string idEditar = "")
+        public ArticulosDetalle(ArticulosGeneral? padre = null, string idEditar = "", string tituloTab = "")
         {
             InitializeComponent();
-            WindowHelper.AjustarAlEcran(this);
-            _padre    = padre;
-            _idEditar = idEditar;
-            Loaded   += (_, _) => CargarUserform();
+            _padre     = padre;
+            _idEditar  = idEditar;
+            _tituloTab = tituloTab;
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
@@ -194,43 +198,38 @@ namespace WpfAppVba
         private void Box_Numeros_PreviewTextInput(object sender, TextCompositionEventArgs e)
             => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
 
-        // ─── Ver familias (modo selector) ────────────────────────────────────
+        // ─── Ver familias (modo selector, en pestaña) ─────────────────────────
         private void BtnVerFamilias_Click(object sender, RoutedEventArgs e)
         {
-            FamiliasGeneral.FamiliaSeleccionada = null;
-            new FamiliasGeneral(modoSelector: true) { Owner = this }.ShowDialog();
-
-            if (!string.IsNullOrEmpty(FamiliasGeneral.FamiliaSeleccionada))
+            FamiliasGeneral.OpenAsTab(Window.GetWindow(this)!, id =>
             {
                 // Asignar el ID — el TextChanged handler llama ActualizarDescripcionFamilia()
-                Box_Identificador_Familia.Text = FamiliasGeneral.FamiliaSeleccionada;
-            }
+                if (!string.IsNullOrEmpty(id)) Box_Identificador_Familia.Text = id;
+            }, contexto: _tituloTab, llamador: this);
         }
 
-        // ─── Ver industrias (modo selector) ──────────────────────────────────
+        // ─── Ver industrias (modo selector, en pestaña) ───────────────────────
         private void BtnVerIndustrias_Click(object sender, RoutedEventArgs e)
         {
-            IndustriasGeneral.IndustriaSeleccionada = null;
-            new IndustriasGeneral(modoSelector: true) { Owner = this }.ShowDialog();
-
-            if (!string.IsNullOrEmpty(IndustriasGeneral.IndustriaSeleccionada))
-                Box_Identificador_Industria.Text = IndustriasGeneral.IndustriaSeleccionada;
+            IndustriasGeneral.OpenAsTab(Window.GetWindow(this)!, id =>
+            {
+                if (!string.IsNullOrEmpty(id)) Box_Identificador_Industria.Text = id;
+            }, contexto: _tituloTab, llamador: this);
         }
 
-        // ─── Ver categorías (modo selector) ───────────────────────────────────
+        // ─── Ver categorías (modo selector, en pestaña) ───────────────────────
         private void BtnVerCategorias_Click(object sender, RoutedEventArgs e)
         {
-            CategoriasGeneral.CategoriaSeleccionada = null;
-            new CategoriasGeneral(modoSelector: true) { Owner = this }.ShowDialog();
-
-            if (!string.IsNullOrEmpty(CategoriasGeneral.CategoriaSeleccionada))
-                Box_Identificador_Categoria.Text = CategoriasGeneral.CategoriaSeleccionada;
+            CategoriasGeneral.OpenAsTab(Window.GetWindow(this)!, id =>
+            {
+                if (!string.IsNullOrEmpty(id)) Box_Identificador_Categoria.Text = id;
+            }, contexto: _tituloTab, llamador: this);
         }
 
         // ─── Ver movimientos del artículo ─────────────────────────────────────
         private void BtnVerMovimientos_Click(object sender, RoutedEventArgs e)
         {
-            new MovimientosWindow(Box_Codigo.Text.Trim()) { Owner = this }.ShowDialog();
+            new MovimientosWindow(Box_Codigo.Text.Trim()) { Owner = Window.GetWindow(this) }.ShowDialog();
         }
 
         // ─── Guardar ─────────────────────────────────────────────────────────
@@ -376,30 +375,22 @@ namespace WpfAppVba
         // ─── Botones Guardar / Cancelar ───────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            if (Guardar()) { _hayCambios = false; Close(); }
+            if (Guardar()) { _hayCambios = false; Cerrando?.Invoke(); }
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
-        { _hayCambios = false; Close(); }
+        { _hayCambios = false; Cerrando?.Invoke(); }
 
-        // ─── Al cerrar: preguntar si hay cambios ──────────────────────────────
-        private void Window_Closing(object sender, CancelEventArgs e)
+        // ─── Llamado por el botón X de la pestaña para verificar cambios ──────
+        public void IntentarCerrar()
         {
-            if (!_hayCambios) return;
+            if (!_hayCambios) { Cerrando?.Invoke(); return; }
 
-            var res = MessageBox.Show("¿Guardar Cambios?", "Consola",
+            var res = MessageBox.Show("¿Guardar cambios?", "Consola",
                 MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
 
-            if (res == MessageBoxResult.Yes)
-            {
-                bool ok = Guardar();
-                e.Cancel = !ok;
-            }
-            else if (res == MessageBoxResult.Cancel)
-            {
-                e.Cancel = true;
-            }
-            // No → cierra sin guardar
+            if (res == MessageBoxResult.Yes && Guardar()) Cerrando?.Invoke();
+            else if (res == MessageBoxResult.No) Cerrando?.Invoke();
         }
     }
 }

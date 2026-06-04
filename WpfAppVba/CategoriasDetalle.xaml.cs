@@ -1,13 +1,14 @@
 using System;
-using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class CategoriasDetalle : Window
+    public partial class CategoriasDetalle : UserControl
     {
+        public event Action? Cerrando;
+
         private static SqlData Sql => SqlData.Instance;
 
         private readonly string _idEditar;
@@ -15,16 +16,19 @@ namespace WpfAppVba
         private bool _hayCambios = false;
         private bool _cargando   = true;
 
+        private bool _iniciado = false;
+        private readonly string _tituloTab;
+
         /// <summary>ID de la categoría recién creada (solo modo "nuevo").</summary>
         public string? ItemCreadoId { get; private set; }
 
-        public CategoriasDetalle(string idEditar = "")
+        public CategoriasDetalle(string idEditar = "", string tituloTab = "")
         {
             InitializeComponent();
-            WindowHelper.AjustarAlEcran(this);
             _idEditar   = idEditar;
             _modoEditar = !string.IsNullOrEmpty(idEditar);
-            Loaded   += (_, _) => CargarUserform();
+            _tituloTab  = tituloTab;
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
@@ -126,29 +130,22 @@ namespace WpfAppVba
         // ─── Botones Guardar / Cancelar ───────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            if (Guardar()) { _hayCambios = false; Close(); }
+            if (Guardar()) { _hayCambios = false; Cerrando?.Invoke(); }
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
-        { _hayCambios = false; Close(); }
+        { _hayCambios = false; Cerrando?.Invoke(); }
 
-        // ─── Al cerrar: preguntar si hay cambios ──────────────────────────────
-        private void Window_Closing(object sender, CancelEventArgs e)
+        // ─── Llamado por el botón X de la pestaña para verificar cambios ──────
+        public void IntentarCerrar()
         {
-            if (!_hayCambios) return;
+            if (!_hayCambios) { Cerrando?.Invoke(); return; }
 
-            var res = MessageBox.Show("¿Guardar Cambios?", "Consola",
+            var res = MessageBox.Show("¿Guardar cambios?", "Consola",
                 MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
 
-            if (res == MessageBoxResult.Yes)
-            {
-                bool ok = Guardar();
-                e.Cancel = !ok;
-            }
-            else if (res == MessageBoxResult.Cancel)
-            {
-                e.Cancel = true;
-            }
+            if (res == MessageBoxResult.Yes && Guardar()) Cerrando?.Invoke();
+            else if (res == MessageBoxResult.No) Cerrando?.Invoke();
         }
     }
 }

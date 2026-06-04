@@ -1,13 +1,15 @@
 using System;
-using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class FamiliasDetalle : Window
+    public partial class FamiliasDetalle : UserControl
     {
+        public event Action? Cerrando;
+
         private static SqlData Sql => SqlData.Instance;
 
         private readonly FamiliasGeneral? _padre;
@@ -15,16 +17,19 @@ namespace WpfAppVba
         private bool _hayCambios = false;
         private bool _cargando   = true;
 
+        private bool _iniciado = false;
+        private readonly string _tituloTab;
+
         /// <summary>ID de la familia recién creada (solo modo "nuevo").</summary>
         public string? ItemCreadoId { get; private set; }
 
-        public FamiliasDetalle(FamiliasGeneral padre, string idEditar = "")
+        public FamiliasDetalle(FamiliasGeneral? padre = null, string idEditar = "", string tituloTab = "")
         {
             InitializeComponent();
-            WindowHelper.AjustarAlEcran(this);
-            _padre    = padre;
-            _idEditar = idEditar;
-            Loaded   += (_, _) => CargarUserform();
+            _padre     = padre;
+            _idEditar  = idEditar;
+            _tituloTab = tituloTab;
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
@@ -67,7 +72,7 @@ namespace WpfAppVba
         }
 
         // ─── Actualizar descripción del producto referido ─────────────────────
-        private void Box_Referido_Codigo_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        private void Box_Referido_Codigo_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (_cargando) return;
             _hayCambios = true;
@@ -78,7 +83,7 @@ namespace WpfAppVba
         }
 
         // ─── Detectar cambios en cualquier campo ──────────────────────────────
-        private void Campo_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        private void Campo_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (!_cargando) _hayCambios = true;
         }
@@ -146,47 +151,38 @@ namespace WpfAppVba
             }
         }
 
-        // ─── Ver productos (modo selector) ────────────────────────────────────
+        // ─── Ver productos (modo selector, en pestaña) ────────────────────────
         private void BtnVerProductos_Click(object sender, RoutedEventArgs e)
         {
-            ProductosGeneral.ProductoSeleccionado = null;
-            new ProductosGeneral(modoSelector: true) { Owner = this }.ShowDialog();
-
-            if (!string.IsNullOrEmpty(ProductosGeneral.ProductoSeleccionado))
-                Box_Referido_Codigo.Text = ProductosGeneral.ProductoSeleccionado;
+            ProductosGeneral.OpenAsTab(Window.GetWindow(this)!, id =>
+            {
+                if (!string.IsNullOrEmpty(id)) Box_Referido_Codigo.Text = id;
+            }, contexto: _tituloTab, llamador: this);
         }
 
         // ─── Validación de entrada ────────────────────────────────────────────
         private void Box_Referido_Codigo_PreviewTextInput(object sender, TextCompositionEventArgs e)
             => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
 
-
         // ─── Botones Guardar / Cancelar ───────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            if (Guardar()) { _hayCambios = false; Close(); }
+            if (Guardar()) { _hayCambios = false; Cerrando?.Invoke(); }
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
-        { _hayCambios = false; Close(); }
+        { _hayCambios = false; Cerrando?.Invoke(); }
 
-        // ─── Al cerrar: preguntar si hay cambios ──────────────────────────────
-        private void Window_Closing(object sender, CancelEventArgs e)
+        // ─── Llamado por el botón X de la pestaña para verificar cambios ──────
+        public void IntentarCerrar()
         {
-            if (!_hayCambios) return;
+            if (!_hayCambios) { Cerrando?.Invoke(); return; }
 
-            var res = MessageBox.Show("¿Guardar Cambios?", "Consola",
+            var res = MessageBox.Show("¿Guardar cambios?", "Consola",
                 MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
 
-            if (res == MessageBoxResult.Yes)
-            {
-                bool ok = Guardar();
-                e.Cancel = !ok;
-            }
-            else if (res == MessageBoxResult.Cancel)
-            {
-                e.Cancel = true;
-            }
+            if (res == MessageBoxResult.Yes && Guardar()) Cerrando?.Invoke();
+            else if (res == MessageBoxResult.No) Cerrando?.Invoke();
         }
     }
 }

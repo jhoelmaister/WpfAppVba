@@ -18,6 +18,10 @@ namespace WpfAppVba
         private readonly CorreccionesGeneral _panelCorrecciones = new();
         private readonly TercerosGeneral     _panelTerceros     = new();
         private readonly SucursalesGeneral   _panelSucursales   = new();
+        private readonly FamiliasGeneral     _panelFamilias     = new();
+        private readonly ProductosGeneral    _panelProductos    = new();
+        private readonly IndustriasGeneral   _panelIndustrias   = new();
+        private readonly CategoriasGeneral   _panelCategorias   = new();
 
         // Cada sección del menú lateral conserva su propio juego de pestañas dinámicas.
         private string _seccionActiva = "articulos";
@@ -29,6 +33,10 @@ namespace WpfAppVba
             ["correcciones"] = new List<TabItem>(),
             ["terceros"]     = new List<TabItem>(),
             ["sucursales"]   = new List<TabItem>(),
+            ["familias"]     = new List<TabItem>(),
+            ["productos"]    = new List<TabItem>(),
+            ["industrias"]   = new List<TabItem>(),
+            ["categorias"]   = new List<TabItem>(),
         };
         private readonly Dictionary<string, TabItem?> _pestañaSeleccionadaPorSeccion = new()
         {
@@ -38,6 +46,10 @@ namespace WpfAppVba
             ["correcciones"] = null,
             ["terceros"]     = null,
             ["sucursales"]   = null,
+            ["familias"]     = null,
+            ["productos"]    = null,
+            ["industrias"]   = null,
+            ["categorias"]   = null,
         };
 
         public ConsolaMovimientos()
@@ -85,6 +97,10 @@ namespace WpfAppVba
                 case "correcciones": TabFijoContenido.Content = _panelCorrecciones; TabFijoTitulo.Text = "Correcciones"; break;
                 case "terceros":     TabFijoContenido.Content = _panelTerceros;     TabFijoTitulo.Text = "Terceros";     break;
                 case "sucursales":   TabFijoContenido.Content = _panelSucursales;   TabFijoTitulo.Text = "Sucursales";   break;
+                case "familias":     TabFijoContenido.Content = _panelFamilias;     TabFijoTitulo.Text = "Familias";     break;
+                case "productos":    TabFijoContenido.Content = _panelProductos;    TabFijoTitulo.Text = "Productos";    break;
+                case "industrias":   TabFijoContenido.Content = _panelIndustrias;   TabFijoTitulo.Text = "Industrias";   break;
+                case "categorias":   TabFijoContenido.Content = _panelCategorias;   TabFijoTitulo.Text = "Categorías";   break;
             }
 
             // 3. Restaurar las pestañas propias de la nueva sección
@@ -219,6 +235,30 @@ namespace WpfAppVba
         {
             MostrarPanel("sucursales");
             MarcarActivo(BtnNav_Sucursales);
+        }
+
+        private void BtnNav_Familias_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("familias");
+            MarcarActivo(BtnNav_Familias);
+        }
+
+        private void BtnNav_Productos_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("productos");
+            MarcarActivo(BtnNav_Productos);
+        }
+
+        private void BtnNav_Industrias_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("industrias");
+            MarcarActivo(BtnNav_Industrias);
+        }
+
+        private void BtnNav_Categorias_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("categorias");
+            MarcarActivo(BtnNav_Categorias);
         }
 
         private void BtnNav_Inventarios_Click(object sender, RoutedEventArgs e)
