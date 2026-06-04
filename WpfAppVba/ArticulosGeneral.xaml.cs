@@ -95,9 +95,12 @@ namespace WpfAppVba
         {
             bool esDialog = ModoExportar || ModoSingle;
 
-            PanelExportar.Visibility       = ModoExportar ? Visibility.Visible    : Visibility.Collapsed;
-            BtnInformeExcel.Visibility     = esDialog     ? Visibility.Collapsed  : Visibility.Visible;
-            PanelBotonesGestion.Visibility = esDialog     ? Visibility.Collapsed  : Visibility.Visible;
+            PanelExportar.Visibility   = ModoExportar ? Visibility.Visible   : Visibility.Collapsed;
+            BtnInformeExcel.Visibility = esDialog     ? Visibility.Collapsed : Visibility.Visible;
+            BtnNuevo.Visibility        = esDialog     ? Visibility.Collapsed : Visibility.Visible;
+            BtnInsertar.Visibility     = esDialog     ? Visibility.Collapsed : Visibility.Visible;
+            BtnEditar.Visibility       = esDialog     ? Visibility.Collapsed : Visibility.Visible;
+            BtnEliminar.Visibility     = esDialog     ? Visibility.Collapsed : Visibility.Visible;
 
             // Columna checkbox (✓) y columna "#" solo visibles en modo importar
             var visibilidad = ModoExportar ? Visibility.Visible : Visibility.Collapsed;
