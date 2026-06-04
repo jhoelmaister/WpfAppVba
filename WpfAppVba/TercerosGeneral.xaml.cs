@@ -35,7 +35,16 @@ namespace WpfAppVba
             string titulo = !modoSelector ? "Terceros"
                 : string.IsNullOrEmpty(contexto) ? "Seleccionar Tercero"
                 : $"Seleccionar Tercero ({contexto})";
-            consola.AbrirPestaña(titulo, ctrl);
+            if (modoSelector)
+            {
+                // Solo un selector a la vez: cierra el anterior y reabre vinculado al llamador actual.
+                consola.CerrarPestañaPorClave("seleccionar-tercero");
+                consola.AbrirPestaña(titulo, ctrl, "seleccionar-tercero");
+            }
+            else
+            {
+                consola.AbrirPestaña(titulo, ctrl);
+            }
         }
 
         // ─── Carga la lista (equivalente a cargarTerceros) ────────────────────

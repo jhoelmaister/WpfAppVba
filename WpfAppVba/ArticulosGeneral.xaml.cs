@@ -25,6 +25,8 @@ namespace WpfAppVba
         public bool ModoExportar => _callbackExportar != null;
         public bool ModoSingle   => _callbackSingle   != null;
 
+        private bool _iniciado = false;
+
         /// <summary>Constructor sin parámetros requerido por el compilador XAML.</summary>
         public ArticulosGeneral() : this(null, null) { }
 
@@ -34,7 +36,7 @@ namespace WpfAppVba
             InitializeComponent();
             _callbackExportar = callbackExportar;
             _callbackSingle   = callbackSingle;
-            Loaded += (_, _) => { CargarArbol(); CargarArticulos(); ConfigurarModo(); };
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarArbol(); CargarArticulos(); ConfigurarModo(); };
         }
 
         /// <summary>Abre ArticulosGeneral como diálogo modal dentro de una ventana temporal.</summary>
