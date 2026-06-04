@@ -392,15 +392,20 @@ namespace WpfAppVba
             AppState.TipoPedido        = "normal";
             string filtroTipo = ObtenerFiltroTipo();
             AppState.TipoMovimiento = string.IsNullOrEmpty(filtroTipo) ? "venta" : filtroTipo;
-            var dlg = new PedidosDetalle(this) { Owner = Window.GetWindow(this) };
-            dlg.ShowDialog();
-            if (dlg.DocumentoCreadoId == null) return;   // cancelado
-
-            var nueva = ConstruirFilaPedido(dlg.DocumentoCreadoId, 0);
-            FilasGrid.Add(nueva);
-            RenumerarYTotales();
-            Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
-            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            var dlg = new PedidosDetalle(this);
+            dlg.Cerrando += () =>
+            {
+                consola.CerrarOverlay();
+                if (dlg.DocumentoCreadoId == null) return;
+                var nueva = ConstruirFilaPedido(dlg.DocumentoCreadoId, 0);
+                FilasGrid.Add(nueva);
+                RenumerarYTotales();
+                Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            };
+            consola.MostrarOverlay(dlg);
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -467,27 +472,28 @@ namespace WpfAppVba
         private void AbrirEditar()
         {
             if (Grid1.SelectedItem is not PedidoFila fila) return;
-            string docSel = fila.DocumentoP;
+            string docSel  = fila.DocumentoP;
+            int    linea   = fila.Linea;
             AppState.EventoFormularioM = "editar";
             AppState.TipoMovimiento = Sql.DocumentosPObj.ObtenerItem("movimiento", docSel)?.ToString() ?? "venta";
-            new PedidosDetalle(this, fila.DocumentoP) { Owner = Window.GetWindow(this) }.ShowDialog();
-
-            var lista = FilasGrid;
-            int idx   = lista.IndexOf(fila);
-            if (idx >= 0)
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            var dlg = new PedidosDetalle(this, docSel);
+            dlg.Cerrando += () =>
             {
-                var actualizada = ConstruirFilaPedido(docSel, fila.Linea);
-                lista[idx] = actualizada;
-                RenumerarYTotales();
-                Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
-            }
-
-            // Tras cerrar el diálogo, WPF restaura el foco de forma asíncrona hacia
-            // la ventana/TabControl, dejando la fila seleccionada pero sin foco de
-            // teclado dentro del grid (las flechas dejan de navegar). Diferimos el
-            // enfoque a la CELDA seleccionada (prioridad Background, para correr tras
-            // la restauración de WPF), que es lo que reactiva la navegación.
-            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+                consola.CerrarOverlay();
+                var lista = FilasGrid;
+                int idx   = lista.IndexOf(fila);
+                if (idx >= 0)
+                {
+                    var actualizada = ConstruirFilaPedido(docSel, linea);
+                    lista[idx] = actualizada;
+                    RenumerarYTotales();
+                    Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
+                }
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            };
+            consola.MostrarOverlay(dlg);
         }
     }
 

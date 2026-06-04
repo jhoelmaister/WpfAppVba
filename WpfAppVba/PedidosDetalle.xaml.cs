@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
@@ -10,8 +9,9 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class PedidosDetalle : VentanaFija
+    public partial class PedidosDetalle : UserControl
     {
+        public event Action? Cerrando;
         private static SqlData Sql => SqlData.Instance;
         private readonly PedidosGeneral? _padre;
         private readonly string _idEditar;
@@ -44,7 +44,6 @@ namespace WpfAppVba
         public PedidosDetalle(PedidosGeneral? padre = null, string idEditar = "")
         {
             InitializeComponent();
-            WindowHelper.AjustarAlEcran(this);
             _padre    = padre;
             _idEditar = idEditar;
             Loaded   += (_, _) => CargarUserform();
@@ -1304,11 +1303,14 @@ namespace WpfAppVba
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
             CommitEdicionesPendientes();
-            if (Guardar()) Close();
+            if (Guardar()) Cerrando?.Invoke();
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
-        { _cambioDocumento = false; _cambioPedido = false; _cambioTrasaccion = false; _cambioEntrega = false; Close(); }
+        {
+            _cambioDocumento = _cambioPedido = _cambioTrasaccion = _cambioEntrega = false;
+            Cerrando?.Invoke();
+        }
 
         // Confirma cualquier celda en edición en los 3 grids editables
         private void CommitEdicionesPendientes()
@@ -1318,25 +1320,17 @@ namespace WpfAppVba
             GridEntregas.CommitEdit(DataGridEditingUnit.Row, true);
         }
 
-        // ─── Al cerrar ────────────────────────────────────────────────────────
-        private void Window_Closing(object sender, CancelEventArgs e)
+        // Llamado por el botón X del overlay para verificar cambios antes de cerrar
+        public void IntentarCerrar()
         {
             CommitEdicionesPendientes();
-
-            if (!HayCambios) return;
+            if (!HayCambios) { Cerrando?.Invoke(); return; }
 
             var res = MessageBox.Show("¿Guardar cambios?", "Consola",
                 MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
 
-            if (res == MessageBoxResult.Yes)
-            {
-                bool ok = Guardar();
-                e.Cancel = !ok;
-            }
-            else if (res == MessageBoxResult.Cancel)
-            {
-                e.Cancel = true;
-            }
+            if (res == MessageBoxResult.Yes && Guardar()) Cerrando?.Invoke();
+            else if (res == MessageBoxResult.No) Cerrando?.Invoke();
         }
     }
 

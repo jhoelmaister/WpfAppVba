@@ -1,14 +1,10 @@
-<local:VentanaFija x:Class="WpfAppVba.PedidosDetalle"
+<UserControl x:Class="WpfAppVba.PedidosDetalle"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:WpfAppVba"
-        Title="Detalle de Pedido" Height="760" Width="900"
-        WindowStartupLocation="CenterScreen"
-        ShowInTaskbar="False"
-        Background="{DynamicResource ThemeBgPrincipal}"
-        Closing="Window_Closing">
+        Background="{DynamicResource ThemeBgPrincipal}">
 
-    <Window.Resources>
+    <UserControl.Resources>
         <!-- ── Botones ─────────────────────────────────────────────────────── -->
         <Style x:Key="BtnBase" TargetType="Button">
             <Setter Property="Height"          Value="28"/>
@@ -54,7 +50,7 @@
         <Style x:Key="RightCell" TargetType="TextBlock">
             <Setter Property="HorizontalAlignment" Value="Right"/>
         </Style>
-    </Window.Resources>
+    </UserControl.Resources>
 
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <Grid Margin="14">
@@ -529,4 +525,4 @@
                     Click="BtnCancelar_Click"/>
         </StackPanel>
     </Grid>
-</local:VentanaFija>
+</UserControl>

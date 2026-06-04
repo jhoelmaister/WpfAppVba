@@ -121,6 +121,28 @@ namespace WpfAppVba
             ActualizarInfoUsuario();
         }
 
+        // ─── Overlay modal ────────────────────────────────────────────────────
+
+        public void MostrarOverlay(UIElement contenido)
+        {
+            OverlayContenido.Content = contenido;
+            OverlayFondo.Visibility  = Visibility.Visible;
+        }
+
+        public void CerrarOverlay()
+        {
+            OverlayFondo.Visibility  = Visibility.Collapsed;
+            OverlayContenido.Content = null;
+        }
+
+        private void BtnCerrarOverlay_Click(object sender, RoutedEventArgs e)
+        {
+            if (OverlayContenido.Content is PedidosDetalle dlg)
+                dlg.IntentarCerrar();
+            else
+                CerrarOverlay();
+        }
+
         // ─── Acciones rápidas ─────────────────────────────────────────────────
 
         private void BtnVentaRapida_Click(object sender, RoutedEventArgs e)
@@ -128,8 +150,9 @@ namespace WpfAppVba
             AppState.EventoFormularioM = "nuevo";
             AppState.TipoMovimiento    = "venta";
             AppState.TipoPedido        = "rapido";
-            new PedidosDetalle { Owner = this }.ShowDialog();
-            TabPedidos.CargarPedidos();
+            var dlg = new PedidosDetalle();
+            dlg.Cerrando += () => { CerrarOverlay(); TabPedidos.CargarPedidos(); };
+            MostrarOverlay(dlg);
         }
 
         private void BtnEntradaRapida_Click(object sender, RoutedEventArgs e)
