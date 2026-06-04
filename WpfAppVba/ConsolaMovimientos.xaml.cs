@@ -22,8 +22,10 @@ namespace WpfAppVba
         private readonly ProductosGeneral    _panelProductos    = new();
         private readonly IndustriasGeneral   _panelIndustrias   = new();
         private readonly CategoriasGeneral   _panelCategorias   = new();
+        private readonly InventariosGeneral  _panelInventarios  = new();
         private readonly PreciosGeneral      _panelPrecios      = new();
         private readonly RegionesGeneral     _panelRegiones     = new();
+        private readonly Configuracion       _panelConfiguracion= new();
 
         // Cada sección del menú lateral conserva su propio juego de pestañas dinámicas.
         private string _seccionActiva = "articulos";
@@ -39,8 +41,10 @@ namespace WpfAppVba
             ["productos"]    = new List<TabItem>(),
             ["industrias"]   = new List<TabItem>(),
             ["categorias"]   = new List<TabItem>(),
+            ["inventarios"]  = new List<TabItem>(),
             ["precios"]      = new List<TabItem>(),
             ["regiones"]     = new List<TabItem>(),
+            ["configuracion"]= new List<TabItem>(),
         };
         private readonly Dictionary<string, TabItem?> _pestañaSeleccionadaPorSeccion = new()
         {
@@ -54,8 +58,10 @@ namespace WpfAppVba
             ["productos"]    = null,
             ["industrias"]   = null,
             ["categorias"]   = null,
+            ["inventarios"]  = null,
             ["precios"]      = null,
             ["regiones"]     = null,
+            ["configuracion"]= null,
         };
 
         public ConsolaMovimientos()
@@ -107,8 +113,10 @@ namespace WpfAppVba
                 case "productos":    TabFijoContenido.Content = _panelProductos;    TabFijoTitulo.Text = "Productos";    break;
                 case "industrias":   TabFijoContenido.Content = _panelIndustrias;   TabFijoTitulo.Text = "Industrias";   break;
                 case "categorias":   TabFijoContenido.Content = _panelCategorias;   TabFijoTitulo.Text = "Categorías";   break;
+                case "inventarios":  TabFijoContenido.Content = _panelInventarios;  TabFijoTitulo.Text = "Inventarios";  break;
                 case "precios":      TabFijoContenido.Content = _panelPrecios;      TabFijoTitulo.Text = "Precios";      break;
                 case "regiones":     TabFijoContenido.Content = _panelRegiones;     TabFijoTitulo.Text = "Regiones";     break;
+                case "configuracion":TabFijoContenido.Content = _panelConfiguracion;TabFijoTitulo.Text = "Configuración";break;
             }
 
             // 3. Restaurar las pestañas propias de la nueva sección
@@ -271,19 +279,8 @@ namespace WpfAppVba
 
         private void BtnNav_Inventarios_Click(object sender, RoutedEventArgs e)
         {
-            var win = new Window
-            {
-                Title                 = "Inventarios",
-                Width                 = 520,
-                Height                = 380,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Owner                 = this,
-                ShowInTaskbar         = false,
-                Background            = Brushes.Transparent,
-                Content               = new InventariosGeneral()
-            };
-            WindowHelper.AjustarAlEcran(win);
-            win.ShowDialog();
+            MostrarPanel("inventarios");
+            MarcarActivo(BtnNav_Inventarios);
         }
 
         private void BtnNav_Regiones_Click(object sender, RoutedEventArgs e)
@@ -300,21 +297,8 @@ namespace WpfAppVba
 
         private void BtnNav_Configuracion_Click(object sender, RoutedEventArgs e)
         {
-            var win = new Window
-            {
-                Title                 = "Configuración",
-                Width                 = 480,
-                Height                = 620,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Owner                 = this,
-                ShowInTaskbar         = false,
-                ResizeMode            = ResizeMode.NoResize,
-                Background            = Brushes.Transparent,
-                Content               = new Configuracion()
-            };
-            WindowHelper.AjustarAlEcran(win);
-            win.ShowDialog();
-            ActualizarInfoUsuario();
+            MostrarPanel("configuracion");
+            MarcarActivo(BtnNav_Configuracion);
         }
 
         // ─── Cerrar sesión ────────────────────────────────────────────────────

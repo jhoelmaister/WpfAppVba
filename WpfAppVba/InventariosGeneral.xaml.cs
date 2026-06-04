@@ -11,10 +11,12 @@ namespace WpfAppVba
     {
         private static SqlData Sql => SqlData.Instance;
 
+        private bool _iniciado = false;
+
         public InventariosGeneral()
         {
             InitializeComponent();
-            Loaded += (_, _) => CargarInventarios();
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarInventarios(); };
         }
 
         // ─── Carga la lista ────────────────────────────────────────────────────
@@ -110,15 +112,20 @@ namespace WpfAppVba
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
             AppState.EventoFormularioI = "nuevo";
-            var detalle = new InventariosDetalle(this) { Owner = Window.GetWindow(this) };
-            detalle.ShowDialog();
-            if (detalle.ItemCreadoId == null) return;   // cancelado
-
-            var nueva = ConstruirFilaInventario(detalle.ItemCreadoId, 0);
-            FilasGrid.Add(nueva);
-            Renumerar();
-            Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
-            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            var detalle = new InventariosDetalle(this);
+            detalle.Cerrando += () =>
+            {
+                consola.CerrarPestaña(detalle);
+                if (detalle.ItemCreadoId == null) return;   // cancelado
+                var nueva = ConstruirFilaInventario(detalle.ItemCreadoId, 0);
+                FilasGrid.Add(nueva);
+                Renumerar();
+                Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            };
+            consola.AbrirPestaña("Nuevo Inventario", detalle, "nuevo-inventario");
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -203,20 +210,26 @@ namespace WpfAppVba
             }
 
             string idSel = fila.Id;
+            int    linea = fila.Linea;
             AppState.EventoFormularioI = "editar";
-            var detalle = new InventariosDetalle(this, fila.Id) { Owner = Window.GetWindow(this) };
-            detalle.ShowDialog();
-
-            var lista = FilasGrid;
-            int idx   = lista.IndexOf(fila);
-            if (idx >= 0)
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            var detalle = new InventariosDetalle(this, fila.Id);
+            detalle.Cerrando += () =>
             {
-                var actualizada = ConstruirFilaInventario(idSel, fila.Linea);
-                lista[idx] = actualizada;
-                Renumerar();
-                Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
-            }
-            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+                consola.CerrarPestaña(detalle);
+                var lista = FilasGrid;
+                int idx   = lista.IndexOf(fila);
+                if (idx >= 0)
+                {
+                    var actualizada = ConstruirFilaInventario(idSel, linea);
+                    lista[idx] = actualizada;
+                    Renumerar();
+                    Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
+                }
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            };
+            consola.AbrirPestaña($"Inventario {idSel}", detalle, $"inventario-{idSel}");
         }
     }
 

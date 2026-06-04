@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,7 +8,7 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class InventariosDetalle : Window
+    public partial class InventariosDetalle : System.Windows.Controls.UserControl
     {
         private static SqlData Sql => SqlData.Instance;
 
@@ -17,7 +16,11 @@ namespace WpfAppVba
         private readonly string _idEditar;
         private bool _hayCambios = false;
         private bool _cargando   = true;
+        private bool _iniciado   = false;
+        private string _tituloTab = "";
         private List<InventarioItemFila> _items = new();
+
+        public event Action? Cerrando;
 
         /// <summary>ID del documento de inventario recién creado.</summary>
         public string? ItemCreadoId { get; private set; }
@@ -25,10 +28,25 @@ namespace WpfAppVba
         public InventariosDetalle(InventariosGeneral? padre = null, string idEditar = "")
         {
             InitializeComponent();
-            WindowHelper.AjustarAlEcran(this);
-            _padre    = padre;
-            _idEditar = idEditar;
-            Loaded   += (_, _) => CargarUserform();
+            _padre     = padre;
+            _idEditar  = idEditar;
+            _tituloTab = string.IsNullOrEmpty(idEditar) ? "nuevo-inventario" : $"inventario-{idEditar}";
+            Loaded    += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
+        }
+
+        // ─── Al cerrar: preguntar si hay cambios ──────────────────────────────
+        public void IntentarCerrar()
+        {
+            // Confirma cualquier celda en edición antes de chequear cambios pendientes
+            GridItems.CommitEdit(DataGridEditingUnit.Row, true);
+
+            if (!_hayCambios) { Cerrando?.Invoke(); return; }
+
+            var res = MessageBox.Show("¿Guardar Cambios?", "Consola",
+                MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+
+            if (res == MessageBoxResult.Yes && Guardar()) Cerrando?.Invoke();
+            else if (res == MessageBoxResult.No)          Cerrando?.Invoke();
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
@@ -152,7 +170,7 @@ namespace WpfAppVba
         // ─── Buscar artículos (modo exportar) ─────────────────────────────────
         private void BtnBuscarArticulos_Click(object sender, RoutedEventArgs e)
         {
-            ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, arts =>
+            ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, callbackExportar: arts =>
             {
                 foreach (var art in arts)
                 {
@@ -178,14 +196,14 @@ namespace WpfAppVba
                     GridItems.ScrollIntoView(ultimo);
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
-            }, null);
+            }, contexto: _tituloTab, llamador: this);
         }
 
         // ─── Buscar artículo (single-select) ─────────────────────────────────
         private void BtnBuscarArticulo_Click(object sender, RoutedEventArgs e)
         {
             var filaActual = GridItems.SelectedItem as InventarioItemFila;
-            ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, null, art =>
+            ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, callbackSingle: art =>
             {
                 InventarioItemFila filaEnfocar;
 
@@ -212,7 +230,7 @@ namespace WpfAppVba
                 _hayCambios = true;
                 RefrescarGrid();
                 EnfocarColumnaCantidad(filaEnfocar);
-            });
+            }, contexto: _tituloTab, llamador: this);
         }
 
         // Posiciona el cursor en la celda Cantidad de la fila indicada e inicia edición
@@ -354,11 +372,11 @@ namespace WpfAppVba
         {
             GridItems.CommitEdit(DataGridEditingUnit.Row, true);
             bool ok = Guardar();
-            if (ok) { _hayCambios = false; Close(); }
+            if (ok) { _hayCambios = false; Cerrando?.Invoke(); }
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
-        { _hayCambios = false; Close(); }
+        { _hayCambios = false; Cerrando?.Invoke(); }
 
         // ─── Guardar ─────────────────────────────────────────────────────────
         private bool Guardar()
@@ -493,29 +511,6 @@ namespace WpfAppVba
                 return fecha.Date + hora;
 
             return fecha.Date + DateTime.Now.TimeOfDay;
-        }
-
-        // ─── Al cerrar: preguntar si hay cambios ──────────────────────────────
-        private void Window_Closing(object sender, CancelEventArgs e)
-        {
-            // Confirma cualquier celda en edición antes de chequear cambios pendientes
-            GridItems.CommitEdit(DataGridEditingUnit.Row, true);
-
-            if (!_hayCambios) return;
-
-            var res = MessageBox.Show("¿Guardar Cambios?", "Consola",
-                MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-
-            if (res == MessageBoxResult.Yes)
-            {
-                bool ok = Guardar();
-                e.Cancel = !ok;
-            }
-            else if (res == MessageBoxResult.Cancel)
-            {
-                e.Cancel = true;
-            }
-            // No → cierra sin guardar
         }
     }
 
