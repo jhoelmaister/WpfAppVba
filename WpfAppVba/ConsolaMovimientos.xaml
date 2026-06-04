@@ -250,50 +250,40 @@
                 </Grid>
             </Border>
 
-            <!-- ── ÁREA DE CONTENIDO (paneles apilados) ───────────── -->
-            <Grid Grid.Column="1" Background="{DynamicResource ThemeBgContenido}">
+            <!-- ── ÁREA DE CONTENIDO (pestañas) ──────────────────── -->
+            <TabControl x:Name="TabContenido" Grid.Column="1"
+                        Background="{DynamicResource ThemeBgContenido}"
+                        BorderThickness="0" Padding="0">
 
-                <!-- Panel Artículos -->
-                <local:ArticulosGeneral x:Name="TabArticulos" Visibility="Visible"/>
+                <TabItem x:Name="TabItemArticulos">
+                    <TabItem.Header>
+                        <TextBlock Text="Artículos" VerticalAlignment="Center"/>
+                    </TabItem.Header>
+                    <local:ArticulosGeneral x:Name="TabArticulos"/>
+                </TabItem>
 
-                <local:PedidosGeneral      x:Name="TabPedidos"
-                                           Visibility="Collapsed"/>
-                <local:TraspasosGeneral    x:Name="TabTraspasos"
-                                           Visibility="Collapsed"/>
-                <local:CorreccionesGeneral x:Name="TabCorrecciones"
-                                           Visibility="Collapsed"/>
+                <TabItem x:Name="TabItemPedidos">
+                    <TabItem.Header>
+                        <TextBlock Text="Pedidos" VerticalAlignment="Center"/>
+                    </TabItem.Header>
+                    <local:PedidosGeneral x:Name="TabPedidos"/>
+                </TabItem>
 
-            </Grid>
-        </Grid>
+                <TabItem x:Name="TabItemTraspasos">
+                    <TabItem.Header>
+                        <TextBlock Text="Traspasos" VerticalAlignment="Center"/>
+                    </TabItem.Header>
+                    <local:TraspasosGeneral x:Name="TabTraspasos"/>
+                </TabItem>
 
-        <!-- ════════════════════════════════════════════════════════════ -->
-        <!-- OVERLAY MODAL                                                -->
-        <!-- ════════════════════════════════════════════════════════════ -->
-        <Grid x:Name="OverlayFondo" Visibility="Collapsed" Grid.RowSpan="2"
-              Panel.ZIndex="100" Background="#BB000000">
-            <Border Background="{DynamicResource ThemeBgPrincipal}"
-                    CornerRadius="10" Margin="40"
-                    MaxWidth="960" MaxHeight="840"
-                    HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
+                <TabItem x:Name="TabItemCorrecciones">
+                    <TabItem.Header>
+                        <TextBlock Text="Correcciones" VerticalAlignment="Center"/>
+                    </TabItem.Header>
+                    <local:CorreccionesGeneral x:Name="TabCorrecciones"/>
+                </TabItem>
 
-                    <!-- Barra superior del overlay con botón cerrar -->
-                    <Grid Grid.Row="0" Background="#252A40" x:Name="OverlayTopBar">
-                        <Button Content="✕" HorizontalAlignment="Right"
-                                Margin="8,4" Padding="10,4"
-                                FontSize="13" FontWeight="Bold"
-                                Background="Transparent" Foreground="#9AA3B8"
-                                BorderThickness="0" Cursor="Hand"
-                                Click="BtnCerrarOverlay_Click"/>
-                    </Grid>
-
-                    <ContentControl x:Name="OverlayContenido" Grid.Row="1"/>
-                </Grid>
-            </Border>
+            </TabControl>
         </Grid>
 
     </Grid>

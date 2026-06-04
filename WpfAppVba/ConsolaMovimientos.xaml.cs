@@ -1,5 +1,7 @@
+using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using WpfAppVba.Data;
 
@@ -22,21 +24,63 @@ namespace WpfAppVba
             LblUsuario.Text = $"Usuario: {AppState.UsuarioActivo}  |  Período: {AppState.PeriodoActivo}";
         }
 
-        // ─── Mostrar panel de contenido ───────────────────────────────────────
+        // ─── Navegación por pestañas ──────────────────────────────────────────
         private void MostrarPanel(string nombre)
         {
-            TabArticulos.Visibility    = Visibility.Collapsed;
-            TabPedidos.Visibility      = Visibility.Collapsed;
-            TabTraspasos.Visibility    = Visibility.Collapsed;
-            TabCorrecciones.Visibility = Visibility.Collapsed;
-
-            switch (nombre)
+            TabItem? tab = nombre switch
             {
-                case "articulos":    TabArticulos.Visibility    = Visibility.Visible; break;
-                case "pedidos":      TabPedidos.Visibility      = Visibility.Visible; break;
-                case "traspasos":    TabTraspasos.Visibility    = Visibility.Visible; break;
-                case "correcciones": TabCorrecciones.Visibility = Visibility.Visible; break;
-            }
+                "articulos"    => TabItemArticulos,
+                "pedidos"      => TabItemPedidos,
+                "traspasos"    => TabItemTraspasos,
+                "correcciones" => TabItemCorrecciones,
+                _              => null
+            };
+            if (tab != null) TabContenido.SelectedItem = tab;
+        }
+
+        public void AbrirPestaña(string titulo, UIElement contenido)
+        {
+            foreach (TabItem t in TabContenido.Items)
+                if (t.Content == contenido) { TabContenido.SelectedItem = t; return; }
+
+            var lblTitulo = new TextBlock
+            {
+                Text = titulo,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            var btnCerrar = new Button
+            {
+                Content           = "✕",
+                Background        = Brushes.Transparent,
+                BorderThickness   = new Thickness(0),
+                Padding           = new Thickness(6, 0, 0, 0),
+                FontSize          = 10,
+                Foreground        = new SolidColorBrush(Color.FromRgb(0x9A, 0xA3, 0xB8)),
+                VerticalAlignment = VerticalAlignment.Center,
+                FocusVisualStyle  = null,
+                Cursor            = Cursors.Hand
+            };
+            var header = new StackPanel { Orientation = Orientation.Horizontal };
+            header.Children.Add(lblTitulo);
+            header.Children.Add(btnCerrar);
+
+            var tab = new TabItem { Header = header, Content = contenido };
+            btnCerrar.Click += (s, e) => { e.Handled = true; CerrarPestaña(contenido); };
+
+            TabContenido.Items.Add(tab);
+            TabContenido.SelectedItem = tab;
+        }
+
+        public void CerrarPestaña(UIElement contenido)
+        {
+            TabItem? target = null;
+            foreach (TabItem t in TabContenido.Items)
+                if (t.Content == contenido) { target = t; break; }
+            if (target == null) return;
+            int idx = TabContenido.Items.IndexOf(target);
+            TabContenido.Items.Remove(target);
+            if (TabContenido.Items.Count > 0)
+                TabContenido.SelectedIndex = Math.Max(0, idx - 1);
         }
 
         // ─── Resaltar ítem activo en la barra lateral ─────────────────────────
@@ -121,49 +165,6 @@ namespace WpfAppVba
             ActualizarInfoUsuario();
         }
 
-        // ─── Overlay modal (stack) ────────────────────────────────────────────
-
-        private readonly Stack<UIElement> _overlayStack = new();
-
-        public void EmpujarOverlay(UIElement contenido)
-        {
-            _overlayStack.Push(contenido);
-            OverlayContenido.Content = contenido;
-            OverlayFondo.Visibility  = Visibility.Visible;
-        }
-
-        public void SacarOverlay()
-        {
-            if (_overlayStack.Count > 0) _overlayStack.Pop();
-            if (_overlayStack.Count > 0)
-            {
-                OverlayContenido.Content = _overlayStack.Peek();
-            }
-            else
-            {
-                OverlayFondo.Visibility  = Visibility.Collapsed;
-                OverlayContenido.Content = null;
-            }
-        }
-
-        public void CerrarOverlay()
-        {
-            _overlayStack.Clear();
-            OverlayFondo.Visibility  = Visibility.Collapsed;
-            OverlayContenido.Content = null;
-        }
-
-        private void BtnCerrarOverlay_Click(object sender, RoutedEventArgs e)
-        {
-            switch (OverlayContenido.Content)
-            {
-                case PedidosDetalle   pd: pd.IntentarCerrar(); break;
-                case TercerosDetalle  td: td.IntentarCerrar(); break;
-                case TercerosGeneral  tg: tg.IntentarCerrar(); break;
-                default: SacarOverlay(); break;
-            }
-        }
-
         // ─── Acciones rápidas ─────────────────────────────────────────────────
 
         private void BtnVentaRapida_Click(object sender, RoutedEventArgs e)
@@ -172,8 +173,8 @@ namespace WpfAppVba
             AppState.TipoMovimiento    = "venta";
             AppState.TipoPedido        = "rapido";
             var dlg = new PedidosDetalle();
-            dlg.Cerrando += () => { SacarOverlay(); TabPedidos.CargarPedidos(); };
-            EmpujarOverlay(dlg);
+            dlg.Cerrando += () => { CerrarPestaña(dlg); TabPedidos.CargarPedidos(); };
+            AbrirPestaña("Venta Rápida", dlg);
         }
 
         private void BtnEntradaRapida_Click(object sender, RoutedEventArgs e)

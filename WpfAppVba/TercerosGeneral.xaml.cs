@@ -31,8 +31,8 @@ namespace WpfAppVba
             var consola = owner as ConsolaMovimientos;
             if (consola == null) return;
             var ctrl = new TercerosGeneral(modoSelector);
-            ctrl.Cerrando += () => { consola.SacarOverlay(); onCerrado?.Invoke(); };
-            consola.EmpujarOverlay(ctrl);
+            ctrl.Cerrando += () => { consola.CerrarPestaña(ctrl); onCerrado?.Invoke(); };
+            consola.AbrirPestaña(modoSelector ? "Seleccionar Tercero" : "Terceros", ctrl);
         }
 
         // ─── Carga la lista (equivalente a cargarTerceros) ────────────────────
@@ -135,7 +135,7 @@ namespace WpfAppVba
             var detalle = new TercerosDetalle();
             detalle.Cerrando += () =>
             {
-                consola.SacarOverlay();
+                consola.CerrarPestaña(detalle);
                 if (detalle.ItemCreadoId == null) return;
                 var nueva = ConstruirFilaTercero(detalle.ItemCreadoId, 0);
                 FilasGrid.Add(nueva);
@@ -143,7 +143,7 @@ namespace WpfAppVba
                 Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.EmpujarOverlay(detalle);
+            consola.AbrirPestaña("Nuevo Tercero", detalle);
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -194,7 +194,7 @@ namespace WpfAppVba
             var detalle = new TercerosDetalle(idSel);
             detalle.Cerrando += () =>
             {
-                consola.SacarOverlay();
+                consola.CerrarPestaña(detalle);
                 var lista = FilasGrid;
                 int idx   = lista.IndexOf(fila);
                 if (idx >= 0)
@@ -206,7 +206,7 @@ namespace WpfAppVba
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.EmpujarOverlay(detalle);
+            consola.AbrirPestaña($"Tercero {idSel}", detalle);
         }
     }
 
