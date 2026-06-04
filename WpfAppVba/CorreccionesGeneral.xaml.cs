@@ -20,10 +20,12 @@ namespace WpfAppVba
         /// </summary>
         public string TipoMovimiento { get; set; } = "";
 
+        private bool _iniciado = false;
+
         public CorreccionesGeneral()
         {
             InitializeComponent();
-            Loaded += (_, _) => { CargarMeses(); CargarCorrecciones(); };
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarMeses(); CargarCorrecciones(); };
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────

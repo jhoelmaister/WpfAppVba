@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -15,6 +16,16 @@ namespace WpfAppVba
         private readonly PedidosGeneral      _panelPedidos      = new();
         private readonly TraspasosGeneral    _panelTraspasos    = new();
         private readonly CorreccionesGeneral _panelCorrecciones = new();
+
+        // Cada sección del menú lateral conserva su propio juego de pestañas dinámicas.
+        private string _seccionActiva = "articulos";
+        private readonly Dictionary<string, List<TabItem>> _pestañasPorSeccion = new()
+        {
+            ["articulos"]    = new List<TabItem>(),
+            ["pedidos"]      = new List<TabItem>(),
+            ["traspasos"]    = new List<TabItem>(),
+            ["correcciones"] = new List<TabItem>(),
+        };
 
         public ConsolaMovimientos()
         {
@@ -33,6 +44,25 @@ namespace WpfAppVba
         // ─── Navegación por pestañas ──────────────────────────────────────────
         private void MostrarPanel(string nombre)
         {
+            if (nombre == _seccionActiva)
+            {
+                TabContenido.SelectedItem = TabFijo;
+                return;
+            }
+
+            // 1. Guardar las pestañas dinámicas de la sección actual y quitarlas de la vista
+            var guardadas = _pestañasPorSeccion[_seccionActiva];
+            guardadas.Clear();
+            for (int i = TabContenido.Items.Count - 1; i >= 0; i--)
+            {
+                if (TabContenido.Items[i] is TabItem t && t != TabFijo)
+                {
+                    guardadas.Insert(0, t);
+                    TabContenido.Items.RemoveAt(i);
+                }
+            }
+
+            // 2. Cambiar el contenido y título de la pestaña fija
             switch (nombre)
             {
                 case "articulos":    TabFijoContenido.Content = _panelArticulos;    TabFijoTitulo.Text = "Artículos";    break;
@@ -40,6 +70,14 @@ namespace WpfAppVba
                 case "traspasos":    TabFijoContenido.Content = _panelTraspasos;    TabFijoTitulo.Text = "Traspasos";    break;
                 case "correcciones": TabFijoContenido.Content = _panelCorrecciones; TabFijoTitulo.Text = "Correcciones"; break;
             }
+
+            // 3. Restaurar las pestañas propias de la nueva sección
+            _seccionActiva = nombre;
+            var restaurar = _pestañasPorSeccion[nombre];
+            foreach (var t in restaurar)
+                TabContenido.Items.Add(t);
+            restaurar.Clear();
+
             TabContenido.SelectedItem = TabFijo;
         }
 
@@ -96,6 +134,18 @@ namespace WpfAppVba
             if (contenido == null) return;
             foreach (TabItem t in TabContenido.Items)
                 if (t.Content == contenido) { TabContenido.SelectedItem = t; return; }
+        }
+
+        public void CerrarPestañaPorClave(string clave)
+        {
+            TabItem? target = null;
+            foreach (TabItem t in TabContenido.Items)
+                if (t.Tag as string == clave) { target = t; break; }
+            if (target == null) return;
+            int idx = TabContenido.Items.IndexOf(target);
+            TabContenido.Items.Remove(target);
+            if (TabContenido.Items.Count > 0)
+                TabContenido.SelectedIndex = Math.Max(0, idx - 1);
         }
 
         // ─── Resaltar ítem activo en la barra lateral ─────────────────────────
