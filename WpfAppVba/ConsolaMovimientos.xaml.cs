@@ -17,6 +17,7 @@ namespace WpfAppVba
         private readonly TraspasosGeneral    _panelTraspasos    = new();
         private readonly CorreccionesGeneral _panelCorrecciones = new();
         private readonly TercerosGeneral     _panelTerceros     = new();
+        private readonly SucursalesGeneral   _panelSucursales   = new();
 
         // Cada sección del menú lateral conserva su propio juego de pestañas dinámicas.
         private string _seccionActiva = "articulos";
@@ -27,6 +28,7 @@ namespace WpfAppVba
             ["traspasos"]    = new List<TabItem>(),
             ["correcciones"] = new List<TabItem>(),
             ["terceros"]     = new List<TabItem>(),
+            ["sucursales"]   = new List<TabItem>(),
         };
         private readonly Dictionary<string, TabItem?> _pestañaSeleccionadaPorSeccion = new()
         {
@@ -35,6 +37,7 @@ namespace WpfAppVba
             ["traspasos"]    = null,
             ["correcciones"] = null,
             ["terceros"]     = null,
+            ["sucursales"]   = null,
         };
 
         public ConsolaMovimientos()
@@ -81,6 +84,7 @@ namespace WpfAppVba
                 case "traspasos":    TabFijoContenido.Content = _panelTraspasos;    TabFijoTitulo.Text = "Traspasos";    break;
                 case "correcciones": TabFijoContenido.Content = _panelCorrecciones; TabFijoTitulo.Text = "Correcciones"; break;
                 case "terceros":     TabFijoContenido.Content = _panelTerceros;     TabFijoTitulo.Text = "Terceros";     break;
+                case "sucursales":   TabFijoContenido.Content = _panelSucursales;   TabFijoTitulo.Text = "Sucursales";   break;
             }
 
             // 3. Restaurar las pestañas propias de la nueva sección
@@ -209,6 +213,12 @@ namespace WpfAppVba
         {
             MostrarPanel("terceros");
             MarcarActivo(BtnNav_Terceros);
+        }
+
+        private void BtnNav_Sucursales_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("sucursales");
+            MarcarActivo(BtnNav_Sucursales);
         }
 
         private void BtnNav_Inventarios_Click(object sender, RoutedEventArgs e)

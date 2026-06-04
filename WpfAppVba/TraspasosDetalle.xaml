@@ -1,14 +1,9 @@
-<Window x:Class="WpfAppVba.TraspasosDetalle"
+<UserControl x:Class="WpfAppVba.TraspasosDetalle"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Detalle de Traspaso" Height="740" Width="860"
-        WindowStartupLocation="CenterScreen"
-        ShowInTaskbar="False"
-        ResizeMode="CanResizeWithGrip"
-        Background="{DynamicResource ThemeBgPrincipal}"
-        Closing="Window_Closing">
+        Background="{DynamicResource ThemeBgPrincipal}">
 
-    <Window.Resources>
+    <UserControl.Resources>
         <Style x:Key="BtnBase" TargetType="Button">
             <Setter Property="Height" Value="28"/>
             <Setter Property="Padding" Value="10,0"/>
@@ -40,7 +35,7 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Margin" Value="0,0,4,0"/>
         </Style>
-    </Window.Resources>
+    </UserControl.Resources>
 
     <Grid Margin="14">
         <Grid.RowDefinitions>
@@ -304,4 +299,4 @@
                     Click="BtnCancelar_Click"/>
         </StackPanel>
     </Grid>
-</Window>
+</UserControl>

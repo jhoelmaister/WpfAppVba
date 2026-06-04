@@ -378,15 +378,21 @@ namespace WpfAppVba
             AppState.EventoFormularioM = "nuevo";
             string filtroTipo = ObtenerFiltroTipo();
             AppState.TipoMovimiento = string.IsNullOrEmpty(filtroTipo) ? "entrada" : filtroTipo;
-            var dlg = new TraspasosDetalle(this) { Owner = Window.GetWindow(this) };
-            dlg.ShowDialog();
-            if (dlg.DocumentoCreadoId == null) return;   // cancelado
-
-            var nueva = ConstruirFilaTraspaso(dlg.DocumentoCreadoId, 0);
-            FilasGrid.Add(nueva);
-            RenumerarYTotales();
-            Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
-            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            string titulo = "Nuevo Traspaso";
+            var dlg = new TraspasosDetalle(this, tituloTab: titulo);
+            dlg.Cerrando += () =>
+            {
+                consola.CerrarPestaña(dlg);
+                if (dlg.DocumentoCreadoId == null) return;   // cancelado
+                var nueva = ConstruirFilaTraspaso(dlg.DocumentoCreadoId, 0);
+                FilasGrid.Add(nueva);
+                RenumerarYTotales();
+                Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            };
+            consola.AbrirPestaña(titulo, dlg, "nuevo-traspaso");
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -453,21 +459,28 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not TraspasoFila fila) return;
             string docSel = fila.DocumentoT;
+            int    linea  = fila.Linea;
             AppState.EventoFormularioM = "editar";
             string origenDoc = Sql.DocumentosTObj.ObtenerItem("origen", docSel)?.ToString() ?? "";
             AppState.TipoMovimiento = origenDoc == AppState.SucursalActiva.ToString() ? "salida" : "entrada";
-            new TraspasosDetalle(this, fila.DocumentoT) { Owner = Window.GetWindow(this) }.ShowDialog();
-
-            var lista = FilasGrid;
-            int idx   = lista.IndexOf(fila);
-            if (idx >= 0)
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            var dlg = new TraspasosDetalle(this, docSel, tituloTab: $"Traspaso {docSel}");
+            dlg.Cerrando += () =>
             {
-                var actualizada = ConstruirFilaTraspaso(docSel, fila.Linea);
-                lista[idx] = actualizada;
-                RenumerarYTotales();
-                Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
-            }
-            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+                consola.CerrarPestaña(dlg);
+                var lista = FilasGrid;
+                int idx   = lista.IndexOf(fila);
+                if (idx >= 0)
+                {
+                    var actualizada = ConstruirFilaTraspaso(docSel, linea);
+                    lista[idx] = actualizada;
+                    RenumerarYTotales();
+                    Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
+                }
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            };
+            consola.AbrirPestaña($"Traspaso {docSel}", dlg, $"traspaso-{docSel}");
         }
     }
 

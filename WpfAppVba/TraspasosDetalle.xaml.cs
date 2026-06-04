@@ -9,8 +9,9 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class TraspasosDetalle : Window
+    public partial class TraspasosDetalle : System.Windows.Controls.UserControl
     {
+        public event Action? Cerrando;
         private static SqlData Sql => SqlData.Instance;
         private readonly TraspasosGeneral? _padre;
         private readonly string _idEditar;
@@ -21,19 +22,22 @@ namespace WpfAppVba
 
         private readonly HashSet<string> _articulosAlertados = new();
 
+        private bool _iniciado = false;
+        private readonly string _tituloTab;
+
         /// <summary>
         /// ID del documento recién creado (solo en modo "nuevo").
-        /// El padre lo lee después de ShowDialog() para enfocar la fila.
+        /// El padre lo lee en el evento Cerrando para enfocar la fila.
         /// </summary>
         public string? DocumentoCreadoId { get; private set; }
 
-        public TraspasosDetalle(TraspasosGeneral? padre = null, string idEditar = "")
+        public TraspasosDetalle(TraspasosGeneral? padre = null, string idEditar = "", string tituloTab = "")
         {
             InitializeComponent();
-            WindowHelper.AjustarAlEcran(this);
-            _padre    = padre;
-            _idEditar = idEditar;
-            Loaded   += (_, _) => CargarUserform();
+            _padre     = padre;
+            _idEditar  = idEditar;
+            _tituloTab = tituloTab;
+            Loaded    += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
@@ -362,15 +366,17 @@ namespace WpfAppVba
         // ─── Buscar sucursal ──────────────────────────────────────────────────
         private void BtnBuscarSucursal_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new SucursalesGeneral(modoSelector: true);
-            dlg.ShowDialog();
-            if (SucursalesGeneral.SucursalSeleccionada != null)
+            SucursalesGeneral.SucursalSeleccionada = null;
+            SucursalesGeneral.OpenAsDialog(Window.GetWindow(this)!, modoSelector: true, contexto: _tituloTab, llamador: this, onCerrado: () =>
             {
-                Box_Sucursal_Identificador.Text = SucursalesGeneral.SucursalSeleccionada;
-                ActualizarDescripcionSucursal();
-                SucursalesGeneral.SucursalSeleccionada = null;
-                _hayCambios = true;
-            }
+                if (SucursalesGeneral.SucursalSeleccionada != null)
+                {
+                    Box_Sucursal_Identificador.Text = SucursalesGeneral.SucursalSeleccionada;
+                    ActualizarDescripcionSucursal();
+                    SucursalesGeneral.SucursalSeleccionada = null;
+                    _hayCambios = true;
+                }
+            });
         }
 
         // ─── Buscar artículo (single-select) ─────────────────────────────────
@@ -379,7 +385,7 @@ namespace WpfAppVba
             if (!_editarFormulario) return;
 
             var filaActual = GridItems.SelectedItem as TraspasoItemFila;
-            ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, null, art =>
+            ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, null, art =>
             {
                 TraspasoItemFila filaEnfocar;
 
@@ -407,7 +413,7 @@ namespace WpfAppVba
                 RefrescarGrid();
                 NotificarStockInsuficiente();
                 EnfocarColumnaCantidad(filaEnfocar);
-            });
+            }, contexto: _tituloTab, llamador: this);
         }
 
         // Posiciona el cursor en la celda Cantidad de la fila indicada e inicia edición
@@ -432,7 +438,7 @@ namespace WpfAppVba
         {
             if (!_editarFormulario) return;
 
-            ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, arts =>
+            ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, arts =>
             {
                 foreach (var art in arts)
                 {
@@ -455,7 +461,7 @@ namespace WpfAppVba
                     GridItems.ScrollIntoView(ultimo);
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
-            }, null);
+            }, null, contexto: _tituloTab, llamador: this);
         }
 
         // ─── Nueva línea vacía ────────────────────────────────────────────────
@@ -744,32 +750,25 @@ namespace WpfAppVba
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
             GridItems.CommitEdit(DataGridEditingUnit.Row, true);
-            if (Guardar()) Close();
+            if (Guardar()) Cerrando?.Invoke();
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
-        { _hayCambios = false; Close(); }
+        { _hayCambios = false; Cerrando?.Invoke(); }
 
-        // ─── Al cerrar ────────────────────────────────────────────────────────
-        private void Window_Closing(object sender, CancelEventArgs e)
+        // ─── Al cerrar (llamado por el botón X de la pestaña) ──────────────────
+        public void IntentarCerrar()
         {
             // Confirma cualquier celda en edición antes de chequear cambios pendientes
             GridItems.CommitEdit(DataGridEditingUnit.Row, true);
 
-            if (!_hayCambios) return;
+            if (!_hayCambios) { Cerrando?.Invoke(); return; }
 
             var res = MessageBox.Show("¿Guardar cambios?", "Consola",
                 MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
 
-            if (res == MessageBoxResult.Yes)
-            {
-                bool ok = Guardar();
-                e.Cancel = !ok;
-            }
-            else if (res == MessageBoxResult.Cancel)
-            {
-                e.Cancel = true;
-            }
+            if (res == MessageBoxResult.Yes && Guardar()) Cerrando?.Invoke();
+            else if (res == MessageBoxResult.No)          Cerrando?.Invoke();
         }
     }
 

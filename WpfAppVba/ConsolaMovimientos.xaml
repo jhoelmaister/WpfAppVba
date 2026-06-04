@@ -182,6 +182,10 @@
                                     Content="👥  Terceros"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Terceros_Click"/>
+                            <Button x:Name="BtnNav_Sucursales"
+                                    Content="🏢  Sucursales"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Sucursales_Click"/>
                             <Button x:Name="BtnNav_Inventarios"
                                     Content="📊  Inventarios"
                                     Style="{StaticResource NavBtn}"

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
@@ -6,29 +7,63 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class SucursalesGeneral : Window
+    public partial class SucursalesGeneral : System.Windows.Controls.UserControl
     {
         private static SqlData Sql => SqlData.Instance;
 
         private readonly bool _modoSelector;
+        private bool _iniciado = false;
+
+        public event Action? Cerrando;
 
         /// <summary>
         /// En modo selector (llamado desde TraspasosDetalle), el doble clic
-        /// establece SucursalSeleccionada y cierra la ventana.
+        /// establece SucursalSeleccionada y cierra la pestaña.
         /// </summary>
         public static string? SucursalSeleccionada = null;
+
+        public SucursalesGeneral() : this(false) { }
 
         public SucursalesGeneral(bool modoSelector = false)
         {
             InitializeComponent();
-            WindowHelper.AjustarAlEcran(this);
             _modoSelector = modoSelector;
-            Loaded += (_, _) =>
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarSucursales(); };
+        }
+
+        public void IntentarCerrar() => Cerrando?.Invoke();
+
+        private void ConfigurarModo()
+        {
+            if (!_modoSelector) return;
+            BtnNuevo.Visibility       = Visibility.Collapsed;
+            BtnEditar.Visibility      = Visibility.Collapsed;
+            BtnEliminar.Visibility    = Visibility.Collapsed;
+            BtnSeleccionar.Visibility = Visibility.Visible;
+        }
+
+        public static void OpenAsDialog(Window owner, bool modoSelector = false, string contexto = "", Action? onCerrado = null, UIElement? llamador = null)
+        {
+            var consola = owner as ConsolaMovimientos;
+            if (consola == null) return;
+            var ctrl = new SucursalesGeneral(modoSelector);
+            ctrl.Cerrando += () => { consola.CerrarPestaña(ctrl); onCerrado?.Invoke(); consola.SeleccionarPestaña(llamador); };
+            string titulo = !modoSelector ? "Sucursales"
+                : string.IsNullOrEmpty(contexto) ? "Seleccionar Sucursal"
+                : $"Seleccionar Sucursal ({contexto})";
+            if (modoSelector)
             {
-                if (_modoSelector)
-                    Title = "Seleccionar Sucursal";
-                CargarSucursales();
-            };
+                // Una sola pestaña selector por llamador: clave única según el contexto.
+                string clave = string.IsNullOrEmpty(contexto)
+                    ? "seleccionar-sucursal"
+                    : $"seleccionar-sucursal|{contexto}";
+                consola.CerrarPestañaPorClave(clave);
+                consola.AbrirPestaña(titulo, ctrl, clave);
+            }
+            else
+            {
+                consola.AbrirPestaña(titulo, ctrl);
+            }
         }
 
         // ─── Verificación de administrador ─────────────────────────────────────
@@ -127,8 +162,11 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not SucursalFila fila) return;
             SucursalSeleccionada = fila.Id;
-            Close();
+            Cerrando?.Invoke();
         }
+
+        private void BtnSeleccionar_Click(object sender, RoutedEventArgs e)
+            => Seleccionar();
 
         // ─── Botones ───────────────────────────────────────────────────────────
 
@@ -142,15 +180,20 @@ namespace WpfAppVba
             }
 
             AppState.EventoFormularioI = "nuevo";
-            var detalle = new SucursalesDetalle(this) { Owner = this };
-            detalle.ShowDialog();
-            if (detalle.ItemCreadoId == null) return;
-
-            var nueva = ConstruirFilaSucursal(detalle.ItemCreadoId, 0);
-            FilasGrid.Add(nueva);
-            Renumerar();
-            Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
-            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            var detalle = new SucursalesDetalle(this);
+            detalle.Cerrando += () =>
+            {
+                consola.CerrarPestaña(detalle);
+                if (detalle.ItemCreadoId == null) return;
+                var nueva = ConstruirFilaSucursal(detalle.ItemCreadoId, 0);
+                FilasGrid.Add(nueva);
+                Renumerar();
+                Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            };
+            consola.AbrirPestaña("Nueva Sucursal", detalle, "nueva-sucursal");
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -208,20 +251,26 @@ namespace WpfAppVba
 
             if (Grid1.SelectedItem is not SucursalFila fila) return;
             string idSel = fila.Id;
+            int    linea = fila.Linea;
             AppState.EventoFormularioI = "modificar";
-            var detalle = new SucursalesDetalle(this, fila.Id) { Owner = this };
-            detalle.ShowDialog();
-
-            var lista = FilasGrid;
-            int idx   = lista.IndexOf(fila);
-            if (idx >= 0)
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            var detalle = new SucursalesDetalle(this, fila.Id);
+            detalle.Cerrando += () =>
             {
-                var actualizada = ConstruirFilaSucursal(idSel, fila.Linea);
-                lista[idx] = actualizada;
-                Renumerar();
-                Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
-            }
-            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+                consola.CerrarPestaña(detalle);
+                var lista = FilasGrid;
+                int idx   = lista.IndexOf(fila);
+                if (idx >= 0)
+                {
+                    var actualizada = ConstruirFilaSucursal(idSel, linea);
+                    lista[idx] = actualizada;
+                    Renumerar();
+                    Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
+                }
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            };
+            consola.AbrirPestaña($"Sucursal {idSel}", detalle, $"sucursal-{idSel}");
         }
     }
 

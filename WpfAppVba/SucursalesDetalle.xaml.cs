@@ -7,7 +7,7 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class SucursalesDetalle : Window
+    public partial class SucursalesDetalle : System.Windows.Controls.UserControl
     {
         private static SqlData Sql => SqlData.Instance;
 
@@ -15,17 +15,19 @@ namespace WpfAppVba
         private readonly string _idEditar;
         private bool _hayCambios = false;
         private bool _cargando   = true;
+        private bool _iniciado   = false;
+
+        public event Action? Cerrando;
 
         /// <summary>ID de la sucursal recién creada (solo modo "nuevo").</summary>
         public string? ItemCreadoId { get; private set; }
 
-        public SucursalesDetalle(SucursalesGeneral padre, string idEditar = "")
+        public SucursalesDetalle(SucursalesGeneral? padre = null, string idEditar = "")
         {
             InitializeComponent();
-            WindowHelper.AjustarAlEcran(this);
             _padre    = padre;
             _idEditar = idEditar;
-            Loaded   += (_, _) => CargarUserform();
+            Loaded   += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
@@ -110,7 +112,7 @@ namespace WpfAppVba
         private void BtnVerRegiones_Click(object sender, RoutedEventArgs e)
         {
             RegionesGeneral.RegionSeleccionadaStatic = null;
-            new RegionesGeneral(modoSelector: true) { Owner = this }.ShowDialog();
+            new RegionesGeneral(modoSelector: true) { Owner = Window.GetWindow(this) }.ShowDialog();
 
             if (!string.IsNullOrEmpty(RegionesGeneral.RegionSeleccionadaStatic))
                 Box_Referido_Codigo.Text = RegionesGeneral.RegionSeleccionadaStatic;
@@ -211,28 +213,21 @@ namespace WpfAppVba
 
         // ─── Botones ──────────────────────────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
-        { if (Guardar()) { _hayCambios = false; Close(); } }
+        { if (Guardar()) { _hayCambios = false; Cerrando?.Invoke(); } }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
-        { _hayCambios = false; Close(); }
+        { _hayCambios = false; Cerrando?.Invoke(); }
 
         // ─── Al cerrar: preguntar si hay cambios ──────────────────────────────
-        private void Window_Closing(object sender, CancelEventArgs e)
+        public void IntentarCerrar()
         {
-            if (!_hayCambios) return;
+            if (!_hayCambios) { Cerrando?.Invoke(); return; }
 
             var res = MessageBox.Show("¿Guardar Cambios?", "Consola",
                 MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
 
-            if (res == MessageBoxResult.Yes)
-            {
-                bool ok = Guardar();
-                e.Cancel = !ok;
-            }
-            else if (res == MessageBoxResult.Cancel)
-            {
-                e.Cancel = true;
-            }
+            if (res == MessageBoxResult.Yes && Guardar()) Cerrando?.Invoke();
+            else if (res == MessageBoxResult.No)          Cerrando?.Invoke();
         }
     }
 }
