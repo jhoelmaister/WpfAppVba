@@ -29,10 +29,6 @@ namespace WpfAppVba
         private readonly HashSet<string> _articulosAlertados = new();
         private string                   _observaciones = "";
 
-        /// <summary>
-        /// ID del documento recién creado (solo en modo "nuevo").
-        /// El padre lo lee después de ShowDialog() para enfocar la fila.
-        /// </summary>
         public string? DocumentoCreadoId { get; private set; }
 
         // Listas estáticas para ComboBox dentro de DataGrid
@@ -539,9 +535,11 @@ namespace WpfAppVba
         private void BtnBuscarTercero_Click(object sender, RoutedEventArgs e)
         {
             TercerosGeneral.TerceroSeleccionado = null;
-            TercerosGeneral.OpenAsDialog(Window.GetWindow(this)!, modoSelector: true);
-            if (!string.IsNullOrEmpty(TercerosGeneral.TerceroSeleccionado))
-                Box_Tercero_Identificador.Text = TercerosGeneral.TerceroSeleccionado;
+            TercerosGeneral.OpenAsDialog(Window.GetWindow(this)!, modoSelector: true, onCerrado: () =>
+            {
+                if (!string.IsNullOrEmpty(TercerosGeneral.TerceroSeleccionado))
+                    Box_Tercero_Identificador.Text = TercerosGeneral.TerceroSeleccionado;
+            });
         }
 
         // ─── Selección en grid de pedidos ─────────────────────────────────────

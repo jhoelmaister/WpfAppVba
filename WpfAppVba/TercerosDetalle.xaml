@@ -1,12 +1,7 @@
-<Window x:Class="WpfAppVba.TercerosDetalle"
+<UserControl x:Class="WpfAppVba.TercerosDetalle"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Tercero" Height="500" Width="420"
-        WindowStartupLocation="CenterScreen"
-        ShowInTaskbar="False"
-        ResizeMode="NoResize"
-        Background="{DynamicResource ThemeBgPrincipal}"
-        Closing="Window_Closing">
+        Background="{DynamicResource ThemeBgPrincipal}">
 
     <Grid Margin="16">
         <Grid.RowDefinitions>
@@ -88,4 +83,4 @@
                     Click="BtnCancelar_Click"/>
         </StackPanel>
     </Grid>
-</Window>
+</UserControl>

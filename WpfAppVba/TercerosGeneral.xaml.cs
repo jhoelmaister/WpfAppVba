@@ -12,10 +12,9 @@ namespace WpfAppVba
         private static SqlData Sql => SqlData.Instance;
         private readonly bool _modoSelector;
 
-        /// <summary>ID del tercero elegido cuando se abre en modo selector.</summary>
+        public event Action? Cerrando;
         public static string? TerceroSeleccionado { get; set; }
 
-        /// <summary>Constructor sin parámetros requerido por el compilador XAML.</summary>
         public TercerosGeneral() : this(false) { }
 
         public TercerosGeneral(bool modoSelector = false)
@@ -25,24 +24,15 @@ namespace WpfAppVba
             Loaded += (_, _) => CargarTerceros();
         }
 
-        /// <summary>Abre TercerosGeneral como diálogo modal dentro de una ventana temporal.</summary>
-        public static void OpenAsDialog(Window owner, bool modoSelector = false)
+        public void IntentarCerrar() => Cerrando?.Invoke();
+
+        public static void OpenAsDialog(Window owner, bool modoSelector = false, Action? onCerrado = null)
         {
+            var consola = owner as ConsolaMovimientos;
+            if (consola == null) return;
             var ctrl = new TercerosGeneral(modoSelector);
-            var win  = new Window
-            {
-                Content                  = ctrl,
-                Title                    = modoSelector ? "Seleccionar Tercero" : "Registros de Terceros",
-                Width                    = 710,
-                Height                   = 543,
-                WindowStartupLocation    = WindowStartupLocation.CenterOwner,
-                Owner                    = owner,
-                ShowInTaskbar            = false,
-                Background               = System.Windows.Media.Brushes.WhiteSmoke,
-                ResizeMode               = ResizeMode.CanResize
-            };
-            WindowHelper.AjustarAlEcran(win);
-            win.ShowDialog();
+            ctrl.Cerrando += () => { consola.SacarOverlay(); onCerrado?.Invoke(); };
+            consola.EmpujarOverlay(ctrl);
         }
 
         // ─── Carga la lista (equivalente a cargarTerceros) ────────────────────
@@ -132,7 +122,7 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not TerceroFila fila) return;
             TerceroSeleccionado = fila.Id;
-            Window.GetWindow(this)?.Close();
+            Cerrando?.Invoke();
         }
 
         // ─── Botones ──────────────────────────────────────────────────────────
@@ -140,15 +130,20 @@ namespace WpfAppVba
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
             AppState.EventoFormularioL = "nuevo";
-            var detalle = new TercerosDetalle() { Owner = Window.GetWindow(this) };
-            detalle.ShowDialog();
-            if (detalle.ItemCreadoId == null) return;   // cancelado
-
-            var nueva = ConstruirFilaTercero(detalle.ItemCreadoId, 0);
-            FilasGrid.Add(nueva);
-            Renumerar();
-            Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
-            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            var detalle = new TercerosDetalle();
+            detalle.Cerrando += () =>
+            {
+                consola.SacarOverlay();
+                if (detalle.ItemCreadoId == null) return;
+                var nueva = ConstruirFilaTercero(detalle.ItemCreadoId, 0);
+                FilasGrid.Add(nueva);
+                Renumerar();
+                Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            };
+            consola.EmpujarOverlay(detalle);
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -192,20 +187,26 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not TerceroFila fila) return;
             string idSel = fila.Id;
+            int    linea = fila.Linea;
             AppState.EventoFormularioL = "modificar";
-            var detalle = new TercerosDetalle(fila.Id) { Owner = Window.GetWindow(this) };
-            detalle.ShowDialog();
-
-            var lista = FilasGrid;
-            int idx   = lista.IndexOf(fila);
-            if (idx >= 0)
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            var detalle = new TercerosDetalle(idSel);
+            detalle.Cerrando += () =>
             {
-                var actualizada = ConstruirFilaTercero(idSel, fila.Linea);
-                lista[idx] = actualizada;
-                Renumerar();
-                Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
-            }
-            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+                consola.SacarOverlay();
+                var lista = FilasGrid;
+                int idx   = lista.IndexOf(fila);
+                if (idx >= 0)
+                {
+                    var actualizada = ConstruirFilaTercero(idSel, linea);
+                    lista[idx] = actualizada;
+                    Renumerar();
+                    Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
+                }
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            };
+            consola.EmpujarOverlay(detalle);
         }
     }
 

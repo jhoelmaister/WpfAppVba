@@ -397,7 +397,7 @@ namespace WpfAppVba
             var dlg = new PedidosDetalle(this);
             dlg.Cerrando += () =>
             {
-                consola.CerrarOverlay();
+                consola.SacarOverlay();
                 if (dlg.DocumentoCreadoId == null) return;
                 var nueva = ConstruirFilaPedido(dlg.DocumentoCreadoId, 0);
                 FilasGrid.Add(nueva);
@@ -405,7 +405,7 @@ namespace WpfAppVba
                 Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.MostrarOverlay(dlg);
+            consola.EmpujarOverlay(dlg);
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -481,7 +481,7 @@ namespace WpfAppVba
             var dlg = new PedidosDetalle(this, docSel);
             dlg.Cerrando += () =>
             {
-                consola.CerrarOverlay();
+                consola.SacarOverlay();
                 var lista = FilasGrid;
                 int idx   = lista.IndexOf(fila);
                 if (idx >= 0)
@@ -493,7 +493,7 @@ namespace WpfAppVba
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.MostrarOverlay(dlg);
+            consola.EmpujarOverlay(dlg);
         }
     }
 

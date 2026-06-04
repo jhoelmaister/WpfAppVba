@@ -1,25 +1,25 @@
 using System;
-using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class TercerosDetalle : Window
+    public partial class TercerosDetalle : UserControl
     {
         private static SqlData Sql => SqlData.Instance;
 
-        private readonly string _idEditar;   // solo en modo modificar
-        private bool _hayCambios  = false;
-        private bool _cargando    = true;    // evita disparar cambios al cargar
+        private readonly string _idEditar;
+        private bool _hayCambios = false;
+        private bool _cargando   = true;
 
+        public event Action? Cerrando;
         public string? ItemCreadoId { get; private set; }
 
         public TercerosDetalle(string idEditar = "")
         {
             InitializeComponent();
-            WindowHelper.AjustarAlEcran(this);
             _idEditar = idEditar;
             Loaded  += (_, _) => CargarUserform();
         }
@@ -156,30 +156,21 @@ namespace WpfAppVba
         // ─── Botones Guardar / Cancelar ───────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            if (Guardar()) { _hayCambios = false; Close(); }
+            if (Guardar()) { _hayCambios = false; Cerrando?.Invoke(); }
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
-        { _hayCambios = false; Close(); }
+        { _hayCambios = false; Cerrando?.Invoke(); }
 
-        // ─── Al cerrar: preguntar si hay cambios (equivalente a UserForm_QueryClose)
-        private void Window_Closing(object sender, CancelEventArgs e)
+        public void IntentarCerrar()
         {
-            if (!_hayCambios) return;
+            if (!_hayCambios) { Cerrando?.Invoke(); return; }
 
             var res = MessageBox.Show("¿Guardar Cambios?", "Consola",
                 MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
 
-            if (res == MessageBoxResult.Yes)
-            {
-                bool ok = Guardar();
-                e.Cancel = !ok; // si guardó mal, no cierra
-            }
-            else if (res == MessageBoxResult.Cancel)
-            {
-                e.Cancel = true;
-            }
-            // No → cierra sin guardar (e.Cancel = false por defecto)
+            if (res == MessageBoxResult.Yes && Guardar()) Cerrando?.Invoke();
+            else if (res == MessageBoxResult.No)          Cerrando?.Invoke();
         }
     }
 }

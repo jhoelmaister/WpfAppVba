@@ -121,26 +121,47 @@ namespace WpfAppVba
             ActualizarInfoUsuario();
         }
 
-        // ─── Overlay modal ────────────────────────────────────────────────────
+        // ─── Overlay modal (stack) ────────────────────────────────────────────
 
-        public void MostrarOverlay(UIElement contenido)
+        private readonly Stack<UIElement> _overlayStack = new();
+
+        public void EmpujarOverlay(UIElement contenido)
         {
+            _overlayStack.Push(contenido);
             OverlayContenido.Content = contenido;
             OverlayFondo.Visibility  = Visibility.Visible;
         }
 
+        public void SacarOverlay()
+        {
+            if (_overlayStack.Count > 0) _overlayStack.Pop();
+            if (_overlayStack.Count > 0)
+            {
+                OverlayContenido.Content = _overlayStack.Peek();
+            }
+            else
+            {
+                OverlayFondo.Visibility  = Visibility.Collapsed;
+                OverlayContenido.Content = null;
+            }
+        }
+
         public void CerrarOverlay()
         {
+            _overlayStack.Clear();
             OverlayFondo.Visibility  = Visibility.Collapsed;
             OverlayContenido.Content = null;
         }
 
         private void BtnCerrarOverlay_Click(object sender, RoutedEventArgs e)
         {
-            if (OverlayContenido.Content is PedidosDetalle dlg)
-                dlg.IntentarCerrar();
-            else
-                CerrarOverlay();
+            switch (OverlayContenido.Content)
+            {
+                case PedidosDetalle   pd: pd.IntentarCerrar(); break;
+                case TercerosDetalle  td: td.IntentarCerrar(); break;
+                case TercerosGeneral  tg: tg.IntentarCerrar(); break;
+                default: SacarOverlay(); break;
+            }
         }
 
         // ─── Acciones rápidas ─────────────────────────────────────────────────
@@ -151,8 +172,8 @@ namespace WpfAppVba
             AppState.TipoMovimiento    = "venta";
             AppState.TipoPedido        = "rapido";
             var dlg = new PedidosDetalle();
-            dlg.Cerrando += () => { CerrarOverlay(); TabPedidos.CargarPedidos(); };
-            MostrarOverlay(dlg);
+            dlg.Cerrando += () => { SacarOverlay(); TabPedidos.CargarPedidos(); };
+            EmpujarOverlay(dlg);
         }
 
         private void BtnEntradaRapida_Click(object sender, RoutedEventArgs e)
