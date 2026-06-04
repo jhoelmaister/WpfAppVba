@@ -67,6 +67,29 @@ namespace WpfAppVba
             consola.AbrirPestaña(titulo, ctrl, clave);
         }
 
+        /// <summary>Abre ArticulosGeneral como diálogo modal dentro de una ventana temporal.
+        /// Usado por formularios que aún se muestran como ventana (Traspasos, Correcciones, Inventarios).</summary>
+        public static void OpenAsDialog(Window owner,
+                                        Action<List<ArticuloExportado>>? callbackExportar = null,
+                                        Action<ArticuloExportado>?        callbackSingle   = null)
+        {
+            var ctrl = new ArticulosGeneral(callbackExportar, callbackSingle);
+            var win  = new Window
+            {
+                Content               = ctrl,
+                Title                 = "Artículos",
+                Width                 = 900,
+                Height                = 560,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Owner                 = owner,
+                ShowInTaskbar         = false,
+                Background            = System.Windows.Media.Brushes.WhiteSmoke,
+                ResizeMode            = ResizeMode.CanResize
+            };
+            WindowHelper.AjustarAlEcran(win);
+            win.ShowDialog();
+        }
+
         // ─── Configurar modo exportar ─────────────────────────────────────────
         private void ConfigurarModo()
         {
