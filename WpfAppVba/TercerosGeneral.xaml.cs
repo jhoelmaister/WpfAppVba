@@ -38,9 +38,12 @@ namespace WpfAppVba
                 : $"Seleccionar Tercero ({contexto})";
             if (modoSelector)
             {
-                // Solo un selector a la vez: cierra el anterior y reabre vinculado al llamador actual.
-                consola.CerrarPestañaPorClave("seleccionar-tercero");
-                consola.AbrirPestaña(titulo, ctrl, "seleccionar-tercero");
+                // Una sola pestaña selector por llamador: clave única según el contexto.
+                string clave = string.IsNullOrEmpty(contexto)
+                    ? "seleccionar-tercero"
+                    : $"seleccionar-tercero|{contexto}";
+                consola.CerrarPestañaPorClave(clave);
+                consola.AbrirPestaña(titulo, ctrl, clave);
             }
             else
             {
