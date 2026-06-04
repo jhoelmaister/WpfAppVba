@@ -178,6 +178,10 @@
 
                             <Rectangle Height="1" Fill="#252A40" Margin="12,8"/>
 
+                            <Button x:Name="BtnNav_Terceros"
+                                    Content="👥  Terceros"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Terceros_Click"/>
                             <Button x:Name="BtnNav_Inventarios"
                                     Content="📊  Inventarios"
                                     Style="{StaticResource NavBtn}"

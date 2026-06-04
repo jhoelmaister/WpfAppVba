@@ -234,7 +234,7 @@ namespace WpfAppVba
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña($"Tercero {idSel}", detalle);
+            consola.AbrirPestaña($"Tercero {idSel}", detalle, $"tercero-{idSel}");
         }
     }
 
