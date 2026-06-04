@@ -43,10 +43,13 @@ namespace WpfAppVba
             TabContenido.SelectedItem = TabFijo;
         }
 
-        public void AbrirPestaña(string titulo, UIElement contenido)
+        public void AbrirPestaña(string titulo, UIElement contenido, string? clave = null)
         {
             foreach (TabItem t in TabContenido.Items)
-                if (t.Content == contenido) { TabContenido.SelectedItem = t; return; }
+            {
+                if (clave != null && t.Tag as string == clave) { TabContenido.SelectedItem = t; return; }
+                if (clave == null && t.Content == contenido)   { TabContenido.SelectedItem = t; return; }
+            }
 
             var lblTitulo = new TextBlock
             {
@@ -69,7 +72,7 @@ namespace WpfAppVba
             header.Children.Add(lblTitulo);
             header.Children.Add(btnCerrar);
 
-            var tab = new TabItem { Header = header, Content = contenido };
+            var tab = new TabItem { Header = header, Content = contenido, Tag = clave };
             btnCerrar.Click += (s, e) => { e.Handled = true; CerrarPestaña(contenido); };
 
             TabContenido.Items.Add(tab);

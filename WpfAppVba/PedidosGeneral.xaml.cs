@@ -400,7 +400,9 @@ namespace WpfAppVba
             AppState.TipoMovimiento = string.IsNullOrEmpty(filtroTipo) ? "venta" : filtroTipo;
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            var dlg = new PedidosDetalle(this);
+            string titulo = tipoPedido == "rapido" ? "Nuevo Pedido Rápido" : "Nuevo Pedido Normal";
+            string clave  = tipoPedido == "rapido" ? "nuevo-pedido-rapido"  : "nuevo-pedido-normal";
+            var dlg = new PedidosDetalle(this, tituloTab: titulo);
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);
@@ -411,8 +413,7 @@ namespace WpfAppVba
                 Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            string titulo = tipoPedido == "rapido" ? "Nuevo Pedido Rápido" : "Nuevo Pedido Normal";
-            consola.AbrirPestaña(titulo, dlg);
+            consola.AbrirPestaña(titulo, dlg, clave);
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -485,7 +486,7 @@ namespace WpfAppVba
             AppState.TipoMovimiento = Sql.DocumentosPObj.ObtenerItem("movimiento", docSel)?.ToString() ?? "venta";
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            var dlg = new PedidosDetalle(this, docSel);
+            var dlg = new PedidosDetalle(this, docSel, tituloTab: $"Pedido {docSel}");
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);

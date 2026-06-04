@@ -26,13 +26,16 @@ namespace WpfAppVba
 
         public void IntentarCerrar() => Cerrando?.Invoke();
 
-        public static void OpenAsDialog(Window owner, bool modoSelector = false, Action? onCerrado = null)
+        public static void OpenAsDialog(Window owner, bool modoSelector = false, string contexto = "", Action? onCerrado = null)
         {
             var consola = owner as ConsolaMovimientos;
             if (consola == null) return;
             var ctrl = new TercerosGeneral(modoSelector);
             ctrl.Cerrando += () => { consola.CerrarPestaña(ctrl); onCerrado?.Invoke(); };
-            consola.AbrirPestaña(modoSelector ? "Seleccionar Tercero" : "Terceros", ctrl);
+            string titulo = !modoSelector ? "Terceros"
+                : string.IsNullOrEmpty(contexto) ? "Seleccionar Tercero"
+                : $"Seleccionar Tercero ({contexto})";
+            consola.AbrirPestaña(titulo, ctrl);
         }
 
         // ─── Carga la lista (equivalente a cargarTerceros) ────────────────────
@@ -143,7 +146,7 @@ namespace WpfAppVba
                 Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña("Nuevo Tercero", detalle);
+            consola.AbrirPestaña("Nuevo Tercero", detalle, "nuevo-tercero");
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)

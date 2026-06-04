@@ -38,13 +38,15 @@ namespace WpfAppVba
         private bool HayCambios => _cambioDocumento || _cambioPedido || _cambioTrasaccion || _cambioEntrega;
 
         private bool _iniciado = false;
+        private readonly string _tituloTab;
 
-        public PedidosDetalle(PedidosGeneral? padre = null, string idEditar = "")
+        public PedidosDetalle(PedidosGeneral? padre = null, string idEditar = "", string tituloTab = "")
         {
             InitializeComponent();
-            _padre    = padre;
-            _idEditar = idEditar;
-            Loaded   += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
+            _padre     = padre;
+            _idEditar  = idEditar;
+            _tituloTab = tituloTab;
+            Loaded    += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
@@ -537,7 +539,7 @@ namespace WpfAppVba
         private void BtnBuscarTercero_Click(object sender, RoutedEventArgs e)
         {
             TercerosGeneral.TerceroSeleccionado = null;
-            TercerosGeneral.OpenAsDialog(Window.GetWindow(this)!, modoSelector: true, onCerrado: () =>
+            TercerosGeneral.OpenAsDialog(Window.GetWindow(this)!, modoSelector: true, contexto: _tituloTab, onCerrado: () =>
             {
                 if (!string.IsNullOrEmpty(TercerosGeneral.TerceroSeleccionado))
                     Box_Tercero_Identificador.Text = TercerosGeneral.TerceroSeleccionado;
