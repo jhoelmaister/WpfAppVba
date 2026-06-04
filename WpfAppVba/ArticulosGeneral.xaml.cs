@@ -12,6 +12,9 @@ namespace WpfAppVba
     {
         private static SqlData Sql => SqlData.Instance;
 
+        public event Action? Cerrando;
+        public void IntentarCerrar() => Cerrando?.Invoke();
+
         // Modo exportar: cuando se abre desde Traspasos/Inventarios/Pedidos (multi)
         private readonly Action<List<ArticuloExportado>>? _callbackExportar;
         // Modo single: buscar un solo artículo con doble clic (sin checkbox ni #)
@@ -39,26 +42,29 @@ namespace WpfAppVba
             Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarArbol(); CargarArticulos(); ConfigurarModo(); };
         }
 
-        /// <summary>Abre ArticulosGeneral como diálogo modal dentro de una ventana temporal.</summary>
-        public static void OpenAsDialog(Window owner,
-                                        Action<List<ArticuloExportado>>? callbackExportar = null,
-                                        Action<ArticuloExportado>?        callbackSingle   = null)
+        /// <summary>Abre ArticulosGeneral como pestaña dentro de ConsolaMovimientos.</summary>
+        public static void OpenAsTab(Window owner,
+                                     Action<List<ArticuloExportado>>? callbackExportar = null,
+                                     Action<ArticuloExportado>?        callbackSingle   = null,
+                                     string                            contexto         = "",
+                                     UIElement?                        llamador         = null)
         {
+            var consola = owner as ConsolaMovimientos;
+            if (consola == null) return;
+
+            bool esMulti = callbackExportar != null;
+            string titulo = esMulti
+                ? (string.IsNullOrEmpty(contexto) ? "Importar Artículos" : $"Importar Artículos ({contexto})")
+                : (string.IsNullOrEmpty(contexto) ? "Buscar Artículo"    : $"Buscar Artículo ({contexto})");
+            string clave = esMulti
+                ? $"importar-articulos|{contexto}"
+                : $"buscar-articulo|{contexto}";
+
             var ctrl = new ArticulosGeneral(callbackExportar, callbackSingle);
-            var win  = new Window
-            {
-                Content               = ctrl,
-                Title                 = "Artículos",
-                Width                 = 900,
-                Height                = 560,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Owner                 = owner,
-                ShowInTaskbar         = false,
-                Background            = System.Windows.Media.Brushes.WhiteSmoke,
-                ResizeMode            = ResizeMode.CanResize
-            };
-            WindowHelper.AjustarAlEcran(win);
-            win.ShowDialog();
+            ctrl.Cerrando += () => { consola.CerrarPestaña(ctrl); consola.SeleccionarPestaña(llamador); };
+
+            consola.CerrarPestañaPorClave(clave);
+            consola.AbrirPestaña(titulo, ctrl, clave);
         }
 
         // ─── Configurar modo exportar ─────────────────────────────────────────
@@ -66,8 +72,9 @@ namespace WpfAppVba
         {
             bool esDialog = ModoExportar || ModoSingle;
 
-            PanelExportar.Visibility  = ModoExportar ? Visibility.Visible  : Visibility.Collapsed;
-            BtnInformeExcel.Visibility = esDialog     ? Visibility.Collapsed : Visibility.Visible;
+            PanelExportar.Visibility       = ModoExportar ? Visibility.Visible    : Visibility.Collapsed;
+            BtnInformeExcel.Visibility     = esDialog     ? Visibility.Collapsed  : Visibility.Visible;
+            PanelBotonesGestion.Visibility = esDialog     ? Visibility.Collapsed  : Visibility.Visible;
 
             // Columna checkbox (✓) y columna "#" solo visibles en modo importar
             var visibilidad = ModoExportar ? Visibility.Visible : Visibility.Collapsed;
@@ -351,11 +358,14 @@ namespace WpfAppVba
                 AbrirEditar();
         }
 
-        // Cierra el diálogo padre (solo si no estamos embebidos en ConsolaMovimientos)
+        // Cierra la pestaña o la ventana temporal según el contexto de apertura
         private void CerrarDialogo()
         {
             var w = Window.GetWindow(this);
-            if (w is not ConsolaMovimientos) w?.Close();
+            if (w is ConsolaMovimientos)
+                Cerrando?.Invoke();
+            else
+                w?.Close();
         }
 
         // ─── Botones ──────────────────────────────────────────────────────────

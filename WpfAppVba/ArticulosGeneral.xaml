@@ -153,7 +153,7 @@
                 </StackPanel>
 
                 <!-- Botones de gestión -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                <StackPanel x:Name="PanelBotonesGestion" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Content="Nuevo"      Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"  Click="BtnNuevo_Click"/>
                     <Button Content="Insertar"   Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"  Click="BtnInsertar_Click"/>
                     <Button Content="Editar"     Margin="0,0,6,0" Style="{StaticResource BtnSecundario}" Click="BtnEditar_Click"/>

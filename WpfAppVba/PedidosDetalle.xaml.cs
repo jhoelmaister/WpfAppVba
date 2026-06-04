@@ -657,7 +657,7 @@ namespace WpfAppVba
         // ─── Botones Pedidos ──────────────────────────────────────────────────
         private void BtnImportarArticulos_Click(object sender, RoutedEventArgs e)
         {
-            ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, arts =>
+            ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, arts =>
             {
                 foreach (var art in arts)
                 {
@@ -681,7 +681,7 @@ namespace WpfAppVba
                     GridItems.ScrollIntoView(ultimo);
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
-            }, null);
+            }, null, contexto: _tituloTab, llamador: this);
         }
 
         // ─── Buscar artículo individual (doble clic en ArticulosGeneral) ────────
@@ -690,7 +690,7 @@ namespace WpfAppVba
             // Guardar referencia a la fila actualmente seleccionada
             var filaActual = GridItems.SelectedItem as PedidoItemFila;
 
-            ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, null, art =>
+            ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, null, art =>
             {
                 double precio = ObtenerPrecioArticulo(art.Id);
                 PedidoItemFila filaEnfocar;
@@ -726,7 +726,7 @@ namespace WpfAppVba
 
                 // Enfocar columna Cantidad de la fila e iniciar edición
                 EnfocarColumnaCantidad(filaEnfocar);
-            });
+            }, contexto: _tituloTab, llamador: this);
         }
 
         // Posiciona el cursor en la celda Cantidad de la fila indicada e inicia edición
@@ -953,7 +953,7 @@ namespace WpfAppVba
         // ─── Botones Entregas ─────────────────────────────────────────────────
         private void BtnImportarArticulosEntregas_Click(object sender, RoutedEventArgs e)
         {
-            ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, arts =>
+            ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, arts =>
             {
                 DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
                 foreach (var art in arts)
@@ -977,7 +977,7 @@ namespace WpfAppVba
                     GridEntregas.ScrollIntoView(ultimo);
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(GridEntregas);
-            }, null);
+            }, null, contexto: _tituloTab, llamador: this);
         }
 
         private void BtnBuscarArticuloEntregas_Click(object sender, RoutedEventArgs e)
@@ -985,7 +985,7 @@ namespace WpfAppVba
             var filaActual = GridEntregas.SelectedItem as EntregaItemFila;
             DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
 
-            ArticulosGeneral.OpenAsDialog(Window.GetWindow(this)!, null, art =>
+            ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, null, art =>
             {
                 EntregaItemFila filaEnfocar;
 
@@ -1025,7 +1025,7 @@ namespace WpfAppVba
                         GridEntregas.Focus();
                         GridEntregas.BeginEdit();
                     }), System.Windows.Threading.DispatcherPriority.Background);
-            });
+            }, contexto: _tituloTab, llamador: this);
         }
 
         private void BtnNuevaLineaEntrega_Click(object sender, RoutedEventArgs e)
