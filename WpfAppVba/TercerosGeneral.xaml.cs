@@ -11,6 +11,7 @@ namespace WpfAppVba
     {
         private static SqlData Sql => SqlData.Instance;
         private readonly bool _modoSelector;
+        private bool _iniciado = false;
 
         public event Action? Cerrando;
         public static string? TerceroSeleccionado { get; set; }
@@ -21,7 +22,7 @@ namespace WpfAppVba
         {
             InitializeComponent();
             _modoSelector = modoSelector;
-            Loaded += (_, _) => CargarTerceros();
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarTerceros(); };
         }
 
         public void IntentarCerrar() => Cerrando?.Invoke();
