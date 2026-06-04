@@ -17,11 +17,13 @@ namespace WpfAppVba
         public event Action? Cerrando;
         public string? ItemCreadoId { get; private set; }
 
+        private bool _iniciado = false;
+
         public TercerosDetalle(string idEditar = "")
         {
             InitializeComponent();
             _idEditar = idEditar;
-            Loaded  += (_, _) => CargarUserform();
+            Loaded  += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
         }
 
         // ─── Carga inicial (equivalente a cargarUserform) ─────────────────────

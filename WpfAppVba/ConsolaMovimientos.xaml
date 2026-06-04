@@ -250,39 +250,18 @@
                 </Grid>
             </Border>
 
-            <!-- ── ÁREA DE CONTENIDO (pestañas) ──────────────────── -->
+            <!-- ── ÁREA DE CONTENIDO ──────────────────── -->
             <TabControl x:Name="TabContenido" Grid.Column="1"
                         Background="{DynamicResource ThemeBgContenido}"
                         BorderThickness="0" Padding="0">
-
-                <TabItem x:Name="TabItemArticulos">
+                <!-- Pestaña fija: título y contenido cambian según el menú lateral -->
+                <TabItem x:Name="TabFijo">
                     <TabItem.Header>
-                        <TextBlock Text="Artículos" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TabFijoTitulo" Text="Artículos"
+                                   VerticalAlignment="Center"/>
                     </TabItem.Header>
-                    <local:ArticulosGeneral x:Name="TabArticulos"/>
+                    <ContentControl x:Name="TabFijoContenido"/>
                 </TabItem>
-
-                <TabItem x:Name="TabItemPedidos">
-                    <TabItem.Header>
-                        <TextBlock Text="Pedidos" VerticalAlignment="Center"/>
-                    </TabItem.Header>
-                    <local:PedidosGeneral x:Name="TabPedidos"/>
-                </TabItem>
-
-                <TabItem x:Name="TabItemTraspasos">
-                    <TabItem.Header>
-                        <TextBlock Text="Traspasos" VerticalAlignment="Center"/>
-                    </TabItem.Header>
-                    <local:TraspasosGeneral x:Name="TabTraspasos"/>
-                </TabItem>
-
-                <TabItem x:Name="TabItemCorrecciones">
-                    <TabItem.Header>
-                        <TextBlock Text="Correcciones" VerticalAlignment="Center"/>
-                    </TabItem.Header>
-                    <local:CorreccionesGeneral x:Name="TabCorrecciones"/>
-                </TabItem>
-
             </TabControl>
         </Grid>
 

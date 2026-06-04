@@ -11,9 +11,18 @@ namespace WpfAppVba
     {
         private Button? _btnActivo;
 
+        private readonly ArticulosGeneral    _panelArticulos    = new();
+        private readonly PedidosGeneral      _panelPedidos      = new();
+        private readonly TraspasosGeneral    _panelTraspasos    = new();
+        private readonly CorreccionesGeneral _panelCorrecciones = new();
+
+        private PedidosGeneral   TabPedidos   => _panelPedidos;
+        private TraspasosGeneral TabTraspasos => _panelTraspasos;
+
         public ConsolaMovimientos()
         {
             InitializeComponent();
+            TabFijoContenido.Content = _panelArticulos;
             ActualizarInfoUsuario();
             MarcarActivo(BtnNav_Articulos);
         }
@@ -27,15 +36,14 @@ namespace WpfAppVba
         // ─── Navegación por pestañas ──────────────────────────────────────────
         private void MostrarPanel(string nombre)
         {
-            TabItem? tab = nombre switch
+            switch (nombre)
             {
-                "articulos"    => TabItemArticulos,
-                "pedidos"      => TabItemPedidos,
-                "traspasos"    => TabItemTraspasos,
-                "correcciones" => TabItemCorrecciones,
-                _              => null
-            };
-            if (tab != null) TabContenido.SelectedItem = tab;
+                case "articulos":    TabFijoContenido.Content = _panelArticulos;    TabFijoTitulo.Text = "Artículos";    break;
+                case "pedidos":      TabFijoContenido.Content = _panelPedidos;      TabFijoTitulo.Text = "Pedidos";      break;
+                case "traspasos":    TabFijoContenido.Content = _panelTraspasos;    TabFijoTitulo.Text = "Traspasos";    break;
+                case "correcciones": TabFijoContenido.Content = _panelCorrecciones; TabFijoTitulo.Text = "Correcciones"; break;
+            }
+            TabContenido.SelectedItem = TabFijo;
         }
 
         public void AbrirPestaña(string titulo, UIElement contenido)

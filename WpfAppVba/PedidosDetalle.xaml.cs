@@ -37,12 +37,14 @@ namespace WpfAppVba
 
         private bool HayCambios => _cambioDocumento || _cambioPedido || _cambioTrasaccion || _cambioEntrega;
 
+        private bool _iniciado = false;
+
         public PedidosDetalle(PedidosGeneral? padre = null, string idEditar = "")
         {
             InitializeComponent();
             _padre    = padre;
             _idEditar = idEditar;
-            Loaded   += (_, _) => CargarUserform();
+            Loaded   += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
