@@ -10,7 +10,7 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 - **Reportes Excel**: `ClosedXML 0.102.2`
 - **IDE recomendado**: Visual Studio 2022 / VS Code + extensión C#
 - **Proyecto**: `WpfAppVba/WpfAppVba.csproj`
-- **Rama de desarrollo activa**: `claude/nifty-newton-80SgZ`
+- **Rama de desarrollo activa**: `sistemaControl_1.5`
 
 ## Lo Que Está Implementado y Funciona
 
@@ -19,32 +19,58 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 - Sistema de pestañas con deduplicación por clave (`AbrirPestaña`, `CerrarPestaña`, `CerrarPestañaPorClave`, `SeleccionarPestaña`).
 - **Registro de pestañas por sección**: cada sección del sidebar conserva sus propias pestañas abiertas al navegar (`_pestañasPorSeccion`).
 - **Memoria de pestaña activa por sección**: al volver a una sección, se restaura la última pestaña enfocada (`_pestañaSeleccionadaPorSeccion`).
-- Tema visual dinámico (recursos `ThemeBgPrincipal`, `ThemeBtnSecBg`, etc.)
+- Tema visual dinámico (recursos `ThemeBgPrincipal`, `ThemeBtnSecBg`, etc.) configurable desde Configuración.
 
-### Secciones del sidebar (todas implementadas con lógica de pestañas)
+### Secciones del sidebar (orden visual)
 | Botón | Panel fijo | Detalle en pestaña | Selector en pestaña |
 |-------|-----------|-------------------|---------------------|
 | 📋 Artículos | `ArticulosGeneral` | `ArticulosDetalle` (modal Window) | — |
 | 📑 Pedidos | `PedidosGeneral` | `PedidosDetalle` (pestaña) | TercerosGeneral, ArticulosGeneral |
 | 🔄 Traspasos | `TraspasosGeneral` | `TraspasosDetalle` (pestaña) | SucursalesGeneral, ArticulosGeneral |
 | 🔧 Correcciones | `CorreccionesGeneral` | `CorreccionesDetalle` (modal Window) | ArticulosGeneral (modal) |
+| *(separador)* | | | |
 | 👥 Terceros | `TercerosGeneral` | `TercerosDetalle` (pestaña) | — |
-| 🏢 Sucursales | `SucursalesGeneral` | `SucursalesDetalle` (pestaña) | RegionesGeneral (modal) |
-| 📊 Inventarios | modal Window | `InventariosDetalle` (modal Window) | ArticulosGeneral (modal) |
-| 💲 Precios | modal Window | — | — |
-| ⚙ Configuración | modal Window | — | — |
+| 🏢 Sucursales | `SucursalesGeneral` | `SucursalesDetalle` (pestaña) | RegionesGeneral (pestaña-selector) |
+| 🗂 Familias | `FamiliasGeneral` | `FamiliasDetalle` (pestaña) | — |
+| 📦 Productos | `ProductosGeneral` | `ProductosDetalle` (pestaña) | — |
+| 🏭 Industrias | `IndustriasGeneral` | `IndustriasDetalle` (pestaña) | — |
+| 🏷 Categorías | `CategoriasGeneral` | `CategoriasDetalle` (pestaña) | — |
+| 📊 Inventarios | `InventariosGeneral` | `InventariosDetalle` (pestaña) | ArticulosGeneral (pestaña) |
+| 🌐 Regiones | `RegionesGeneral` | `RegionesDetalle` (pestaña) | — |
+| 💲 Precios | `PreciosGeneral` | `PreciosDetalle` (pestaña) | RegionesGeneral (pestaña-selector) |
+| ⚙ Configuración | `Configuracion` (embedded) | — | — |
+
+### Paneles declarados en ConsolaMovimientos
+```csharp
+private readonly ArticulosGeneral    _panelArticulos     = new();
+private readonly PedidosGeneral      _panelPedidos       = new();
+private readonly TraspasosGeneral    _panelTraspasos     = new();
+private readonly CorreccionesGeneral _panelCorrecciones  = new();
+private readonly TercerosGeneral     _panelTerceros      = new();
+private readonly SucursalesGeneral   _panelSucursales    = new();
+private readonly FamiliasGeneral     _panelFamilias      = new();
+private readonly ProductosGeneral    _panelProductos     = new();
+private readonly IndustriasGeneral   _panelIndustrias    = new();
+private readonly CategoriasGeneral   _panelCategorias    = new();
+private readonly InventariosGeneral  _panelInventarios   = new();
+private readonly PreciosGeneral      _panelPrecios       = new();
+private readonly RegionesGeneral     _panelRegiones      = new();
+private readonly Configuracion       _panelConfiguracion = new();
+```
 
 ### Patrones de comportamiento implementados
 - `_iniciado` flag en todos los paneles (evita recarga al cambiar de pestaña).
 - `Cerrando` event + `IntentarCerrar()` en todos los detalles embebidos en pestañas.
-- Selector tabs deduplicados por contexto: `seleccionar-tercero|{contexto}`, `seleccionar-sucursal|{contexto}`, `buscar-articulo|{contexto}`, `importar-articulos|{contexto}`.
-- Botones de gestión (Nuevo/Editar/Eliminar) ocultos en modo selector; botón "Seleccionar" visible en modo selector; "Actualizar" siempre visible.
+- Selector tabs deduplicados por contexto: `seleccionar-tercero|{contexto}`, `seleccionar-sucursal|{contexto}`, `buscar-articulo|{contexto}`, `importar-articulos|{contexto}`, `seleccionar-region|{contexto}`.
+- Botones de gestión (Nuevo/Editar/Eliminar) ocultos en modo selector; botón "Seleccionar" visible solo en modo selector; "Actualizar" siempre visible.
 - Actualización incremental del grid tras crear/editar/eliminar (sin recargar todo).
+- **Nombres de botones CRUD específicos por entidad**: todos los formularios General usan etiquetas explícitas ("Nuevo Artículo", "Editar Traspaso", "Eliminar Corrección", etc.).
+- **Botones Guardar/Cancelar en detalles**: posición inferior izquierda, estilo uniforme — Guardar `#1A73E8`/blanco, Cancelar `ThemeBtnSecBg`/`ThemeBtnSecFg`, ambos con `Cursor="Hand"`.
 
 ## Decisiones de Arquitectura Importantes
 
 ### 1. Ventana única (Single-Window UI)
-`ConsolaMovimientos` es la **única ventana OS**. Todo se embebe en pestañas. No hay ventanas secundarias de gestión principal. Excepción: formularios pequeños de detalle que siguen como modal (`InventariosDetalle`, `CorreccionesDetalle`, `ArticulosDetalle`, `RegionesGeneral`, `PreciosGeneral`).
+`ConsolaMovimientos` es la **única ventana OS**. Todo se embebe en pestañas. No hay ventanas secundarias de gestión principal. Excepción: `ArticulosDetalle` y `CorreccionesDetalle` siguen siendo modal Windows (pendiente de migrar).
 
 ### 2. Patrón `Cerrando` + `IntentarCerrar`
 ```csharp
@@ -67,8 +93,17 @@ consola.AbrirPestaña($"Pedido {docSel}", dlg, $"pedido-{docSel}");
 // Si ya existe una pestaña con esa clave, solo la enfoca
 ```
 
-### 4. Selector tabs con contexto
-Un pedido abierto puede tener exactamente un "Seleccionar Tercero (Pedido 34)" y otro "Seleccionar Tercero (Pedido 50)". Clave: `seleccionar-tercero|Pedido 34`.
+### 4. Selector tabs con contexto (callback-based)
+```csharp
+// OpenAsTab con callback — no usa estado global, sino lambda:
+RegionesGeneral.OpenAsTab(
+    Window.GetWindow(this)!,
+    id => { Box_Referido_Codigo.Text = id; },  // callback al seleccionar
+    contexto: _tituloTab,
+    llamador: this
+);
+```
+Clave de deduplicación: `seleccionar-region|{_tituloTab}`. Un pedido abierto puede tener exactamente un "Seleccionar Tercero (Pedido 34)" y otro "Seleccionar Tercero (Pedido 50)".
 
 ### 5. `_iniciado` flag
 ```csharp
@@ -76,9 +111,13 @@ Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarDatos(); Co
 ```
 WPF re-dispara `Loaded` cuando un UserControl se mueve entre pestañas del TabControl. Sin este guard, los datos se recargarían al cambiar de sección.
 
-### 6. `OpenAsTab` vs `OpenAsDialog`
-- `OpenAsTab`: abre el control como pestaña en ConsolaMovimientos (sistema de pestañas).
-- `OpenAsDialog` (en ArticulosGeneral, TercerosGeneral, SucursalesGeneral): abre como pestaña en ConsolaMovimientos pero con el patrón de "selector" — se reutiliza como "abrir en pestaña" para el contexto. Nombre heredado del primer patrón modal, ahora siempre usa pestañas.
+### 6. `OpenAsTab` (patrón selector)
+```csharp
+// Método estático en el General:
+public static void OpenAsTab(Window ventana, Action<string>? callback, string contexto, UserControl llamador)
+```
+- Sin callback → modo normal (Nuevo/Editar/Eliminar visibles, Seleccionar oculto).
+- Con callback → modo selector (Nuevo/Editar/Eliminar ocultos, Seleccionar visible en pie izquierdo).
 
 ### 7. Registro de pestañas por sección
 ```csharp
@@ -86,32 +125,57 @@ private readonly Dictionary<string, List<TabItem>> _pestañasPorSeccion = new()
 {
     ["articulos"] = new(), ["pedidos"] = new(), ["traspasos"] = new(),
     ["correcciones"] = new(), ["terceros"] = new(), ["sucursales"] = new(),
+    ["familias"] = new(), ["productos"] = new(), ["industrias"] = new(),
+    ["categorias"] = new(), ["inventarios"] = new(), ["precios"] = new(),
+    ["regiones"] = new(), ["configuracion"] = new(),
 };
-private readonly Dictionary<string, TabItem?> _pestañaSeleccionadaPorSeccion = new() { ... };
 ```
 Al cambiar sección: guardar pestañas actuales + pestaña activa → cambiar panel fijo → restaurar pestañas + pestaña activa de la nueva sección.
 
-## Lo Que Falta Por Hacer (Con Prioridades)
+### 8. Convención de botones CRUD
+Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
+- Nuevo/Nueva `{Entidad}` (azul `#1A73E8`)
+- Insertar `{Entidad}` (azul, solo en Artículos)
+- Editar `{Entidad}` (secundario `ThemeBtnSecBg`)
+- Eliminar `{Entidad}` (rojo `#D93025`)
+- Actualizar (secundario, siempre visible)
+- Seleccionar (visible solo en modo selector)
+
+## Lo Que Falta Por Hacer
 
 ### Alta prioridad
-- [ ] **CorreccionesGeneral → lógica de pestañas**: `CorreccionesDetalle` aún se abre con `ShowDialog()`. Aplicar el mismo patrón que Traspasos (Window → UserControl, `Cerrando`, tab en ConsolaMovimientos).
+- [ ] **CorreccionesDetalle → lógica de pestañas**: aún se abre con `ShowDialog()`. Aplicar el mismo patrón que Traspasos (Window → UserControl, `Cerrando`, tab en ConsolaMovimientos). Su selector de artículos también usa modal.
+- [ ] **ArticulosDetalle → lógica de pestañas**: aún es modal Window. Migrar a pestaña igual que los demás detalles.
 - [ ] Verificar compilación y prueba completa del sistema (no hay herramientas de build en el entorno cloud — debe hacerse en máquina local).
 
 ### Media prioridad
-- [ ] **InventariosGeneral**: actualmente es una modal Window independiente del sistema de pestañas. Podría integrarse como sección sidebar.
 - [ ] Botón X de las pestañas dinámicas debería llamar `IntentarCerrar()` si el contenido lo implementa, en vez de cerrar directamente (actualmente `CerrarPestaña` cierra sin consultar).
+- [ ] Exportación de datos en otras secciones (actualmente solo ArticulosGeneral tiene "Informe Excel").
 
 ### Baja prioridad / Futuro
-- [ ] Tema visual configurable (ya existe base con `DynamicResource`)
 - [ ] Reportes adicionales en Excel
-- [ ] Exportación de datos en otras secciones (actualmente solo ArticulosGeneral tiene "Informe Excel")
+- [ ] Mejoras de rendimiento en carga de grids grandes
 
 ## Problemas Conocidos o Pendientes
 
 - **Sin herramientas de build en el entorno cloud**: todos los cambios se aplican siguiendo patrones existentes, pero no pueden compilarse ni ejecutarse remotamente. Siempre verificar localmente antes de merge a producción.
 - **`AppState.TipoPedido` y `AppState.TipoMovimiento` son globales**: en `PedidosGeneral.AbrirEditar` se leen del DB antes de abrir la pestaña para garantizar el valor correcto. Si se abrieran dos pestañas de edición simultáneas muy rápido, podría haber condición de carrera (actualmente no es un problema práctico).
 - **`CorreccionesDetalle` sigue siendo modal**: usa `OpenAsDialog` de ArticulosGeneral (modal window) para buscar artículos. Esto es inconsistente con el patrón de Pedidos/Traspasos pero funciona.
-- **Rama de trabajo**: todos los cambios van a `claude/nifty-newton-80SgZ`. No usar otras ramas sin coordinación.
+- **Rama de trabajo**: todos los cambios van a `sistemaControl_1.5`. Los commits se generan primero en una rama de sesión (`claude/...`) y luego se pasan a `sistemaControl_1.5` por fast-forward.
+
+## Historial de Cambios por Sesión
+
+### Sesión anterior (antes de compactación)
+- Precios migrado a panel sidebar + pestañas (`PreciosGeneral`, `PreciosDetalle`).
+- Regiones: nueva sección en sidebar entre Inventarios y Precios (`RegionesGeneral`, `RegionesDetalle`).
+- Sucursales: selector de región vía `RegionesGeneral.OpenAsTab` con callback (sin estado global).
+- Inventarios migrado a panel sidebar + pestañas (`InventariosGeneral`, `InventariosDetalle`); selección de artículos vía `ArticulosGeneral.OpenAsTab`.
+- Configuración: ya tenía soporte embedded en `BtnGuardar_Click`; no requirió cambios de código.
+
+### Sesión actual
+- **SucursalesDetalle**: botones Guardar/Cancelar movidos a inferior izquierda con estilo uniforme (`#1A73E8`, `ThemeBtnSecBg`/`ThemeBtnSecFg`, `Cursor="Hand"`), igual a TercerosDetalle.
+- **Todos los formularios General**: botones CRUD renombrados para incluir el nombre de la entidad (e.g., "Nuevo Traspaso", "Editar Corrección", "Eliminar Artículo").
+- **Rama**: todos los cambios en `sistemaControl_1.5` (fast-forward desde `claude/awesome-turing-SBiHH`).
 
 ## Comandos Importantes
 
@@ -119,7 +183,7 @@ Al cambiar sección: guardar pestañas actuales + pestaña activa → cambiar pa
 ```bash
 git clone <repo-url>
 cd WpfAppVba
-git checkout claude/nifty-newton-80SgZ
+git checkout sistemaControl_1.5
 # Abrir WpfAppVba/WpfAppVba.csproj en Visual Studio 2022
 ```
 
@@ -138,9 +202,9 @@ dotnet run --project WpfAppVba.csproj
 
 ### Git (rama activa)
 ```bash
-git checkout claude/nifty-newton-80SgZ
-git pull origin claude/nifty-newton-80SgZ
-git push -u origin claude/nifty-newton-80SgZ
+git checkout sistemaControl_1.5
+git pull origin sistemaControl_1.5
+git push -u origin sistemaControl_1.5
 ```
 
 ### Restaurar paquetes NuGet (si es necesario)
