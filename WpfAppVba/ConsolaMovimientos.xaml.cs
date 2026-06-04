@@ -22,6 +22,8 @@ namespace WpfAppVba
         private readonly ProductosGeneral    _panelProductos    = new();
         private readonly IndustriasGeneral   _panelIndustrias   = new();
         private readonly CategoriasGeneral   _panelCategorias   = new();
+        private readonly PreciosGeneral      _panelPrecios      = new();
+        private readonly RegionesGeneral     _panelRegiones     = new();
 
         // Cada sección del menú lateral conserva su propio juego de pestañas dinámicas.
         private string _seccionActiva = "articulos";
@@ -37,6 +39,8 @@ namespace WpfAppVba
             ["productos"]    = new List<TabItem>(),
             ["industrias"]   = new List<TabItem>(),
             ["categorias"]   = new List<TabItem>(),
+            ["precios"]      = new List<TabItem>(),
+            ["regiones"]     = new List<TabItem>(),
         };
         private readonly Dictionary<string, TabItem?> _pestañaSeleccionadaPorSeccion = new()
         {
@@ -50,6 +54,8 @@ namespace WpfAppVba
             ["productos"]    = null,
             ["industrias"]   = null,
             ["categorias"]   = null,
+            ["precios"]      = null,
+            ["regiones"]     = null,
         };
 
         public ConsolaMovimientos()
@@ -101,6 +107,8 @@ namespace WpfAppVba
                 case "productos":    TabFijoContenido.Content = _panelProductos;    TabFijoTitulo.Text = "Productos";    break;
                 case "industrias":   TabFijoContenido.Content = _panelIndustrias;   TabFijoTitulo.Text = "Industrias";   break;
                 case "categorias":   TabFijoContenido.Content = _panelCategorias;   TabFijoTitulo.Text = "Categorías";   break;
+                case "precios":      TabFijoContenido.Content = _panelPrecios;      TabFijoTitulo.Text = "Precios";      break;
+                case "regiones":     TabFijoContenido.Content = _panelRegiones;     TabFijoTitulo.Text = "Regiones";     break;
             }
 
             // 3. Restaurar las pestañas propias de la nueva sección
@@ -278,9 +286,16 @@ namespace WpfAppVba
             win.ShowDialog();
         }
 
+        private void BtnNav_Regiones_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("regiones");
+            MarcarActivo(BtnNav_Regiones);
+        }
+
         private void BtnNav_Precios_Click(object sender, RoutedEventArgs e)
         {
-            new PreciosGeneral { Owner = this }.ShowDialog();
+            MostrarPanel("precios");
+            MarcarActivo(BtnNav_Precios);
         }
 
         private void BtnNav_Configuracion_Click(object sender, RoutedEventArgs e)

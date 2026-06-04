@@ -206,6 +206,10 @@
                                     Content="📊  Inventarios"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Inventarios_Click"/>
+                            <Button x:Name="BtnNav_Regiones"
+                                    Content="🌐  Regiones"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Regiones_Click"/>
                             <Button x:Name="BtnNav_Precios"
                                     Content="💲  Precios"
                                     Style="{StaticResource NavBtn}"

@@ -7,25 +7,58 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class RegionesGeneral : Window
+    public partial class RegionesGeneral : System.Windows.Controls.UserControl
     {
         private static SqlData Sql => SqlData.Instance;
-        private readonly bool _modoSelector;
+        private readonly Action<string>? _callbackSeleccion;
+        private bool _iniciado = false;
 
-        /// <summary>Cuando se abre en modo selector, aquí queda el ID de la región elegida.</summary>
-        public static string? RegionSeleccionadaStatic { get; set; }
+        public bool ModoSelector => _callbackSeleccion != null;
+        public event Action? Cerrando;
 
-        public RegionesGeneral(bool modoSelector = false)
+        public RegionesGeneral(Action<string>? callbackSeleccion = null)
         {
             InitializeComponent();
-            WindowHelper.AjustarAlEcran(this);
-            _modoSelector = modoSelector;
-            Loaded += (_, _) =>
+            _callbackSeleccion = callbackSeleccion;
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarRegiones(); };
+        }
+
+        public void IntentarCerrar() => Cerrando?.Invoke();
+
+        public static void OpenAsTab(Window owner, Action<string>? callbackSeleccion, string contexto, UIElement? llamador)
+        {
+            var consola = owner as ConsolaMovimientos;
+            if (consola == null) return;
+            var ctrl = new RegionesGeneral(callbackSeleccion);
+            ctrl.Cerrando += () =>
             {
-                if (_modoSelector)
-                    Title = "Seleccionar Región";
-                CargarRegiones();
+                consola.CerrarPestaña(ctrl);
+                consola.SeleccionarPestaña(llamador);
             };
+            string titulo = callbackSeleccion != null
+                ? (string.IsNullOrEmpty(contexto) ? "Seleccionar Región" : $"Seleccionar Región ({contexto})")
+                : "Regiones";
+            if (callbackSeleccion != null)
+            {
+                string clave = string.IsNullOrEmpty(contexto)
+                    ? "seleccionar-region"
+                    : $"seleccionar-region|{contexto}";
+                consola.CerrarPestañaPorClave(clave);
+                consola.AbrirPestaña(titulo, ctrl, clave);
+            }
+            else
+            {
+                consola.AbrirPestaña(titulo, ctrl);
+            }
+        }
+
+        private void ConfigurarModo()
+        {
+            if (!ModoSelector) return;
+            BtnNuevo.Visibility       = Visibility.Collapsed;
+            BtnEditar.Visibility      = Visibility.Collapsed;
+            BtnEliminar.Visibility    = Visibility.Collapsed;
+            BtnSeleccionar.Visibility = Visibility.Visible;
         }
 
         // ─── Carga la lista ────────────────────────────────────────────────────
@@ -92,7 +125,7 @@ namespace WpfAppVba
         private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             e.Handled = true;
-            if (_modoSelector) Seleccionar();
+            if (ModoSelector) Seleccionar();
             else               AbrirEditar();
         }
 
@@ -101,7 +134,7 @@ namespace WpfAppVba
         {
             if (e.Key != Key.Enter) return;
             e.Handled = true;
-            if (_modoSelector) Seleccionar();
+            if (ModoSelector) Seleccionar();
             else               AbrirEditar();
         }
 
@@ -109,22 +142,30 @@ namespace WpfAppVba
         private void Seleccionar()
         {
             if (Grid1.SelectedItem is not RegionFila fila) return;
-            RegionSeleccionadaStatic = fila.Id;
-            Close();
+            _callbackSeleccion?.Invoke(fila.Id);
+            Cerrando?.Invoke();
         }
+
+        private void BtnSeleccionar_Click(object sender, RoutedEventArgs e)
+            => Seleccionar();
 
         // ─── Botones ──────────────────────────────────────────────────────────
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
-            var detalle = new RegionesDetalle() { Owner = this };
-            detalle.ShowDialog();
-            if (detalle.ItemCreadoId == null) return;
-
-            var nueva = ConstruirFila(detalle.ItemCreadoId, 0);
-            FilasGrid.Add(nueva);
-            Renumerar();
-            Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
-            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            var detalle = new RegionesDetalle();
+            detalle.Cerrando += () =>
+            {
+                consola.CerrarPestaña(detalle);
+                if (detalle.ItemCreadoId == null) return;
+                var nueva = ConstruirFila(detalle.ItemCreadoId, 0);
+                FilasGrid.Add(nueva);
+                Renumerar();
+                Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            };
+            consola.AbrirPestaña("Nueva Región", detalle, "nueva-region");
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -168,19 +209,25 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not RegionFila fila) return;
             string idSel = fila.Id;
-            var detalle = new RegionesDetalle(fila.Id) { Owner = this };
-            detalle.ShowDialog();
-
-            var lista = FilasGrid;
-            int idx   = lista.IndexOf(fila);
-            if (idx >= 0)
+            int    linea = fila.Linea;
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            var detalle = new RegionesDetalle(fila.Id);
+            detalle.Cerrando += () =>
             {
-                var actualizada = ConstruirFila(idSel, fila.Linea);
-                lista[idx] = actualizada;
-                Renumerar();
-                Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
-            }
-            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+                consola.CerrarPestaña(detalle);
+                var lista = FilasGrid;
+                int idx   = lista.IndexOf(fila);
+                if (idx >= 0)
+                {
+                    var actualizada = ConstruirFila(idSel, linea);
+                    lista[idx] = actualizada;
+                    Renumerar();
+                    Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
+                }
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            };
+            consola.AbrirPestaña($"Región {idSel}", detalle, $"region-{idSel}");
         }
     }
 

@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -16,6 +15,7 @@ namespace WpfAppVba
         private bool _hayCambios = false;
         private bool _cargando   = true;
         private bool _iniciado   = false;
+        private string _tituloTab = "";
 
         public event Action? Cerrando;
 
@@ -25,9 +25,10 @@ namespace WpfAppVba
         public SucursalesDetalle(SucursalesGeneral? padre = null, string idEditar = "")
         {
             InitializeComponent();
-            _padre    = padre;
-            _idEditar = idEditar;
-            Loaded   += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
+            _padre     = padre;
+            _idEditar  = idEditar;
+            _tituloTab = string.IsNullOrEmpty(idEditar) ? "nueva-sucursal" : $"sucursal-{idEditar}";
+            Loaded    += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
@@ -111,11 +112,9 @@ namespace WpfAppVba
         // ─── Ver regiones (modo selector) ─────────────────────────────────────
         private void BtnVerRegiones_Click(object sender, RoutedEventArgs e)
         {
-            RegionesGeneral.RegionSeleccionadaStatic = null;
-            new RegionesGeneral(modoSelector: true) { Owner = Window.GetWindow(this) }.ShowDialog();
-
-            if (!string.IsNullOrEmpty(RegionesGeneral.RegionSeleccionadaStatic))
-                Box_Referido_Codigo.Text = RegionesGeneral.RegionSeleccionadaStatic;
+            RegionesGeneral.OpenAsTab(Window.GetWindow(this)!,
+                id => { Box_Referido_Codigo.Text = id; },
+                _tituloTab, this);
         }
 
         // ─── Detectar cambios en cualquier campo ──────────────────────────────

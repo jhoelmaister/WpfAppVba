@@ -1,12 +1,11 @@
 using System;
-using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class RegionesDetalle : Window
+    public partial class RegionesDetalle : System.Windows.Controls.UserControl
     {
         private static SqlData Sql => SqlData.Instance;
 
@@ -14,6 +13,10 @@ namespace WpfAppVba
         private readonly bool   _modoEditar;
         private bool _hayCambios = false;
         private bool _cargando   = true;
+        private bool _iniciado   = false;
+        private string _tituloTab = "";
+
+        public event Action? Cerrando;
 
         /// <summary>ID de la región recién creada (solo modo "nuevo").</summary>
         public string? ItemCreadoId { get; private set; }
@@ -21,10 +24,21 @@ namespace WpfAppVba
         public RegionesDetalle(string idEditar = "")
         {
             InitializeComponent();
-            WindowHelper.AjustarAlEcran(this);
             _idEditar   = idEditar;
             _modoEditar = !string.IsNullOrEmpty(idEditar);
-            Loaded += (_, _) => CargarUserform();
+            _tituloTab  = string.IsNullOrEmpty(idEditar) ? "nueva-region" : $"region-{idEditar}";
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
+        }
+
+        public void IntentarCerrar()
+        {
+            if (!_hayCambios) { Cerrando?.Invoke(); return; }
+
+            var res = MessageBox.Show("¿Guardar Cambios?", "Consola",
+                MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+
+            if (res == MessageBoxResult.Yes && Guardar()) Cerrando?.Invoke();
+            else if (res == MessageBoxResult.No)          Cerrando?.Invoke();
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
@@ -128,29 +142,10 @@ namespace WpfAppVba
         // ─── Botones Guardar / Cancelar ───────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            if (Guardar()) { _hayCambios = false; Close(); }
+            if (Guardar()) { _hayCambios = false; Cerrando?.Invoke(); }
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
-        { _hayCambios = false; Close(); }
-
-        // ─── Al cerrar: preguntar si hay cambios ──────────────────────────────
-        private void Window_Closing(object sender, CancelEventArgs e)
-        {
-            if (!_hayCambios) return;
-
-            var res = MessageBox.Show("¿Guardar Cambios?", "Consola",
-                MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-
-            if (res == MessageBoxResult.Yes)
-            {
-                bool ok = Guardar();
-                e.Cancel = !ok;
-            }
-            else if (res == MessageBoxResult.Cancel)
-            {
-                e.Cancel = true;
-            }
-        }
+        { _hayCambios = false; Cerrando?.Invoke(); }
     }
 }

@@ -8,19 +8,23 @@ using WpfAppVba.Data;
 
 namespace WpfAppVba
 {
-    public partial class PreciosGeneral : Window
+    public partial class PreciosGeneral : System.Windows.Controls.UserControl
     {
         private static SqlData Sql => SqlData.Instance;
 
         // Modo de filtro activo: "todos" | "busqueda" | "familia"
         private string _modoFiltro = "todos";
+        private bool _iniciado = false;
+
+        public event Action? Cerrando;
 
         public PreciosGeneral()
         {
             InitializeComponent();
-            WindowHelper.AjustarAlEcran(this);
-            Loaded += (_, _) => { CargarRegiones(); CargarArbol(); CargarArticulos(); };
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarRegiones(); CargarArbol(); CargarArticulos(); };
         }
+
+        public void IntentarCerrar() => Cerrando?.Invoke();
 
         // ─── Carga el selector de regiones ───────────────────────────────────
         private void CargarRegiones()
@@ -322,16 +326,22 @@ namespace WpfAppVba
                 return;
             }
 
-            var detalle = new PreciosDetalle(fila.Id, fila.Codigo, fila.Descripcion,
-                                             "", RegionSeleccionadaId, RegionSeleccionadaDesc) { Owner = this };
-            detalle.ShowDialog();
-            if (detalle.ItemCreadoId == null) return;
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
 
-            var nueva = ConstruirFilaPrecio(detalle.ItemCreadoId, 0);
-            PreciosGrid.Add(nueva);
-            RenumerarPrecios();
-            GridPrecios.SelectedItem = nueva; GridPrecios.ScrollIntoView(nueva);
-            GridFocusHelper.EnfocarCeldaSeleccionada(GridPrecios);
+            var detalle = new PreciosDetalle(fila.Id, fila.Codigo, fila.Descripcion,
+                                             "", RegionSeleccionadaId, RegionSeleccionadaDesc);
+            detalle.Cerrando += () =>
+            {
+                consola.CerrarPestaña(detalle);
+                if (detalle.ItemCreadoId == null) return;
+                var nueva = ConstruirFilaPrecio(detalle.ItemCreadoId, 0);
+                PreciosGrid.Add(nueva);
+                RenumerarPrecios();
+                GridPrecios.SelectedItem = nueva; GridPrecios.ScrollIntoView(nueva);
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridPrecios);
+            };
+            consola.AbrirPestaña("Nuevo Precio", detalle, $"nuevo-precio-{fila.Id}");
         }
 
         private void BtnEditarPrecio_Click(object sender, RoutedEventArgs e)
@@ -340,19 +350,24 @@ namespace WpfAppVba
             if (GridPrecios.SelectedItem is not PrecioHistFila fila) return;
 
             string idSel = fila.Id;
-            var detalle = new PreciosDetalle(art.Id, art.Codigo, art.Descripcion, fila.Id) { Owner = this };
-            detalle.ShowDialog();
-
-            var lista = PreciosGrid;
-            int idx   = lista.IndexOf(fila);
-            if (idx >= 0)
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            var detalle = new PreciosDetalle(art.Id, art.Codigo, art.Descripcion, fila.Id);
+            detalle.Cerrando += () =>
             {
-                var actualizada = ConstruirFilaPrecio(idSel, fila.Linea);
-                lista[idx] = actualizada;
-                RenumerarPrecios();
-                GridPrecios.SelectedItem = actualizada; GridPrecios.ScrollIntoView(actualizada);
-            }
-            GridFocusHelper.EnfocarCeldaSeleccionada(GridPrecios);
+                consola.CerrarPestaña(detalle);
+                var lista = PreciosGrid;
+                int idx   = lista.IndexOf(fila);
+                if (idx >= 0)
+                {
+                    var actualizada = ConstruirFilaPrecio(idSel, fila.Linea);
+                    lista[idx] = actualizada;
+                    RenumerarPrecios();
+                    GridPrecios.SelectedItem = actualizada; GridPrecios.ScrollIntoView(actualizada);
+                }
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridPrecios);
+            };
+            consola.AbrirPestaña("Editar Precio", detalle, $"precio-{idSel}");
         }
 
         private void BtnEliminarPrecio_Click(object sender, RoutedEventArgs e)
@@ -413,18 +428,24 @@ namespace WpfAppVba
 
         private void BtnGestionarRegiones_Click(object sender, RoutedEventArgs e)
         {
-            new RegionesGeneral { Owner = this }.ShowDialog();
-            string? regionActualId = RegionSeleccionadaId;
-            Sql.RegionesObj.Actualizar();
-            CargarRegiones();
-            // Restaurar selección previa si sigue existiendo
-            if (!string.IsNullOrEmpty(regionActualId))
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            string regionActualId = RegionSeleccionadaId;
+            var ctrl = new RegionesGeneral();
+            ctrl.Cerrando += () =>
             {
-                foreach (RegionItem item in CmbRegion.Items)
+                consola.CerrarPestaña(ctrl);
+                Sql.RegionesObj.Actualizar();
+                CargarRegiones();
+                if (!string.IsNullOrEmpty(regionActualId))
                 {
-                    if (item.Id == regionActualId) { CmbRegion.SelectedItem = item; break; }
+                    foreach (RegionItem item in CmbRegion.Items)
+                    {
+                        if (item.Id == regionActualId) { CmbRegion.SelectedItem = item; break; }
+                    }
                 }
-            }
+            };
+            consola.AbrirPestaña("Gestionar Regiones", ctrl, "gestionar-regiones");
         }
     }
 
