@@ -3,207 +3,315 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="{DynamicResource ThemeBgPrincipal}">
 
-    <Grid Margin="16">
+    <UserControl.Resources>
+        <Style x:Key="SectionLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+
+        <Style x:Key="ModernInput" TargetType="TextBox">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeInputBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="CaretBrush" Value="#4F8EF7"/>
+        </Style>
+
+        <Style x:Key="ReadOnlyInput" TargetType="TextBox" BasedOn="{StaticResource ModernInput}">
+            <Setter Property="Background" Value="{DynamicResource ThemeBgReadOnly}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoMuted}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="IsEnabled" Value="False"/>
+        </Style>
+
+        <Style x:Key="SelectorBtn" TargetType="Button">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeBgSurface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style x:Key="CardBorder" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ThemeBgSurface}"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="18,14"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+
+        <Style x:Key="CardHeader" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#4F8EF7"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock x:Name="LblTitulo" Grid.Row="0" FontSize="15" FontWeight="Bold"
-                   Foreground="{DynamicResource ThemeTexto}" Margin="0,0,0,14"/>
-
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <!-- ══ ENCABEZADO ══════════════════════════════════════════════ -->
+        <Border Grid.Row="0" Background="{DynamicResource ThemeBgSurface}"
+                BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,0,0,1"
+                Padding="20,14">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="120"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
 
-                <!-- ID (solo lectura) -->
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="ID:"
-                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
-                           VerticalAlignment="Center" Margin="0,0,8,10"/>
-                <TextBox Grid.Row="0" Grid.Column="1" x:Name="Box_Identificador"
-                         Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="{DynamicResource ThemeBordeInput}"
-                         Margin="0,0,0,10" MaxWidth="120" HorizontalAlignment="Left"
-                         IsEnabled="False"
-                         Background="{DynamicResource ThemeBgReadOnly}"
-                         Foreground="{DynamicResource ThemeTextoMuted}"
-                         TextChanged="Campo_TextChanged"/>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="36" Height="36" CornerRadius="8"
+                            Background="#1A3A6B" Margin="0,0,12,0">
+                        <TextBlock Text="&#x1F4E6;" FontSize="18" HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="LblTitulo" FontSize="14" FontWeight="Bold"
+                                   Foreground="{DynamicResource ThemeTexto}"/>
+                        <TextBlock Text="Gestión de Artículos" FontSize="11"
+                                   Foreground="{DynamicResource ThemeTextoSec}" Margin="0,1,0,0"/>
+                    </StackPanel>
+                </StackPanel>
 
-                <!-- Código + Índice inline -->
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Código:"
-                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
-                           VerticalAlignment="Center" Margin="0,0,8,10"/>
-                <Grid Grid.Row="1" Grid.Column="1" Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="90"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBox x:Name="Box_Codigo" Grid.Column="0"
-                             Height="30" FontSize="12" Padding="6,4"
-                             BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,8,0"
-                             TextChanged="Campo_TextChanged"/>
-                    <TextBlock Grid.Column="1" Text="Índice:"
-                               FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
-                               VerticalAlignment="Center" Margin="0,0,6,0"/>
-                    <TextBox x:Name="Box_Indice" Grid.Column="2"
-                             Height="30" FontSize="12" Padding="6,4"
-                             BorderBrush="{DynamicResource ThemeBordeInput}"
-                             TextChanged="Campo_TextChanged"
-                             PreviewTextInput="Box_Numeros_PreviewTextInput"/>
-                </Grid>
-
-                <!-- Familia (selector) -->
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Familia:"
-                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
-                           VerticalAlignment="Center" Margin="0,0,8,10"/>
-                <Grid Grid.Row="2" Grid.Column="1" Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="80"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBox x:Name="Box_Identificador_Familia" Grid.Column="0"
-                             Height="30" FontSize="12" Padding="6,4"
-                             BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,6,0"
-                             TextChanged="Box_Familia_TextChanged"
-                             PreviewTextInput="Box_Numeros_PreviewTextInput"/>
-                    <TextBlock x:Name="Box_Familia_Descripcion" Grid.Column="1"
-                               VerticalAlignment="Center" FontSize="11"
-                               Foreground="{DynamicResource ThemeTextoMuted}" Margin="0,0,6,0"
-                               TextTrimming="CharacterEllipsis"/>
-                    <Button x:Name="BtnVerFamilias" Grid.Column="2"
-                            Content="Ver Familias" Height="30" Padding="10,0" FontSize="11"
-                            BorderThickness="0" Cursor="Hand"
-                            Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
-                            Click="BtnVerFamilias_Click"/>
-                </Grid>
-
-                <!-- Industria (selector) -->
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="Industria:"
-                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
-                           VerticalAlignment="Center" Margin="0,0,8,10"/>
-                <Grid Grid.Row="3" Grid.Column="1" Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="80"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBox x:Name="Box_Identificador_Industria" Grid.Column="0"
-                             Height="30" FontSize="12" Padding="6,4"
-                             BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,6,0"
-                             TextChanged="Box_Industria_TextChanged"
-                             PreviewTextInput="Box_Numeros_PreviewTextInput"/>
-                    <TextBlock x:Name="Box_Industria_Descripcion" Grid.Column="1"
-                               VerticalAlignment="Center" FontSize="11"
-                               Foreground="{DynamicResource ThemeTextoMuted}" Margin="0,0,6,0"
-                               TextTrimming="CharacterEllipsis"/>
-                    <Button x:Name="BtnVerIndustrias" Grid.Column="2"
-                            Content="Ver Industrias" Height="30" Padding="10,0" FontSize="11"
-                            BorderThickness="0" Cursor="Hand"
-                            Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
-                            Click="BtnVerIndustrias_Click"/>
-                </Grid>
-
-                <!-- Categoría (selector) -->
-                <TextBlock Grid.Row="4" Grid.Column="0" Text="Categoría:"
-                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
-                           VerticalAlignment="Center" Margin="0,0,8,10"/>
-                <Grid Grid.Row="4" Grid.Column="1" Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="80"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBox x:Name="Box_Identificador_Categoria" Grid.Column="0"
-                             Height="30" FontSize="12" Padding="6,4"
-                             BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,6,0"
-                             TextChanged="Box_Categoria_TextChanged"
-                             PreviewTextInput="Box_Numeros_PreviewTextInput"/>
-                    <TextBlock x:Name="Box_Categoria_Descripcion" Grid.Column="1"
-                               VerticalAlignment="Center" FontSize="11"
-                               Foreground="{DynamicResource ThemeTextoMuted}" Margin="0,0,6,0"
-                               TextTrimming="CharacterEllipsis"/>
-                    <Button x:Name="BtnVerCategorias" Grid.Column="2"
-                            Content="Ver Categorías" Height="30" Padding="10,0" FontSize="11"
-                            BorderThickness="0" Cursor="Hand"
-                            Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
-                            Click="BtnVerCategorias_Click"/>
-                </Grid>
-
-                <!-- Separador -->
-                <Separator Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
-                           Background="{DynamicResource ThemeBorde}" Margin="0,0,0,10"/>
-
-                <!-- Descripción -->
-                <TextBlock Grid.Row="6" Grid.Column="0" Text="Descripción:"
-                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
-                           VerticalAlignment="Center" Margin="0,0,8,10"/>
-                <TextBox Grid.Row="6" Grid.Column="1" x:Name="Box_Descripcion"
-                         Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,10"
-                         TextChanged="Campo_TextChanged"/>
-
-                <!-- Modelo -->
-                <TextBlock Grid.Row="7" Grid.Column="0" Text="Modelo:"
-                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
-                           VerticalAlignment="Center" Margin="0,0,8,10"/>
-                <TextBox Grid.Row="7" Grid.Column="1" x:Name="Box_Modelo"
-                         Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,10"
-                         TextChanged="Campo_TextChanged"/>
-
-                <!-- Separador -->
-                <Separator Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2"
-                           Background="{DynamicResource ThemeBorde}" Margin="0,0,0,10"/>
-
-                <!-- Observaciones -->
-                <TextBlock Grid.Row="9" Grid.Column="0" Text="Observaciones:"
-                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
-                           VerticalAlignment="Top" Margin="0,7,8,0"/>
-                <TextBox Grid.Row="9" Grid.Column="1" x:Name="Box_Observacion"
-                         Height="80" FontSize="12" Padding="6,4"
-                         BorderBrush="{DynamicResource ThemeBordeInput}"
-                         TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
-                         TextChanged="Campo_TextChanged"/>
+                <!-- Badge ID -->
+                <Border Grid.Column="1" CornerRadius="6" Background="{DynamicResource ThemeBgReadOnly}"
+                        Padding="10,4" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="ID" FontSize="10" Foreground="{DynamicResource ThemeTextoMuted}"
+                                   VerticalAlignment="Center" Margin="0,0,6,0" FontWeight="SemiBold"/>
+                        <TextBox x:Name="Box_Identificador" Width="48" Height="24"
+                                 FontSize="12" FontWeight="Bold" Padding="4,0"
+                                 VerticalContentAlignment="Center"
+                                 HorizontalContentAlignment="Center"
+                                 BorderThickness="0"
+                                 Background="Transparent"
+                                 Foreground="#4F8EF7"
+                                 IsEnabled="False"
+                                 TextChanged="Campo_TextChanged"/>
+                    </StackPanel>
+                </Border>
             </Grid>
+        </Border>
+
+        <!-- ══ CONTENIDO ══════════════════════════════════════════════ -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16,20,0">
+            <StackPanel>
+
+                <!-- ▸ CARD: IDENTIFICACIÓN -->
+                <Border Style="{StaticResource CardBorder}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CardHeader}" Text="● IDENTIFICACIÓN"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="140"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="CÓDIGO"/>
+                                <TextBox x:Name="Box_Codigo" Style="{StaticResource ModernInput}"
+                                         TextChanged="Campo_TextChanged"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="ÍNDICE"/>
+                                <TextBox x:Name="Box_Indice" Style="{StaticResource ModernInput}"
+                                         TextChanged="Campo_TextChanged"
+                                         PreviewTextInput="Box_Numeros_PreviewTextInput"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ▸ CARD: CLASIFICACIÓN -->
+                <Border Style="{StaticResource CardBorder}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CardHeader}" Text="● CLASIFICACIÓN"/>
+
+                        <!-- Familia -->
+                        <StackPanel Margin="0,0,0,12">
+                            <TextBlock Style="{StaticResource SectionLabel}" Text="FAMILIA"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="Box_Identificador_Familia" Grid.Column="0"
+                                         Style="{StaticResource ModernInput}"
+                                         TextChanged="Box_Familia_TextChanged"
+                                         PreviewTextInput="Box_Numeros_PreviewTextInput"/>
+                                <Border Grid.Column="2" CornerRadius="6"
+                                        Background="{DynamicResource ThemeBgReadOnly}"
+                                        Padding="10,0">
+                                    <TextBlock x:Name="Box_Familia_Descripcion"
+                                               VerticalAlignment="Center" FontSize="12"
+                                               Foreground="{DynamicResource ThemeTextoMuted}"
+                                               TextTrimming="CharacterEllipsis"/>
+                                </Border>
+                                <Button x:Name="BtnVerFamilias" Grid.Column="4"
+                                        Style="{StaticResource SelectorBtn}"
+                                        Content="&#x1F50D; Familias"
+                                        Click="BtnVerFamilias_Click"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Industria -->
+                        <StackPanel Margin="0,0,0,12">
+                            <TextBlock Style="{StaticResource SectionLabel}" Text="INDUSTRIA"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="Box_Identificador_Industria" Grid.Column="0"
+                                         Style="{StaticResource ModernInput}"
+                                         TextChanged="Box_Industria_TextChanged"
+                                         PreviewTextInput="Box_Numeros_PreviewTextInput"/>
+                                <Border Grid.Column="2" CornerRadius="6"
+                                        Background="{DynamicResource ThemeBgReadOnly}"
+                                        Padding="10,0">
+                                    <TextBlock x:Name="Box_Industria_Descripcion"
+                                               VerticalAlignment="Center" FontSize="12"
+                                               Foreground="{DynamicResource ThemeTextoMuted}"
+                                               TextTrimming="CharacterEllipsis"/>
+                                </Border>
+                                <Button x:Name="BtnVerIndustrias" Grid.Column="4"
+                                        Style="{StaticResource SelectorBtn}"
+                                        Content="&#x1F50D; Industrias"
+                                        Click="BtnVerIndustrias_Click"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Categoría -->
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionLabel}" Text="CATEGORÍA"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="Box_Identificador_Categoria" Grid.Column="0"
+                                         Style="{StaticResource ModernInput}"
+                                         TextChanged="Box_Categoria_TextChanged"
+                                         PreviewTextInput="Box_Numeros_PreviewTextInput"/>
+                                <Border Grid.Column="2" CornerRadius="6"
+                                        Background="{DynamicResource ThemeBgReadOnly}"
+                                        Padding="10,0">
+                                    <TextBlock x:Name="Box_Categoria_Descripcion"
+                                               VerticalAlignment="Center" FontSize="12"
+                                               Foreground="{DynamicResource ThemeTextoMuted}"
+                                               TextTrimming="CharacterEllipsis"/>
+                                </Border>
+                                <Button x:Name="BtnVerCategorias" Grid.Column="4"
+                                        Style="{StaticResource SelectorBtn}"
+                                        Content="&#x1F50D; Categorías"
+                                        Click="BtnVerCategorias_Click"/>
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ▸ CARD: DETALLES DEL ARTÍCULO -->
+                <Border Style="{StaticResource CardBorder}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CardHeader}" Text="● DETALLES DEL ARTÍCULO"/>
+
+                        <StackPanel Margin="0,0,0,12">
+                            <TextBlock Style="{StaticResource SectionLabel}" Text="DESCRIPCIÓN"/>
+                            <TextBox x:Name="Box_Descripcion" Style="{StaticResource ModernInput}"
+                                     TextChanged="Campo_TextChanged"/>
+                        </StackPanel>
+
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionLabel}" Text="MODELO"/>
+                            <TextBox x:Name="Box_Modelo" Style="{StaticResource ModernInput}"
+                                     TextChanged="Campo_TextChanged"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ▸ CARD: OBSERVACIONES -->
+                <Border Style="{StaticResource CardBorder}" Margin="0,0,0,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CardHeader}" Text="● OBSERVACIONES"/>
+                        <TextBox x:Name="Box_Observacion"
+                                 MinHeight="80" FontSize="13" Padding="10,8"
+                                 BorderBrush="{DynamicResource ThemeBordeInput}"
+                                 BorderThickness="0,0,0,2"
+                                 Background="{DynamicResource ThemeInputBg}"
+                                 Foreground="{DynamicResource ThemeTexto}"
+                                 TextWrapping="Wrap" AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto"
+                                 TextChanged="Campo_TextChanged"/>
+                    </StackPanel>
+                </Border>
+
+                <Rectangle Height="16"/>
+
+            </StackPanel>
         </ScrollViewer>
 
-        <!-- Guardar / Cancelar / Ver Movimientos -->
-        <DockPanel Grid.Row="2" Margin="0,10,0,0">
-            <Button x:Name="BtnVerMovimientos" DockPanel.Dock="Right"
-                    Content="📊 Ver Movimientos"
-                    Height="32" Padding="14,0" FontSize="12"
-                    Background="{DynamicResource ThemeBtnSecBg}" Foreground="#1A73E8"
-                    BorderThickness="0" Cursor="Hand"
-                    Visibility="Collapsed"
-                    Click="BtnVerMovimientos_Click"/>
-            <StackPanel Orientation="Horizontal">
-                <Button Content="Guardar" Height="32" Padding="14,0" FontSize="12"
-                        Background="#1A73E8" Foreground="White"
-                        BorderThickness="0" Cursor="Hand" Margin="0,0,8,0"
-                        Click="BtnGuardar_Click"/>
-                <Button Content="Cancelar" Height="32" Padding="14,0" FontSize="12"
-                        Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
-                        BorderThickness="0" Cursor="Hand"
-                        Click="BtnCancelar_Click"/>
-            </StackPanel>
-        </DockPanel>
+        <!-- ══ BARRA DE ACCIONES ══════════════════════════════════════ -->
+        <Border Grid.Row="2" Background="{DynamicResource ThemeBgSurface}"
+                BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,1,0,0"
+                Padding="20,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="BtnVerMovimientos" Grid.Column="0"
+                        HorizontalAlignment="Left"
+                        Content="&#x1F4CA; Ver Movimientos"
+                        Height="36" Padding="16,0" FontSize="12"
+                        Background="{DynamicResource ThemeBgReadOnly}"
+                        Foreground="#4F8EF7"
+                        BorderThickness="1" BorderBrush="#1A3A6B"
+                        Cursor="Hand"
+                        Visibility="Collapsed"
+                        Click="BtnVerMovimientos_Click"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="Cancelar"
+                            Height="36" Padding="18,0" FontSize="13"
+                            Background="{DynamicResource ThemeBtnSecBg}"
+                            Foreground="{DynamicResource ThemeBtnSecFg}"
+                            BorderThickness="0" Cursor="Hand" Margin="0,0,10,0"
+                            Click="BtnCancelar_Click"/>
+                    <Button Content="&#x1F4BE; Guardar"
+                            Height="36" Padding="18,0" FontSize="13" FontWeight="SemiBold"
+                            Background="#1A73E8" Foreground="White"
+                            BorderThickness="0" Cursor="Hand"
+                            Click="BtnGuardar_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>
