@@ -50,129 +50,213 @@
         <Style x:Key="RightCell" TargetType="TextBlock">
             <Setter Property="HorizontalAlignment" Value="Right"/>
         </Style>
+
+        <!-- ── Diseño moderno (cards / inputs) ───────────────────────────── -->
+        <Style x:Key="SectionLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+
+        <Style x:Key="ModernInput" TargetType="TextBox">
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeInputBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="CaretBrush" Value="#4F8EF7"/>
+        </Style>
+
+        <Style x:Key="ReadOnlyInput" TargetType="TextBox" BasedOn="{StaticResource ModernInput}">
+            <Setter Property="Background" Value="{DynamicResource ThemeBgReadOnly}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+        </Style>
+
+        <Style x:Key="CardBorder" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ThemeBgSurface}"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="18,14"/>
+        </Style>
+
+        <Style x:Key="CardHeader" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#4F8EF7"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
     </UserControl.Resources>
 
     <!-- ═══════════════════════════════════════════════════════════════════ -->
-    <Grid Margin="14">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>  <!-- 0: Título -->
-            <RowDefinition Height="Auto"/>  <!-- 1: Doc / Fecha / Hora / Estado -->
-            <RowDefinition Height="Auto"/>  <!-- 2: Tercero -->
-            <RowDefinition Height="Auto"/>  <!-- 3: Referencia / Cuenta -->
-            <RowDefinition Height="Auto"/>  <!-- 4: Emisión / Edición -->
-            <RowDefinition Height="Auto"/>  <!-- 5: Separador -->
-            <RowDefinition Height="*"/>     <!-- 6: TabControl -->
-            <RowDefinition Height="Auto"/>  <!-- 7: Totales fila A -->
-            <RowDefinition Height="Auto"/>  <!-- 8: Totales fila B (Guardar/Cancelar) -->
+            <RowDefinition Height="Auto"/>  <!-- 0: Encabezado -->
+            <RowDefinition Height="Auto"/>  <!-- 1: Card de cabecera -->
+            <RowDefinition Height="*"/>     <!-- 2: TabControl -->
+            <RowDefinition Height="Auto"/>  <!-- 3: Totales + acciones -->
         </Grid.RowDefinitions>
 
-        <!-- ══ Row 0: Título ══════════════════════════════════════════════ -->
-        <TextBlock x:Name="LblTitulo" Grid.Row="0" Margin="0,0,0,8"
-                   FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTexto}"
-                   VerticalAlignment="Center"/>
+        <!-- ══ ENCABEZADO ══════════════════════════════════════════════ -->
+        <Border Grid.Row="0" Background="{DynamicResource ThemeBgSurface}"
+                BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,0,0,1"
+                Padding="20,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-        <!-- ══ Row 1: Doc · Fecha · Hora · Estado · Cuenta ═════════════════ -->
-        <Grid Grid.Row="1" Margin="0,0,0,6">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="75"/>
-                <ColumnDefinition Width="10"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="130"/>
-                <ColumnDefinition Width="10"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="100"/>
-                <ColumnDefinition Width="10"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="150"/>
-                <ColumnDefinition Width="10"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="10"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="90"/>
-            </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="36" Height="36" CornerRadius="8"
+                            Background="#1A3A6B" Margin="0,0,12,0">
+                        <TextBlock Text="&#x1F9FE;" FontSize="18" HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="LblTitulo" FontSize="14" FontWeight="Bold"
+                                   Foreground="{DynamicResource ThemeTexto}"/>
+                        <TextBlock Text="Gestión de Pedidos" FontSize="11"
+                                   Foreground="{DynamicResource ThemeTextoSec}" Margin="0,1,0,0"/>
+                    </StackPanel>
+                </StackPanel>
 
-            <TextBlock Grid.Column="0"  Text="Doc. Pedido:" Style="{StaticResource Lbl}"/>
-            <TextBox   Grid.Column="1"  x:Name="Box_DocumentoP" Height="28" FontSize="12"
-                       Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
-                       PreviewTextInput="Box_Numeros_PreviewTextInput"
-                       TextChanged="Campo_TextChanged"/>
+                <!-- Tipo de movimiento -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="TIPO" FontSize="10" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeTextoMuted}"
+                               VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ComboBox x:Name="CboMovimiento" Width="110" Height="30" FontSize="12"
+                              SelectionChanged="CboMovimiento_SelectionChanged">
+                        <ComboBoxItem Content="Venta"/>
+                        <ComboBoxItem Content="Compra"/>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+        </Border>
 
-            <TextBlock Grid.Column="3"  Text="Fecha:" Style="{StaticResource Lbl}"/>
-            <DatePicker Grid.Column="4" x:Name="Box_Fecha" Height="28" FontSize="12"
-                        SelectedDateChanged="Campo_DateChanged"/>
+        <!-- ══ CARD DE CABECERA ════════════════════════════════════════ -->
+        <Border Grid.Row="1" Style="{StaticResource CardBorder}" Margin="16,16,16,0">
+            <StackPanel>
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="150"/>
+                    </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="6"  Text="Hora:" Style="{StaticResource Lbl}"/>
-            <TextBox   Grid.Column="7"  x:Name="Box_Hora" Height="28" FontSize="12"
-                       Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
-                       TextChanged="Campo_TextChanged"/>
+                    <!-- Doc. Pedido -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Style="{StaticResource SectionLabel}" Text="DOC. PEDIDO"/>
+                        <TextBox x:Name="Box_DocumentoP" Style="{StaticResource ModernInput}"
+                                 PreviewTextInput="Box_Numeros_PreviewTextInput"
+                                 TextChanged="Campo_TextChanged"/>
+                    </StackPanel>
 
-            <TextBlock Grid.Column="9"  Text="Estado:" Style="{StaticResource Lbl}"/>
-            <TextBox   Grid.Column="10" x:Name="Box_Estado" Height="28" FontSize="12"
-                       Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
-                       IsReadOnly="True" Background="{DynamicResource ThemeBgReadOnly}" Foreground="{DynamicResource ThemeTextoSec}"/>
+                    <!-- Fecha -->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Style="{StaticResource SectionLabel}" Text="FECHA"/>
+                        <DatePicker x:Name="Box_Fecha" Height="34" FontSize="13"
+                                    VerticalContentAlignment="Center"
+                                    SelectedDateChanged="Campo_DateChanged"/>
+                    </StackPanel>
 
-            <TextBlock Grid.Column="12" Text="Cuenta:" Style="{StaticResource Lbl}"/>
-            <TextBox   Grid.Column="13" x:Name="Box_Cuenta"
-                       Height="28" FontSize="12" Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
-                       IsReadOnly="True" Background="{DynamicResource ThemeBgReadOnly}" Foreground="{DynamicResource ThemeTextoSec}"/>
+                    <!-- Hora -->
+                    <StackPanel Grid.Column="4">
+                        <TextBlock Style="{StaticResource SectionLabel}" Text="HORA"/>
+                        <TextBox x:Name="Box_Hora" Style="{StaticResource ModernInput}"
+                                 TextChanged="Campo_TextChanged"/>
+                    </StackPanel>
 
-            <TextBlock Grid.Column="15" Text="Tipo:" Style="{StaticResource Lbl}"/>
-            <ComboBox  Grid.Column="16" x:Name="CboMovimiento" Height="26" FontSize="12"
-                       SelectionChanged="CboMovimiento_SelectionChanged">
-                <ComboBoxItem Content="Venta"/>
-                <ComboBoxItem Content="Compra"/>
-            </ComboBox>
-        </Grid>
+                    <!-- Estado -->
+                    <StackPanel Grid.Column="6">
+                        <TextBlock Style="{StaticResource SectionLabel}" Text="ESTADO"/>
+                        <TextBox x:Name="Box_Estado" Style="{StaticResource ReadOnlyInput}"/>
+                    </StackPanel>
+                </Grid>
 
-        <!-- ══ Row 2: Tercero + Referencia ══════════════════════════════════ -->
-        <Grid Grid.Row="2" Margin="0,0,0,6">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="80"/>
-                <ColumnDefinition Width="32"/>
-                <ColumnDefinition Width="10"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="10"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.3*"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="0" Text="Tercero:" Style="{StaticResource Lbl}"/>
-            <TextBox   Grid.Column="1" x:Name="Box_Tercero_Identificador"
-                       Height="28" FontSize="12" Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
-                       PreviewTextInput="Box_Numeros_PreviewTextInput"
-                       TextChanged="Box_Tercero_Identificador_TextChanged"/>
-            <Button    Grid.Column="2" Content="..." Width="30" Height="28"
-                       Style="{StaticResource BtnSecundario}" Margin="2,0,0,0"
-                       Click="BtnBuscarTercero_Click"/>
+                    <!-- Tercero -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Style="{StaticResource SectionLabel}" Text="TERCERO"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" x:Name="Box_Tercero_Identificador"
+                                     Style="{StaticResource ModernInput}"
+                                     PreviewTextInput="Box_Numeros_PreviewTextInput"
+                                     TextChanged="Box_Tercero_Identificador_TextChanged"/>
+                            <Button Grid.Column="1" Content="&#x1F50D;" Width="34" Height="34"
+                                    FontSize="13" BorderThickness="1"
+                                    BorderBrush="{DynamicResource ThemeBordeInput}"
+                                    Background="{DynamicResource ThemeBgSurface}"
+                                    Foreground="{DynamicResource ThemeTextoSec}"
+                                    Cursor="Hand" Margin="4,0,0,0"
+                                    Click="BtnBuscarTercero_Click"/>
+                            <Border Grid.Column="3" CornerRadius="6"
+                                    Background="{DynamicResource ThemeBgReadOnly}" Padding="10,0">
+                                <TextBlock x:Name="Box_Tercero_Descripcion"
+                                           FontSize="12" Foreground="{DynamicResource ThemeTexto}"
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"/>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
 
-            <TextBlock Grid.Column="4" x:Name="Box_Tercero_Descripcion"
-                       FontSize="12" Foreground="{DynamicResource ThemeTexto}" VerticalAlignment="Center"
-                       TextTrimming="CharacterEllipsis"/>
+                    <!-- Referencia -->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Style="{StaticResource SectionLabel}" Text="REFERENCIA"/>
+                        <TextBox x:Name="Box_Referencia" Style="{StaticResource ModernInput}"
+                                 TextChanged="Campo_TextChanged"/>
+                    </StackPanel>
+                </Grid>
 
-            <TextBlock Grid.Column="6" Text="Referencia:" Style="{StaticResource Lbl}"/>
-            <TextBox   Grid.Column="7" x:Name="Box_Referencia"
-                       Height="28" FontSize="12" Padding="5,4" BorderBrush="{DynamicResource ThemeBordeInput}"
-                       TextChanged="Campo_TextChanged"/>
-        </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-        <!-- ══ Row 3: (vacío — Cuenta se movió a Row 1) ════════════════════ -->
+                    <!-- Cuenta -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Style="{StaticResource SectionLabel}" Text="CUENTA"/>
+                        <TextBox x:Name="Box_Cuenta" Style="{StaticResource ReadOnlyInput}"/>
+                    </StackPanel>
 
-        <!-- ══ Row 4: Emisión / Edición ══════════════════════════════════ -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,0,0,6">
-            <TextBlock Text="Emisión:" Style="{StaticResource LblMuted}"/>
-            <TextBlock x:Name="Box_Emision" Style="{StaticResource LblMuted}" Margin="0,0,16,0"/>
-            <TextBlock Text="Edición:" Style="{StaticResource LblMuted}"/>
-            <TextBlock x:Name="Box_Edicion" Style="{StaticResource LblMuted}"/>
-        </StackPanel>
+                    <!-- Emisión / Edición -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom"
+                                Margin="0,0,0,8">
+                        <TextBlock Text="Emisión:" Style="{StaticResource LblMuted}"/>
+                        <TextBlock x:Name="Box_Emision" Style="{StaticResource LblMuted}" Margin="0,0,16,0"/>
+                        <TextBlock Text="Edición:" Style="{StaticResource LblMuted}"/>
+                        <TextBlock x:Name="Box_Edicion" Style="{StaticResource LblMuted}"/>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </Border>
 
-        <!-- ══ Row 5: Separador ═══════════════════════════════════════════ -->
-        <Separator Grid.Row="5" Margin="0,0,0,6"/>
-
-        <!-- ══ Row 6: TabControl ══════════════════════════════════════════ -->
-        <TabControl x:Name="TabControl1" Grid.Row="6">
+        <!-- ══ TabControl ══════════════════════════════════════════════ -->
+        <TabControl x:Name="TabControl1" Grid.Row="2" Margin="16,12,16,0"
+                    Background="Transparent" BorderThickness="0">
 
             <!-- ── Tab 1: Artículos ────────────────────────────────────── -->
             <TabItem Header="Artículos del Pedido">
@@ -466,57 +550,70 @@
             </TabItem>
         </TabControl>
 
-        <!-- ══ Row 7: Totales fila A ══════════════════════════════════════ -->
-        <Grid Grid.Row="7" Margin="0,6,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="20"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <!-- ══ BARRA INFERIOR: Totales + Acciones ══════════════════════ -->
+        <Border Grid.Row="3" Background="{DynamicResource ThemeBgSurface}"
+                BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,1,0,0"
+                Padding="20,10">
+            <StackPanel>
+                <!-- Totales -->
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-            <!-- Totales unidades -->
-            <WrapPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="Total:" Style="{StaticResource Lbl}"/>
-                <TextBlock x:Name="TxtTotalUnidades" FontSize="12" FontWeight="Bold"
-                           Foreground="#1A73E8" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                <TextBlock Text="Diferentes:" Style="{StaticResource Lbl}"/>
-                <TextBlock x:Name="TxtUnidadesDiferentes" FontSize="12" FontWeight="Bold"
-                           Foreground="#1A73E8" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                <TextBlock Text="Peq:" Style="{StaticResource Lbl}"/>
-                <TextBlock x:Name="TxtTotalPeq" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
-                           VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <TextBlock Text="Med:" Style="{StaticResource Lbl}"/>
-                <TextBlock x:Name="TxtTotalMed" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
-                           VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <TextBlock Text="Gra:" Style="{StaticResource Lbl}"/>
-                <TextBlock x:Name="TxtTotalGra" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
-                           VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <TextBlock Text="Otros:" Style="{StaticResource Lbl}"/>
-                <TextBlock x:Name="TxtTotalOtros" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
-                           VerticalAlignment="Center"/>
-            </WrapPanel>
+                    <!-- Totales unidades -->
+                    <WrapPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Total:" Style="{StaticResource Lbl}"/>
+                        <TextBlock x:Name="TxtTotalUnidades" FontSize="12" FontWeight="Bold"
+                                   Foreground="#1A73E8" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="Diferentes:" Style="{StaticResource Lbl}"/>
+                        <TextBlock x:Name="TxtUnidadesDiferentes" FontSize="12" FontWeight="Bold"
+                                   Foreground="#1A73E8" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="Peq:" Style="{StaticResource Lbl}"/>
+                        <TextBlock x:Name="TxtTotalPeq" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
+                                   VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Text="Med:" Style="{StaticResource Lbl}"/>
+                        <TextBlock x:Name="TxtTotalMed" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
+                                   VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Text="Gra:" Style="{StaticResource Lbl}"/>
+                        <TextBlock x:Name="TxtTotalGra" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
+                                   VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Text="Otros:" Style="{StaticResource Lbl}"/>
+                        <TextBlock x:Name="TxtTotalOtros" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
+                                   VerticalAlignment="Center"/>
+                    </WrapPanel>
 
-            <!-- Totales divisas -->
-            <WrapPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="Importe:" Style="{StaticResource Lbl}"/>
-                <TextBlock x:Name="TxtTotalImporte" FontSize="12" FontWeight="Bold"
-                           Foreground="#2E7D32" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                <TextBlock Text="Cuenta:" Style="{StaticResource Lbl}"/>
-                <TextBlock x:Name="TxtTotalCuenta" FontSize="12" FontWeight="Bold"
-                           Foreground="#1A73E8" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                <TextBlock Text="Saldo:" Style="{StaticResource Lbl}"/>
-                <TextBlock x:Name="TxtTotalSaldo" FontSize="12" FontWeight="Bold"
-                           Foreground="#D93025" VerticalAlignment="Center"/>
-            </WrapPanel>
-        </Grid>
+                    <!-- Totales divisas -->
+                    <WrapPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Importe:" Style="{StaticResource Lbl}"/>
+                        <TextBlock x:Name="TxtTotalImporte" FontSize="12" FontWeight="Bold"
+                                   Foreground="#2E7D32" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="Cuenta:" Style="{StaticResource Lbl}"/>
+                        <TextBlock x:Name="TxtTotalCuenta" FontSize="12" FontWeight="Bold"
+                                   Foreground="#1A73E8" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="Saldo:" Style="{StaticResource Lbl}"/>
+                        <TextBlock x:Name="TxtTotalSaldo" FontSize="12" FontWeight="Bold"
+                                   Foreground="#D93025" VerticalAlignment="Center"/>
+                    </WrapPanel>
+                </Grid>
 
-        <!-- ══ Row 8: Guardar / Cancelar ═════════════════════════════════ -->
-        <StackPanel Grid.Row="8" Orientation="Horizontal"
-                    HorizontalAlignment="Right" Margin="0,6,0,0">
-            <Button Content="Guardar"  Style="{StaticResource BtnPrimario}"
-                    Margin="0,0,8,0" Click="BtnGuardar_Click"/>
-            <Button Content="Cancelar" Style="{StaticResource BtnSecundario}"
-                    Click="BtnCancelar_Click"/>
-        </StackPanel>
+                <!-- Acciones -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Cancelar"
+                            Height="36" Padding="18,0" FontSize="13"
+                            Background="{DynamicResource ThemeBtnSecBg}"
+                            Foreground="{DynamicResource ThemeBtnSecFg}"
+                            BorderThickness="0" Cursor="Hand" Margin="0,0,10,0"
+                            Click="BtnCancelar_Click"/>
+                    <Button Content="&#x1F4BE; Guardar"
+                            Height="36" Padding="18,0" FontSize="13" FontWeight="SemiBold"
+                            Background="#1A73E8" Foreground="White"
+                            BorderThickness="0" Cursor="Hand"
+                            Click="BtnGuardar_Click"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
     </Grid>
 </UserControl>
