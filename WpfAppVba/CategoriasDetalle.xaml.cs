@@ -1,0 +1,151 @@
+using System;
+using System.Windows;
+using System.Windows.Controls;
+using WpfAppVba.Data;
+
+namespace WpfAppVba
+{
+    public partial class CategoriasDetalle : UserControl
+    {
+        public event Action? Cerrando;
+
+        private static SqlData Sql => SqlData.Instance;
+
+        private readonly string _idEditar;
+        private readonly bool   _modoEditar;
+        private bool _hayCambios = false;
+        private bool _cargando   = true;
+
+        private bool _iniciado = false;
+        private readonly string _tituloTab;
+
+        /// <summary>ID de la categoría recién creada (solo modo "nuevo").</summary>
+        public string? ItemCreadoId { get; private set; }
+
+        public CategoriasDetalle(string idEditar = "", string tituloTab = "")
+        {
+            InitializeComponent();
+            _idEditar   = idEditar;
+            _modoEditar = !string.IsNullOrEmpty(idEditar);
+            _tituloTab  = tituloTab;
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
+        }
+
+        // ─── Carga inicial ────────────────────────────────────────────────────
+        private void CargarUserform()
+        {
+            _cargando = true;
+
+            if (_modoEditar)
+            {
+                LblTitulo.Text       = "Editar Categoría";
+                Box_Codigo.IsEnabled = false;
+                CargarParaEditar();
+            }
+            else
+            {
+                LblTitulo.Text       = "Nueva Categoría";
+                Box_Codigo.IsEnabled = true;
+                CargarParaNuevo();
+            }
+
+            _cargando   = false;
+            _hayCambios = false;
+        }
+
+        private void CargarParaEditar()
+        {
+            string id = _idEditar;
+            Box_Codigo.Text      = id;
+            Box_Descripcion.Text = Sql.CategoriasObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+        }
+
+        private void CargarParaNuevo()
+        {
+            long siguiente = Convert.ToInt64(Sql.CategoriasObj.Maximo("id") ?? 0) + 1;
+            Box_Codigo.Text = siguiente.ToString();
+        }
+
+        // ─── Detectar cambios en cualquier campo ──────────────────────────────
+        private void Campo_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!_cargando) _hayCambios = true;
+        }
+
+        // ─── Guardar ─────────────────────────────────────────────────────────
+        private bool Guardar()
+            => _modoEditar ? GuardarEditar() : GuardarNuevo();
+
+        private bool GuardarEditar()
+        {
+            string codigo = Box_Codigo.Text.Trim();
+            try
+            {
+                Sql.CategoriasObj.EstablecerItem("descripcion", codigo, Box_Descripcion.Text);
+                Sql.CategoriasObj.EstablecerItem("edicion",     codigo, DateTime.Now);
+                Sql.CategoriasObj.EstablecerItem("usuarioE",    codigo, AppState.UsuarioActivo);
+
+                Sql.CategoriasObj.OrdenarData(("id", false));
+                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+        }
+
+        private bool GuardarNuevo()
+        {
+            string codigo = Box_Codigo.Text.Trim();
+            try
+            {
+                if (!Sql.CategoriasObj.VerificarId(codigo, "id"))
+                {
+                    MessageBox.Show("El código ya existe", "Consola",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
+
+                Sql.CategoriasObj.Nuevo(codigo);
+                Sql.CategoriasObj.EstablecerItem("descripcion", codigo, Box_Descripcion.Text);
+                Sql.CategoriasObj.EstablecerItem("emision",     codigo, DateTime.Now);
+                Sql.CategoriasObj.EstablecerItem("edicion",     codigo, DateTime.Now);
+                Sql.CategoriasObj.EstablecerItem("usuario",     codigo, AppState.UsuarioActivo);
+                Sql.CategoriasObj.EstablecerItem("usuarioE",    codigo, AppState.UsuarioActivo);
+
+                Sql.CategoriasObj.OrdenarData(("id", false));
+                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+                ItemCreadoId = codigo;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+        }
+
+        // ─── Botones Guardar / Cancelar ───────────────────────────────────────
+        private void BtnGuardar_Click(object sender, RoutedEventArgs e)
+        {
+            if (Guardar()) { _hayCambios = false; Cerrando?.Invoke(); }
+        }
+
+        private void BtnCancelar_Click(object sender, RoutedEventArgs e)
+        { _hayCambios = false; Cerrando?.Invoke(); }
+
+        // ─── Llamado por el botón X de la pestaña para verificar cambios ──────
+        public void IntentarCerrar()
+        {
+            if (!_hayCambios) { Cerrando?.Invoke(); return; }
+
+            var res = MessageBox.Show("¿Guardar cambios?", "Consola",
+                MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+
+            if (res == MessageBoxResult.Yes && Guardar()) Cerrando?.Invoke();
+            else if (res == MessageBoxResult.No) Cerrando?.Invoke();
+        }
+    }
+}

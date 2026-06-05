@@ -1,0 +1,232 @@
+using System;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using WpfAppVba.Data;
+
+namespace WpfAppVba
+{
+    public partial class SucursalesDetalle : System.Windows.Controls.UserControl
+    {
+        private static SqlData Sql => SqlData.Instance;
+
+        private readonly SucursalesGeneral? _padre;
+        private readonly string _idEditar;
+        private bool _hayCambios = false;
+        private bool _cargando   = true;
+        private bool _iniciado   = false;
+        private string _tituloTab = "";
+
+        public event Action? Cerrando;
+
+        /// <summary>ID de la sucursal recién creada (solo modo "nuevo").</summary>
+        public string? ItemCreadoId { get; private set; }
+
+        public SucursalesDetalle(SucursalesGeneral? padre = null, string idEditar = "")
+        {
+            InitializeComponent();
+            _padre     = padre;
+            _idEditar  = idEditar;
+            _tituloTab = string.IsNullOrEmpty(idEditar) ? "nueva-sucursal" : $"sucursal-{idEditar}";
+            Loaded    += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
+        }
+
+        // ─── Carga inicial ────────────────────────────────────────────────────
+        private void CargarUserform()
+        {
+            _cargando = true;
+
+            if (AppState.EventoFormularioI == "modificar")
+            {
+                LblTitulo.Text       = "Editar Sucursal";
+                Box_Codigo.IsEnabled = false;
+                CargarParaEditar();
+            }
+            else
+            {
+                LblTitulo.Text       = "Nueva Sucursal";
+                Box_Codigo.IsEnabled = true;
+                CargarParaNuevo();
+            }
+
+            _cargando   = false;
+            _hayCambios = false;
+        }
+
+        private void CargarParaEditar()
+        {
+            string id = _idEditar;
+            Box_Codigo.Text      = id;
+            Box_Nit.Text         = Sql.SucursalesObj.ObtenerItem("nit",         id)?.ToString() ?? "";
+            Box_Descripcion.Text = Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+            Box_Telefono.Text    = Sql.SucursalesObj.ObtenerItem("telefono",    id)?.ToString() ?? "";
+            Box_Direccion.Text   = Sql.SucursalesObj.ObtenerItem("direccion",   id)?.ToString() ?? "";
+            Box_Observacion.Text = Sql.SucursalesObj.ObtenerItem("observacion", id)?.ToString() ?? "";
+
+            string regionId = Sql.SucursalesObj.ObtenerItem("region", id)?.ToString() ?? "";
+            Box_Referido_Codigo.Text = regionId;
+            Box_Referido_Descripcion.Text = Sql.RegionesObj.ObtenerItem("descripcion", regionId)?.ToString() ?? "";
+
+            var fechaObj = Sql.SucursalesObj.ObtenerItem("fecha", id);
+            if (fechaObj != null && DateTime.TryParse(fechaObj.ToString(), out DateTime fecha))
+            {
+                Box_Fecha.SelectedDate = fecha.Date;
+                Box_Hora.Text          = fecha.ToString("HH:mm:ss");
+            }
+            else
+            {
+                Box_Fecha.SelectedDate = DateTime.Today;
+                Box_Hora.Text          = "00:00:00";
+            }
+        }
+
+        private void CargarParaNuevo()
+        {
+            long siguiente = Convert.ToInt64(Sql.SucursalesObj.Maximo("id") ?? 0) + 1;
+            Box_Codigo.Text        = siguiente.ToString();
+            var ahora = DateTime.Now;
+            Box_Fecha.SelectedDate = ahora.Date;
+            Box_Hora.Text          = ahora.ToString("HH:mm:ss");
+        }
+
+        // ─── Combina la fecha (DatePicker) con la hora (TextBox) ───────────────
+        private DateTime ObtenerFechaHora()
+        {
+            DateTime fecha = Box_Fecha.SelectedDate ?? DateTime.Today;
+            if (TimeSpan.TryParse(Box_Hora.Text.Trim(), System.Globalization.CultureInfo.InvariantCulture, out var ts))
+                return fecha.Date + ts;
+            return fecha.Date;
+        }
+
+        // ─── Actualizar descripción de la región referida ─────────────────────
+        private void Box_Referido_Codigo_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_cargando) return;
+            _hayCambios = true;
+            string regionId = Box_Referido_Codigo.Text.Trim();
+            Box_Referido_Descripcion.Text = regionId == ""
+                ? ""
+                : Sql.RegionesObj.ObtenerItem("descripcion", regionId)?.ToString() ?? "";
+        }
+
+        // ─── Ver regiones (modo selector) ─────────────────────────────────────
+        private void BtnVerRegiones_Click(object sender, RoutedEventArgs e)
+        {
+            RegionesGeneral.OpenAsTab(Window.GetWindow(this)!,
+                id => { Box_Referido_Codigo.Text = id; },
+                _tituloTab, this);
+        }
+
+        // ─── Detectar cambios en cualquier campo ──────────────────────────────
+        private void Campo_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!_cargando) _hayCambios = true;
+        }
+
+        private void Box_Fecha_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_cargando) _hayCambios = true;
+        }
+
+        // ─── Guardar ──────────────────────────────────────────────────────────
+        private bool Guardar()
+        {
+            return AppState.EventoFormularioI == "modificar"
+                ? GuardarEditar()
+                : GuardarNuevo();
+        }
+
+        private bool GuardarEditar()
+        {
+            string codigo = Box_Codigo.Text.Trim();
+            try
+            {
+                Sql.SucursalesObj.EstablecerItem("nit",         codigo, Box_Nit.Text);
+                Sql.SucursalesObj.EstablecerItem("descripcion", codigo, Box_Descripcion.Text);
+                Sql.SucursalesObj.EstablecerItem("telefono",    codigo, Box_Telefono.Text);
+                Sql.SucursalesObj.EstablecerItem("region",      codigo, Box_Referido_Codigo.Text);
+                Sql.SucursalesObj.EstablecerItem("direccion",   codigo, Box_Direccion.Text);
+                Sql.SucursalesObj.EstablecerItem("observacion", codigo, Box_Observacion.Text);
+                Sql.SucursalesObj.EstablecerItem("fecha",       codigo, ObtenerFechaHora());
+                Sql.SucursalesObj.EstablecerItem("edicion",     codigo, DateTime.Now);
+                Sql.SucursalesObj.EstablecerItem("usuarioE",    codigo, AppState.UsuarioActivo);
+
+                Sql.SucursalesObj.OrdenarData(("id", false));
+                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+        }
+
+        private bool GuardarNuevo()
+        {
+            string codigo = Box_Codigo.Text.Trim();
+            try
+            {
+                if (!Sql.SucursalesObj.VerificarId(codigo, "id"))
+                {
+                    MessageBox.Show("El código ya existe", "Consola",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
+
+                Sql.SucursalesObj.Nuevo(codigo);
+                Sql.SucursalesObj.EstablecerItem("nit",         codigo, Box_Nit.Text);
+                Sql.SucursalesObj.EstablecerItem("descripcion", codigo, Box_Descripcion.Text);
+                Sql.SucursalesObj.EstablecerItem("telefono",    codigo, Box_Telefono.Text);
+                Sql.SucursalesObj.EstablecerItem("region",      codigo, Box_Referido_Codigo.Text);
+                Sql.SucursalesObj.EstablecerItem("direccion",   codigo, Box_Direccion.Text);
+                Sql.SucursalesObj.EstablecerItem("observacion", codigo, Box_Observacion.Text);
+                Sql.SucursalesObj.EstablecerItem("fecha",       codigo, ObtenerFechaHora());
+                Sql.SucursalesObj.EstablecerItem("emision",     codigo, DateTime.Now);
+                Sql.SucursalesObj.EstablecerItem("edicion",     codigo, DateTime.Now);
+                Sql.SucursalesObj.EstablecerItem("usuario",     codigo, AppState.UsuarioActivo);
+                Sql.SucursalesObj.EstablecerItem("usuarioE",    codigo, AppState.UsuarioActivo);
+
+                Sql.SucursalesObj.OrdenarData(("id", false));
+                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+                ItemCreadoId = codigo;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+        }
+
+        // ─── Validación de entrada ────────────────────────────────────────────
+        private void Box_Nit_PreviewTextInput(object sender, TextCompositionEventArgs e)
+            => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
+
+        private void Box_Referido_Codigo_PreviewTextInput(object sender, TextCompositionEventArgs e)
+            => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
+
+        private void Box_Telefono_PreviewTextInput(object sender, TextCompositionEventArgs e)
+            => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
+
+
+        // ─── Botones ──────────────────────────────────────────────────────────
+        private void BtnGuardar_Click(object sender, RoutedEventArgs e)
+        { if (Guardar()) { _hayCambios = false; Cerrando?.Invoke(); } }
+
+        private void BtnCancelar_Click(object sender, RoutedEventArgs e)
+        { _hayCambios = false; Cerrando?.Invoke(); }
+
+        // ─── Al cerrar: preguntar si hay cambios ──────────────────────────────
+        public void IntentarCerrar()
+        {
+            if (!_hayCambios) { Cerrando?.Invoke(); return; }
+
+            var res = MessageBox.Show("¿Guardar Cambios?", "Consola",
+                MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+
+            if (res == MessageBoxResult.Yes && Guardar()) Cerrando?.Invoke();
+            else if (res == MessageBoxResult.No)          Cerrando?.Invoke();
+        }
+    }
+}

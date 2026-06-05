@@ -1,0 +1,46 @@
+<Window x:Class="WpfAppVba.InformeExcelArticulos"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Generar Informe Excel — Artículos"
+        Width="380" Height="230"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        Background="{DynamicResource ThemeBgPrincipal}">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Nombre del informe -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="Nombre del informe:" FontSize="12" Margin="0,0,0,4"
+                       Foreground="{DynamicResource ThemeTexto}"/>
+            <TextBox x:Name="TxtNombre" Height="28" FontSize="12" Padding="6,4"
+                     BorderBrush="{DynamicResource ThemeBordeInput}"
+                     Background="{DynamicResource ThemeInputBg}"
+                     Foreground="{DynamicResource ThemeTexto}"/>
+        </StackPanel>
+
+        <!-- Fecha de corte -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,18">
+            <TextBlock Text="Fecha de corte (dd/mm/aaaa):" FontSize="12" Margin="0,0,0,4"
+                       Foreground="{DynamicResource ThemeTexto}"/>
+            <TextBox x:Name="TxtFecha" Height="28" FontSize="12" Padding="6,4"
+                     BorderBrush="{DynamicResource ThemeBordeInput}"
+                     Background="{DynamicResource ThemeInputBg}"
+                     Foreground="{DynamicResource ThemeTexto}"
+                     ToolTip="Ingrese la fecha de corte en formato dd/mm/aaaa"/>
+        </StackPanel>
+
+        <!-- Botón crear -->
+        <Button Grid.Row="2" x:Name="BtnCrearInforme" Content="Crear Informe"
+                Height="32" FontSize="13"
+                Background="#1A73E8" Foreground="White"
+                BorderThickness="0" Cursor="Hand"
+                Click="BtnCrearInforme_Click"/>
+    </Grid>
+</Window>

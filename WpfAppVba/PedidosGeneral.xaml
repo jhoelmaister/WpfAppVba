@@ -1,0 +1,213 @@
+<UserControl x:Class="WpfAppVba.PedidosGeneral"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Background="{DynamicResource ThemeBgPrincipal}">
+
+    <UserControl.Resources>
+        <Style x:Key="BtnBase" TargetType="Button">
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style x:Key="BtnPrimario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="#1A73E8"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style x:Key="BtnSecundario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="{DynamicResource ThemeBtnSecBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeBtnSecFg}"/>
+        </Style>
+        <Style x:Key="BtnPeligro" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="#D93025"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="12">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="160"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Panel izquierdo: TreeView meses + filtros -->
+        <Grid Grid.Column="0" Margin="0,0,8,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1" Background="{DynamicResource ThemeBgSurface}">
+                <TreeView x:Name="Tree1"
+                          SelectedItemChanged="Tree1_SelectedItemChanged"
+                          PreviewMouseLeftButtonDown="Tree1_PreviewMouseLeftButtonDown"
+                          FontSize="12"/>
+            </Border>
+
+            <!-- Filtros Estado / Cuenta -->
+            <Border Grid.Row="1" Margin="0,8,0,0" BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
+                    Background="{DynamicResource ThemeBgSurface}" Padding="8,6">
+                <StackPanel>
+                    <TextBlock Text="Estado" FontSize="12" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeTexto}" Margin="0,0,0,4"/>
+                    <RadioButton x:Name="BtnFiltroTodos" Content="Todos" IsChecked="True"
+                                 GroupName="EstadoP" FontSize="12" Margin="0,0,0,3"
+                                 Checked="FiltroEstado_Checked"/>
+                    <RadioButton x:Name="BtnFiltroPendiente" Content="Pendiente"
+                                 GroupName="EstadoP" FontSize="12" Margin="0,0,0,3"
+                                 Checked="FiltroEstado_Checked"/>
+                    <RadioButton x:Name="BtnFiltroEntregado" Content="Entregado"
+                                 GroupName="EstadoP" FontSize="12" Margin="0,0,0,3"
+                                 Checked="FiltroEstado_Checked"/>
+                    <RadioButton x:Name="BtnFiltroEntregaParcial" Content="Entrega Parcial"
+                                 GroupName="EstadoP" FontSize="12"
+                                 Checked="FiltroEstado_Checked"/>
+
+                    <TextBlock Text="Cuenta" FontSize="12" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeTexto}" Margin="0,10,0,4"/>
+                    <RadioButton x:Name="BtnCuentaTodos" Content="Todos" IsChecked="True"
+                                 GroupName="CuentaP" FontSize="12" Margin="0,0,0,3"
+                                 Checked="FiltroCuenta_Checked"/>
+                    <RadioButton x:Name="BtnCuentaPendiente" Content="Pendiente"
+                                 GroupName="CuentaP" FontSize="12" Margin="0,0,0,3"
+                                 Checked="FiltroCuenta_Checked"/>
+                    <RadioButton x:Name="BtnCuentaCancelado" Content="Cancelado"
+                                 GroupName="CuentaP" FontSize="12" Margin="0,0,0,3"
+                                 Checked="FiltroCuenta_Checked"/>
+                    <RadioButton x:Name="BtnCuentaParcial" Content="Pendiente Parcial"
+                                 GroupName="CuentaP" FontSize="12"
+                                 Checked="FiltroCuenta_Checked"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Panel derecho -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*" MinHeight="120"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Título tipo movimiento + filtro -->
+            <Grid Grid.Row="0" Margin="0,0,0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="LblTipoMovimiento" Grid.Column="0"
+                           FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTexto}"
+                           VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Movimiento:" FontSize="12" VerticalAlignment="Center"
+                               Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,6,0"/>
+                    <ComboBox x:Name="CboTipoMovimiento" Width="90" Height="26" FontSize="12"
+                              SelectionChanged="CboTipoMovimiento_SelectionChanged">
+                        <ComboBoxItem Content="Todos" IsSelected="True"/>
+                        <ComboBoxItem Content="Ventas"/>
+                        <ComboBoxItem Content="Compras"/>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+
+            <!-- Buscador -->
+            <Grid Grid.Row="1" Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="TxtBuscar" Grid.Column="0" Height="28" FontSize="12"
+                         Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,6,0"
+                         KeyDown="TxtBuscar_KeyDown"/>
+                <Button Content="Buscar" Grid.Column="1"
+                        Style="{StaticResource BtnSecundario}"
+                        Click="BtnBuscar_Click"/>
+            </Grid>
+
+            <!-- DataGrid principal (Lista1) -->
+            <DataGrid x:Name="Grid1" Grid.Row="2"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      SelectionMode="Single"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="Horizontal"
+                      BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
+                      FontSize="12"
+                      SelectionChanged="Grid1_SelectionChanged"
+                      MouseDoubleClick="Grid1_MouseDoubleClick"
+                      PreviewKeyDown="Grid1_PreviewKeyDown">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Línea"             Binding="{Binding Linea}"       Width="55"/>
+                    <DataGridTextColumn Header="DocumentoP"        Binding="{Binding DocumentoP}"  Width="90"/>
+                    <DataGridTextColumn Header="Fecha"             Binding="{Binding FechaStr}"     Width="150"/>
+                    <DataGridTextColumn Header="Movimiento"        Binding="{Binding Movimiento}"   Width="100"/>
+                    <DataGridTextColumn Header="Cliente/Proveedor" Binding="{Binding TerceroDesc}"  Width="*"/>
+                    <DataGridTextColumn Header="Estado"            Binding="{Binding Estado}"       Width="120"/>
+                    <DataGridTextColumn Header="Cuenta"            Binding="{Binding Cuenta}"       Width="120"/>
+                    <DataGridTextColumn Header="Cantidad"          Binding="{Binding Cantidad, StringFormat=#\,##0.##}"  Width="70"
+                                        ElementStyle="{StaticResource CeldaNumero}"/>
+                    <DataGridTextColumn Header="Importe"           Binding="{Binding Importe,  StringFormat=#\,##0.##}"  Width="80"
+                                        ElementStyle="{StaticResource CeldaNumero}"/>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- Panel detalle artículos (Lista2) — visible cuando hay fila seleccionada -->
+            <Border x:Name="PanelDetalle" Grid.Row="3"
+                    Visibility="Collapsed"
+                    Margin="0,4,0,0"
+                    BorderBrush="#1A73E8" BorderThickness="1"
+                    Background="{DynamicResource ThemeBgSurface}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="110"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="Artículos del documento"
+                               FontSize="11" FontWeight="SemiBold" Foreground="#1A73E8"
+                               Margin="6,3,0,2"/>
+                    <DataGrid x:Name="Lista2" Grid.Row="1"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              BorderThickness="0"
+                              FontSize="11">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Línea"       Binding="{Binding Linea}"       Width="40"/>
+                            <DataGridTextColumn Header="Artículo"    Binding="{Binding ArticuloId}"  Width="60"/>
+                            <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
+                            <DataGridTextColumn Header="Cantidad"    Binding="{Binding Cantidad, StringFormat=#\,##0.##}"  Width="60"
+                                                ElementStyle="{StaticResource CeldaNumero}"/>
+                            <DataGridTextColumn Header="Importe"     Binding="{Binding Importe,  StringFormat=#\,##0.##}"  Width="70"
+                                                ElementStyle="{StaticResource CeldaNumero}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <!-- Totales -->
+            <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,6,0,0">
+                <TextBlock Text="Total Cantidad:" VerticalAlignment="Center" FontSize="12" Margin="0,0,4,0"/>
+                <TextBlock x:Name="TxtTotalCantidad" VerticalAlignment="Center" FontSize="12"
+                           FontWeight="SemiBold" Margin="0,0,16,0"/>
+                <TextBlock Text="Total Importe:" VerticalAlignment="Center" FontSize="12" Margin="0,0,4,0"/>
+                <TextBlock x:Name="TxtTotalImporte" VerticalAlignment="Center" FontSize="12"
+                           FontWeight="SemiBold"/>
+            </StackPanel>
+
+            <!-- Botones -->
+            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                <Button Content="Nuevo Pedido Rápido" Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"   Click="BtnNuevoRapido_Click"/>
+                <Button Content="Nuevo Pedido Normal" Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"   Click="BtnNuevoNormal_Click"/>
+                <Button Content="Editar Pedido"     Margin="0,0,6,0" Style="{StaticResource BtnSecundario}" Click="BtnEditar_Click"/>
+                <Button Content="Eliminar Pedido"   Margin="0,0,6,0" Style="{StaticResource BtnPeligro}"    Click="BtnEliminar_Click"/>
+                <Button Content="Actualizar" Margin="0,0,0,0" Style="{StaticResource BtnSecundario}" Click="BtnActualizar_Click"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>
