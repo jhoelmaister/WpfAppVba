@@ -10,6 +10,7 @@ namespace WpfAppVba
     {
         private static SqlData Sql => SqlData.Instance;
         private bool _cargando;
+        private string? _lastSelectedServId;
 
         public Configuracion()
         {
@@ -203,6 +204,12 @@ namespace WpfAppVba
         private ServidorVista? ServidorSeleccionado() =>
             LstServidores.SelectedItem as ServidorVista;
 
+        private void LstServidores_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (LstServidores.SelectedItem is ServidorVista sv)
+                _lastSelectedServId = sv.Id;
+        }
+
         private void BtnAgregarServidor_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new ConfiguracionDbWindow { Owner = Window.GetWindow(this) };
@@ -222,7 +229,7 @@ namespace WpfAppVba
 
         private void EditarServidorSeleccionado()
         {
-            var sel = ServidorSeleccionado();
+            var sel = ServidorSeleccionadoOUltimo();
             if (sel == null)
             {
                 MessageBox.Show("Selecciona un servidor de la lista.", "Editar servidor",
@@ -238,9 +245,18 @@ namespace WpfAppVba
                 RefrescarServidores();
         }
 
-        private void BtnEliminarServidor_Click(object sender, RoutedEventArgs e)
+        private ServidorVista? ServidorSeleccionadoOUltimo()
         {
             var sel = ServidorSeleccionado();
+            if (sel == null && _lastSelectedServId != null)
+                sel = (LstServidores.ItemsSource as System.Collections.Generic.List<ServidorVista>)
+                          ?.FirstOrDefault(s => s.Id == _lastSelectedServId);
+            return sel;
+        }
+
+        private void BtnEliminarServidor_Click(object sender, RoutedEventArgs e)
+        {
+            var sel = ServidorSeleccionadoOUltimo();
             if (sel == null)
             {
                 MessageBox.Show("Selecciona un servidor de la lista.", "Eliminar servidor",
@@ -258,7 +274,7 @@ namespace WpfAppVba
 
         private void BtnConectarServidor_Click(object sender, RoutedEventArgs e)
         {
-            var sel = ServidorSeleccionado();
+            var sel = ServidorSeleccionadoOUltimo();
             if (sel == null)
             {
                 MessageBox.Show("Selecciona un servidor de la lista.", "Conectar",

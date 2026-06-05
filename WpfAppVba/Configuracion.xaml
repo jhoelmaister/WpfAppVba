@@ -31,6 +31,35 @@
             <Setter Property="Height" Value="36"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeInputBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+        </Style>
+        <Style x:Key="ServerListItemStyle" TargetType="ListViewItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="4,4"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource ThemeFilaSeleccionada}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource ThemeBgReadOnly}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ServerListHeaderStyle" TargetType="GridViewColumnHeader">
+            <Setter Property="Background" Value="{DynamicResource ThemeBgSurface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="6,5"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorde}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
         </Style>
         <Style x:Key="SelectorBtn" TargetType="Button">
             <Setter Property="Height" Value="32"/>
@@ -139,15 +168,19 @@
                         <Border BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
                                 CornerRadius="6">
                             <ListView x:Name="LstServidores" Height="150"
-                                      BorderThickness="0" Background="Transparent"
+                                      BorderThickness="0"
+                                      Background="{DynamicResource ThemeInputBg}"
+                                      Foreground="{DynamicResource ThemeTexto}"
                                       FontSize="12"
                                       SelectionMode="Single"
-                                      MouseDoubleClick="LstServidores_MouseDoubleClick">
+                                      ItemContainerStyle="{StaticResource ServerListItemStyle}"
+                                      MouseDoubleClick="LstServidores_MouseDoubleClick"
+                                      SelectionChanged="LstServidores_SelectionChanged">
                                 <ListView.View>
-                                    <GridView>
+                                    <GridView ColumnHeaderContainerStyle="{StaticResource ServerListHeaderStyle}">
                                         <GridViewColumn Header="" Width="32"
                                                         DisplayMemberBinding="{Binding Activo}"/>
-                                        <GridViewColumn Header="Nombre" Width="140"
+                                        <GridViewColumn Header="Alias" Width="140"
                                                         DisplayMemberBinding="{Binding Nombre}"/>
                                         <GridViewColumn Header="Servidor" Width="160"
                                                         DisplayMemberBinding="{Binding Servidor}"/>
