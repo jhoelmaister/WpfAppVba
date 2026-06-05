@@ -10,72 +10,132 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Título -->
         <TextBlock x:Name="LblTitulo" Grid.Row="0" FontSize="15" FontWeight="Bold"
-                   Foreground="{DynamicResource ThemeTexto}" Margin="0,0,0,12"/>
+                   Foreground="{DynamicResource ThemeTexto}" Margin="0,0,0,14"/>
 
-        <!-- Campos -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="120"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <TextBlock Text="Código:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-                <TextBox x:Name="Box_Codigo" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
+                <!-- Código -->
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Código:"
+                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
+                           VerticalAlignment="Center" Margin="0,0,8,10"/>
+                <TextBox Grid.Row="0" Grid.Column="1" x:Name="Box_Codigo"
+                         Height="30" FontSize="12" Padding="6,4"
+                         BorderBrush="{DynamicResource ThemeBordeInput}"
+                         Margin="0,0,0,10" MaxWidth="180" HorizontalAlignment="Left"
                          TextChanged="Campo_TextChanged"/>
 
-                <TextBlock Text="Nit:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-                <TextBox x:Name="Box_Nit" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
+                <!-- NIT -->
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="NIT:"
+                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
+                           VerticalAlignment="Center" Margin="0,0,8,10"/>
+                <TextBox Grid.Row="1" Grid.Column="1" x:Name="Box_Nit"
+                         Height="30" FontSize="12" Padding="6,4"
+                         BorderBrush="{DynamicResource ThemeBordeInput}"
+                         Margin="0,0,0,10" MaxWidth="200" HorizontalAlignment="Left"
                          TextChanged="Campo_TextChanged"
                          PreviewTextInput="Box_Nit_PreviewTextInput"/>
 
-                <TextBlock Text="Descripción:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-                <TextBox x:Name="Box_Descripcion" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
+                <!-- Descripción -->
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Descripción:"
+                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
+                           VerticalAlignment="Center" Margin="0,0,8,10"/>
+                <TextBox Grid.Row="2" Grid.Column="1" x:Name="Box_Descripcion"
+                         Height="30" FontSize="12" Padding="6,4"
+                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,10"
                          TextChanged="Campo_TextChanged"/>
 
-                <TextBlock Text="Contacto:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-                <TextBox x:Name="Box_Contacto" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
+                <!-- Contacto + Teléfono en la misma fila -->
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Contacto:"
+                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
+                           VerticalAlignment="Center" Margin="0,0,8,10"/>
+                <Grid Grid.Row="3" Grid.Column="1" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="140"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="Box_Contacto" Grid.Column="0"
+                             Height="30" FontSize="12" Padding="6,4"
+                             BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,8,0"
+                             TextChanged="Campo_TextChanged"/>
+                    <TextBlock Grid.Column="1" Text="Teléfono:"
+                               FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
+                               VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBox x:Name="Box_Telefono" Grid.Column="2"
+                             Height="30" FontSize="12" Padding="6,4"
+                             BorderBrush="{DynamicResource ThemeBordeInput}"
+                             TextChanged="Campo_TextChanged"
+                             PreviewTextInput="Box_Telefono_PreviewTextInput"/>
+                </Grid>
+
+                <!-- Dirección -->
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="Dirección:"
+                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
+                           VerticalAlignment="Center" Margin="0,0,8,10"/>
+                <TextBox Grid.Row="4" Grid.Column="1" x:Name="Box_Direccion"
+                         Height="30" FontSize="12" Padding="6,4"
+                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,10"
                          TextChanged="Campo_TextChanged"/>
 
-                <TextBlock Text="Teléfono:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-                <TextBox x:Name="Box_Telefono" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
-                         TextChanged="Campo_TextChanged"
-                         PreviewTextInput="Box_Telefono_PreviewTextInput"/>
+                <!-- Contacto 2 + Teléfono 2 en la misma fila -->
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="Contacto 2:"
+                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
+                           VerticalAlignment="Center" Margin="0,0,8,10"/>
+                <Grid Grid.Row="5" Grid.Column="1" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="140"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="Box_Contacto2" Grid.Column="0"
+                             Height="30" FontSize="12" Padding="6,4"
+                             BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,8,0"
+                             TextChanged="Campo_TextChanged"/>
+                    <TextBlock Grid.Column="1" Text="Teléfono 2:"
+                               FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
+                               VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBox x:Name="Box_Telefono2" Grid.Column="2"
+                             Height="30" FontSize="12" Padding="6,4"
+                             BorderBrush="{DynamicResource ThemeBordeInput}"
+                             TextChanged="Campo_TextChanged"
+                             PreviewTextInput="Box_Telefono_PreviewTextInput"/>
+                </Grid>
 
-                <TextBlock Text="Dirección:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-                <TextBox x:Name="Box_Direccion" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
+                <!-- Observaciones (separador visual antes) -->
+                <Separator Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2"
+                           Background="{DynamicResource ThemeBorde}" Margin="0,0,0,10"/>
+
+                <TextBlock Grid.Row="7" Grid.Column="0" Text="Observaciones:"
+                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
+                           VerticalAlignment="Top" Margin="0,7,8,0"/>
+                <TextBox Grid.Row="7" Grid.Column="1" x:Name="Box_Observacion"
+                         Height="80" FontSize="12" Padding="6,4"
+                         BorderBrush="{DynamicResource ThemeBordeInput}"
+                         TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
                          TextChanged="Campo_TextChanged"/>
-
-                <TextBlock Text="Contacto 2:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-                <TextBox x:Name="Box_Contacto2" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
-                         TextChanged="Campo_TextChanged"/>
-
-                <TextBlock Text="Teléfono 2:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-                <TextBox x:Name="Box_Telefono2" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,8"
-                         TextChanged="Campo_TextChanged"
-                         PreviewTextInput="Box_Telefono_PreviewTextInput"/>
-
-                <TextBlock Text="Observaciones:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-                <TextBox x:Name="Box_Observacion" Height="70" FontSize="12" Padding="6,4"
-                         BorderBrush="{DynamicResource ThemeBordeInput}" TextWrapping="Wrap" AcceptsReturn="True"
-                         VerticalScrollBarVisibility="Auto" Margin="0,0,0,8"
-                         TextChanged="Campo_TextChanged"/>
-
-            </StackPanel>
+            </Grid>
         </ScrollViewer>
 
-        <!-- Guardar / Cancelar -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
             <Button Content="Guardar" Height="32" Padding="14,0" FontSize="12"
                     Background="#1A73E8" Foreground="White"
-                    BorderThickness="0" Cursor="Hand"
-                    Margin="0,0,8,0"
+                    BorderThickness="0" Cursor="Hand" Margin="0,0,8,0"
                     Click="BtnGuardar_Click"/>
             <Button Content="Cancelar" Height="32" Padding="14,0" FontSize="12"
                     Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
