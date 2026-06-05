@@ -1,81 +1,124 @@
 <Window x:Class="WpfAppVba.ConfiguracionDbWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Configuración de Conexión" Height="410" Width="440"
+        Title="Configuración de Conexión" Height="500" Width="460"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="{DynamicResource ThemeBgPrincipal}">
 
-    <Grid Margin="24,20,24,20">
+    <Window.Resources>
+        <Style x:Key="SectionLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+        <Style x:Key="ModernInput" TargetType="TextBox">
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeInputBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="CaretBrush" Value="#4F8EF7"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Título -->
-        <TextBlock Grid.Row="0" Text="Configuración de Conexión" FontSize="16" FontWeight="Bold"
-                   Foreground="{DynamicResource ThemeTexto}" Margin="0,0,0,6"/>
+        <!-- ══ ENCABEZADO ══════════════════════════════════════════════ -->
+        <Border Grid.Row="0" Background="{DynamicResource ThemeBgSurface}"
+                BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,0,0,1"
+                Padding="20,14">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Border Width="36" Height="36" CornerRadius="8"
+                        Background="#1A3A6B" Margin="0,0,12,0">
+                    <TextBlock Text="&#x1F5A5;" FontSize="18" HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Name="LblTitulo" FontSize="14" FontWeight="Bold"
+                               Text="Nuevo Servidor"
+                               Foreground="{DynamicResource ThemeTexto}"/>
+                    <TextBlock x:Name="LblHint" FontSize="11"
+                               Foreground="{DynamicResource ThemeTextoSec}" Margin="0,1,0,0"
+                               Text="Datos de conexión a SQL Server."/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
 
-        <!-- Subtítulo -->
-        <TextBlock Grid.Row="1" TextWrapping="Wrap" FontSize="12"
-                   Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,16"
-                   Text="Configure los datos de conexión a SQL Server para continuar."/>
+        <!-- ══ CAMPOS ══════════════════════════════════════════════════ -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16,20,0">
+            <StackPanel>
+                <TextBlock Style="{StaticResource SectionLabel}" Text="NOMBRE (ALIAS)"/>
+                <TextBox x:Name="TxtNombre" Style="{StaticResource ModernInput}"/>
 
-        <!-- Campos -->
-        <StackPanel Grid.Row="2">
+                <TextBlock Style="{StaticResource SectionLabel}" Text="SERVIDOR"/>
+                <TextBox x:Name="TxtServidor" Style="{StaticResource ModernInput}"/>
 
-            <TextBlock Text="Servidor:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-            <TextBox x:Name="TxtServidor" Height="30" FontSize="12" Padding="6,4"
-                     BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,10"/>
+                <TextBlock Style="{StaticResource SectionLabel}" Text="BASE DE DATOS"/>
+                <TextBox x:Name="TxtBaseDatos" Style="{StaticResource ModernInput}"/>
 
-            <TextBlock Text="Base de datos:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-            <TextBox x:Name="TxtBaseDatos" Height="30" FontSize="12" Padding="6,4"
-                     BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,10"/>
+                <TextBlock Style="{StaticResource SectionLabel}" Text="USUARIO"/>
+                <TextBox x:Name="TxtUsuario" Style="{StaticResource ModernInput}"/>
 
-            <TextBlock Text="Usuario:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-            <TextBox x:Name="TxtUsuario" Height="30" FontSize="12" Padding="6,4"
-                     BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,10"/>
+                <TextBlock Style="{StaticResource SectionLabel}" Text="CONTRASEÑA"/>
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <PasswordBox x:Name="PwdContrasena" Grid.Column="0" Height="34" FontSize="13" Padding="10,0"
+                                 VerticalContentAlignment="Center"
+                                 BorderThickness="0,0,0,2"
+                                 BorderBrush="{DynamicResource ThemeBordeInput}"
+                                 Background="{DynamicResource ThemeInputBg}"/>
+                    <TextBox x:Name="TxtContrasenaVisible" Grid.Column="0" Height="34" FontSize="13" Padding="10,0"
+                             VerticalContentAlignment="Center"
+                             BorderThickness="0,0,0,2"
+                             BorderBrush="{DynamicResource ThemeBordeInput}"
+                             Background="{DynamicResource ThemeInputBg}"
+                             Foreground="{DynamicResource ThemeTexto}"
+                             Visibility="Collapsed"/>
+                    <Button x:Name="BtnTogglePwd" Grid.Column="1" Content="Ver" Width="56" Height="34"
+                            FontSize="11"
+                            Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
+                            BorderThickness="0" Cursor="Hand" Margin="8,0,0,0"
+                            Click="BtnTogglePwd_Click"/>
+                </Grid>
 
-            <TextBlock Text="Contraseña:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-            <Grid Margin="0,0,0,14">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <PasswordBox x:Name="PwdContrasena" Grid.Column="0" Height="30" FontSize="12" Padding="6,4"
-                             BorderBrush="{DynamicResource ThemeBordeInput}"/>
-                <TextBox x:Name="TxtContrasenaVisible" Grid.Column="0" Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="{DynamicResource ThemeBordeInput}" Visibility="Collapsed"/>
-                <Button x:Name="BtnTogglePwd" Grid.Column="1" Content="Ver" Width="50" Height="30"
-                        FontSize="11"
+                <Button x:Name="BtnProbarConexion" Content="Probar conexión"
+                        Height="34" FontSize="12" Padding="14,0"
                         Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
-                        BorderThickness="0" Cursor="Hand" Margin="6,0,0,0"
-                        Click="BtnTogglePwd_Click"/>
-            </Grid>
+                        BorderThickness="0" Cursor="Hand" HorizontalAlignment="Left"
+                        Click="BtnProbarConexion_Click"/>
+            </StackPanel>
+        </ScrollViewer>
 
-            <Button x:Name="BtnProbarConexion" Content="Probar conexión"
-                    Height="30" FontSize="12" Padding="12,0"
-                    Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
-                    BorderThickness="0" Cursor="Hand" HorizontalAlignment="Left"
-                    Click="BtnProbarConexion_Click"/>
-
-        </StackPanel>
-
-        <!-- Botones inferiores -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-            <Button x:Name="BtnCancelar" Content="Cancelar"
-                    Height="32" FontSize="12" Padding="16,0"
-                    Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
-                    BorderThickness="0" Cursor="Hand" Margin="0,0,10,0"
-                    Click="BtnCancelar_Click"/>
-            <Button x:Name="BtnGuardar" Content="Guardar"
-                    Height="32" FontSize="12" FontWeight="SemiBold" Padding="16,0"
-                    Background="#1A73E8" Foreground="White"
-                    BorderThickness="0" Cursor="Hand"
-                    Click="BtnGuardar_Click"/>
-        </StackPanel>
-
+        <!-- ══ BOTONES ═════════════════════════════════════════════════ -->
+        <Border Grid.Row="2" Background="{DynamicResource ThemeBgSurface}"
+                BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,1,0,0"
+                Padding="20,12">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="BtnCancelar" Content="Cancelar"
+                        Height="36" FontSize="13" Padding="18,0"
+                        Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
+                        BorderThickness="0" Cursor="Hand" Margin="0,0,10,0"
+                        Click="BtnCancelar_Click"/>
+                <Button x:Name="BtnGuardar" Content="&#x1F4BE; Guardar"
+                        Height="36" FontSize="13" FontWeight="SemiBold" Padding="18,0"
+                        Background="#1A73E8" Foreground="White"
+                        BorderThickness="0" Cursor="Hand"
+                        Click="BtnGuardar_Click"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>
