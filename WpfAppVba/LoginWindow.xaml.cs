@@ -18,12 +18,34 @@ namespace WpfAppVba
             Loaded += LoginWindow_Loaded;
         }
 
-        // ─── Al abrir: carga usuarios y catálogos base ────────────────────────
+        // ─── Al abrir: verificar config y cargar catálogos base ──────────────
         private async void LoginWindow_Loaded(object sender, RoutedEventArgs e)
         {
             BtnIngresar.IsEnabled = false;
-            MostrarEstado("Conectando a base de datos...", Colors.Gray);
 
+            if (!ConexionConfig.HayConfiguracion())
+            {
+                MostrarEstado("Configure la conexión a base de datos.", Colors.Orange);
+                var dlg = new ConfiguracionDbWindow { Owner = this };
+                if (dlg.ShowDialog() != true)
+                {
+                    Application.Current.Shutdown();
+                    return;
+                }
+                // ConfiguracionDbWindow ya configuró DatabaseConnection al guardar
+            }
+            else
+            {
+                DatabaseConnection.CargarDesdeConfiguracion();
+            }
+
+            await ConectarBaseDatosAsync();
+        }
+
+        private async Task ConectarBaseDatosAsync()
+        {
+            BtnIngresar.IsEnabled = false;
+            MostrarEstado("Conectando a base de datos...", Colors.Gray);
             try
             {
                 await Task.Run(() => AppLoader.ConectarProductos());
@@ -44,10 +66,18 @@ namespace WpfAppVba
                 BtnIngresar_Click(sender, e);
         }
 
+        // ─── Configurar conexión desde el login ───────────────────────────────
+        private async void BtnConfigurarConexion_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new ConfiguracionDbWindow { Owner = this };
+            if (dlg.ShowDialog() == true)
+                await ConectarBaseDatosAsync();
+        }
+
         // ─── Lógica de inicio de sesión (equivalente a CommandButton1_Click) ──
         private async void BtnIngresar_Click(object sender, RoutedEventArgs e)
         {
-            string cuenta    = TxtCuenta.Text.Trim();
+            string cuenta     = TxtCuenta.Text.Trim();
             string contrasena = TxtContrasena.Password;
 
             if (string.IsNullOrEmpty(cuenta) || string.IsNullOrEmpty(contrasena))
@@ -56,14 +86,12 @@ namespace WpfAppVba
                 return;
             }
 
-            // Deshabilitar controles (equivalente a VBA)
             BtnIngresar.IsEnabled   = false;
             TxtCuenta.IsEnabled     = false;
             TxtContrasena.IsEnabled = false;
 
             MostrarEstado("Verificando credenciales...", Colors.Green);
 
-            // ── Buscar usuario en caché ──────────────────────────────────────
             string idEncontrado = "";
             bool encontrado = false;
 
@@ -90,7 +118,6 @@ namespace WpfAppVba
 
             if (encontrado)
             {
-                // ── Establecer estado de sesión (equivalente a VBA) ──────────
                 AppState.UsuarioActivo  = Convert.ToInt64(idEncontrado);
                 AppState.SucursalActiva = Convert.ToInt64(
                     Sql.UsuariosObj.ObtenerItem("sucursal", idEncontrado) ?? 0);
@@ -99,7 +126,6 @@ namespace WpfAppVba
                 AppState.SesionActiva   = true;
                 AppState.PeriodoActivo  = DateTime.Now.Year.ToString();
 
-                // Cargar tema preferido del usuario y aplicarlo
                 string temaUsuario = Sql.UsuariosObj.ObtenerItem("temaC", idEncontrado)?.ToString() ?? "";
                 AppState.TemaActivo = temaUsuario.Trim().ToLowerInvariant() == ThemeManager.TemaOscuro
                     ? ThemeManager.TemaOscuro
@@ -118,7 +144,6 @@ namespace WpfAppVba
 
                 MostrarEstado("¡Conexión exitosa!", Colors.Green);
 
-                // ── Abrir ventana principal ───────────────────────────────────
                 var main = new ConsolaMovimientos();
                 main.Show();
                 Close();

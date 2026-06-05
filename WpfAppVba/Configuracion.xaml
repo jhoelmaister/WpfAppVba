@@ -72,6 +72,49 @@
                         Margin="0,0,0,10"
                         Click="BtnGuardarTema_Click"/>
 
+                <!-- ══ Sección: Conexión SQL Server ══════════════════════════ -->
+                <TextBlock Text="Conexión SQL Server" Style="{StaticResource LblSeccion}"/>
+                <Separator Background="{DynamicResource ThemeBorde}" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Servidor:" Style="{StaticResource LblEtiqueta}"/>
+                <TextBox x:Name="TxtConServidor" Style="{StaticResource CajaEditable}"/>
+
+                <TextBlock Text="Base de datos:" Style="{StaticResource LblEtiqueta}"/>
+                <TextBox x:Name="TxtConBaseDatos" Style="{StaticResource CajaEditable}"/>
+
+                <TextBlock Text="Usuario SQL:" Style="{StaticResource LblEtiqueta}"/>
+                <TextBox x:Name="TxtConUsuario" Style="{StaticResource CajaEditable}"/>
+
+                <TextBlock Text="Contraseña:" Style="{StaticResource LblEtiqueta}"/>
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <PasswordBox x:Name="PwdConContrasena" Grid.Column="0" Height="30" FontSize="12" Padding="6,4"
+                                 BorderBrush="{DynamicResource ThemeBordeInput}"/>
+                    <TextBox x:Name="TxtConContrasenaVisible" Grid.Column="0" Height="30" FontSize="12" Padding="6,4"
+                             BorderBrush="{DynamicResource ThemeBordeInput}" Visibility="Collapsed"/>
+                    <Button x:Name="BtnMostrarConPwd" Grid.Column="1" Content="Ver" Width="50" Height="30"
+                            FontSize="11"
+                            Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
+                            BorderThickness="0" Cursor="Hand" Margin="6,0,0,0"
+                            Click="BtnMostrarConPwd_Click"/>
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <Button x:Name="BtnProbarConexion" Content="Probar conexión"
+                            Height="30" FontSize="12" Padding="12,0"
+                            Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
+                            BorderThickness="0" Cursor="Hand" Margin="0,0,8,0"
+                            Click="BtnProbarConexion_Click"/>
+                    <Button x:Name="BtnGuardarConexion" Content="Guardar conexión"
+                            Height="30" FontSize="12" FontWeight="SemiBold" Padding="12,0"
+                            Background="#1A73E8" Foreground="White"
+                            BorderThickness="0" Cursor="Hand"
+                            Click="BtnGuardarConexion_Click"/>
+                </StackPanel>
+
                 <!-- ══ Sección: Mi Cuenta ════════════════════════════════════ -->
                 <TextBlock Text="Mi Cuenta" Style="{StaticResource LblSeccion}"/>
                 <Separator Background="{DynamicResource ThemeBorde}" Margin="0,0,0,10"/>

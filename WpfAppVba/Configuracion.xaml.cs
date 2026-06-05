@@ -1,7 +1,9 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Data.SqlClient;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
@@ -42,6 +44,16 @@ namespace WpfAppVba
                 TxtNombres.Text   = nombres;
                 TxtApellidos.Text = apellidos;
                 TxtTipo.Text      = tipo;
+
+                // Conexión SQL Server guardada
+                var cfg = ConexionConfig.Cargar();
+                if (cfg != null)
+                {
+                    TxtConServidor.Text    = cfg.Value.servidor;
+                    TxtConBaseDatos.Text   = cfg.Value.baseDatos;
+                    TxtConUsuario.Text     = cfg.Value.usuario;
+                    PwdConContrasena.Password = cfg.Value.contrasena;
+                }
 
                 // Tema: si el valor de BD no es válido, usar el tema activo o "claro"
                 string temaInicial = temaDb.Trim().ToLowerInvariant() == ThemeManager.TemaOscuro
@@ -164,6 +176,101 @@ namespace WpfAppVba
             catch (Exception ex)
             {
                 MessageBox.Show($"Error al guardar el tema: {ex.Message}", "Configuración",
+                                MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // ─── Conexión SQL Server ─────────────────────────────────────────────
+
+        private string ObtenerConContrasena() =>
+            TxtConContrasenaVisible.Visibility == Visibility.Visible
+                ? TxtConContrasenaVisible.Text
+                : PwdConContrasena.Password;
+
+        private void BtnMostrarConPwd_Click(object sender, RoutedEventArgs e)
+        {
+            if (PwdConContrasena.Visibility == Visibility.Visible)
+            {
+                TxtConContrasenaVisible.Text    = PwdConContrasena.Password;
+                PwdConContrasena.Visibility     = Visibility.Collapsed;
+                TxtConContrasenaVisible.Visibility = Visibility.Visible;
+                BtnMostrarConPwd.Content        = "Ocultar";
+            }
+            else
+            {
+                PwdConContrasena.Password          = TxtConContrasenaVisible.Text;
+                TxtConContrasenaVisible.Visibility = Visibility.Collapsed;
+                PwdConContrasena.Visibility        = Visibility.Visible;
+                BtnMostrarConPwd.Content           = "Ver";
+            }
+        }
+
+        private async void BtnProbarConexion_Click(object sender, RoutedEventArgs e)
+        {
+            string servidor   = TxtConServidor.Text.Trim();
+            string baseDatos  = TxtConBaseDatos.Text.Trim();
+            string usuario    = TxtConUsuario.Text.Trim();
+            string contrasena = ObtenerConContrasena();
+
+            if (string.IsNullOrEmpty(servidor) || string.IsNullOrEmpty(baseDatos))
+            {
+                MessageBox.Show("Completa al menos Servidor y Base de datos.", "Probar conexión",
+                                MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            BtnProbarConexion.IsEnabled  = false;
+            BtnGuardarConexion.IsEnabled = false;
+            try
+            {
+                string cs = $"Server={servidor};Database={baseDatos};User Id={usuario};Password={contrasena};" +
+                            "Connect Timeout=10;TrustServerCertificate=True;";
+                await Task.Run(() =>
+                {
+                    using var conn = new SqlConnection(cs);
+                    conn.Open();
+                    using var cmd = new SqlCommand("SELECT 1", conn);
+                    cmd.ExecuteScalar();
+                });
+                MessageBox.Show("Conexión exitosa.", "Probar conexión",
+                                MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al conectar:\n{ex.Message}", "Probar conexión",
+                                MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                BtnProbarConexion.IsEnabled  = true;
+                BtnGuardarConexion.IsEnabled = true;
+            }
+        }
+
+        private void BtnGuardarConexion_Click(object sender, RoutedEventArgs e)
+        {
+            string servidor   = TxtConServidor.Text.Trim();
+            string baseDatos  = TxtConBaseDatos.Text.Trim();
+            string usuario    = TxtConUsuario.Text.Trim();
+            string contrasena = ObtenerConContrasena();
+
+            if (string.IsNullOrEmpty(servidor) || string.IsNullOrEmpty(baseDatos))
+            {
+                MessageBox.Show("Completa al menos Servidor y Base de datos.", "Guardar conexión",
+                                MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                ConexionConfig.Guardar(servidor, baseDatos, usuario, contrasena);
+                DatabaseConnection.Configurar(servidor, baseDatos, usuario, contrasena);
+                MessageBox.Show("Conexión guardada. Los cambios se aplicarán al reiniciar la aplicación.",
+                                "Guardar conexión", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al guardar:\n{ex.Message}", "Guardar conexión",
                                 MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }

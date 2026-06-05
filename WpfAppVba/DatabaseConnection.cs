@@ -3,30 +3,36 @@ using Microsoft.Data.SqlClient;
 
 namespace WpfAppVba.Data
 {
-    /// <summary>
-    /// Equivalente a Conectar_Datos.bas
-    /// Maneja la conexión global a SQL Server con reconexión automática.
-    /// </summary>
     public static class DatabaseConnection
     {
         private static SqlConnection? _connection;
 
-        private static string _server   = "MAISTER\\SQLEXPRESS";
-        private static string _user     = "SA";
-        private static string _password = "papa1122";
-        private static string _database = "edberBase";
+        private static string _server   = "";
+        private static string _user     = "";
+        private static string _password = "";
+        private static string _database = "";
 
         private static string ConnectionString =>
             $"Server={_server};Database={_database};User Id={_user};Password={_password};" +
             $"Application Name=edber;Connect Timeout=10;Command Timeout=10;TrustServerCertificate=True;";
 
-        // ─── Configurar credenciales desde fuera (appsettings, etc.) ──────────
+        // ─── Configurar credenciales ──────────────────────────────────────────
         public static void Configurar(string server, string database, string user, string password)
         {
             _server   = server;
             _database = database;
             _user     = user;
             _password = password;
+            CerrarConexion();
+        }
+
+        // ─── Cargar credenciales desde el archivo cifrado ────────────────────
+        public static bool CargarDesdeConfiguracion()
+        {
+            var cfg = ConexionConfig.Cargar();
+            if (cfg == null) return false;
+            Configurar(cfg.Value.servidor, cfg.Value.baseDatos, cfg.Value.usuario, cfg.Value.contrasena);
+            return true;
         }
 
         // ─── Obtener (o crear) la conexión ───────────────────────────────────
@@ -45,7 +51,6 @@ namespace WpfAppVba.Data
                 try { _connection.Open(); }
                 catch
                 {
-                    // Si falla la reconexión, crear una nueva
                     _connection.Dispose();
                     _connection = new SqlConnection(ConnectionString);
                     _connection.Open();
