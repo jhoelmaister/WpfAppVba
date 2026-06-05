@@ -27,14 +27,11 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="IsEnabled" Value="False"/>
         </Style>
-        <Style x:Key="ModernCombo" TargetType="ComboBox">
+        <Style x:Key="ModernCombo" TargetType="ComboBox"
+               BasedOn="{StaticResource {x:Type ComboBox}}">
             <Setter Property="Height" Value="36"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Padding" Value="8,0"/>
-            <Setter Property="Background" Value="{DynamicResource ThemeInputBg}"/>
-            <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
-            <Setter Property="BorderThickness" Value="0,0,0,2"/>
         </Style>
         <Style x:Key="ServerListItemStyle" TargetType="ListViewItem">
             <Setter Property="Background" Value="Transparent"/>
