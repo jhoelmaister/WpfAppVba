@@ -150,7 +150,9 @@ namespace WpfAppVba
             TxtTotalImporte.Text    = totalImporte.ToString("N2");
             TxtTotalDocumentos.Text = lista.Count.ToString("N0");
             TxtTotalPendientes.Text = lista.Count(f => f.Estado == "pendiente"
-                                                    || f.Estado == "entrega parcial").ToString();
+                                                    || f.Estado == "pendiente parcial"
+                                                    || f.Cuenta == "pendiente"
+                                                    || f.Cuenta == "pendiente parcial").ToString();
 
             // ── Título correcto según VBA ─────────────────────────────────────
             LblTipoMovimiento.Text = tipoMov switch
@@ -169,7 +171,7 @@ namespace WpfAppVba
         {
             if (BtnFiltroPendiente?.IsChecked == true)      return "pendiente";
             if (BtnFiltroEntregado?.IsChecked == true)      return "entregado";
-            if (BtnFiltroEntregaParcial?.IsChecked == true) return "entrega parcial";
+            if (BtnFiltroEntregaParcial?.IsChecked == true) return "pendiente parcial";
             return "";
         }
 
@@ -242,7 +244,9 @@ namespace WpfAppVba
             TxtTotalImporte.Text    = totalImporte.ToString("N2");
             TxtTotalDocumentos.Text = lista.Count.ToString("N0");
             TxtTotalPendientes.Text = lista.Count(f => f.Estado == "pendiente"
-                                                    || f.Estado == "entrega parcial").ToString();
+                                                    || f.Estado == "pendiente parcial"
+                                                    || f.Cuenta == "pendiente"
+                                                    || f.Cuenta == "pendiente parcial").ToString();
             Grid1.Items.Refresh();
         }
 

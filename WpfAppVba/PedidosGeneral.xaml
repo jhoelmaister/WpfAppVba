@@ -12,6 +12,29 @@
             <Setter Property="FontSize"        Value="12"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.70"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         <Style x:Key="BtnPrimario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
             <Setter Property="Background" Value="#3B82F6"/>
@@ -69,7 +92,7 @@
                             <DataTrigger Binding="{Binding Estado}" Value="pendiente">
                                 <Setter Property="Background" Value="#FEF3C7"/>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding Estado}" Value="entrega parcial">
+                            <DataTrigger Binding="{Binding Estado}" Value="pendiente parcial">
                                 <Setter Property="Background" Value="#FEE2E2"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -86,7 +109,7 @@
                                 <DataTrigger Binding="{Binding Estado}" Value="pendiente">
                                     <Setter Property="Foreground" Value="#92400E"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding Estado}" Value="entrega parcial">
+                                <DataTrigger Binding="{Binding Estado}" Value="pendiente parcial">
                                     <Setter Property="Foreground" Value="#991B1B"/>
                                 </DataTrigger>
                             </Style.Triggers>
@@ -142,7 +165,7 @@
                     <Style TargetType="Border">
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding Movimiento}" Value="venta">
-                                <Setter Property="Background" Value="#DBEAFE"/>
+                                <Setter Property="Background" Value="#FEE2E2"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding Movimiento}" Value="compra">
                                 <Setter Property="Background" Value="#D1FAE5"/>
@@ -156,7 +179,7 @@
                         <Style TargetType="TextBlock">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding Movimiento}" Value="venta">
-                                    <Setter Property="Foreground" Value="#1E40AF"/>
+                                    <Setter Property="Foreground" Value="#991B1B"/>
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding Movimiento}" Value="compra">
                                     <Setter Property="Foreground" Value="#065F46"/>
@@ -228,7 +251,7 @@
                                      Style="{StaticResource FilterRadio}"
                                      Checked="FiltroEstado_Checked"/>
                         <RadioButton x:Name="BtnFiltroEntregaParcial"
-                                     Content="Entrega parcial"
+                                     Content="Pendiente parcial"
                                      GroupName="EstadoP"
                                      Style="{StaticResource FilterRadio}"
                                      Checked="FiltroEstado_Checked"/>
@@ -426,12 +449,12 @@
                     <!-- Botones de acción -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
                         <Button x:Name="BtnNuevoRapido"
-                                Content="＋ Rápido"
+                                Content="Nuevo Pedido Rápido"
                                 Style="{StaticResource BtnPrimario}"
                                 Margin="0,0,6,0"
                                 Click="BtnNuevoRapido_Click"/>
                         <Button x:Name="BtnNuevoNormal"
-                                Content="＋ Normal"
+                                Content="Nuevo Pedido Normal"
                                 Style="{StaticResource BtnSuccess}"
                                 Margin="0,0,6,0"
                                 Click="BtnNuevoNormal_Click"/>
@@ -447,9 +470,8 @@
                                 Style="{StaticResource BtnPeligro}"
                                 Margin="0,0,6,0"
                                 Click="BtnEliminar_Click"/>
-                        <Button Content="↺"
-                                Style="{StaticResource BtnIcono}"
-                                FontSize="14"
+                        <Button Content="Actualizar"
+                                Style="{StaticResource BtnSecundario}"
                                 Click="BtnActualizar_Click"/>
                     </StackPanel>
                 </Grid>
@@ -511,8 +533,8 @@
                                         Binding="{Binding FechaStr}"
                                         Width="148"/>
 
-                    <!-- Columna Tipo con badge -->
-                    <DataGridTemplateColumn Header="Tipo" Width="80">
+                    <!-- Columna Movimiento con badge -->
+                    <DataGridTemplateColumn Header="Movimiento" Width="80">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <ContentPresenter Content="{Binding}"
