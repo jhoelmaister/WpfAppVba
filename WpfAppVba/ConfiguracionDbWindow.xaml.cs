@@ -164,12 +164,18 @@ namespace WpfAppVba
                     Contrasena = ContrasenaEfectiva()
                 };
 
-                if (_original != null) ConexionConfig.Actualizar(s);
-                else                   ConexionConfig.Agregar(s);
+                if (_original != null)
+                {
+                    ConexionConfig.Actualizar(s);
+                }
+                else
+                {
+                    ConexionConfig.Agregar(s);
+                    ConexionConfig.EstablecerActivo(s.Id); // el servidor nuevo queda activo inmediatamente
+                }
 
-                // Si el servidor guardado es el activo, reconfigurar la conexión global.
-                if (ConexionConfig.ObtenerActivoId() == s.Id)
-                    DatabaseConnection.Configurar(s.Servidor, s.BaseDatos, s.Usuario, s.Contrasena);
+                // Reconfigurar siempre la conexión global con el servidor guardado.
+                DatabaseConnection.Configurar(s.Servidor, s.BaseDatos, s.Usuario, s.Contrasena);
 
                 Resultado    = s;
                 DialogResult = true;
