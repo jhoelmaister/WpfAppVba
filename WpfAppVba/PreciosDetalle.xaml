@@ -3,93 +3,176 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Background="{DynamicResource ThemeBgPrincipal}">
 
-    <Grid Margin="16">
+    <UserControl.Resources>
+        <Style x:Key="SectionLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+
+        <Style x:Key="ModernInput" TargetType="TextBox">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeInputBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="CaretBrush" Value="#4F8EF7"/>
+        </Style>
+
+        <Style x:Key="CardBorder" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ThemeBgSurface}"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="18,14"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+
+        <Style x:Key="CardHeader" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#4F8EF7"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock x:Name="LblTitulo" Grid.Row="0" FontSize="15" FontWeight="Bold"
-                   Foreground="{DynamicResource ThemeTexto}" Margin="0,0,0,14"/>
-
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="120"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-
-                <!-- Artículo (solo lectura) -->
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Artículo:"
-                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
-                           VerticalAlignment="Center" Margin="0,0,8,10"/>
-                <TextBox Grid.Row="0" Grid.Column="1" x:Name="Box_Articulo"
-                         Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,10"
-                         MaxWidth="160" HorizontalAlignment="Left"
-                         IsEnabled="False"
-                         Background="{DynamicResource ThemeBgReadOnly}"
-                         Foreground="{DynamicResource ThemeTextoMuted}"/>
-
-                <!-- Fecha + Hora inline -->
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Fecha:"
-                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
-                           VerticalAlignment="Center" Margin="0,0,8,10"/>
-                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,10">
-                    <DatePicker x:Name="Box_Fecha" Width="160" Height="30" FontSize="12"
-                                SelectedDateChanged="Box_Fecha_SelectedDateChanged"/>
-                    <TextBlock Text="Hora:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
-                               VerticalAlignment="Center" Margin="12,0,6,0"/>
-                    <TextBox x:Name="Box_Hora" Width="90" Height="30" FontSize="12" Padding="6,4"
-                             BorderBrush="{DynamicResource ThemeBordeInput}"
-                             TextChanged="Campo_TextChanged"/>
+        <!-- ══ ENCABEZADO ══════════════════════════════════════════════ -->
+        <Border Grid.Row="0" Background="{DynamicResource ThemeBgSurface}"
+                BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,0,0,1"
+                Padding="20,14">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Border Width="36" Height="36" CornerRadius="8"
+                        Background="#1A3A6B" Margin="0,0,12,0">
+                    <TextBlock Text="&#x1F4B0;" FontSize="18" HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Name="LblTitulo" FontSize="14" FontWeight="Bold"
+                               Foreground="{DynamicResource ThemeTexto}"/>
+                    <TextBlock Text="Gestión de Precios" FontSize="11"
+                               Foreground="{DynamicResource ThemeTextoSec}" Margin="0,1,0,0"/>
                 </StackPanel>
+            </StackPanel>
+        </Border>
 
-                <!-- Región (código + descripción inline) -->
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Región:"
-                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
-                           VerticalAlignment="Center" Margin="0,0,8,10"/>
-                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,10">
-                    <TextBox x:Name="Box_Region_Codigo" Width="80" Height="30" FontSize="12" Padding="6,4"
-                             BorderBrush="{DynamicResource ThemeBordeInput}"
-                             IsEnabled="False"
-                             Background="{DynamicResource ThemeBgReadOnly}"
-                             Foreground="{DynamicResource ThemeTextoMuted}"
-                             TextChanged="Box_Region_Codigo_TextChanged"/>
-                    <TextBlock x:Name="Box_Region_Descripcion" FontSize="11"
-                               Foreground="{DynamicResource ThemeTexto}"
-                               VerticalAlignment="Center" Margin="8,0,0,0"/>
-                </StackPanel>
+        <!-- ══ CONTENIDO ══════════════════════════════════════════════ -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16,20,0">
+            <StackPanel>
 
-                <!-- Precio -->
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="Precio:"
-                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
-                           VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <TextBox Grid.Row="3" Grid.Column="1" x:Name="Box_Precio"
-                         Height="30" FontSize="12" Padding="6,4"
-                         BorderBrush="{DynamicResource ThemeBordeInput}"
-                         MaxWidth="160" HorizontalAlignment="Left"
-                         TextChanged="Campo_TextChanged"
-                         PreviewTextInput="Box_Decimales_PreviewTextInput"/>
-            </Grid>
+                <!-- ▸ CARD: ARTÍCULO -->
+                <Border Style="{StaticResource CardBorder}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CardHeader}" Text="● ARTÍCULO"/>
+                        <TextBlock Style="{StaticResource SectionLabel}" Text="CÓDIGO Y DESCRIPCIÓN"/>
+                        <TextBox x:Name="Box_Articulo" Style="{StaticResource ModernInput}"
+                                 IsEnabled="False"
+                                 Background="{DynamicResource ThemeBgReadOnly}"
+                                 Foreground="{DynamicResource ThemeTextoMuted}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- ▸ CARD: FECHA Y HORA -->
+                <Border Style="{StaticResource CardBorder}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CardHeader}" Text="● FECHA Y HORA"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="150"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="FECHA"/>
+                                <DatePicker x:Name="Box_Fecha" Height="36" FontSize="13"
+                                            SelectedDateChanged="Box_Fecha_SelectedDateChanged"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="HORA"/>
+                                <TextBox x:Name="Box_Hora" Style="{StaticResource ModernInput}"
+                                         TextChanged="Campo_TextChanged"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ▸ CARD: REGIÓN -->
+                <Border Style="{StaticResource CardBorder}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CardHeader}" Text="● REGIÓN"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="CÓDIGO"/>
+                                <TextBox x:Name="Box_Region_Codigo" Style="{StaticResource ModernInput}"
+                                         IsEnabled="False"
+                                         Background="{DynamicResource ThemeBgReadOnly}"
+                                         Foreground="{DynamicResource ThemeTextoMuted}"
+                                         TextChanged="Box_Region_Codigo_TextChanged"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" VerticalAlignment="Bottom" Margin="0,0,0,4">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="DESCRIPCIÓN"/>
+                                <TextBlock x:Name="Box_Region_Descripcion"
+                                           FontSize="13" Height="36"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource ThemeTexto}"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ▸ CARD: PRECIO -->
+                <Border Style="{StaticResource CardBorder}" Margin="0,0,0,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CardHeader}" Text="● PRECIO"/>
+                        <TextBlock Style="{StaticResource SectionLabel}" Text="VALOR"/>
+                        <TextBox x:Name="Box_Precio" Style="{StaticResource ModernInput}"
+                                 MaxWidth="200" HorizontalAlignment="Left"
+                                 TextChanged="Campo_TextChanged"
+                                 PreviewTextInput="Box_Decimales_PreviewTextInput"/>
+                    </StackPanel>
+                </Border>
+
+                <Rectangle Height="16"/>
+
+            </StackPanel>
         </ScrollViewer>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
-            <Button Content="Guardar" Height="32" Padding="14,0" FontSize="12"
-                    Background="#1A73E8" Foreground="White"
-                    BorderThickness="0" Cursor="Hand" Margin="0,0,8,0"
-                    Click="BtnGuardar_Click"/>
-            <Button Content="Cancelar" Height="32" Padding="14,0" FontSize="12"
-                    Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
-                    BorderThickness="0" Cursor="Hand"
-                    Click="BtnCancelar_Click"/>
-        </StackPanel>
+        <!-- ══ BARRA DE ACCIONES ══════════════════════════════════════ -->
+        <Border Grid.Row="2" Background="{DynamicResource ThemeBgSurface}"
+                BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,1,0,0"
+                Padding="20,10">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Cancelar"
+                        Height="36" Padding="18,0" FontSize="13"
+                        Background="{DynamicResource ThemeBtnSecBg}"
+                        Foreground="{DynamicResource ThemeBtnSecFg}"
+                        BorderThickness="0" Cursor="Hand" Margin="0,0,10,0"
+                        Click="BtnCancelar_Click"/>
+                <Button Content="&#x1F4BE; Guardar"
+                        Height="36" Padding="18,0" FontSize="13" FontWeight="SemiBold"
+                        Background="#1A73E8" Foreground="White"
+                        BorderThickness="0" Cursor="Hand"
+                        Click="BtnGuardar_Click"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </UserControl>
