@@ -633,9 +633,9 @@
                               FontSize="11">
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">
-                                <Setter Property="Background"      Value="#F5F3FF"/>
-                                <Setter Property="Foreground"      Value="#5B21B6"/>
-                                <Setter Property="BorderBrush"     Value="#DDD6FE"/>
+                                <Setter Property="Background"      Value="#5B21B6"/>
+                                <Setter Property="Foreground"      Value="White"/>
+                                <Setter Property="BorderBrush"     Value="#7C3AED"/>
                                 <Setter Property="BorderThickness" Value="0,0,1,1"/>
                                 <Setter Property="Padding"         Value="12,5"/>
                                 <Setter Property="FontSize"        Value="10"/>
