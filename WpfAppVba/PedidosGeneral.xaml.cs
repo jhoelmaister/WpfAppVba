@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -144,9 +145,12 @@ namespace WpfAppVba
                 totalImporte += importe;
             }
 
-            Grid1.ItemsSource = lista;
-            TxtTotalCantidad.Text = totalCant.ToString("N0");
-            TxtTotalImporte.Text  = totalImporte.ToString("N2");
+            Grid1.ItemsSource       = lista;
+            TxtTotalCantidad.Text   = totalCant.ToString("N0");
+            TxtTotalImporte.Text    = totalImporte.ToString("N2");
+            TxtTotalDocumentos.Text = lista.Count.ToString("N0");
+            TxtTotalPendientes.Text = lista.Count(f => f.Estado == "pendiente"
+                                                    || f.Estado == "entrega parcial").ToString();
 
             // ── Título correcto según VBA ─────────────────────────────────────
             LblTipoMovimiento.Text = tipoMov switch
@@ -234,8 +238,11 @@ namespace WpfAppVba
                 totalCant    += f.Cantidad;
                 totalImporte += f.Importe;
             }
-            TxtTotalCantidad.Text = totalCant.ToString("N0");
-            TxtTotalImporte.Text  = totalImporte.ToString("N2");
+            TxtTotalCantidad.Text   = totalCant.ToString("N0");
+            TxtTotalImporte.Text    = totalImporte.ToString("N2");
+            TxtTotalDocumentos.Text = lista.Count.ToString("N0");
+            TxtTotalPendientes.Text = lista.Count(f => f.Estado == "pendiente"
+                                                    || f.Estado == "entrega parcial").ToString();
             Grid1.Items.Refresh();
         }
 
@@ -275,6 +282,7 @@ namespace WpfAppVba
 
         private void MostrarDetalle(string documentoP)
         {
+            LblDetalleHeader.Text = $"Artículos del documento {documentoP}";
             var detalles = new List<PedidoDetalleFila>();
             int linea = 1;
 
