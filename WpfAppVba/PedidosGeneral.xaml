@@ -424,24 +424,28 @@
                     </Border>
 
                     <!-- Botones de acción -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
                         <Button x:Name="BtnNuevoRapido"
                                 Content="＋ Rápido"
                                 Style="{StaticResource BtnPrimario}"
+                                Margin="0,0,6,0"
                                 Click="BtnNuevoRapido_Click"/>
                         <Button x:Name="BtnNuevoNormal"
                                 Content="＋ Normal"
                                 Style="{StaticResource BtnSuccess}"
+                                Margin="0,0,6,0"
                                 Click="BtnNuevoNormal_Click"/>
                         <Rectangle Width="1" Fill="{DynamicResource ThemeBorde}"
-                                   VerticalAlignment="Stretch" Margin="2,4"/>
+                                   VerticalAlignment="Stretch" Margin="2,4,8,4"/>
                         <Button x:Name="BtnEditar"
                                 Content="Editar"
                                 Style="{StaticResource BtnSecundario}"
+                                Margin="0,0,6,0"
                                 Click="BtnEditar_Click"/>
                         <Button x:Name="BtnEliminar"
                                 Content="Eliminar"
                                 Style="{StaticResource BtnPeligro}"
+                                Margin="0,0,6,0"
                                 Click="BtnEliminar_Click"/>
                         <Button Content="↺"
                                 Style="{StaticResource BtnIcono}"
