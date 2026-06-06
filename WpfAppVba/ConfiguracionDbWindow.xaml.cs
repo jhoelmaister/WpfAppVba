@@ -9,6 +9,7 @@ namespace WpfAppVba
     public partial class ConfiguracionDbWindow : Window
     {
         private readonly ServidorConexion? _original;
+        private bool _pruebaExitosa = false;
 
         /// <summary>Servidor resultante tras guardar (null si se canceló).</summary>
         public ServidorConexion? Resultado { get; private set; }
@@ -23,13 +24,28 @@ namespace WpfAppVba
             if (editar != null)
             {
                 // Modo edición: NO se exponen las credenciales (usuario / contraseña).
-                LblTitulo.Text   = "Editar Servidor";
-                LblHint.Text     = "Deja Usuario y Contraseña en blanco para conservar los actuales.";
-                TxtNombre.Text   = editar.Nombre;
-                TxtServidor.Text = editar.Servidor;
-                TxtBaseDatos.Text= editar.BaseDatos;
+                LblTitulo.Text    = "Editar Servidor";
+                LblHint.Text      = "Deja Usuario y Contraseña en blanco para conservar los actuales.";
+                TxtNombre.Text    = editar.Nombre;
+                TxtServidor.Text  = editar.Servidor;
+                TxtBaseDatos.Text = editar.BaseDatos;
                 // TxtUsuario y PwdContrasena quedan vacíos a propósito.
             }
+
+            // Guardar deshabilitado hasta que la prueba sea exitosa.
+            // Se suscribe DESPUÉS de poblar los campos para no disparar el reset en la carga inicial.
+            BtnGuardar.IsEnabled = false;
+            TxtServidor.TextChanged          += (_, _) => ResetearPrueba();
+            TxtBaseDatos.TextChanged         += (_, _) => ResetearPrueba();
+            TxtUsuario.TextChanged           += (_, _) => ResetearPrueba();
+            PwdContrasena.PasswordChanged    += (_, _) => ResetearPrueba();
+            TxtContrasenaVisible.TextChanged += (_, _) => ResetearPrueba();
+        }
+
+        private void ResetearPrueba()
+        {
+            _pruebaExitosa       = false;
+            BtnGuardar.IsEnabled = false;
         }
 
         // ─── Credenciales efectivas (en edición, vacío = conservar) ──────────
@@ -99,6 +115,8 @@ namespace WpfAppVba
                     using var cmd = new SqlCommand("SELECT 1", conn);
                     cmd.ExecuteScalar();
                 });
+                _pruebaExitosa       = true;
+                BtnGuardar.IsEnabled = true;
                 MessageBox.Show("Conexión exitosa.", "Probar conexión",
                                 MessageBoxButton.OK, MessageBoxImage.Information);
             }
@@ -110,13 +128,20 @@ namespace WpfAppVba
             finally
             {
                 BtnProbarConexion.IsEnabled = true;
-                BtnGuardar.IsEnabled        = true;
+                BtnGuardar.IsEnabled        = _pruebaExitosa;
             }
         }
 
         // ─── Guardar ─────────────────────────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
+            if (!_pruebaExitosa)
+            {
+                MessageBox.Show("Debes probar la conexión exitosamente antes de guardar.",
+                                "Guardar conexión", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             string servidor  = TxtServidor.Text.Trim();
             string baseDatos = TxtBaseDatos.Text.Trim();
 
