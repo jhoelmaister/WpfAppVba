@@ -501,55 +501,6 @@ namespace WpfAppVba
 
         private void Campo_DateChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Sincronizar el TextBox visible cuando el código asigna Box_Fecha.SelectedDate
-            if (Box_FechaTexto != null && Box_Fecha.SelectedDate.HasValue)
-                Box_FechaTexto.Text = Box_Fecha.SelectedDate.Value.ToString("dd/MM/yyyy");
-            if (!_cargando) _cambioDocumento = true;
-        }
-
-        // ─── Calendario popup para la fecha del pedido ────────────────────────
-        private void BtnCalendario_Click(object sender, RoutedEventArgs e)
-        {
-            if (Box_Fecha.SelectedDate.HasValue)
-                CalendarioFecha.SelectedDate = Box_Fecha.SelectedDate.Value;
-            PopupCalendario.IsOpen = !PopupCalendario.IsOpen;
-        }
-
-        private void CalendarioFecha_SelectedDatesChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (CalendarioFecha.SelectedDate.HasValue)
-            {
-                DateTime fecha = CalendarioFecha.SelectedDate.Value;
-                Box_FechaTexto.Text = fecha.ToString("dd/MM/yyyy");
-                bool prev = _cargando;
-                _cargando = true;
-                Box_Fecha.SelectedDate = fecha;
-                _cargando = prev;
-                _cambioDocumento = true;
-            }
-            PopupCalendario.IsOpen = false;
-        }
-
-        private void Box_FechaTexto_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (DateTime.TryParseExact(Box_FechaTexto.Text.Trim(), "dd/MM/yyyy",
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    System.Globalization.DateTimeStyles.None, out DateTime fecha))
-            {
-                bool prev = _cargando;
-                _cargando = true;
-                Box_Fecha.SelectedDate = fecha;
-                _cargando = prev;
-                _cambioDocumento = true;
-            }
-            else if (!string.IsNullOrEmpty(Box_FechaTexto.Text) && Box_Fecha.SelectedDate.HasValue)
-            {
-                Box_FechaTexto.Text = Box_Fecha.SelectedDate.Value.ToString("dd/MM/yyyy");
-            }
-        }
-
-        private void Box_Hora_TextChanged(object sender, TextChangedEventArgs e)
-        {
             if (!_cargando) _cambioDocumento = true;
         }
 
