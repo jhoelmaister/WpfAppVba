@@ -507,13 +507,13 @@
 
                 <DataGrid.ColumnHeaderStyle>
                     <Style TargetType="DataGridColumnHeader">
-                        <Setter Property="Background"     Value="{DynamicResource ThemeBgSurface}"/>
-                        <Setter Property="Foreground"     Value="{DynamicResource ThemeTextoSec}"/>
-                        <Setter Property="BorderBrush"    Value="{DynamicResource ThemeBorde}"/>
-                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                        <Setter Property="Padding"        Value="12,6"/>
-                        <Setter Property="FontSize"       Value="11"/>
-                        <Setter Property="FontWeight"     Value="SemiBold"/>
+                        <Setter Property="Background"      Value="{DynamicResource ThemeBgSurface}"/>
+                        <Setter Property="Foreground"      Value="{DynamicResource ThemeTextoSec}"/>
+                        <Setter Property="BorderBrush"     Value="{DynamicResource ThemeBorde}"/>
+                        <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                        <Setter Property="Padding"         Value="12,6"/>
+                        <Setter Property="FontSize"        Value="11"/>
+                        <Setter Property="FontWeight"      Value="SemiBold"/>
                     </Style>
                 </DataGrid.ColumnHeaderStyle>
 
@@ -597,7 +597,7 @@
             <!-- ── Panel detalle artículos (siempre visible) ── -->
             <Border x:Name="PanelDetalle" Grid.Row="4"
                     Background="{DynamicResource ThemeBgSurface}"
-                    BorderBrush="#3B82F6"
+                    BorderBrush="#EF4444"
                     BorderThickness="0,2,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -605,9 +605,9 @@
                         <RowDefinition Height="120"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Cabecera panel detalle con fondo azul -->
+                    <!-- Cabecera panel detalle con fondo rojo -->
                     <Border Grid.Row="0"
-                            Background="#3B82F6"
+                            Background="#EF4444"
                             Padding="14,7">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="▸"
@@ -633,10 +633,10 @@
                               FontSize="11">
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">
-                                <Setter Property="Background"      Value="#EFF6FF"/>
-                                <Setter Property="Foreground"      Value="#1E40AF"/>
-                                <Setter Property="BorderBrush"     Value="#BFDBFE"/>
-                                <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                <Setter Property="Background"      Value="#FEF2F2"/>
+                                <Setter Property="Foreground"      Value="#991B1B"/>
+                                <Setter Property="BorderBrush"     Value="#FECACA"/>
+                                <Setter Property="BorderThickness" Value="0,0,1,1"/>
                                 <Setter Property="Padding"         Value="12,5"/>
                                 <Setter Property="FontSize"        Value="10"/>
                                 <Setter Property="FontWeight"      Value="SemiBold"/>
