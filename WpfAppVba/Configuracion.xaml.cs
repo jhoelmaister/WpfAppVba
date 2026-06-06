@@ -1,9 +1,7 @@
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using Microsoft.Data.SqlClient;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
@@ -12,6 +10,7 @@ namespace WpfAppVba
     {
         private static SqlData Sql => SqlData.Instance;
         private bool _cargando;
+        private string? _lastSelectedServId;
 
         public Configuracion()
         {
@@ -23,6 +22,17 @@ namespace WpfAppVba
         {
             public string Id          { get; set; } = "";
             public string Descripcion { get; set; } = "";
+        }
+
+        // Fila de la lista de servidores (sin exponer credenciales).
+        private class ServidorVista
+        {
+            public string Id        { get; set; } = "";
+            public string Nombre    { get; set; } = "";
+            public string Servidor  { get; set; } = "";
+            public string BaseDatos { get; set; } = "";
+            public bool   EsActivo  { get; set; }
+            public string Activo    => EsActivo ? "●" : "";
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
@@ -45,15 +55,8 @@ namespace WpfAppVba
                 TxtApellidos.Text = apellidos;
                 TxtTipo.Text      = tipo;
 
-                // Conexión SQL Server guardada
-                var cfg = ConexionConfig.Cargar();
-                if (cfg != null)
-                {
-                    TxtConServidor.Text    = cfg.Value.servidor;
-                    TxtConBaseDatos.Text   = cfg.Value.baseDatos;
-                    TxtConUsuario.Text     = cfg.Value.usuario;
-                    PwdConContrasena.Password = cfg.Value.contrasena;
-                }
+                // Lista de servidores SQL Server registrados
+                RefrescarServidores();
 
                 // Tema: si el valor de BD no es válido, usar el tema activo o "claro"
                 string temaInicial = temaDb.Trim().ToLowerInvariant() == ThemeManager.TemaOscuro
@@ -180,99 +183,114 @@ namespace WpfAppVba
             }
         }
 
-        // ─── Conexión SQL Server ─────────────────────────────────────────────
+        // ─── Conexión SQL Server (lista de servidores) ───────────────────────
 
-        private string ObtenerConContrasena() =>
-            TxtConContrasenaVisible.Visibility == Visibility.Visible
-                ? TxtConContrasenaVisible.Text
-                : PwdConContrasena.Password;
-
-        private void BtnMostrarConPwd_Click(object sender, RoutedEventArgs e)
+        private void RefrescarServidores()
         {
-            if (PwdConContrasena.Visibility == Visibility.Visible)
-            {
-                TxtConContrasenaVisible.Text    = PwdConContrasena.Password;
-                PwdConContrasena.Visibility     = Visibility.Collapsed;
-                TxtConContrasenaVisible.Visibility = Visibility.Visible;
-                BtnMostrarConPwd.Content        = "Ocultar";
-            }
-            else
-            {
-                PwdConContrasena.Password          = TxtConContrasenaVisible.Text;
-                TxtConContrasenaVisible.Visibility = Visibility.Collapsed;
-                PwdConContrasena.Visibility        = Visibility.Visible;
-                BtnMostrarConPwd.Content           = "Ver";
-            }
-        }
-
-        private async void BtnProbarConexion_Click(object sender, RoutedEventArgs e)
-        {
-            string servidor   = TxtConServidor.Text.Trim();
-            string baseDatos  = TxtConBaseDatos.Text.Trim();
-            string usuario    = TxtConUsuario.Text.Trim();
-            string contrasena = ObtenerConContrasena();
-
-            if (string.IsNullOrEmpty(servidor) || string.IsNullOrEmpty(baseDatos))
-            {
-                MessageBox.Show("Completa al menos Servidor y Base de datos.", "Probar conexión",
-                                MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            BtnProbarConexion.IsEnabled  = false;
-            BtnGuardarConexion.IsEnabled = false;
-            try
-            {
-                string cs = $"Server={servidor};Database={baseDatos};User Id={usuario};Password={contrasena};" +
-                            "Connect Timeout=10;TrustServerCertificate=True;";
-                await Task.Run(() =>
+            string activo = ConexionConfig.ObtenerActivoId();
+            var items = ConexionConfig.CargarLista()
+                .Select(s => new ServidorVista
                 {
-                    using var conn = new SqlConnection(cs);
-                    conn.Open();
-                    using var cmd = new SqlCommand("SELECT 1", conn);
-                    cmd.ExecuteScalar();
-                });
-                MessageBox.Show("Conexión exitosa.", "Probar conexión",
-                                MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error al conectar:\n{ex.Message}", "Probar conexión",
-                                MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                BtnProbarConexion.IsEnabled  = true;
-                BtnGuardarConexion.IsEnabled = true;
-            }
+                    Id        = s.Id,
+                    Nombre    = s.Nombre,
+                    Servidor  = s.Servidor,
+                    BaseDatos = s.BaseDatos,
+                    EsActivo  = s.Id == activo
+                })
+                .ToList();
+            LstServidores.ItemsSource = items;
         }
 
-        private void BtnGuardarConexion_Click(object sender, RoutedEventArgs e)
-        {
-            string servidor   = TxtConServidor.Text.Trim();
-            string baseDatos  = TxtConBaseDatos.Text.Trim();
-            string usuario    = TxtConUsuario.Text.Trim();
-            string contrasena = ObtenerConContrasena();
+        private ServidorVista? ServidorSeleccionado() =>
+            LstServidores.SelectedItem as ServidorVista;
 
-            if (string.IsNullOrEmpty(servidor) || string.IsNullOrEmpty(baseDatos))
+        private void LstServidores_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (LstServidores.SelectedItem is ServidorVista sv)
+                _lastSelectedServId = sv.Id;
+        }
+
+        private void BtnAgregarServidor_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new ConfiguracionDbWindow { Owner = Window.GetWindow(this) };
+            if (dlg.ShowDialog() == true)
+                RefrescarServidores();
+        }
+
+        private void LstServidores_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            EditarServidorSeleccionado();
+        }
+
+        private void BtnEditarServidor_Click(object sender, RoutedEventArgs e)
+        {
+            EditarServidorSeleccionado();
+        }
+
+        private void EditarServidorSeleccionado()
+        {
+            var sel = ServidorSeleccionadoOUltimo();
+            if (sel == null)
             {
-                MessageBox.Show("Completa al menos Servidor y Base de datos.", "Guardar conexión",
-                                MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Selecciona un servidor de la lista.", "Editar servidor",
+                                MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            try
+            var original = ConexionConfig.ObtenerPorId(sel.Id);
+            if (original == null) { RefrescarServidores(); return; }
+
+            var dlg = new ConfiguracionDbWindow(original) { Owner = Window.GetWindow(this) };
+            if (dlg.ShowDialog() == true)
+                RefrescarServidores();
+        }
+
+        private ServidorVista? ServidorSeleccionadoOUltimo()
+        {
+            var sel = ServidorSeleccionado();
+            if (sel == null && _lastSelectedServId != null)
+                sel = (LstServidores.ItemsSource as System.Collections.Generic.List<ServidorVista>)
+                          ?.FirstOrDefault(s => s.Id == _lastSelectedServId);
+            return sel;
+        }
+
+        private void BtnEliminarServidor_Click(object sender, RoutedEventArgs e)
+        {
+            var sel = ServidorSeleccionadoOUltimo();
+            if (sel == null)
             {
-                ConexionConfig.Guardar(servidor, baseDatos, usuario, contrasena);
-                DatabaseConnection.Configurar(servidor, baseDatos, usuario, contrasena);
-                MessageBox.Show("Conexión guardada. Los cambios se aplicarán al reiniciar la aplicación.",
-                                "Guardar conexión", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Selecciona un servidor de la lista.", "Eliminar servidor",
+                                MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
             }
-            catch (Exception ex)
+
+            var r = MessageBox.Show($"¿Eliminar el servidor \"{sel.Nombre}\"?", "Eliminar servidor",
+                                    MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (r != MessageBoxResult.Yes) return;
+
+            ConexionConfig.Eliminar(sel.Id);
+            RefrescarServidores();
+        }
+
+        private void BtnConectarServidor_Click(object sender, RoutedEventArgs e)
+        {
+            var sel = ServidorSeleccionadoOUltimo();
+            if (sel == null)
             {
-                MessageBox.Show($"Error al guardar:\n{ex.Message}", "Guardar conexión",
-                                MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Selecciona un servidor de la lista.", "Conectar",
+                                MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
             }
+
+            ConexionConfig.EstablecerActivo(sel.Id);
+            var srv = ConexionConfig.ObtenerPorId(sel.Id);
+            if (srv != null)
+                DatabaseConnection.Configurar(srv.Servidor, srv.BaseDatos, srv.Usuario, srv.Contrasena);
+
+            RefrescarServidores();
+            MessageBox.Show($"\"{sel.Nombre}\" quedó como servidor activo.\n" +
+                            "Reinicia la aplicación para aplicar el cambio.",
+                            "Conectar", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         // ─── Guardar ─────────────────────────────────────────────────────────

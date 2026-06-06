@@ -8,20 +8,43 @@ namespace WpfAppVba
 {
     public partial class ConfiguracionDbWindow : Window
     {
-        public ConfiguracionDbWindow()
+        private readonly ServidorConexion? _original;
+
+        /// <summary>Servidor resultante tras guardar (null si se canceló).</summary>
+        public ServidorConexion? Resultado { get; private set; }
+
+        public ConfiguracionDbWindow() : this(null) { }
+
+        public ConfiguracionDbWindow(ServidorConexion? editar)
         {
             InitializeComponent();
-            CargarDatosGuardados();
+            _original = editar;
+
+            if (editar != null)
+            {
+                // Modo edición: NO se exponen las credenciales (usuario / contraseña).
+                LblTitulo.Text   = "Editar Servidor";
+                LblHint.Text     = "Deja Usuario y Contraseña en blanco para conservar los actuales.";
+                TxtNombre.Text   = editar.Nombre;
+                TxtServidor.Text = editar.Servidor;
+                TxtBaseDatos.Text= editar.BaseDatos;
+                // TxtUsuario y PwdContrasena quedan vacíos a propósito.
+            }
         }
 
-        private void CargarDatosGuardados()
+        // ─── Credenciales efectivas (en edición, vacío = conservar) ──────────
+        private string UsuarioEfectivo()
         {
-            var cfg = ConexionConfig.Cargar();
-            if (cfg == null) return;
-            TxtServidor.Text       = cfg.Value.servidor;
-            TxtBaseDatos.Text      = cfg.Value.baseDatos;
-            TxtUsuario.Text        = cfg.Value.usuario;
-            PwdContrasena.Password = cfg.Value.contrasena;
+            string u = TxtUsuario.Text.Trim();
+            if (string.IsNullOrEmpty(u) && _original != null) return _original.Usuario;
+            return u;
+        }
+
+        private string ContrasenaEfectiva()
+        {
+            string c = ObtenerContrasena();
+            if (string.IsNullOrEmpty(c) && _original != null) return _original.Contrasena;
+            return c;
         }
 
         private string ObtenerContrasena() =>
@@ -34,17 +57,17 @@ namespace WpfAppVba
         {
             if (PwdContrasena.Visibility == Visibility.Visible)
             {
-                TxtContrasenaVisible.Text    = PwdContrasena.Password;
-                PwdContrasena.Visibility     = Visibility.Collapsed;
-                TxtContrasenaVisible.Visibility = Visibility.Visible;
-                BtnTogglePwd.Content         = "Ocultar";
+                TxtContrasenaVisible.Text        = PwdContrasena.Password;
+                PwdContrasena.Visibility         = Visibility.Collapsed;
+                TxtContrasenaVisible.Visibility  = Visibility.Visible;
+                BtnTogglePwd.Content             = "Ocultar";
             }
             else
             {
-                PwdContrasena.Password          = TxtContrasenaVisible.Text;
-                TxtContrasenaVisible.Visibility = Visibility.Collapsed;
-                PwdContrasena.Visibility        = Visibility.Visible;
-                BtnTogglePwd.Content            = "Ver";
+                PwdContrasena.Password           = TxtContrasenaVisible.Text;
+                TxtContrasenaVisible.Visibility  = Visibility.Collapsed;
+                PwdContrasena.Visibility         = Visibility.Visible;
+                BtnTogglePwd.Content             = "Ver";
             }
         }
 
@@ -53,8 +76,8 @@ namespace WpfAppVba
         {
             string servidor   = TxtServidor.Text.Trim();
             string baseDatos  = TxtBaseDatos.Text.Trim();
-            string usuario    = TxtUsuario.Text.Trim();
-            string contrasena = ObtenerContrasena();
+            string usuario    = UsuarioEfectivo();
+            string contrasena = ContrasenaEfectiva();
 
             if (string.IsNullOrEmpty(servidor) || string.IsNullOrEmpty(baseDatos))
             {
@@ -94,10 +117,8 @@ namespace WpfAppVba
         // ─── Guardar ─────────────────────────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            string servidor   = TxtServidor.Text.Trim();
-            string baseDatos  = TxtBaseDatos.Text.Trim();
-            string usuario    = TxtUsuario.Text.Trim();
-            string contrasena = ObtenerContrasena();
+            string servidor  = TxtServidor.Text.Trim();
+            string baseDatos = TxtBaseDatos.Text.Trim();
 
             if (string.IsNullOrEmpty(servidor) || string.IsNullOrEmpty(baseDatos))
             {
@@ -108,8 +129,24 @@ namespace WpfAppVba
 
             try
             {
-                ConexionConfig.Guardar(servidor, baseDatos, usuario, contrasena);
-                DatabaseConnection.Configurar(servidor, baseDatos, usuario, contrasena);
+                var s = new ServidorConexion
+                {
+                    Id         = _original?.Id ?? Guid.NewGuid().ToString("N"),
+                    Nombre     = string.IsNullOrWhiteSpace(TxtNombre.Text) ? servidor : TxtNombre.Text.Trim(),
+                    Servidor   = servidor,
+                    BaseDatos  = baseDatos,
+                    Usuario    = UsuarioEfectivo(),
+                    Contrasena = ContrasenaEfectiva()
+                };
+
+                if (_original != null) ConexionConfig.Actualizar(s);
+                else                   ConexionConfig.Agregar(s);
+
+                // Si el servidor guardado es el activo, reconfigurar la conexión global.
+                if (ConexionConfig.ObtenerActivoId() == s.Id)
+                    DatabaseConnection.Configurar(s.Servidor, s.BaseDatos, s.Usuario, s.Contrasena);
+
+                Resultado    = s;
                 DialogResult = true;
             }
             catch (Exception ex)

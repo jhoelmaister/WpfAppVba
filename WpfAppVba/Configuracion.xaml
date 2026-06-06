@@ -4,170 +4,302 @@
         Background="{DynamicResource ThemeBgPrincipal}">
 
     <UserControl.Resources>
-        <Style x:Key="LblEtiqueta" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11"/>
+        <Style x:Key="SectionLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
-            <Setter Property="Margin" Value="0,0,0,2"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
         </Style>
-        <Style x:Key="CajaLectura" TargetType="TextBox">
-            <Setter Property="Height" Value="30"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Padding" Value="6,4"/>
+        <Style x:Key="ModernInput" TargetType="TextBox">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
-            <Setter Property="Margin" Value="0,0,0,10"/>
-            <Setter Property="IsEnabled" Value="False"/>
+            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeInputBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="CaretBrush" Value="#4F8EF7"/>
+        </Style>
+        <Style x:Key="ReadOnlyInput" TargetType="TextBox" BasedOn="{StaticResource ModernInput}">
             <Setter Property="Background" Value="{DynamicResource ThemeBgReadOnly}"/>
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="IsEnabled" Value="False"/>
         </Style>
-        <Style x:Key="CajaEditable" TargetType="TextBox">
-            <Setter Property="Height" Value="30"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Padding" Value="6,4"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
-            <Setter Property="Margin" Value="0,0,0,10"/>
-        </Style>
-        <!-- Encabezado de sección -->
-        <Style x:Key="LblSeccion" TargetType="TextBlock">
+        <Style x:Key="ModernCombo" TargetType="ComboBox"
+               BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="Height" Value="36"/>
             <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="8,0"/>
+        </Style>
+        <Style x:Key="ServerListItemStyle" TargetType="ListViewItem">
+            <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
-            <Setter Property="Margin" Value="0,12,0,4"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="4,4"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource ThemeFilaSeleccionada}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource ThemeBgReadOnly}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ServerListHeaderStyle" TargetType="GridViewColumnHeader">
+            <Setter Property="Background" Value="{DynamicResource ThemeBgSurface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="6,5"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorde}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        </Style>
+        <Style x:Key="SelectorBtn" TargetType="Button">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="14,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeBgSurface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+        <Style x:Key="CardBorder" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ThemeBgSurface}"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="18,14"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+        <Style x:Key="CardHeader" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#4F8EF7"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
     </UserControl.Resources>
 
-    <Grid Margin="16">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>  <!-- Título -->
-            <RowDefinition Height="*"/>     <!-- Campos -->
-            <RowDefinition Height="Auto"/>  <!-- Botón -->
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Título -->
-        <TextBlock Grid.Row="0" Text="Configuración" FontSize="15" FontWeight="Bold"
-                   Foreground="{DynamicResource ThemeTexto}" Margin="0,0,0,14"/>
+        <!-- ══ ENCABEZADO ══════════════════════════════════════════════ -->
+        <Border Grid.Row="0" Background="{DynamicResource ThemeBgSurface}"
+                BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,0,0,1"
+                Padding="20,14">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Border Width="36" Height="36" CornerRadius="8"
+                        Background="#1A3A6B" Margin="0,0,12,0">
+                    <TextBlock Text="&#x2699;" FontSize="18" HorizontalAlignment="Center"
+                               VerticalAlignment="Center" Foreground="White"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Configuración" FontSize="14" FontWeight="Bold"
+                               Foreground="{DynamicResource ThemeTexto}"/>
+                    <TextBlock Text="Preferencias, conexiones y cuenta" FontSize="11"
+                               Foreground="{DynamicResource ThemeTextoSec}" Margin="0,1,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
 
-        <!-- Campos -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <!-- ══ CONTENIDO ══════════════════════════════════════════════ -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16,20,0">
             <StackPanel>
 
-                <!-- ══ Sección: General ══════════════════════════════════════ -->
-                <TextBlock Text="General" Style="{StaticResource LblSeccion}"/>
-                <Separator Background="{DynamicResource ThemeBorde}" Margin="0,0,0,10"/>
+                <!-- ▸ CARD: GENERAL -->
+                <Border Style="{StaticResource CardBorder}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CardHeader}" Text="● GENERAL"/>
 
-                <!-- Tema -->
-                <TextBlock Text="Tema:" Style="{StaticResource LblEtiqueta}"/>
-                <ComboBox x:Name="CmbTema" Height="30" FontSize="12"
-                          Padding="4,0" Margin="0,0,0,10"
-                          SelectionChanged="CmbTema_SelectionChanged">
-                    <ComboBoxItem Content="claro"/>
-                    <ComboBoxItem Content="oscuro"/>
-                </ComboBox>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="240"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                <!-- Botón Guardar (solo el tema) -->
-                <Button x:Name="BtnGuardarTema" Content="Guardar Cambios"
-                        Height="30" FontSize="12" FontWeight="SemiBold"
-                        Background="#1A73E8" Foreground="White"
-                        BorderThickness="0" Cursor="Hand"
-                        HorizontalAlignment="Left" Padding="14,0"
-                        Margin="0,0,0,10"
-                        Click="BtnGuardarTema_Click"/>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="TEMA"/>
+                                <ComboBox x:Name="CmbTema" Style="{StaticResource ModernCombo}"
+                                          SelectionChanged="CmbTema_SelectionChanged">
+                                    <ComboBoxItem Content="claro"/>
+                                    <ComboBoxItem Content="oscuro"/>
+                                </ComboBox>
+                            </StackPanel>
 
-                <!-- ══ Sección: Conexión SQL Server ══════════════════════════ -->
-                <TextBlock Text="Conexión SQL Server" Style="{StaticResource LblSeccion}"/>
-                <Separator Background="{DynamicResource ThemeBorde}" Margin="0,0,0,10"/>
+                            <Button x:Name="BtnGuardarTema" Grid.Column="2" Content="Aplicar tema"
+                                    Height="36" FontSize="12" FontWeight="SemiBold"
+                                    Background="#1A73E8" Foreground="White"
+                                    BorderThickness="0" Cursor="Hand" Padding="16,0"
+                                    VerticalAlignment="Bottom"
+                                    Click="BtnGuardarTema_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
 
-                <TextBlock Text="Servidor:" Style="{StaticResource LblEtiqueta}"/>
-                <TextBox x:Name="TxtConServidor" Style="{StaticResource CajaEditable}"/>
+                <!-- ▸ CARD: CONEXIÓN SQL SERVER -->
+                <Border Style="{StaticResource CardBorder}">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Style="{StaticResource CardHeader}"
+                                       Text="● CONEXIÓN SQL SERVER" Margin="0"/>
+                            <Button Grid.Column="1" x:Name="BtnAgregarServidor" Content="＋ Agregar"
+                                    Height="30" FontSize="12" FontWeight="SemiBold" Padding="14,0"
+                                    Background="#1A73E8" Foreground="White"
+                                    BorderThickness="0" Cursor="Hand"
+                                    Click="BtnAgregarServidor_Click"/>
+                        </Grid>
 
-                <TextBlock Text="Base de datos:" Style="{StaticResource LblEtiqueta}"/>
-                <TextBox x:Name="TxtConBaseDatos" Style="{StaticResource CajaEditable}"/>
+                        <Border BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
+                                CornerRadius="6">
+                            <ListView x:Name="LstServidores" Height="150"
+                                      BorderThickness="0"
+                                      Background="{DynamicResource ThemeInputBg}"
+                                      Foreground="{DynamicResource ThemeTexto}"
+                                      FontSize="12"
+                                      SelectionMode="Single"
+                                      ItemContainerStyle="{StaticResource ServerListItemStyle}"
+                                      MouseDoubleClick="LstServidores_MouseDoubleClick"
+                                      SelectionChanged="LstServidores_SelectionChanged">
+                                <ListView.View>
+                                    <GridView ColumnHeaderContainerStyle="{StaticResource ServerListHeaderStyle}">
+                                        <GridViewColumn Header="" Width="32"
+                                                        DisplayMemberBinding="{Binding Activo}"/>
+                                        <GridViewColumn Header="Alias" Width="140"
+                                                        DisplayMemberBinding="{Binding Nombre}"/>
+                                        <GridViewColumn Header="Servidor" Width="160"
+                                                        DisplayMemberBinding="{Binding Servidor}"/>
+                                        <GridViewColumn Header="Base de datos" Width="150"
+                                                        DisplayMemberBinding="{Binding BaseDatos}"/>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Border>
 
-                <TextBlock Text="Usuario SQL:" Style="{StaticResource LblEtiqueta}"/>
-                <TextBox x:Name="TxtConUsuario" Style="{StaticResource CajaEditable}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <Button x:Name="BtnConectarServidor" Content="🔌 Conectar"
+                                    Height="32" FontSize="12" FontWeight="SemiBold" Padding="14,0"
+                                    Background="#2E7D32" Foreground="White"
+                                    BorderThickness="0" Cursor="Hand" Margin="0,0,8,0"
+                                    Click="BtnConectarServidor_Click"/>
+                            <Button x:Name="BtnEditarServidor" Content="✎ Editar"
+                                    Style="{StaticResource SelectorBtn}"
+                                    Click="BtnEditarServidor_Click"/>
+                            <Button x:Name="BtnEliminarServidor" Content="🗑 Eliminar"
+                                    Height="32" FontSize="12" Padding="14,0"
+                                    Background="#D93025" Foreground="White"
+                                    BorderThickness="0" Cursor="Hand"
+                                    Click="BtnEliminarServidor_Click"/>
+                        </StackPanel>
 
-                <TextBlock Text="Contraseña:" Style="{StaticResource LblEtiqueta}"/>
-                <Grid Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <PasswordBox x:Name="PwdConContrasena" Grid.Column="0" Height="30" FontSize="12" Padding="6,4"
-                                 BorderBrush="{DynamicResource ThemeBordeInput}"/>
-                    <TextBox x:Name="TxtConContrasenaVisible" Grid.Column="0" Height="30" FontSize="12" Padding="6,4"
-                             BorderBrush="{DynamicResource ThemeBordeInput}" Visibility="Collapsed"/>
-                    <Button x:Name="BtnMostrarConPwd" Grid.Column="1" Content="Ver" Width="50" Height="30"
-                            FontSize="11"
-                            Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
-                            BorderThickness="0" Cursor="Hand" Margin="6,0,0,0"
-                            Click="BtnMostrarConPwd_Click"/>
-                </Grid>
+                        <TextBlock FontSize="11" Foreground="{DynamicResource ThemeTextoMuted}"
+                                   TextWrapping="Wrap" Margin="0,10,0,0"
+                                   Text="Los cambios de servidor activo se aplican al reiniciar la aplicación. Al editar no se muestran las credenciales guardadas."/>
+                    </StackPanel>
+                </Border>
 
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                    <Button x:Name="BtnProbarConexion" Content="Probar conexión"
-                            Height="30" FontSize="12" Padding="12,0"
-                            Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
-                            BorderThickness="0" Cursor="Hand" Margin="0,0,8,0"
-                            Click="BtnProbarConexion_Click"/>
-                    <Button x:Name="BtnGuardarConexion" Content="Guardar conexión"
-                            Height="30" FontSize="12" FontWeight="SemiBold" Padding="12,0"
-                            Background="#1A73E8" Foreground="White"
-                            BorderThickness="0" Cursor="Hand"
-                            Click="BtnGuardarConexion_Click"/>
-                </StackPanel>
+                <!-- ▸ CARD: MI CUENTA -->
+                <Border Style="{StaticResource CardBorder}" Margin="0,0,0,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CardHeader}" Text="● MI CUENTA"/>
 
-                <!-- ══ Sección: Mi Cuenta ════════════════════════════════════ -->
-                <TextBlock Text="Mi Cuenta" Style="{StaticResource LblSeccion}"/>
-                <Separator Background="{DynamicResource ThemeBorde}" Margin="0,0,0,10"/>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                <!-- Cuenta (solo lectura) -->
-                <TextBlock Text="Cuenta:" Style="{StaticResource LblEtiqueta}"/>
-                <TextBox x:Name="TxtCuenta" Style="{StaticResource CajaLectura}"/>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="CUENTA"/>
+                                <TextBox x:Name="TxtCuenta" Style="{StaticResource ReadOnlyInput}"/>
+                            </StackPanel>
 
-                <!-- Nombres -->
-                <TextBlock Text="Nombres:" Style="{StaticResource LblEtiqueta}"/>
-                <TextBox x:Name="TxtNombres" Style="{StaticResource CajaEditable}"/>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="TIPO DE USUARIO"/>
+                                <TextBox x:Name="TxtTipo" Style="{StaticResource ReadOnlyInput}"/>
+                            </StackPanel>
+                        </Grid>
 
-                <!-- Apellidos -->
-                <TextBlock Text="Apellidos:" Style="{StaticResource LblEtiqueta}"/>
-                <TextBox x:Name="TxtApellidos" Style="{StaticResource CajaEditable}"/>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                <!-- Sucursal Activa -->
-                <TextBlock Text="Sucursal Activa:" Style="{StaticResource LblEtiqueta}"/>
-                <ComboBox x:Name="CmbSucursal" Height="30" FontSize="12"
-                          Padding="4,0" Margin="0,0,0,10"
-                          DisplayMemberPath="Descripcion"
-                          SelectionChanged="CmbSucursal_SelectionChanged"/>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="NOMBRES"/>
+                                <TextBox x:Name="TxtNombres" Style="{StaticResource ModernInput}"/>
+                            </StackPanel>
 
-                <!-- Inicio de Sucursal (solo lectura) -->
-                <TextBlock Text="Inicio de Sucursal:" Style="{StaticResource LblEtiqueta}"/>
-                <TextBox x:Name="TxtFechaInicio" Style="{StaticResource CajaLectura}"/>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="APELLIDOS"/>
+                                <TextBox x:Name="TxtApellidos" Style="{StaticResource ModernInput}"/>
+                            </StackPanel>
+                        </Grid>
 
-                <!-- Periodo Activo -->
-                <TextBlock Text="Periodo Activo:" Style="{StaticResource LblEtiqueta}"/>
-                <ComboBox x:Name="CmbPeriodo" Height="30" FontSize="12"
-                          Padding="4,0" Margin="0,0,0,10"/>
+                        <StackPanel Margin="0,0,0,12">
+                            <TextBlock Style="{StaticResource SectionLabel}" Text="SUCURSAL ACTIVA"/>
+                            <ComboBox x:Name="CmbSucursal" Style="{StaticResource ModernCombo}"
+                                      DisplayMemberPath="Descripcion"
+                                      SelectionChanged="CmbSucursal_SelectionChanged"/>
+                        </StackPanel>
 
-                <!-- Tipo de Usuario (solo lectura) -->
-                <TextBlock Text="Tipo de Usuario:" Style="{StaticResource LblEtiqueta}"/>
-                <TextBox x:Name="TxtTipo" Style="{StaticResource CajaLectura}"/>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                <!-- Botón Cambiar Contraseña -->
-                <Button x:Name="BtnCambiarContrasena" Content="🔑 Cambiar Contraseña"
-                        Height="30" FontSize="12" Padding="12,0"
-                        Background="#5C6BC0" Foreground="White"
-                        BorderThickness="0" Cursor="Hand"
-                        HorizontalAlignment="Left" Margin="0,6,0,10"
-                        Click="BtnCambiarContrasena_Click"/>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="INICIO DE SUCURSAL"/>
+                                <TextBox x:Name="TxtFechaInicio" Style="{StaticResource ReadOnlyInput}"/>
+                            </StackPanel>
 
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="PERIODO ACTIVO"/>
+                                <ComboBox x:Name="CmbPeriodo" Style="{StaticResource ModernCombo}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Button x:Name="BtnCambiarContrasena" Content="🔑 Cambiar Contraseña"
+                                Height="34" FontSize="12" Padding="14,0"
+                                Background="#5C6BC0" Foreground="White"
+                                BorderThickness="0" Cursor="Hand"
+                                HorizontalAlignment="Left"
+                                Click="BtnCambiarContrasena_Click"/>
+                    </StackPanel>
+                </Border>
+
+                <Rectangle Height="16"/>
             </StackPanel>
         </ScrollViewer>
 
-        <!-- Botón Guardar -->
-        <Button Grid.Row="2" x:Name="BtnGuardar" Content="Guardar Cambios"
-                Height="34" FontSize="13" FontWeight="SemiBold"
-                Background="#1A73E8" Foreground="White"
-                BorderThickness="0" Cursor="Hand"
-                Margin="0,10,0,0"
-                Click="BtnGuardar_Click"/>
+        <!-- ══ BARRA DE ACCIONES ══════════════════════════════════════ -->
+        <Border Grid.Row="2" Background="{DynamicResource ThemeBgSurface}"
+                BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,1,0,0"
+                Padding="20,10">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="BtnGuardar" Content="&#x1F4BE; Guardar Cambios"
+                        Height="36" FontSize="13" FontWeight="SemiBold" Padding="18,0"
+                        Background="#1A73E8" Foreground="White"
+                        BorderThickness="0" Cursor="Hand"
+                        Click="BtnGuardar_Click"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </UserControl>

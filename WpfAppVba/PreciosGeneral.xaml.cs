@@ -425,28 +425,6 @@ namespace WpfAppVba
             CargarArbol();
             CargarArticulos();
         }
-
-        private void BtnGestionarRegiones_Click(object sender, RoutedEventArgs e)
-        {
-            var consola = Window.GetWindow(this) as ConsolaMovimientos;
-            if (consola == null) return;
-            string regionActualId = RegionSeleccionadaId;
-            var ctrl = new RegionesGeneral();
-            ctrl.Cerrando += () =>
-            {
-                consola.CerrarPestaña(ctrl);
-                Sql.RegionesObj.Actualizar();
-                CargarRegiones();
-                if (!string.IsNullOrEmpty(regionActualId))
-                {
-                    foreach (RegionItem item in CmbRegion.Items)
-                    {
-                        if (item.Id == regionActualId) { CmbRegion.SelectedItem = item; break; }
-                    }
-                }
-            };
-            consola.AbrirPestaña("Gestionar Regiones", ctrl, "gestionar-regiones");
-        }
     }
 
     // ─── Modelos de fila ──────────────────────────────────────────────────────
