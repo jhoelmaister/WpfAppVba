@@ -321,7 +321,6 @@
                                    FontSize="15" FontWeight="SemiBold"
                                    Foreground="{DynamicResource ThemeTexto}"/>
                         <TextBlock x:Name="LblSubtitulo"
-                                   Text="Seleccione un mes para filtrar"
                                    FontSize="11"
                                    Foreground="{DynamicResource ThemeTextoSec}"
                                    Margin="0,2,0,0"/>

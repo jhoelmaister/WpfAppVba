@@ -161,6 +161,12 @@ namespace WpfAppVba
                 "compra" => "Compras de Productos",
                 _        => "Pedidos (Ventas y Compras)"
             };
+            int año = AppState.DataFechaFinal.Year > 2000
+                ? AppState.DataFechaFinal.Year
+                : DateTime.Now.Year;
+            LblSubtitulo.Text = string.IsNullOrEmpty(_mesActivo)
+                ? año.ToString()
+                : $"{_mesActivo} {año}";
 
             // Ocultar el panel de detalle al recargar
             OcultarDetalle();
