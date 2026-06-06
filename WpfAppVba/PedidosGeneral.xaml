@@ -597,7 +597,7 @@
             <!-- ── Panel detalle artículos (siempre visible) ── -->
             <Border x:Name="PanelDetalle" Grid.Row="4"
                     Background="{DynamicResource ThemeBgSurface}"
-                    BorderBrush="#EF4444"
+                    BorderBrush="#7C3AED"
                     BorderThickness="0,2,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -605,9 +605,9 @@
                         <RowDefinition Height="120"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Cabecera panel detalle con fondo rojo -->
+                    <!-- Cabecera panel detalle con fondo violeta -->
                     <Border Grid.Row="0"
-                            Background="#EF4444"
+                            Background="#7C3AED"
                             Padding="14,7">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="▸"
@@ -633,9 +633,9 @@
                               FontSize="11">
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">
-                                <Setter Property="Background"      Value="#FEF2F2"/>
-                                <Setter Property="Foreground"      Value="#991B1B"/>
-                                <Setter Property="BorderBrush"     Value="#FECACA"/>
+                                <Setter Property="Background"      Value="#F5F3FF"/>
+                                <Setter Property="Foreground"      Value="#5B21B6"/>
+                                <Setter Property="BorderBrush"     Value="#DDD6FE"/>
                                 <Setter Property="BorderThickness" Value="0,0,1,1"/>
                                 <Setter Property="Padding"         Value="12,5"/>
                                 <Setter Property="FontSize"        Value="10"/>
