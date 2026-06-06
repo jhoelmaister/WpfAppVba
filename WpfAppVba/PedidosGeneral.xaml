@@ -192,8 +192,7 @@
                     <TextBlock Text="MESES"
                                FontSize="10" FontWeight="SemiBold"
                                Foreground="{DynamicResource ThemeTextoSec}"
-                               Margin="12,0,0,6"
-                               LetterSpacing="1"/>
+                               Margin="12,0,0,6"/>
                     <Border BorderBrush="{DynamicResource ThemeBorde}"
                             BorderThickness="1" Margin="8,0">
                         <TreeView x:Name="Tree1"
