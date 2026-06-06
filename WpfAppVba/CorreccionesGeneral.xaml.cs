@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -116,14 +117,23 @@ namespace WpfAppVba
                 totalCant += cant;
             }
 
-            Grid1.ItemsSource = lista;
-            TxtTotalCantidad.Text = totalCant.ToString("N0");
+            Grid1.ItemsSource       = lista;
+            TxtTotalCantidad.Text   = totalCant.ToString("N0");
+            TxtTotalDocumentos.Text = lista.Count.ToString("N0");
+            TxtTotalIngresos.Text   = lista.Count(f => f.Movimiento == "ingreso").ToString();
+            TxtTotalEgresos.Text    = lista.Count(f => f.Movimiento == "egreso").ToString();
             LblTipoMovimiento.Text = tipoMov switch
             {
                 "egreso"  => "Egresos de Stock (pérdida, merma, hurto, consumo interno)",
                 "ingreso" => "Ingresos de Stock (error de registro, registros omitidos)",
                 _         => "Correcciones de Stock (Ingresos y Egresos)"
             };
+            int año = AppState.DataFechaFinal.Year > 2000
+                ? AppState.DataFechaFinal.Year
+                : DateTime.Now.Year;
+            LblSubtitulo.Text = string.IsNullOrEmpty(_mesActivo)
+                ? año.ToString()
+                : $"{_mesActivo} {año}";
 
             OcultarDetalle();
         }
@@ -176,7 +186,10 @@ namespace WpfAppVba
                 f.Linea    = n++;
                 totalCant += f.CantidadTotal;
             }
-            TxtTotalCantidad.Text = totalCant.ToString("N0");
+            TxtTotalCantidad.Text   = totalCant.ToString("N0");
+            TxtTotalDocumentos.Text = lista.Count.ToString("N0");
+            TxtTotalIngresos.Text   = lista.Count(f => f.Movimiento == "ingreso").ToString();
+            TxtTotalEgresos.Text    = lista.Count(f => f.Movimiento == "egreso").ToString();
             Grid1.Items.Refresh();
         }
 
@@ -199,6 +212,7 @@ namespace WpfAppVba
         // ─── Panel de detalle artículos (Lista2) ─────────────────────────────
         private void MostrarDetalle(string documentoC)
         {
+            LblDetalleHeader.Text = $"Artículos del documento {documentoC}";
             var detalles = new List<CorreccionDetalleFila>();
             int linea = 1;
 
@@ -231,13 +245,12 @@ namespace WpfAppVba
             }
 
             Lista2.ItemsSource = detalles;
-            PanelDetalle.Visibility = detalles.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void OcultarDetalle()
         {
-            PanelDetalle.Visibility = Visibility.Collapsed;
-            Lista2.ItemsSource = null;
+            LblDetalleHeader.Text = "Artículos del documento";
+            Lista2.ItemsSource    = null;
         }
 
         // ─── Selección en Grid1 → mostrar detalle ────────────────────────────

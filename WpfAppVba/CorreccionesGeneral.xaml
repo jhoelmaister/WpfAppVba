@@ -4,124 +4,419 @@
         Background="{DynamicResource ThemeBgPrincipal}">
 
     <UserControl.Resources>
+
+        <!-- ── Botones base ── -->
         <Style x:Key="BtnBase" TargetType="Button">
-            <Setter Property="Height" Value="30"/>
-            <Setter Property="Padding" Value="12,0"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Height"          Value="30"/>
+            <Setter Property="Padding"         Value="11,0"/>
+            <Setter Property="FontSize"        Value="12"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.70"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         <Style x:Key="BtnPrimario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
-            <Setter Property="Background" Value="#1A73E8"/>
+            <Setter Property="Background" Value="#3B82F6"/>
             <Setter Property="Foreground" Value="White"/>
         </Style>
         <Style x:Key="BtnSecundario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
-            <Setter Property="Background" Value="{DynamicResource ThemeBtnSecBg}"/>
-            <Setter Property="Foreground" Value="{DynamicResource ThemeBtnSecFg}"/>
+            <Setter Property="Background"    Value="{DynamicResource ThemeBtnSecBg}"/>
+            <Setter Property="Foreground"    Value="{DynamicResource ThemeBtnSecFg}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush"   Value="{DynamicResource ThemeBorde}"/>
         </Style>
         <Style x:Key="BtnPeligro" TargetType="Button" BasedOn="{StaticResource BtnBase}">
-            <Setter Property="Background" Value="#D93025"/>
+            <Setter Property="Background" Value="#EF4444"/>
             <Setter Property="Foreground" Value="White"/>
         </Style>
+
+        <!-- ── Tarjeta métrica ── -->
+        <Style x:Key="MetricCard" TargetType="Border">
+            <Setter Property="Background"    Value="{DynamicResource ThemeBgSurface}"/>
+            <Setter Property="BorderBrush"   Value="{DynamicResource ThemeBorde}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius"  Value="8"/>
+            <Setter Property="Padding"       Value="12,10"/>
+        </Style>
+
+        <!-- ── Badge de movimiento en DataGrid ── -->
+        <DataTemplate x:Key="BadgeMovimiento">
+            <Border Padding="6,2" CornerRadius="4" HorizontalAlignment="Left">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Movimiento}" Value="ingreso">
+                                <Setter Property="Background" Value="#D1FAE5"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Movimiento}" Value="egreso">
+                                <Setter Property="Background" Value="#FEE2E2"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                        <Setter Property="Background" Value="{DynamicResource ThemeBgReadOnly}"/>
+                    </Style>
+                </Border.Style>
+                <TextBlock Text="{Binding Movimiento}" FontSize="11" FontWeight="SemiBold">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Movimiento}" Value="ingreso">
+                                    <Setter Property="Foreground" Value="#065F46"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Movimiento}" Value="egreso">
+                                    <Setter Property="Foreground" Value="#991B1B"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Border>
+        </DataTemplate>
+
     </UserControl.Resources>
 
-    <Grid Margin="12">
+    <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="160"/>
+            <ColumnDefinition Width="152"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Panel izquierdo: TreeView meses -->
-        <Border Grid.Column="0" Margin="0,0,8,0" BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1" Background="{DynamicResource ThemeBgSurface}">
-            <TreeView x:Name="Tree1"
-                      SelectedItemChanged="Tree1_SelectedItemChanged"
-                      PreviewMouseLeftButtonDown="Tree1_PreviewMouseLeftButtonDown"
-                      FontSize="12"/>
+        <!-- ════════════════════════════════════════════════════════ -->
+        <!-- SIDEBAR                                                   -->
+        <!-- ════════════════════════════════════════════════════════ -->
+        <Border Grid.Column="0"
+                Background="{DynamicResource ThemeBgSurface}"
+                BorderBrush="{DynamicResource ThemeBorde}"
+                BorderThickness="0,0,1,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="0,8,0,12">
+
+                    <!-- Árbol de meses -->
+                    <TextBlock Text="MESES"
+                               FontSize="10" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeTextoSec}"
+                               Margin="12,0,0,6"/>
+                    <Border BorderBrush="{DynamicResource ThemeBorde}"
+                            BorderThickness="1" Margin="8,0">
+                        <TreeView x:Name="Tree1"
+                                  Background="Transparent"
+                                  BorderThickness="0"
+                                  SelectedItemChanged="Tree1_SelectedItemChanged"
+                                  PreviewMouseLeftButtonDown="Tree1_PreviewMouseLeftButtonDown"
+                                  FontSize="12"/>
+                    </Border>
+
+                </StackPanel>
+            </ScrollViewer>
         </Border>
 
-        <!-- Panel derecho -->
+        <!-- ════════════════════════════════════════════════════════ -->
+        <!-- ÁREA PRINCIPAL                                           -->
+        <!-- ════════════════════════════════════════════════════════ -->
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*" MinHeight="120"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>  <!-- Top bar: título + selector movimiento -->
+                <RowDefinition Height="Auto"/>  <!-- Métricas -->
+                <RowDefinition Height="Auto"/>  <!-- Búsqueda + botones -->
+                <RowDefinition Height="*"/>     <!-- DataGrid principal -->
+                <RowDefinition Height="Auto"/>  <!-- Panel detalle artículos -->
             </Grid.RowDefinitions>
 
-            <!-- Título tipo movimiento + filtro -->
-            <Grid Grid.Row="0" Margin="0,0,0,8">
+            <!-- ── Top bar ── -->
+            <Border Grid.Row="0"
+                    Background="{DynamicResource ThemeBgSurface}"
+                    BorderBrush="{DynamicResource ThemeBorde}"
+                    BorderThickness="0,0,0,1"
+                    Padding="16,10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock x:Name="LblTipoMovimiento"
+                                   FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThemeTexto}"/>
+                        <TextBlock x:Name="LblSubtitulo"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource ThemeTextoSec}"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                VerticalAlignment="Center" Margin="0,0,0,0">
+                        <TextBlock Text="Movimiento:"
+                                   FontSize="12" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource ThemeTextoSec}"
+                                   Margin="0,0,6,0"/>
+                        <ComboBox x:Name="CboTipoMovimiento"
+                                  Width="100" Height="28" FontSize="12"
+                                  SelectionChanged="CboTipoMovimiento_SelectionChanged">
+                            <ComboBoxItem Content="Todos" IsSelected="True"/>
+                            <ComboBoxItem Content="Ingresos"/>
+                            <ComboBoxItem Content="Egresos"/>
+                        </ComboBox>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ── Métricas ── -->
+            <Grid Grid.Row="1" Margin="14,10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock x:Name="LblTipoMovimiento" Grid.Column="0"
-                           FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTexto}"
-                           VerticalAlignment="Center"/>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Movimiento:" FontSize="12" VerticalAlignment="Center"
-                               Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,6,0"/>
-                    <ComboBox x:Name="CboTipoMovimiento" Width="100" Height="26" FontSize="12"
-                              SelectionChanged="CboTipoMovimiento_SelectionChanged">
-                        <ComboBoxItem Content="Todos" IsSelected="True"/>
-                        <ComboBoxItem Content="Ingresos"/>
-                        <ComboBoxItem Content="Egresos"/>
-                    </ComboBox>
-                </StackPanel>
-            </Grid>
-
-            <!-- Buscador -->
-            <Grid Grid.Row="1" Margin="0,0,0,8">
-                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="8"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <TextBox x:Name="TxtBuscar" Grid.Column="0" Height="28" FontSize="12"
-                         Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,6,0"
-                         KeyDown="TxtBuscar_KeyDown"/>
-                <Button Content="Buscar" Grid.Column="1"
-                        Style="{StaticResource BtnSecundario}"
-                        Click="BtnBuscar_Click"/>
+
+                <Border Grid.Column="0" Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="Total cantidad"
+                                   FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
+                        <TextBlock x:Name="TxtTotalCantidad"
+                                   FontSize="20" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThemeTexto}"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="Documentos"
+                                   FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
+                        <TextBlock x:Name="TxtTotalDocumentos"
+                                   FontSize="20" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThemeTexto}"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="4" Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="Ingresos"
+                                   FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
+                        <TextBlock x:Name="TxtTotalIngresos"
+                                   FontSize="20" FontWeight="SemiBold"
+                                   Foreground="#10B981"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="6" Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="Egresos"
+                                   FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
+                        <TextBlock x:Name="TxtTotalEgresos"
+                                   FontSize="20" FontWeight="SemiBold"
+                                   Foreground="#EF4444"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
             </Grid>
 
-            <!-- DataGrid principal (Lista1) -->
-            <DataGrid x:Name="Grid1" Grid.Row="2"
+            <!-- ── Búsqueda + botones ── -->
+            <Border Grid.Row="2"
+                    Background="{DynamicResource ThemeBgSurface}"
+                    BorderBrush="{DynamicResource ThemeBorde}"
+                    BorderThickness="0,1,0,1"
+                    Padding="14,8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Buscador con ícono embebido -->
+                    <Border Grid.Column="0"
+                            Background="{DynamicResource ThemeInputBg}"
+                            BorderBrush="{DynamicResource ThemeBordeInput}"
+                            BorderThickness="1" CornerRadius="6"
+                            Margin="0,0,10,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="30"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="🔍"
+                                       FontSize="12" HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource ThemeTextoSec}"
+                                       IsHitTestVisible="False"/>
+                            <TextBox x:Name="TxtBuscar"
+                                     Grid.Column="1"
+                                     Height="30" FontSize="12"
+                                     Padding="4,0"
+                                     BorderThickness="0"
+                                     Background="Transparent"
+                                     VerticalContentAlignment="Center"
+                                     KeyDown="TxtBuscar_KeyDown"/>
+                            <Button Grid.Column="2" Content="Buscar"
+                                    Height="30" Padding="10,0" FontSize="12"
+                                    Background="#3B82F6" Foreground="White"
+                                    BorderThickness="0" Cursor="Hand"
+                                    Click="BtnBuscar_Click"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Botones de acción -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button x:Name="BtnNuevo"
+                                Content="Nueva Corrección"
+                                Style="{StaticResource BtnPrimario}"
+                                Margin="0,0,6,0"
+                                Click="BtnNuevo_Click"/>
+                        <Rectangle Width="1" Fill="{DynamicResource ThemeBorde}"
+                                   VerticalAlignment="Stretch" Margin="2,4,8,4"/>
+                        <Button x:Name="BtnEditar"
+                                Content="Editar"
+                                Style="{StaticResource BtnSecundario}"
+                                Margin="0,0,6,0"
+                                Click="BtnEditar_Click"/>
+                        <Button x:Name="BtnEliminar"
+                                Content="Eliminar"
+                                Style="{StaticResource BtnPeligro}"
+                                Margin="0,0,6,0"
+                                Click="BtnEliminar_Click"/>
+                        <Button Content="Actualizar"
+                                Style="{StaticResource BtnSecundario}"
+                                Click="BtnActualizar_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ── DataGrid principal ── -->
+            <DataGrid x:Name="Grid1" Grid.Row="3"
                       AutoGenerateColumns="False"
                       IsReadOnly="True"
                       SelectionMode="Single"
                       HeadersVisibility="Column"
                       GridLinesVisibility="Horizontal"
-                      BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
+                      BorderBrush="{DynamicResource ThemeBorde}"
+                      BorderThickness="0"
                       FontSize="12"
+                      RowHeight="34"
                       SelectionChanged="Grid1_SelectionChanged"
                       MouseDoubleClick="Grid1_MouseDoubleClick"
                       PreviewKeyDown="Grid1_PreviewKeyDown">
+
+                <DataGrid.ColumnHeaderStyle>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background"      Value="{DynamicResource ThemeBgSurface}"/>
+                        <Setter Property="Foreground"      Value="{DynamicResource ThemeTextoSec}"/>
+                        <Setter Property="BorderBrush"     Value="{DynamicResource ThemeBorde}"/>
+                        <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                        <Setter Property="Padding"         Value="12,6"/>
+                        <Setter Property="FontSize"        Value="11"/>
+                        <Setter Property="FontWeight"      Value="SemiBold"/>
+                    </Style>
+                </DataGrid.ColumnHeaderStyle>
+
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Línea"      Binding="{Binding Linea}"       Width="60"/>
-                    <DataGridTextColumn Header="DocumentoC" Binding="{Binding Id}"          Width="90"/>
-                    <DataGridTextColumn Header="Fecha"      Binding="{Binding FechaStr}"    Width="150"/>
-                    <DataGridTextColumn Header="Movimiento" Binding="{Binding Movimiento}"  Width="100"/>
-                    <DataGridTextColumn Header="Motivo"     Binding="{Binding Motivo}"      Width="*"/>
-                    <DataGridTextColumn Header="Cantidad"   Binding="{Binding CantidadTotal, StringFormat=#\,##0.##}"  Width="80"
+                    <DataGridTextColumn Header="#"
+                                        Binding="{Binding Linea}"
+                                        Width="46">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground"         Value="{DynamicResource ThemeTextoSec}"/>
+                                <Setter Property="VerticalAlignment"  Value="Center"/>
+                                <Setter Property="Margin"             Value="12,0,0,0"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="Documento"
+                                        Binding="{Binding Id}"
+                                        Width="88">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="FontWeight"        Value="SemiBold"/>
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="Margin"            Value="4,0"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="Fecha"
+                                        Binding="{Binding FechaStr}"
+                                        Width="148"/>
+
+                    <!-- Columna Movimiento con badge -->
+                    <DataGridTemplateColumn Header="Movimiento" Width="90">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ContentPresenter Content="{Binding}"
+                                                  ContentTemplate="{StaticResource BadgeMovimiento}"
+                                                  Margin="4,0" VerticalAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTextColumn Header="Motivo"
+                                        Binding="{Binding Motivo}"
+                                        Width="*"/>
+
+                    <DataGridTextColumn Header="Cantidad"
+                                        Binding="{Binding CantidadTotal, StringFormat=#\,##0.##}"
+                                        Width="80"
                                         ElementStyle="{StaticResource CeldaNumero}"/>
                 </DataGrid.Columns>
             </DataGrid>
 
-            <!-- Panel detalle artículos (Lista2) — visible cuando hay fila seleccionada -->
-            <Border x:Name="PanelDetalle" Grid.Row="3"
-                    Visibility="Collapsed"
-                    Margin="0,4,0,0"
-                    BorderBrush="#1A73E8" BorderThickness="1"
-                    Background="{DynamicResource ThemeBgSurface}">
+            <!-- ── Panel detalle artículos (siempre visible) ── -->
+            <Border x:Name="PanelDetalle" Grid.Row="4"
+                    Background="{DynamicResource ThemeBgSurface}"
+                    BorderBrush="#7C3AED"
+                    BorderThickness="0,2,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="100"/>
+                        <RowDefinition Height="120"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="Artículos del documento"
-                               FontSize="11" FontWeight="SemiBold" Foreground="#1A73E8"
-                               Margin="6,3,0,2"/>
+
+                    <!-- Cabecera panel detalle con fondo violeta -->
+                    <Border Grid.Row="0"
+                            Background="#7C3AED"
+                            Padding="14,7">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="▸"
+                                       FontSize="12" Foreground="White"
+                                       VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock x:Name="LblDetalleHeader"
+                                       Text="Artículos del documento"
+                                       FontSize="12" FontWeight="SemiBold"
+                                       Foreground="White"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Grid detalle -->
                     <DataGrid x:Name="Lista2" Grid.Row="1"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
@@ -129,32 +424,35 @@
                               HeadersVisibility="Column"
                               GridLinesVisibility="Horizontal"
                               BorderThickness="0"
+                              Background="Transparent"
                               FontSize="11">
+                        <DataGrid.ColumnHeaderStyle>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="Background"      Value="#5B21B6"/>
+                                <Setter Property="Foreground"      Value="White"/>
+                                <Setter Property="BorderBrush"     Value="#7C3AED"/>
+                                <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                <Setter Property="Padding"         Value="12,5"/>
+                                <Setter Property="FontSize"        Value="10"/>
+                                <Setter Property="FontWeight"      Value="SemiBold"/>
+                            </Style>
+                        </DataGrid.ColumnHeaderStyle>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Línea"       Binding="{Binding Linea}"       Width="40"/>
-                            <DataGridTextColumn Header="Código"      Binding="{Binding Codigo}"      Width="60"/>
-                            <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
-                            <DataGridTextColumn Header="Cantidad"    Binding="{Binding Cantidad, StringFormat=#\,##0.##}"  Width="70"
+                            <DataGridTextColumn Header="Lín."
+                                                Binding="{Binding Linea}"       Width="40"/>
+                            <DataGridTextColumn Header="Código"
+                                                Binding="{Binding Codigo}"      Width="70"/>
+                            <DataGridTextColumn Header="Descripción"
+                                                Binding="{Binding Descripcion}" Width="*"/>
+                            <DataGridTextColumn Header="Cantidad"
+                                                Binding="{Binding Cantidad, StringFormat=#\,##0.##}"
+                                                Width="80"
                                                 ElementStyle="{StaticResource CeldaNumero}"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
             </Border>
 
-            <!-- Totales -->
-            <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,6,0,0">
-                <TextBlock Text="Total Cantidad:" VerticalAlignment="Center" FontSize="12" Margin="0,0,4,0"/>
-                <TextBlock x:Name="TxtTotalCantidad" VerticalAlignment="Center" FontSize="12"
-                           FontWeight="SemiBold" Margin="0,0,0,0"/>
-            </StackPanel>
-
-            <!-- Botones -->
-            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-                <Button Content="Nueva Corrección"      Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"   Click="BtnNuevo_Click"/>
-                <Button Content="Editar Corrección"     Margin="0,0,6,0" Style="{StaticResource BtnSecundario}" Click="BtnEditar_Click"/>
-                <Button Content="Eliminar Corrección"   Margin="0,0,6,0" Style="{StaticResource BtnPeligro}"    Click="BtnEliminar_Click"/>
-                <Button Content="Actualizar" Margin="0,0,0,0" Style="{StaticResource BtnSecundario}" Click="BtnActualizar_Click"/>
-            </StackPanel>
         </Grid>
     </Grid>
 </UserControl>

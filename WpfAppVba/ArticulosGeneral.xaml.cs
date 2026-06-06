@@ -242,9 +242,11 @@ namespace WpfAppVba
                 totalStock += stock;
             }
 
-            Grid1.ItemsSource      = lista;
+            Grid1.ItemsSource       = lista;
+            TxtTotalArticulos.Text  = lista.Count.ToString("N0");
             TxtTotalDisponible.Text = totalDisp.ToString("N0");
             TxtTotalStock.Text      = totalStock.ToString("N0");
+            LblSubtitulo.Text       = $"{lista.Count:N0} artículos";
 
             if (ModoExportar)
                 LblSeleccionados.Text = $"Seleccionados: {_seleccionados.Count}";
@@ -301,8 +303,10 @@ namespace WpfAppVba
                 totalDisp  += f.Disponible;
                 totalStock += f.Stock;
             }
+            TxtTotalArticulos.Text  = lista.Count.ToString("N0");
             TxtTotalDisponible.Text = totalDisp.ToString("N0");
             TxtTotalStock.Text      = totalStock.ToString("N0");
+            LblSubtitulo.Text       = $"{lista.Count:N0} artículos";
             if (ModoExportar)
                 LblSeleccionados.Text = $"Seleccionados: {_seleccionados.Count}";
             Grid1.Items.Refresh();
