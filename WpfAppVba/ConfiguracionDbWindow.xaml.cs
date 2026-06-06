@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 using Microsoft.Data.SqlClient;
 using WpfAppVba.Data;
 
@@ -44,8 +45,9 @@ namespace WpfAppVba
 
         private void ResetearPrueba()
         {
-            _pruebaExitosa       = false;
-            BtnGuardar.IsEnabled = false;
+            _pruebaExitosa            = false;
+            BtnGuardar.IsEnabled      = false;
+            LblEstadoConexion.Text    = "";
         }
 
         // ─── Credenciales efectivas (en edición, vacío = conservar) ──────────
@@ -104,6 +106,7 @@ namespace WpfAppVba
 
             BtnProbarConexion.IsEnabled = false;
             BtnGuardar.IsEnabled        = false;
+            LblEstadoConexion.Text      = "";
             try
             {
                 string cs = $"Server={servidor};Database={baseDatos};User Id={usuario};Password={contrasena};" +
@@ -115,15 +118,14 @@ namespace WpfAppVba
                     using var cmd = new SqlCommand("SELECT 1", conn);
                     cmd.ExecuteScalar();
                 });
-                _pruebaExitosa       = true;
-                BtnGuardar.IsEnabled = true;
-                MessageBox.Show("Conexión exitosa.", "Probar conexión",
-                                MessageBoxButton.OK, MessageBoxImage.Information);
+                _pruebaExitosa                = true;
+                LblEstadoConexion.Text        = "Conexión exitosa";
+                LblEstadoConexion.Foreground  = new SolidColorBrush(Color.FromRgb(16, 185, 129));
             }
-            catch (Exception ex)
+            catch
             {
-                MessageBox.Show($"Error al conectar:\n{ex.Message}", "Probar conexión",
-                                MessageBoxButton.OK, MessageBoxImage.Error);
+                LblEstadoConexion.Text       = "No se pudo conectar";
+                LblEstadoConexion.Foreground = new SolidColorBrush(Color.FromRgb(220, 38, 38));
             }
             finally
             {

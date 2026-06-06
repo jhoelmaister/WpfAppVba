@@ -1,6 +1,7 @@
 using System;
 using Microsoft.Data.SqlClient;
 
+#pragma warning disable IDE0130
 namespace WpfAppVba.Data
 {
     public static class DatabaseConnection

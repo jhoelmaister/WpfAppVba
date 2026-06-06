@@ -95,11 +95,15 @@
                             Click="BtnTogglePwd_Click"/>
                 </Grid>
 
-                <Button x:Name="BtnProbarConexion" Content="Probar conexión"
-                        Height="34" FontSize="12" Padding="14,0"
-                        Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
-                        BorderThickness="0" Cursor="Hand" HorizontalAlignment="Left"
-                        Click="BtnProbarConexion_Click"/>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="BtnProbarConexion" Content="Probar conexión"
+                            Height="34" FontSize="12" Padding="14,0"
+                            Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeBtnSecFg}"
+                            BorderThickness="0" Cursor="Hand"
+                            Click="BtnProbarConexion_Click"/>
+                    <TextBlock x:Name="LblEstadoConexion" VerticalAlignment="Center"
+                               FontSize="12" FontWeight="SemiBold" Margin="12,0,0,0"/>
+                </StackPanel>
             </StackPanel>
         </ScrollViewer>
 
