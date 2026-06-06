@@ -145,14 +145,14 @@ namespace WpfAppVba
                 totalImporte += importe;
             }
 
-            Grid1.ItemsSource       = lista;
-            TxtTotalCantidad.Text   = totalCant.ToString("N0");
-            TxtTotalImporte.Text    = totalImporte.ToString("N2");
-            TxtTotalDocumentos.Text = lista.Count.ToString("N0");
-            TxtTotalPendientes.Text = lista.Count(f => f.Estado == "pendiente"
-                                                    || f.Estado == "pendiente parcial"
-                                                    || f.Cuenta == "pendiente"
-                                                    || f.Cuenta == "pendiente parcial").ToString();
+            Grid1.ItemsSource        = lista;
+            TxtTotalCantidad.Text    = totalCant.ToString("N0");
+            TxtTotalImporte.Text     = totalImporte.ToString("N2");
+            TxtTotalDocumentos.Text  = lista.Count.ToString("N0");
+            TxtTotalPendientes.Text  = lista.Count(f => f.Estado == "pendiente"
+                                                     || f.Estado == "pendiente parcial").ToString();
+            TxtCuentaPendientes.Text = lista.Count(f => f.Cuenta == "pendiente"
+                                                     || f.Cuenta == "pendiente parcial").ToString();
 
             // ── Título correcto según VBA ─────────────────────────────────────
             LblTipoMovimiento.Text = tipoMov switch
@@ -240,13 +240,13 @@ namespace WpfAppVba
                 totalCant    += f.Cantidad;
                 totalImporte += f.Importe;
             }
-            TxtTotalCantidad.Text   = totalCant.ToString("N0");
-            TxtTotalImporte.Text    = totalImporte.ToString("N2");
-            TxtTotalDocumentos.Text = lista.Count.ToString("N0");
-            TxtTotalPendientes.Text = lista.Count(f => f.Estado == "pendiente"
-                                                    || f.Estado == "pendiente parcial"
-                                                    || f.Cuenta == "pendiente"
-                                                    || f.Cuenta == "pendiente parcial").ToString();
+            TxtTotalCantidad.Text    = totalCant.ToString("N0");
+            TxtTotalImporte.Text     = totalImporte.ToString("N2");
+            TxtTotalDocumentos.Text  = lista.Count.ToString("N0");
+            TxtTotalPendientes.Text  = lista.Count(f => f.Estado == "pendiente"
+                                                     || f.Estado == "pendiente parcial").ToString();
+            TxtCuentaPendientes.Text = lista.Count(f => f.Cuenta == "pendiente"
+                                                     || f.Cuenta == "pendiente parcial").ToString();
             Grid1.Items.Refresh();
         }
 
@@ -318,15 +318,12 @@ namespace WpfAppVba
             }
 
             Lista2.ItemsSource = detalles;
-            PanelDetalle.Visibility = detalles.Count > 0
-                ? Visibility.Visible
-                : Visibility.Collapsed;
         }
 
         private void OcultarDetalle()
         {
-            PanelDetalle.Visibility = Visibility.Collapsed;
-            Lista2.ItemsSource = null;
+            LblDetalleHeader.Text  = "Artículos del documento";
+            Lista2.ItemsSource     = null;
         }
 
         // ─── Eventos árbol y filtros ──────────────────────────────────────────

@@ -329,7 +329,7 @@
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal"
                                 VerticalAlignment="Center" Margin="0,0,0,0">
-                        <TextBlock Text="Tipo:"
+                        <TextBlock Text="Movimiento:"
                                    FontSize="12" VerticalAlignment="Center"
                                    Foreground="{DynamicResource ThemeTextoSec}"
                                    Margin="0,0,6,0"/>
@@ -347,6 +347,8 @@
             <!-- ── Métricas ── -->
             <Grid Grid.Row="1" Margin="14,10">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="8"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="8"/>
                     <ColumnDefinition Width="*"/>
@@ -391,11 +393,22 @@
 
                 <Border Grid.Column="6" Style="{StaticResource MetricCard}">
                     <StackPanel>
-                        <TextBlock Text="Pendientes"
+                        <TextBlock Text="Estado pendientes"
                                    FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
                         <TextBlock x:Name="TxtTotalPendientes"
                                    FontSize="20" FontWeight="SemiBold"
                                    Foreground="#EF4444"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="8" Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="Cuenta pendientes"
+                                   FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
+                        <TextBlock x:Name="TxtCuentaPendientes"
+                                   FontSize="20" FontWeight="SemiBold"
+                                   Foreground="#F59E0B"
                                    Margin="0,2,0,0"/>
                     </StackPanel>
                 </Border>
@@ -581,31 +594,29 @@
                 </DataGrid.Columns>
             </DataGrid>
 
-            <!-- ── Panel detalle artículos ── -->
+            <!-- ── Panel detalle artículos (siempre visible) ── -->
             <Border x:Name="PanelDetalle" Grid.Row="4"
-                    Visibility="Collapsed"
                     Background="{DynamicResource ThemeBgSurface}"
-                    BorderBrush="{DynamicResource ThemeBorde}"
-                    BorderThickness="0,1,0,0">
+                    BorderBrush="#3B82F6"
+                    BorderThickness="0,2,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="110"/>
+                        <RowDefinition Height="120"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Cabecera panel detalle -->
+                    <!-- Cabecera panel detalle con fondo azul -->
                     <Border Grid.Row="0"
-                            BorderBrush="{DynamicResource ThemeBorde}"
-                            BorderThickness="0,0,0,1"
-                            Padding="14,6">
+                            Background="#3B82F6"
+                            Padding="14,7">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="▸"
-                                       FontSize="11" Foreground="#3B82F6"
+                                       FontSize="12" Foreground="White"
                                        VerticalAlignment="Center" Margin="0,0,6,0"/>
                             <TextBlock x:Name="LblDetalleHeader"
                                        Text="Artículos del documento"
-                                       FontSize="11" FontWeight="SemiBold"
-                                       Foreground="#3B82F6"
+                                       FontSize="12" FontWeight="SemiBold"
+                                       Foreground="White"
                                        VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
@@ -622,9 +633,9 @@
                               FontSize="11">
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">
-                                <Setter Property="Background"      Value="{DynamicResource ThemeBgSurface}"/>
-                                <Setter Property="Foreground"      Value="{DynamicResource ThemeTextoSec}"/>
-                                <Setter Property="BorderBrush"     Value="{DynamicResource ThemeBorde}"/>
+                                <Setter Property="Background"      Value="#EFF6FF"/>
+                                <Setter Property="Foreground"      Value="#1E40AF"/>
+                                <Setter Property="BorderBrush"     Value="#BFDBFE"/>
                                 <Setter Property="BorderThickness" Value="0,0,0,1"/>
                                 <Setter Property="Padding"         Value="12,5"/>
                                 <Setter Property="FontSize"        Value="10"/>
