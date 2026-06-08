@@ -10,6 +10,25 @@
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </UserControl.Resources>
 
@@ -26,13 +45,16 @@
                    Foreground="{DynamicResource ThemeTexto}" Margin="0,0,0,10"/>
 
         <!-- DataGrid -->
-        <DataGrid x:Name="Grid1" Grid.Row="1"
+        <Border Grid.Row="1" CornerRadius="6" ClipToBounds="True"
+                BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
+                Background="{DynamicResource ThemeBgSurface}">
+        <DataGrid x:Name="Grid1"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   SelectionMode="Single"
                   HeadersVisibility="Column"
                   GridLinesVisibility="Horizontal"
-                  BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
+                  BorderThickness="0"
                   FontSize="12"
                   MouseDoubleClick="Grid1_MouseDoubleClick"
                   PreviewKeyDown="Grid1_PreviewKeyDown">
@@ -44,6 +66,7 @@
                                     ElementStyle="{StaticResource CeldaNumero}"/>
             </DataGrid.Columns>
         </DataGrid>
+        </Border>
 
         <!-- Nota -->
         <TextBlock Grid.Row="2" Margin="0,6,0,0" FontSize="11" Foreground="{DynamicResource ThemeTextoMuted}"
