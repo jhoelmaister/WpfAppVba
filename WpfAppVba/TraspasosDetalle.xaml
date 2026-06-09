@@ -182,6 +182,10 @@
                             <ComboBoxItem Content="pendiente revisar"/>
                             <ComboBoxItem Content="entregado"/>
                         </ComboBox>
+                        <Border x:Name="BadgeEstado" CornerRadius="10" Padding="8,2"
+                                Margin="0,4,0,0" HorizontalAlignment="Left">
+                            <TextBlock x:Name="TxtBadgeEstado" FontSize="11" FontWeight="SemiBold"/>
+                        </Border>
                     </StackPanel>
                 </Grid>
 

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
@@ -129,6 +130,8 @@ namespace WpfAppVba
             }
 
             // Cargar artículos
+            ActualizarBadgeEstado();
+
             _items.Clear();
             int linea = 1;
             int uf = Sql.TraspasosObj.ContarFilas;
@@ -174,6 +177,8 @@ namespace WpfAppVba
             TxtEmision.Text = $"{ahora:d} {ahora:HH:mm:ss}";
             TxtEdicion.Text = $"{ahora:d} {ahora:HH:mm:ss}";
 
+            ActualizarBadgeEstado();
+
             _items.Clear();
             RefrescarGrid();
         }
@@ -190,6 +195,20 @@ namespace WpfAppVba
                 }
             }
             if (Box_Estado.Items.Count > 0) Box_Estado.SelectedIndex = 0;
+        }
+
+        private void ActualizarBadgeEstado()
+        {
+            string estado = ((Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "").ToLower();
+            (BadgeEstado.Background, TxtBadgeEstado.Foreground, TxtBadgeEstado.Text) = estado switch
+            {
+                "entregado"         => (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
+                                        new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)), "Entregado"),
+                "pendiente revisar" => (new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)),
+                                        new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E)), "Pendiente revisar"),
+                _                   => (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
+                                        new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Pendiente")
+            };
         }
 
         private void ActualizarDescripcionSucursal()
@@ -329,6 +348,7 @@ namespace WpfAppVba
             AppState.TipoMovimiento = tipo;
             LblTitulo.Text = tipo == "salida" ? "Salida de Productos Detalle" : "Entrada de Productos Detalle";
             _hayCambios = true;
+            ActualizarBadgeEstado();
         }
 
         // ─── Eventos de campos ────────────────────────────────────────────────
@@ -345,6 +365,7 @@ namespace WpfAppVba
         private void Campo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!_cargando) _hayCambios = true;
+            if (sender == Box_Estado) ActualizarBadgeEstado();
         }
 
         private void Box_Sucursal_Identificador_TextChanged(object sender, TextChangedEventArgs e)
