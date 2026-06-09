@@ -204,11 +204,25 @@ namespace WpfAppVba
             {
                 "entregado"         => (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
                                         new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)), "Entregado"),
-                "pendiente revisar" => (new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)),
-                                        new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E)), "Pendiente revisar"),
-                _                   => (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
-                                        new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Pendiente")
+                "pendiente revisar" => (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
+                                        new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Pendiente revisar"),
+                _                   => (new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)),
+                                        new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E)), "Pendiente")
             };
+
+            // Ícono y color según tipo (entrada/salida)
+            string tipo    = AppState.TipoMovimiento.ToLower();
+            bool esSalida  = tipo == "salida";
+            LblIconoTipo.Text       = esSalida ? "SA" : "EN";
+            IconoBorde.Background   = esSalida
+                ? new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7))
+                : new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5));
+            LblIconoTipo.Foreground = esSalida
+                ? new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E))
+                : new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46));
+
+            LblDocNum.Text       = Box_DocumentoT.Text;
+            LblSucursalTipo.Text = esSalida ? "Sucursal destino" : "Sucursal origen";
         }
 
         private void ActualizarDescripcionSucursal()
@@ -355,6 +369,7 @@ namespace WpfAppVba
         private void Campo_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (!_cargando) _hayCambios = true;
+            if (sender == Box_DocumentoT) LblDocNum.Text = Box_DocumentoT.Text;
         }
 
         private void Campo_DateChanged(object sender, SelectionChangedEventArgs e)
