@@ -13,6 +13,25 @@
             <Setter Property="FontSize"        Value="12"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         <Style x:Key="BtnPrimario"   TargetType="Button" BasedOn="{StaticResource BtnBase}">
             <Setter Property="Background" Value="#3B82F6"/>
@@ -65,6 +84,32 @@
         <!-- ── Alineación numérica ── -->
         <Style x:Key="RightCell" TargetType="TextBlock">
             <Setter Property="HorizontalAlignment" Value="Right"/>
+        </Style>
+
+        <!-- ── Input redondeado ── -->
+        <Style x:Key="ModernInput" TargetType="TextBox">
+            <Setter Property="Height"                   Value="28"/>
+            <Setter Property="FontSize"                 Value="12"/>
+            <Setter Property="Padding"                  Value="7,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush"              Value="{DynamicResource ThemeBordeInput}"/>
+            <Setter Property="BorderThickness"          Value="1"/>
+            <Setter Property="Background"               Value="{DynamicResource ThemeInputBg}"/>
+            <Setter Property="Foreground"               Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
     </UserControl.Resources>
@@ -144,10 +189,8 @@
                                 Margin="0,0,6,0"
                                 Click="BtnCancelar_Click"/>
                         <Button Content="💾 Guardar"
-                                Height="30" Padding="14,0" FontSize="12"
-                                FontWeight="SemiBold"
-                                Background="#3B82F6" Foreground="White"
-                                BorderThickness="0" Cursor="Hand"
+                                Height="30" FontWeight="SemiBold"
+                                Style="{StaticResource BtnPrimario}"
                                 Click="BtnGuardar_Click"/>
                     </StackPanel>
                 </Grid>
@@ -179,9 +222,7 @@
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Doc. Pedido" Style="{StaticResource LblMuted}"/>
                         <TextBox x:Name="Box_DocumentoP"
-                                 Height="28" FontSize="12" Padding="7,0"
-                                 VerticalContentAlignment="Center"
-                                 BorderBrush="{DynamicResource ThemeBordeInput}"
+                                 Style="{StaticResource ModernInput}"
                                  PreviewTextInput="Box_Numeros_PreviewTextInput"
                                  TextChanged="Campo_TextChanged"/>
                     </StackPanel>
@@ -196,9 +237,8 @@
                     <!-- Hora -->
                     <StackPanel Grid.Column="4">
                         <TextBlock Text="Hora" Style="{StaticResource LblMuted}"/>
-                        <TextBox x:Name="Box_Hora" Height="28" FontSize="12"
-                                 Padding="7,0" VerticalContentAlignment="Center"
-                                 BorderBrush="{DynamicResource ThemeBordeInput}"
+                        <TextBox x:Name="Box_Hora"
+                                 Style="{StaticResource ModernInput}"
                                  TextChanged="Campo_TextChanged"/>
                     </StackPanel>
 
@@ -206,9 +246,7 @@
                     <StackPanel Grid.Column="6">
                         <TextBlock Text="Tercero" Style="{StaticResource LblMuted}"/>
                         <TextBox x:Name="Box_Tercero_Identificador"
-                                 Height="28" FontSize="12" Padding="7,0"
-                                 VerticalContentAlignment="Center"
-                                 BorderBrush="{DynamicResource ThemeBordeInput}"
+                                 Style="{StaticResource ModernInput}"
                                  PreviewTextInput="Box_Numeros_PreviewTextInput"
                                  TextChanged="Box_Tercero_Identificador_TextChanged"/>
                     </StackPanel>
@@ -239,9 +277,7 @@
                     <StackPanel Grid.Column="12">
                         <TextBlock Text="Referencia" Style="{StaticResource LblMuted}"/>
                         <TextBox x:Name="Box_Referencia"
-                                 Height="28" FontSize="12" Padding="7,0"
-                                 VerticalContentAlignment="Center"
-                                 BorderBrush="{DynamicResource ThemeBordeInput}"
+                                 Style="{StaticResource ModernInput}"
                                  TextChanged="Campo_TextChanged"/>
                     </StackPanel>
 
@@ -256,7 +292,7 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- Emisión / edición / estado / cuenta (readonly, fila secundaria) -->
+                <!-- Emisión / edición (readonly, fila secundaria) -->
                 <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                     <TextBlock Text="Emisión:" Style="{StaticResource LblMuted}"/>
                     <TextBlock x:Name="Box_Emision"
@@ -265,22 +301,10 @@
                     <TextBlock Text="Edición:" Style="{StaticResource LblMuted}"/>
                     <TextBlock x:Name="Box_Edicion"
                                FontSize="10" Foreground="{DynamicResource ThemeTexto}"
-                               VerticalAlignment="Center" Margin="0,0,16,0"/>
-                    <TextBlock Text="Estado:" Style="{StaticResource LblMuted}"/>
-                    <TextBox x:Name="Box_Estado"
-                             Height="20" Width="120" FontSize="10"
-                             Padding="5,0" VerticalContentAlignment="Center"
-                             IsReadOnly="True"
-                             Background="{DynamicResource ThemeBgReadOnly}"
-                             BorderBrush="{DynamicResource ThemeBorde}"
-                             Margin="0,0,14,0"/>
-                    <TextBlock Text="Cuenta:" Style="{StaticResource LblMuted}"/>
-                    <TextBox x:Name="Box_Cuenta"
-                             Height="20" Width="120" FontSize="10"
-                             Padding="5,0" VerticalContentAlignment="Center"
-                             IsReadOnly="True"
-                             Background="{DynamicResource ThemeBgReadOnly}"
-                             BorderBrush="{DynamicResource ThemeBorde}"/>
+                               VerticalAlignment="Center"/>
+                    <!-- Ocultos: usados por code-behind, visualmente en badges -->
+                    <TextBox x:Name="Box_Estado" Visibility="Collapsed" IsReadOnly="True"/>
+                    <TextBox x:Name="Box_Cuenta" Visibility="Collapsed" IsReadOnly="True"/>
                 </StackPanel>
 
             </StackPanel>
@@ -731,96 +755,90 @@
                 BorderBrush="{DynamicResource ThemeBorde}"
                 BorderThickness="0,1,0,0"
                 Padding="14,8">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Izquierda: totales de unidades -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
-                        <StackPanel>
-                            <TextBlock Text="Total unidades" FontSize="10"
-                                       Foreground="{DynamicResource ThemeTextoSec}"/>
-                            <TextBlock x:Name="TxtTotalUnidades"
-                                       FontSize="17" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource ThemeTexto}"/>
-                        </StackPanel>
-                    </Border>
-                    <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
-                        <StackPanel>
-                            <TextBlock Text="Diferentes" FontSize="10"
-                                       Foreground="{DynamicResource ThemeTextoSec}"/>
-                            <TextBlock x:Name="TxtUnidadesDiferentes"
-                                       FontSize="17" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource ThemeTexto}"/>
-                        </StackPanel>
-                    </Border>
-                    <!-- Chips de categoría -->
-                    <Border Background="{DynamicResource ThemeBgSurface}"
-                            BorderBrush="{DynamicResource ThemeBorde}"
-                            BorderThickness="1" CornerRadius="8"
-                            Padding="10,8">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Peq: " FontSize="11"
-                                       Foreground="{DynamicResource ThemeTextoSec}"/>
-                            <TextBlock x:Name="TxtTotalPeq"
-                                       FontSize="11" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource ThemeTexto}"
-                                       Margin="0,0,12,0"/>
-                            <TextBlock Text="Med: " FontSize="11"
-                                       Foreground="{DynamicResource ThemeTextoSec}"/>
-                            <TextBlock x:Name="TxtTotalMed"
-                                       FontSize="11" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource ThemeTexto}"
-                                       Margin="0,0,12,0"/>
-                            <TextBlock Text="Gra: " FontSize="11"
-                                       Foreground="{DynamicResource ThemeTextoSec}"/>
-                            <TextBlock x:Name="TxtTotalGra"
-                                       FontSize="11" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource ThemeTexto}"
-                                       Margin="0,0,12,0"/>
-                            <TextBlock Text="Otros: " FontSize="11"
-                                       Foreground="{DynamicResource ThemeTextoSec}"/>
-                            <TextBlock x:Name="TxtTotalOtros"
-                                       FontSize="11" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource ThemeTexto}"/>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-
-                <!-- Derecha: totales financieros -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
-                        <StackPanel>
-                            <TextBlock Text="Importe total" FontSize="10"
-                                       Foreground="{DynamicResource ThemeTextoSec}"/>
-                            <TextBlock x:Name="TxtTotalImporte"
-                                       FontSize="17" FontWeight="SemiBold"
-                                       Foreground="#065F46"/>
-                        </StackPanel>
-                    </Border>
-                    <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
-                        <StackPanel>
-                            <TextBlock Text="Pagado / Cobrado" FontSize="10"
-                                       Foreground="{DynamicResource ThemeTextoSec}"/>
-                            <TextBlock x:Name="TxtTotalCuenta"
-                                       FontSize="17" FontWeight="SemiBold"
-                                       Foreground="#1E40AF"/>
-                        </StackPanel>
-                    </Border>
-                    <Border Style="{StaticResource MetricCard}">
-                        <StackPanel>
-                            <TextBlock Text="Saldo" FontSize="10"
-                                       Foreground="{DynamicResource ThemeTextoSec}"/>
-                            <TextBlock x:Name="TxtTotalSaldo"
-                                       FontSize="17" FontWeight="SemiBold"
-                                       Foreground="#991B1B"/>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-            </Grid>
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right" VerticalAlignment="Center">
+                <!-- Chips de categoría -->
+                <Border Background="{DynamicResource ThemeBgSurface}"
+                        BorderBrush="{DynamicResource ThemeBorde}"
+                        BorderThickness="1" CornerRadius="8"
+                        Padding="10,8" Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Peq: " FontSize="11"
+                                   Foreground="{DynamicResource ThemeTextoSec}"/>
+                        <TextBlock x:Name="TxtTotalPeq"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThemeTexto}"
+                                   Margin="0,0,12,0"/>
+                        <TextBlock Text="Med: " FontSize="11"
+                                   Foreground="{DynamicResource ThemeTextoSec}"/>
+                        <TextBlock x:Name="TxtTotalMed"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThemeTexto}"
+                                   Margin="0,0,12,0"/>
+                        <TextBlock Text="Gra: " FontSize="11"
+                                   Foreground="{DynamicResource ThemeTextoSec}"/>
+                        <TextBlock x:Name="TxtTotalGra"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThemeTexto}"
+                                   Margin="0,0,12,0"/>
+                        <TextBlock Text="Otros: " FontSize="11"
+                                   Foreground="{DynamicResource ThemeTextoSec}"/>
+                        <TextBlock x:Name="TxtTotalOtros"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThemeTexto}"/>
+                    </StackPanel>
+                </Border>
+                <!-- Total unidades -->
+                <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="Total unidades" FontSize="10"
+                                   Foreground="{DynamicResource ThemeTextoSec}"/>
+                        <TextBlock x:Name="TxtTotalUnidades"
+                                   FontSize="17" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThemeTexto}"/>
+                    </StackPanel>
+                </Border>
+                <!-- Diferentes -->
+                <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="Diferentes" FontSize="10"
+                                   Foreground="{DynamicResource ThemeTextoSec}"/>
+                        <TextBlock x:Name="TxtUnidadesDiferentes"
+                                   FontSize="17" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThemeTexto}"/>
+                    </StackPanel>
+                </Border>
+                <!-- Importe -->
+                <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="Importe total" FontSize="10"
+                                   Foreground="{DynamicResource ThemeTextoSec}"/>
+                        <TextBlock x:Name="TxtTotalImporte"
+                                   FontSize="17" FontWeight="SemiBold"
+                                   Foreground="#065F46"/>
+                    </StackPanel>
+                </Border>
+                <!-- Cuenta -->
+                <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="Pagado / Cobrado" FontSize="10"
+                                   Foreground="{DynamicResource ThemeTextoSec}"/>
+                        <TextBlock x:Name="TxtTotalCuenta"
+                                   FontSize="17" FontWeight="SemiBold"
+                                   Foreground="#1E40AF"/>
+                    </StackPanel>
+                </Border>
+                <!-- Saldo -->
+                <Border Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="Saldo" FontSize="10"
+                                   Foreground="{DynamicResource ThemeTextoSec}"/>
+                        <TextBlock x:Name="TxtTotalSaldo"
+                                   FontSize="17" FontWeight="SemiBold"
+                                   Foreground="#991B1B"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
         </Border>
 
     </Grid>
