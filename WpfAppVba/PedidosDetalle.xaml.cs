@@ -601,6 +601,7 @@ namespace WpfAppVba
                 TabCobros.Header = tipo == "venta" ? "Cobros" : "Pagos";
             BtnCobrarDocumento.Content = tipo == "venta" ? "Cobrar Documento" : "Pagar Documento";
             _cambioDocumento = true;
+            ActualizarBadges();
         }
 
         // ─── Eventos de campos del encabezado ─────────────────────────────────
