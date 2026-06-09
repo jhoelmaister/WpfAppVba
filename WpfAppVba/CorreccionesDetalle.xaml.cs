@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
@@ -55,6 +56,7 @@ namespace WpfAppVba
                 CargarParaNuevo();
             }
 
+            ActualizarBadge();
             _cargando   = false;
             _hayCambios = false;
         }
@@ -136,6 +138,30 @@ namespace WpfAppVba
                 LblTitulo.Text = $"{prefijo} Corrección de {tipoLabel}";
                 _hayCambios = true;
             }
+            ActualizarBadge();
+        }
+
+        // ─── Badge + ícono según movimiento ───────────────────────────────────
+        private void ActualizarBadge()
+        {
+            string mov     = (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "egreso";
+            bool esIngreso = mov == "ingreso";
+
+            (BadgeEstado.Background, TxtBadgeEstado.Foreground, TxtBadgeEstado.Text) = esIngreso
+                ? (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
+                   new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)), "Ingreso")
+                : (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
+                   new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Egreso");
+
+            LblIconoTipo.Text       = esIngreso ? "IN" : "EG";
+            IconoBorde.Background   = esIngreso
+                ? new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5))
+                : new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2));
+            LblIconoTipo.Foreground = esIngreso
+                ? new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46))
+                : new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B));
+
+            LblDocNum.Text = Box_DocumentoC.Text;
         }
 
         /// <summary>Repuebla la lista de motivos según el movimiento seleccionado.</summary>
@@ -268,6 +294,7 @@ namespace WpfAppVba
         private void Campo_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (!_cargando) _hayCambios = true;
+            if (sender == Box_DocumentoC) LblDocNum.Text = Box_DocumentoC.Text;
         }
 
         private void Campo_DateChanged(object? sender, SelectionChangedEventArgs e)
