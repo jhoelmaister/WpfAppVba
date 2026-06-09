@@ -450,12 +450,14 @@
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <!-- Panel inferior: Precios | Stock | Observaciones -->
+                    <!-- Panel inferior: Precios | Stock | Categorías | Observaciones -->
                     <Grid Grid.Row="2" Background="{DynamicResource ThemeBgSurface}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="260"/>
                             <ColumnDefinition Width="1"/>
                             <ColumnDefinition Width="240"/>
+                            <ColumnDefinition Width="1"/>
+                            <ColumnDefinition Width="160"/>
                             <ColumnDefinition Width="1"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
@@ -521,8 +523,47 @@
 
                         <Rectangle Grid.Column="3" Fill="{DynamicResource ThemeBorde}"/>
 
-                        <!-- Observaciones -->
+                        <!-- Categorías -->
                         <DockPanel Grid.Column="4" Margin="10,8,10,8">
+                            <TextBlock DockPanel.Dock="Top"
+                                       Style="{StaticResource SectionHeader}"
+                                       Text="Categorías"/>
+                            <DataGrid x:Name="GridCategorias"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      IsReadOnly="True"
+                                      HeadersVisibility="Column"
+                                      GridLinesVisibility="Horizontal"
+                                      BorderBrush="{DynamicResource ThemeBorde}"
+                                      BorderThickness="1"
+                                      FontSize="11">
+                                <DataGrid.ColumnHeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="Background"      Value="{DynamicResource ThemeBgSurface}"/>
+                                        <Setter Property="Foreground"      Value="{DynamicResource ThemeTextoSec}"/>
+                                        <Setter Property="BorderBrush"     Value="{DynamicResource ThemeBorde}"/>
+                                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                        <Setter Property="Padding"         Value="6,4"/>
+                                        <Setter Property="FontSize"        Value="10"/>
+                                        <Setter Property="FontWeight"      Value="SemiBold"/>
+                                    </Style>
+                                </DataGrid.ColumnHeaderStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Categoría"
+                                                        Binding="{Binding Categoria}"
+                                                        Width="*"/>
+                                    <DataGridTextColumn Header="Cant."
+                                                        Binding="{Binding Cantidad}"
+                                                        Width="50"
+                                                        ElementStyle="{StaticResource CeldaNumero}"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+
+                        <Rectangle Grid.Column="5" Fill="{DynamicResource ThemeBorde}"/>
+
+                        <!-- Observaciones -->
+                        <DockPanel Grid.Column="6" Margin="10,8,10,8">
                             <TextBlock DockPanel.Dock="Top"
                                        Style="{StaticResource SectionHeader}"
                                        Text="Observaciones"/>
@@ -757,37 +798,11 @@
                 Padding="14,8">
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Right" VerticalAlignment="Center">
-                <!-- Chips de categoría -->
-                <Border Background="{DynamicResource ThemeBgSurface}"
-                        BorderBrush="{DynamicResource ThemeBorde}"
-                        BorderThickness="1" CornerRadius="8"
-                        Padding="10,8" Margin="0,0,8,0">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="Peq: " FontSize="11"
-                                   Foreground="{DynamicResource ThemeTextoSec}"/>
-                        <TextBlock x:Name="TxtTotalPeq"
-                                   FontSize="11" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource ThemeTexto}"
-                                   Margin="0,0,12,0"/>
-                        <TextBlock Text="Med: " FontSize="11"
-                                   Foreground="{DynamicResource ThemeTextoSec}"/>
-                        <TextBlock x:Name="TxtTotalMed"
-                                   FontSize="11" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource ThemeTexto}"
-                                   Margin="0,0,12,0"/>
-                        <TextBlock Text="Gra: " FontSize="11"
-                                   Foreground="{DynamicResource ThemeTextoSec}"/>
-                        <TextBlock x:Name="TxtTotalGra"
-                                   FontSize="11" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource ThemeTexto}"
-                                   Margin="0,0,12,0"/>
-                        <TextBlock Text="Otros: " FontSize="11"
-                                   Foreground="{DynamicResource ThemeTextoSec}"/>
-                        <TextBlock x:Name="TxtTotalOtros"
-                                   FontSize="11" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource ThemeTexto}"/>
-                    </StackPanel>
-                </Border>
+                <!-- Chips de categoría (ocultos, usados por code-behind) -->
+                <TextBlock x:Name="TxtTotalPeq"   Visibility="Collapsed"/>
+                <TextBlock x:Name="TxtTotalMed"   Visibility="Collapsed"/>
+                <TextBlock x:Name="TxtTotalGra"   Visibility="Collapsed"/>
+                <TextBlock x:Name="TxtTotalOtros" Visibility="Collapsed"/>
                 <!-- Total unidades -->
                 <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
                     <StackPanel>
@@ -795,6 +810,7 @@
                                    Foreground="{DynamicResource ThemeTextoSec}"/>
                         <TextBlock x:Name="TxtTotalUnidades"
                                    FontSize="17" FontWeight="SemiBold"
+                                   HorizontalAlignment="Right"
                                    Foreground="{DynamicResource ThemeTexto}"/>
                     </StackPanel>
                 </Border>
@@ -805,6 +821,7 @@
                                    Foreground="{DynamicResource ThemeTextoSec}"/>
                         <TextBlock x:Name="TxtUnidadesDiferentes"
                                    FontSize="17" FontWeight="SemiBold"
+                                   HorizontalAlignment="Right"
                                    Foreground="{DynamicResource ThemeTexto}"/>
                     </StackPanel>
                 </Border>
@@ -815,6 +832,7 @@
                                    Foreground="{DynamicResource ThemeTextoSec}"/>
                         <TextBlock x:Name="TxtTotalImporte"
                                    FontSize="17" FontWeight="SemiBold"
+                                   HorizontalAlignment="Right"
                                    Foreground="#065F46"/>
                     </StackPanel>
                 </Border>
@@ -825,6 +843,7 @@
                                    Foreground="{DynamicResource ThemeTextoSec}"/>
                         <TextBlock x:Name="TxtTotalCuenta"
                                    FontSize="17" FontWeight="SemiBold"
+                                   HorizontalAlignment="Right"
                                    Foreground="#1E40AF"/>
                     </StackPanel>
                 </Border>
@@ -835,6 +854,7 @@
                                    Foreground="{DynamicResource ThemeTextoSec}"/>
                         <TextBlock x:Name="TxtTotalSaldo"
                                    FontSize="17" FontWeight="SemiBold"
+                                   HorizontalAlignment="Right"
                                    Foreground="#991B1B"/>
                     </StackPanel>
                 </Border>

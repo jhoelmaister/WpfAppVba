@@ -324,6 +324,7 @@ namespace WpfAppVba
             CargarTotales();
             CargarTotalesDivisas();
             CargarEstadosCuenta();
+            CargarTotalesCategoria();
             if (AppState.TipoPedido.ToLower() == "normal")
                 CargarEstados();
         }
@@ -430,6 +431,49 @@ namespace WpfAppVba
 
             // Sincronizar badge del número de documento
             LblDocBadge.Text = Box_DocumentoP.Text;
+        }
+
+        private void CargarTotalesCategoria()
+        {
+            int ufCat = Sql.CategoriasObj.ContarFilas;
+            var categoriaIds   = new List<string>();
+            var categoriaDescs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var cantPorCategoria = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+
+            for (int i = 1; i <= ufCat; i++)
+            {
+                var idObj = Sql.CategoriasObj.Mover(i);
+                if (idObj == null) continue;
+                string catId   = idObj.ToString()!;
+                string catDesc = Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? catId;
+                categoriaIds.Add(catId);
+                categoriaDescs[catId]    = catDesc;
+                cantPorCategoria[catId]  = 0;
+            }
+
+            double cantOtros = 0;
+            foreach (var p in _pedidos)
+            {
+                if (string.IsNullOrEmpty(p.ArticuloId))
+                { cantOtros += p.Cantidad; continue; }
+
+                string catId = Sql.ArticulosObj.ObtenerItem("categoria", p.ArticuloId)?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(catId) && cantPorCategoria.ContainsKey(catId))
+                    cantPorCategoria[catId] += p.Cantidad;
+                else
+                    cantOtros += p.Cantidad;
+            }
+
+            var filas = categoriaIds
+                .Select(id => new CategoriaFila
+                {
+                    Categoria = categoriaDescs[id],
+                    Cantidad  = cantPorCategoria[id].ToString("N0")
+                })
+                .ToList();
+
+            filas.Add(new CategoriaFila { Categoria = "Otros", Cantidad = cantOtros.ToString("N0") });
+            GridCategorias.ItemsSource = filas;
         }
 
         private void CargarEstados()
@@ -1440,5 +1484,11 @@ namespace WpfAppVba
         public string Codigo     { get; set; } = "";
         public string Disponible { get; set; } = "";
         public string Stock      { get; set; } = "";
+    }
+
+    public class CategoriaFila
+    {
+        public string Categoria { get; set; } = "";
+        public string Cantidad  { get; set; } = "";
     }
 }
