@@ -176,9 +176,69 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - **SucursalesDetalle**: botones Guardar/Cancelar movidos a inferior izquierda con estilo uniforme (`#1A73E8`, `ThemeBtnSecBg`/`ThemeBtnSecFg`, `Cursor="Hand"`), igual a TercerosDetalle.
 - **Todos los formularios General**: botones CRUD renombrados para incluir el nombre de la entidad (e.g., "Nuevo Traspaso", "Editar Corrección", "Eliminar Artículo").
 
-### Sesión actual
+### Sesión anterior (antes de compactación)
 - **Botón X de pestañas dinámicas**: ahora llama `IntentarCerrar()` vía reflexión si el contenido lo implementa, protegiendo cambios no guardados antes de cerrar.
 - **CONTEXT.md**: actualizado para reflejar que `CorreccionesDetalle` y `ArticulosDetalle` ya estaban migrados a pestañas en sesiones anteriores.
+
+### Sesión actual (2026-06-09) — rama `master`
+> Nota: esta sesión trabajó directamente en `master` por instrucción del usuario.
+
+#### Rediseño general de vistas (esquinas redondeadas)
+- **TercerosGeneral, SucursalesGeneral, FamiliasGeneral, ProductosGeneral, IndustriasGeneral, CategoriasGeneral, InventariosGeneral, PreciosGeneral**: aplicado estilo unificado de esquinas redondeadas.
+  - Estilo `Btn` con `ControlTemplate` + `CornerRadius="6"` + triggers hover/pressed.
+  - Estilo `SearchInput` (TextBox) con `CornerRadius="6"`.
+  - DataGrids envueltos en `<Border CornerRadius="6">`.
+- **PreciosDetalle**: rediseñado siguiendo el estilo de TercerosDetalle.
+- **ConfiguracionDbWindow**: UX "test before save" — botón "Probar conexión" antes de guardar, mensaje de estado inline.
+- **LoginWindow**: abre diálogo de configuración en modo edición cuando ya existe un servidor configurado.
+- **DatabaseConnection.cs**: suprimido warning IDE0130 con directiva `#pragma warning`.
+
+#### PedidosDetalle — rediseño completo
+> El primer rediseño fue revertido por el usuario al commit `0f302660`. Luego se aplicó el diseño final aprobado.
+
+**Estructura XAML (3 filas):**
+- **Row 0 — Encabezado** (`ThemeBgSurface`, borde inferior 1px, Padding 14,10):
+  - Fila superior: ícono `LblIconoTipo` (V/C), `LblTitulo`, `LblDocBadge`, `BadgeEstado`, `BadgeCuenta`, botones Cancelar + Guardar.
+  - Fila de campos: Doc. Pedido, Fecha, Hora, Tercero (id + botón `···` + descripción read-only), Referencia, ComboBox Tipo.
+  - Fila secundaria: Emisión (`Box_Emision`), Edición (`Box_Edicion`), `Box_Estado` y `Box_Cuenta` como `Visibility="Collapsed"` (usados por code-behind, visualmente en badges).
+- **Row 1 — TabControl** (3 tabs: Artículos, Cobros/Pagos, Entregas):
+  - **Tab Artículos**: toolbar + `GridItems` + panel inferior de 7 columnas (`260/1/240/1/160/1/*`):
+    - Col 0: `GridPrecios` (Historial de precios)
+    - Col 2: `GridStock` (Stock actual)
+    - Col 4: `GridCategorias` (lista de categorías — añadida en esta sesión)
+    - Col 6: `Box_Observaciones`
+  - **Tab Cobros/Pagos**: toolbar + `GridTrasacciones`.
+  - **Tab Entregas**: toolbar + `GridEntregas`.
+- **Row 2 — Barra de totales** (Grid con dos grupos):
+  - **Izquierda**: `TxtTotalUnidades` (Total unidades) + `TxtUnidadesDiferentes` (Diferentes) — números alineados a la derecha dentro de cada tarjeta `MetricCard`.
+  - **Derecha**: `TxtTotalImporte` (verde `#065F46`) + `TxtTotalCuenta` (azul `#1E40AF`) + `TxtTotalSaldo` (rojo `#991B1B`) — números alineados a la derecha.
+  - `TxtTotalPeq`, `TxtTotalMed`, `TxtTotalGra`, `TxtTotalOtros`: `Visibility="Collapsed"`, presentes para compatibilidad con `CargarTotales()` en code-behind.
+
+**Estilos en `UserControl.Resources`:**
+| Clave | Tipo | Descripción |
+|-------|------|-------------|
+| `BtnBase` | Button | CornerRadius=6, height=28, hover opacity 0.9, pressed 0.75 |
+| `BtnPrimario` | Button (BasedOn BtnBase) | Background #3B82F6, Foreground White |
+| `BtnSecundario` | Button (BasedOn BtnBase) | ThemeBtnSecBg/Fg, BorderThickness=1 |
+| `BtnPeligro` | Button (BasedOn BtnBase) | Background #EF4444 |
+| `BtnAmarillo` | Button (BasedOn BtnBase) | Background #F59E0B |
+| `ModernInput` | TextBox | ControlTemplate con CornerRadius=6, PART_ContentHost |
+| `MetricCard` | Border | CornerRadius=8, Padding=10,8, ThemeBgSurface |
+| `SectionHeader` | TextBlock | FontSize=10, SemiBold, ThemeTextoSec |
+| `LblMuted` | TextBlock | FontSize=10, ThemeTextoSec |
+| `Lbl` | TextBlock | FontSize=11, ThemeTextoSec, Margin 0,0,5,0 |
+| `RightCell` | TextBlock | HorizontalAlignment=Right |
+
+**Code-behind destacado:**
+- `ActualizarBadges()`: colorea dinámicamente `BadgeEstado`/`BadgeCuenta` con `SolidColorBrush(Color.FromRgb(...))` según valores de `Box_Estado`/`Box_Cuenta`. Actualiza `LblIconoTipo` (V/C) y `LblDocBadge`.
+- `CargarTotalesCategoria()`: lee todas las categorías de `Sql.CategoriasObj`; suma cantidades de `_pedidos` por categoría (campo `"categoria"` del artículo); líneas sin `ArticuloId` o sin categoría reconocida → "Otros". Asigna a `GridCategorias.ItemsSource`.
+- `ActualizarTotales()` llama: `CargarTotales()`, `CargarTotalesDivisas()`, `CargarEstadosCuenta()`, `CargarTotalesCategoria()`, y `CargarEstados()` si `tipoPedido=="normal"`.
+- `CategoriaCantFila`: clase de fila para `GridCategorias` (renombrada desde `CategoriaFila` para evitar conflicto CS0101 con `CategoriasGeneral.xaml.cs`).
+
+**Correcciones realizadas en esta sesión:**
+- CS0101: `CategoriaFila` duplicada con `CategoriasGeneral` → renombrada a `CategoriaCantFila` en PedidosDetalle.
+- Alineación de la barra de totales: pasó de un solo `StackPanel HorizontalAlignment="Right"` a un `Grid` con grupo izquierdo (contadores) y grupo derecho (importes).
+- Texto de `TxtTotalUnidades` y `TxtUnidadesDiferentes`: `HorizontalAlignment="Right"` dentro de su tarjeta.
 
 ## Comandos Importantes
 
