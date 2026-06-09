@@ -228,6 +228,24 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - Badge colors: pendiente=rojo, pendiente parcial=amarillo, entregado/cancelado=verde.
 - `"Pend. parcial"` → `"Pendiente parcial"` en botón de filtro de PedidosGeneral.
 
+### Sesión 2026-06-09 (parte 3) — rama `master`
+
+#### CorreccionesDetalle — Stock actual al lado de Observación
+- Row 3 ampliado a 140 px; panel horizontal: `GridStock (260px) | separador 1px | Observación (*)`.
+- `GridItems_SelectionChanged` → `CargarStock()` usa `StockCalculator.ContarStock` igual que TraspasosDetalle.
+- Nueva clase `CorreccionStockFila`.
+
+#### TraspasosDetalle — GridCategorias siempre cargado
+- `CargarTotales()` itera primero `Sql.CategoriasObj` para crear todas las filas con cantidad 0, luego acumula desde `_items`. Así el grid muestra todas las categorías desde el inicio aunque no haya artículos.
+
+#### Movimientos — convertido a UserControl + sección en sidebar
+- `MovimientosGeneral` (nuevo UserControl): mismo contenido que `MovimientosWindow` pero embebible en pestañas.
+  - `OpenAsTab(Window, codigoArticulo)` abre como pestaña con clave `movimientos-{codigo}`.
+  - Si `codigoFijo != ""` (invocado desde ArticulosDetalle): `TxtCodigo.IsEnabled = false`, `BtnBuscar.IsEnabled = false`.
+- `ConsolaMovimientos`: nuevo botón `📈 Movimientos` en sidebar entre Correcciones y el separador; sección `"movimientos"` registrada en los diccionarios de pestañas.
+- `ArticulosDetalle.BtnVerMovimientos_Click`: reemplaza `new MovimientosWindow(...).ShowDialog()` → `MovimientosGeneral.OpenAsTab(...)`.
+- `MovimientosWindow` permanece en el proyecto (no se eliminó) para no romper referencias pendientes.
+
 ### Sesión 2026-06-09 (parte 2) — rama `master`
 
 #### TraspasosDetalle — rediseño completo + mejoras

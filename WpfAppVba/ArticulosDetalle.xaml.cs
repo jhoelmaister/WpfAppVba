@@ -229,7 +229,7 @@ namespace WpfAppVba
         // ─── Ver movimientos del artículo ─────────────────────────────────────
         private void BtnVerMovimientos_Click(object sender, RoutedEventArgs e)
         {
-            new MovimientosWindow(Box_Codigo.Text.Trim()) { Owner = Window.GetWindow(this) }.ShowDialog();
+            MovimientosGeneral.OpenAsTab(Window.GetWindow(this)!, Box_Codigo.Text.Trim());
         }
 
         // ─── Guardar ─────────────────────────────────────────────────────────

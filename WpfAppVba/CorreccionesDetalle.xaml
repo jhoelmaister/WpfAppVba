@@ -103,7 +103,7 @@
             <RowDefinition Height="Auto"/>  <!-- 0  Encabezado -->
             <RowDefinition Height="Auto"/>  <!-- 1  Toolbar -->
             <RowDefinition Height="*"/>     <!-- 2  GridItems -->
-            <RowDefinition Height="90"/>    <!-- 3  Observación -->
+            <RowDefinition Height="140"/>   <!-- 3  Stock + Observación -->
             <RowDefinition Height="Auto"/>  <!-- 4  Totales -->
         </Grid.RowDefinitions>
 
@@ -287,6 +287,7 @@
                   BorderThickness="0"
                   FontSize="12"
                   RowHeight="32"
+                  SelectionChanged="GridItems_SelectionChanged"
                   CellEditEnding="GridItems_CellEditEnding"
                   PreparingCellForEdit="GridItems_PreparingCellForEdit">
 
@@ -336,25 +337,72 @@
         </DataGrid>
 
         <!-- ════════════════════════════════════════════════════════ -->
-        <!-- 3 · OBSERVACIÓN (debajo del grid)                       -->
+        <!-- 3 · STOCK + OBSERVACIÓN (debajo del grid)               -->
         <!-- ════════════════════════════════════════════════════════ -->
-        <DockPanel Grid.Row="3"
-                   Background="{DynamicResource ThemeBgSurface}"
-                   Margin="0">
-            <StackPanel DockPanel.Dock="Top" Margin="14,8,14,0">
-                <TextBlock Text="Observación" Style="{StaticResource SectionHeader}"/>
-            </StackPanel>
-            <Border Margin="14,0,14,8" CornerRadius="6" BorderThickness="1"
-                    BorderBrush="{DynamicResource ThemeBordeInput}" ClipToBounds="True">
-                <TextBox x:Name="Box_Observacion" FontSize="12"
-                         Padding="7,5"
-                         BorderThickness="0"
-                         AcceptsReturn="True"
-                         TextWrapping="Wrap"
-                         VerticalScrollBarVisibility="Auto"
-                         TextChanged="Campo_TextChanged"/>
-            </Border>
-        </DockPanel>
+        <Grid Grid.Row="3"
+              Background="{DynamicResource ThemeBgSurface}"
+              Margin="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260"/>
+                <ColumnDefinition Width="1"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Stock actual -->
+            <DockPanel Grid.Column="0" Margin="14,8,10,8">
+                <TextBlock DockPanel.Dock="Top" Text="Stock actual"
+                           Style="{StaticResource SectionHeader}"/>
+                <Border CornerRadius="6" BorderThickness="1"
+                        BorderBrush="{DynamicResource ThemeBorde}" ClipToBounds="True">
+                    <DataGrid x:Name="GridStock"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserAddRows="False"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              BorderThickness="0"
+                              FontSize="11">
+                        <DataGrid.ColumnHeaderStyle>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="Background"      Value="{DynamicResource ThemeBgSurface}"/>
+                                <Setter Property="Foreground"      Value="{DynamicResource ThemeTextoSec}"/>
+                                <Setter Property="BorderBrush"     Value="{DynamicResource ThemeBorde}"/>
+                                <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                <Setter Property="Padding"         Value="6,4"/>
+                                <Setter Property="FontSize"        Value="10"/>
+                                <Setter Property="FontWeight"      Value="SemiBold"/>
+                            </Style>
+                        </DataGrid.ColumnHeaderStyle>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Artículo"  Binding="{Binding Codigo}"     Width="*"/>
+                            <DataGridTextColumn Header="Disp."     Binding="{Binding Disponible}" Width="52"
+                                                ElementStyle="{StaticResource CeldaNumero}"/>
+                            <DataGridTextColumn Header="Stock"     Binding="{Binding Stock}"      Width="52"
+                                                ElementStyle="{StaticResource CeldaNumero}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </DockPanel>
+
+            <!-- Separador vertical -->
+            <Rectangle Grid.Column="1" Fill="{DynamicResource ThemeBorde}"/>
+
+            <!-- Observación -->
+            <DockPanel Grid.Column="2" Margin="10,8,14,8">
+                <TextBlock DockPanel.Dock="Top" Text="Observación"
+                           Style="{StaticResource SectionHeader}"/>
+                <Border CornerRadius="6" BorderThickness="1"
+                        BorderBrush="{DynamicResource ThemeBordeInput}" ClipToBounds="True">
+                    <TextBox x:Name="Box_Observacion" FontSize="12"
+                             Padding="7,5"
+                             BorderThickness="0"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             VerticalScrollBarVisibility="Auto"
+                             TextChanged="Campo_TextChanged"/>
+                </Border>
+            </DockPanel>
+        </Grid>
 
         <!-- ════════════════════════════════════════════════════════ -->
         <!-- 4 · BARRA DE TOTALES                                    -->

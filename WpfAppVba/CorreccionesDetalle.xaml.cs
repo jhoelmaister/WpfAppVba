@@ -475,6 +475,31 @@ namespace WpfAppVba
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
+        // ─── Selección en GridItems → mostrar stock ───────────────────────────
+        private void GridItems_SelectionChanged(object sender, SelectionChangedEventArgs e)
+            => CargarStock(GridItems.SelectedItem as CorreccionItemFila);
+
+        private void CargarStock(CorreccionItemFila? fila)
+        {
+            if (fila == null || string.IsNullOrEmpty(fila.ArticuloId))
+            {
+                GridStock.ItemsSource = null;
+                return;
+            }
+
+            double stock = StockCalculator.ContarStock(fila.ArticuloId, AppState.DataFechaFinal);
+
+            GridStock.ItemsSource = new List<CorreccionStockFila>
+            {
+                new CorreccionStockFila
+                {
+                    Codigo     = fila.Codigo,
+                    Disponible = stock.ToString("N0"),
+                    Stock      = stock.ToString("N0")
+                }
+            };
+        }
+
         // ─── Seleccionar todo al entrar al campo Código / Cantidad ────────────
         private void GridItems_PreparingCellForEdit(object? sender, DataGridPreparingCellForEditEventArgs e)
         {
@@ -693,6 +718,13 @@ namespace WpfAppVba
             return fecha.Date + DateTime.Now.TimeOfDay;
         }
 
+    }
+
+    public class CorreccionStockFila
+    {
+        public string Codigo     { get; set; } = "";
+        public string Disponible { get; set; } = "";
+        public string Stock      { get; set; } = "";
     }
 
     // ─── Modelo de ítem ───────────────────────────────────────────────────────

@@ -26,6 +26,7 @@ namespace WpfAppVba
         private readonly PreciosGeneral      _panelPrecios      = new();
         private readonly RegionesGeneral     _panelRegiones     = new();
         private readonly Configuracion       _panelConfiguracion= new();
+        private readonly MovimientosGeneral  _panelMovimientos  = new();
 
         // Cada sección del menú lateral conserva su propio juego de pestañas dinámicas.
         private string _seccionActiva = "articulos";
@@ -45,6 +46,7 @@ namespace WpfAppVba
             ["precios"]      = new List<TabItem>(),
             ["regiones"]     = new List<TabItem>(),
             ["configuracion"]= new List<TabItem>(),
+            ["movimientos"]  = new List<TabItem>(),
         };
         private readonly Dictionary<string, TabItem?> _pestañaSeleccionadaPorSeccion = new()
         {
@@ -62,6 +64,7 @@ namespace WpfAppVba
             ["precios"]      = null,
             ["regiones"]     = null,
             ["configuracion"]= null,
+            ["movimientos"]  = null,
         };
 
         public ConsolaMovimientos()
@@ -117,6 +120,7 @@ namespace WpfAppVba
                 case "precios":      TabFijoContenido.Content = _panelPrecios;      TabFijoTitulo.Text = "Precios";      break;
                 case "regiones":     TabFijoContenido.Content = _panelRegiones;     TabFijoTitulo.Text = "Regiones";     break;
                 case "configuracion":TabFijoContenido.Content = _panelConfiguracion;TabFijoTitulo.Text = "Configuración";break;
+                case "movimientos":  TabFijoContenido.Content = _panelMovimientos;  TabFijoTitulo.Text = "Movimientos";  break;
             }
 
             // 3. Restaurar las pestañas propias de la nueva sección
@@ -308,6 +312,12 @@ namespace WpfAppVba
         }
 
         // ─── Cerrar sesión ────────────────────────────────────────────────────
+
+        private void BtnNav_Movimientos_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("movimientos");
+            MarcarActivo(BtnNav_Movimientos);
+        }
 
         private void BtnCerrarSesion_Click(object sender, RoutedEventArgs e)
         {

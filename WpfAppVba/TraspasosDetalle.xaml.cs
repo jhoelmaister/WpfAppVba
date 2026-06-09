@@ -280,28 +280,53 @@ namespace WpfAppVba
         {
             double totalUnidades = 0;
             var distintos = new HashSet<string>();
-            var porCategoria = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
 
+            // Inicializar todas las categorías existentes con cantidad 0
+            var categoriaIds   = new List<string>();
+            var categoriaDescs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var porCategoria   = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+
+            int ufCat = Sql.CategoriasObj.ContarFilas;
+            for (int i = 1; i <= ufCat; i++)
+            {
+                var idObj = Sql.CategoriasObj.Mover(i);
+                if (idObj == null) continue;
+                string catId   = idObj.ToString()!;
+                string catDesc = Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? catId;
+                categoriaIds.Add(catId);
+                categoriaDescs[catId] = catDesc;
+                porCategoria[catDesc] = 0;
+            }
+
+            double cantOtros = 0;
             foreach (var item in _items)
             {
                 totalUnidades += item.Cantidad;
                 if (!string.IsNullOrEmpty(item.ArticuloId))
                     distintos.Add(item.ArticuloId);
 
-                string catId   = Sql.ArticulosObj.ObtenerItem("categoria",   item.ArticuloId)?.ToString() ?? "";
-                string catDesc = string.IsNullOrEmpty(catId) ? "(Sin cat.)" :
-                                 Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "(Sin cat.)";
-                if (!porCategoria.ContainsKey(catDesc)) porCategoria[catDesc] = 0;
-                porCategoria[catDesc] += item.Cantidad;
+                string catId   = Sql.ArticulosObj.ObtenerItem("categoria", item.ArticuloId)?.ToString() ?? "";
+                string catDesc = (!string.IsNullOrEmpty(catId) && categoriaDescs.ContainsKey(catId))
+                                 ? categoriaDescs[catId] : "";
+                if (!string.IsNullOrEmpty(catDesc))
+                    porCategoria[catDesc] += item.Cantidad;
+                else
+                    cantOtros += item.Cantidad;
             }
 
             TxtTotalUnidades.Text      = totalUnidades.ToString("N0");
             TxtUnidadesDiferentes.Text = distintos.Count.ToString();
 
-            GridCategorias.ItemsSource = porCategoria
-                .OrderByDescending(kv => kv.Value)
-                .Select(kv => new CategoriaCantFila { Categoria = kv.Key, Cantidad = kv.Value.ToString("N0") })
+            var filas = categoriaIds
+                .Select(id => new CategoriaCantFila
+                {
+                    Categoria = categoriaDescs[id],
+                    Cantidad  = porCategoria[categoriaDescs[id]].ToString("N0")
+                })
                 .ToList();
+            filas.Add(new CategoriaCantFila { Categoria = "Otros", Cantidad = cantOtros.ToString("N0") });
+
+            GridCategorias.ItemsSource = filas;
         }
 
         // ─── Stock del artículo seleccionado (GridStock / Lista3) ─────────────

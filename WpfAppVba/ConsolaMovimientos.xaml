@@ -175,6 +175,10 @@
                                     Content="🔧  Correcciones"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Correcciones_Click"/>
+                            <Button x:Name="BtnNav_Movimientos"
+                                    Content="📈  Movimientos"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Movimientos_Click"/>
 
                             <Rectangle Height="1" Fill="#252A40" Margin="12,8"/>
 
