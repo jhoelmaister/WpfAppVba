@@ -322,9 +322,11 @@ namespace WpfAppVba
         private void ActualizarTotales()
         {
             CargarTotales();
+            CargarTotalesEntregas();
             CargarTotalesDivisas();
             CargarEstadosCuenta();
             CargarTotalesCategoria();
+            CargarTotalesCategoriaEntregas();
             if (AppState.TipoPedido.ToLower() == "normal")
                 CargarEstados();
         }
@@ -342,6 +344,21 @@ namespace WpfAppVba
 
             TxtTotalUnidades.Text      = totalUnid.ToString("N0");
             TxtUnidadesDiferentes.Text = articulosUnicos.Count.ToString();
+        }
+
+        private void CargarTotalesEntregas()
+        {
+            double totalUnid = 0;
+            var articulosUnicos = new HashSet<string>();
+
+            foreach (var e in _entregas)
+            {
+                if (!string.IsNullOrEmpty(e.ArticuloId)) articulosUnicos.Add(e.ArticuloId);
+                totalUnid += e.Cantidad;
+            }
+
+            TxtTotalUnidadesE.Text      = totalUnid.ToString("N0");
+            TxtUnidadesDiferentesE.Text = articulosUnicos.Count.ToString();
         }
 
         private void CargarTotalesDivisas()
@@ -423,6 +440,12 @@ namespace WpfAppVba
         }
 
         private void CargarTotalesCategoria()
+            => CargarTotalesCategoriaEn(_pedidos.Select(p => (p.ArticuloId, p.Cantidad)), GridCategorias);
+
+        private void CargarTotalesCategoriaEntregas()
+            => CargarTotalesCategoriaEn(_entregas.Select(e => (e.ArticuloId, e.Cantidad)), GridCategoriasE);
+
+        private void CargarTotalesCategoriaEn(IEnumerable<(string ArticuloId, double Cantidad)> lineas, DataGrid destino)
         {
             int ufCat = Sql.CategoriasObj.ContarFilas;
             var categoriaIds   = new List<string>();
@@ -441,16 +464,16 @@ namespace WpfAppVba
             }
 
             double cantOtros = 0;
-            foreach (var p in _pedidos)
+            foreach (var linea in lineas)
             {
-                if (string.IsNullOrEmpty(p.ArticuloId))
-                { cantOtros += p.Cantidad; continue; }
+                if (string.IsNullOrEmpty(linea.ArticuloId))
+                { cantOtros += linea.Cantidad; continue; }
 
-                string catId = Sql.ArticulosObj.ObtenerItem("categoria", p.ArticuloId)?.ToString() ?? "";
+                string catId = Sql.ArticulosObj.ObtenerItem("categoria", linea.ArticuloId)?.ToString() ?? "";
                 if (!string.IsNullOrEmpty(catId) && cantPorCategoria.ContainsKey(catId))
-                    cantPorCategoria[catId] += p.Cantidad;
+                    cantPorCategoria[catId] += linea.Cantidad;
                 else
-                    cantOtros += p.Cantidad;
+                    cantOtros += linea.Cantidad;
             }
 
             var filas = categoriaIds
@@ -462,7 +485,7 @@ namespace WpfAppVba
                 .ToList();
 
             filas.Add(new CategoriaCantFila { Categoria = "Otros", Cantidad = cantOtros.ToString("N0") });
-            GridCategorias.ItemsSource = filas;
+            destino.ItemsSource = filas;
         }
 
         private void CargarEstados()
