@@ -111,10 +111,20 @@
 
         <!-- ══ CONTENIDO ══════════════════════════════════════════════ -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16,20,0">
-            <StackPanel MaxWidth="650" HorizontalAlignment="Center">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <!-- ▸ CARD: GENERAL -->
-                <Border Style="{StaticResource CardBorder}">
+                <!-- ▸ CARD: GENERAL (columna izquierda, fila 0) -->
+                <Border Style="{StaticResource CardBorder}"
+                        Grid.Column="0" Grid.Row="0" Margin="0,0,6,12">
                     <StackPanel>
                         <TextBlock Style="{StaticResource CardHeader}" Text="● GENERAL"/>
 
@@ -145,8 +155,10 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ▸ CARD: CONEXIÓN SQL SERVER -->
-                <Border Style="{StaticResource CardBorder}">
+                <!-- ▸ CARD: CONEXIÓN SQL SERVER (columna derecha) -->
+                <Border Style="{StaticResource CardBorder}"
+                        Grid.Column="1" Grid.Row="0" Grid.RowSpan="3"
+                        VerticalAlignment="Top" Margin="6,0,0,12">
                     <StackPanel>
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
@@ -210,8 +222,9 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ▸ CARD: MI CUENTA -->
-                <Border Style="{StaticResource CardBorder}" Margin="0,0,0,0">
+                <!-- ▸ CARD: MI CUENTA (columna izquierda, fila 1) -->
+                <Border Style="{StaticResource CardBorder}"
+                        Grid.Column="0" Grid.Row="1" Margin="0,0,6,12">
                     <StackPanel>
                         <TextBlock Style="{StaticResource CardHeader}" Text="● MI CUENTA"/>
 
@@ -285,8 +298,8 @@
                     </StackPanel>
                 </Border>
 
-                <Rectangle Height="16"/>
-            </StackPanel>
+                <Rectangle Height="16" Grid.Column="0" Grid.Row="2"/>
+            </Grid>
         </ScrollViewer>
 
         <!-- ══ BARRA DE ACCIONES ══════════════════════════════════════ -->

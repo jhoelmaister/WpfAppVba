@@ -211,11 +211,14 @@ namespace WpfAppVba
             DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : default;
             string regionId   = Sql.PreciosObj.ObtenerItem("region", id)?.ToString() ?? "";
             string regionDesc = Sql.RegionesObj.ObtenerItem("descripcion", regionId)?.ToString() ?? regionId;
+            string articuloId = Sql.PreciosObj.ObtenerItem("articulo", id)?.ToString() ?? "";
+            string codigo     = Sql.ArticulosObj.ObtenerItem("codigo", articuloId)?.ToString() ?? "";
 
             return new PrecioHistFila
             {
                 Linea    = linea,
                 Id       = id,
+                Codigo   = codigo,
                 Fecha    = fecha,
                 FechaStr = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                 Region   = regionDesc,
@@ -367,7 +370,7 @@ namespace WpfAppVba
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(GridPrecios);
             };
-            consola.AbrirPestaña("Editar Precio", detalle, $"precio-{idSel}");
+            consola.AbrirPestaña($"Precio {art.Codigo}", detalle, $"precio-{idSel}");
         }
 
         private void BtnEliminarPrecio_Click(object sender, RoutedEventArgs e)
@@ -441,6 +444,7 @@ namespace WpfAppVba
     {
         public int      Linea    { get; set; }
         public string   Id       { get; set; } = "";
+        public string   Codigo   { get; set; } = "";
         public DateTime Fecha    { get; set; }
         public string   FechaStr { get; set; } = "";
         public string   Region   { get; set; } = "";

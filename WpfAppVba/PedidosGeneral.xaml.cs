@@ -409,11 +409,13 @@ namespace WpfAppVba
         private void BtnNuevoNormal_Click(object sender, RoutedEventArgs e)
             => AbrirNuevoPedido("normal");
 
-        private void AbrirNuevoPedido(string tipoPedido)
+        // tipoMovimiento: si se indica ("venta"/"compra") fuerza el movimiento;
+        // si es null se toma del filtro activo. Público para accesos rápidos del top bar.
+        public void AbrirNuevoPedido(string tipoPedido, string? tipoMovimiento = null)
         {
             AppState.EventoFormularioM = "nuevo";
             AppState.TipoPedido        = tipoPedido;
-            string filtroTipo = ObtenerFiltroTipo();
+            string filtroTipo = tipoMovimiento ?? ObtenerFiltroTipo();
             AppState.TipoMovimiento = string.IsNullOrEmpty(filtroTipo) ? "venta" : filtroTipo;
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;

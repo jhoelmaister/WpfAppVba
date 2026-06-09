@@ -389,9 +389,14 @@ namespace WpfAppVba
 
         // ─── Botones ──────────────────────────────────────────────────────────
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
+            => AbrirNuevoTraspaso();
+
+        // tipoMovimiento: si se indica ("salida"/"entrada") fuerza el movimiento;
+        // si es null se toma del filtro activo. Público para accesos rápidos del top bar.
+        public void AbrirNuevoTraspaso(string? tipoMovimiento = null)
         {
             AppState.EventoFormularioM = "nuevo";
-            string filtroTipo = ObtenerFiltroTipo();
+            string filtroTipo = tipoMovimiento ?? ObtenerFiltroTipo();
             AppState.TipoMovimiento = string.IsNullOrEmpty(filtroTipo) ? "entrada" : filtroTipo;
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;

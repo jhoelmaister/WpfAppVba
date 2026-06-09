@@ -44,6 +44,38 @@
             </Setter>
         </Style>
 
+        <!-- ── Botón de acceso rápido (top bar) ───────────────────────── -->
+        <Style x:Key="QuickBtn" TargetType="Button">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="14,0"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- ── TabControl de sub-pestañas ─────────────────────────────── -->
         <Style x:Key="ModernTabControl" TargetType="TabControl">
             <Setter Property="Background" Value="{DynamicResource ThemeBgContenido}"/>
@@ -127,8 +159,23 @@
                                VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <!-- Usuario -->
+                <!-- Accesos rápidos + Usuario -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="BtnQuick_Venta" Content="🛒  Venta"
+                            Style="{StaticResource QuickBtn}" Background="#E53935"
+                            Click="BtnQuick_Venta_Click"/>
+                    <Button x:Name="BtnQuick_Compra" Content="📥  Compra"
+                            Style="{StaticResource QuickBtn}" Background="#1E88E5"
+                            Click="BtnQuick_Compra_Click"/>
+                    <Button x:Name="BtnQuick_Salida" Content="📤  Salida"
+                            Style="{StaticResource QuickBtn}" Background="#FB8C00"
+                            Click="BtnQuick_Salida_Click"/>
+                    <Button x:Name="BtnQuick_Entrada" Content="📦  Entrada"
+                            Style="{StaticResource QuickBtn}" Background="#43A047"
+                            Click="BtnQuick_Entrada_Click"/>
+
+                    <Rectangle Width="1" Height="24" Fill="#3A4059" Margin="10,0"/>
+
                     <TextBlock x:Name="LblUsuario"
                                FontSize="11" Foreground="#9AA3B8"
                                VerticalAlignment="Center"/>

@@ -319,6 +319,35 @@ namespace WpfAppVba
             MarcarActivo(BtnNav_Movimientos);
         }
 
+        // ─── Accesos rápidos del top bar ──────────────────────────────────────
+        private void BtnQuick_Venta_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("pedidos");
+            MarcarActivo(BtnNav_Pedidos);
+            _panelPedidos.AbrirNuevoPedido("rapido", "venta");
+        }
+
+        private void BtnQuick_Compra_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("pedidos");
+            MarcarActivo(BtnNav_Pedidos);
+            _panelPedidos.AbrirNuevoPedido("rapido", "compra");
+        }
+
+        private void BtnQuick_Salida_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("traspasos");
+            MarcarActivo(BtnNav_Traspasos);
+            _panelTraspasos.AbrirNuevoTraspaso("salida");
+        }
+
+        private void BtnQuick_Entrada_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("traspasos");
+            MarcarActivo(BtnNav_Traspasos);
+            _panelTraspasos.AbrirNuevoTraspaso("entrada");
+        }
+
         private void BtnCerrarSesion_Click(object sender, RoutedEventArgs e)
         {
             AppState.SesionActiva  = false;
