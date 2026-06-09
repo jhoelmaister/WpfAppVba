@@ -240,9 +240,20 @@ namespace WpfAppVba
             var original = ConexionConfig.ObtenerPorId(sel.Id);
             if (original == null) { RefrescarServidores(); return; }
 
+            bool eraActivo = sel.Id == ConexionConfig.ObtenerActivoId();
+
             var dlg = new ConfiguracionDbWindow(original) { Owner = Window.GetWindow(this) };
             if (dlg.ShowDialog() == true)
+            {
+                // Si se editó el servidor al que estamos conectados, cerrar sesión
+                // y reabrir login para aplicar las credenciales actualizadas.
+                if (eraActivo)
+                {
+                    CerrarSesionYReabrirLogin();
+                    return;
+                }
                 RefrescarServidores();
+            }
         }
 
         private ServidorVista? ServidorSeleccionadoOUltimo()
@@ -282,15 +293,36 @@ namespace WpfAppVba
                 return;
             }
 
-            ConexionConfig.EstablecerActivo(sel.Id);
-            var srv = ConexionConfig.ObtenerPorId(sel.Id);
-            if (srv != null)
-                DatabaseConnection.Configurar(srv.Servidor, srv.BaseDatos, srv.Usuario, srv.Contrasena);
+            // Si ya estamos conectados a ese servidor, no hay nada que hacer.
+            if (sel.Id == ConexionConfig.ObtenerActivoId())
+            {
+                MessageBox.Show("Ya estás conectado a este servidor.", "Conectar",
+                                MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
 
-            RefrescarServidores();
-            MessageBox.Show($"\"{sel.Nombre}\" quedó como servidor activo.\n" +
-                            "Reinicia la aplicación para aplicar el cambio.",
-                            "Conectar", MessageBoxButton.OK, MessageBoxImage.Information);
+            var r = MessageBox.Show(
+                $"Se cerrará la sesión actual y se iniciará sesión en \"{sel.Nombre}\".\n¿Continuar?",
+                "Conectar", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (r != MessageBoxResult.Yes) return;
+
+            ConexionConfig.EstablecerActivo(sel.Id);
+            CerrarSesionYReabrirLogin();
+        }
+
+        // ─── Cerrar sesión y reabrir login con el servidor activo ────────────
+        private void CerrarSesionYReabrirLogin()
+        {
+            AppState.SesionActiva  = false;
+            AppState.UsuarioActivo = 0;
+            DatabaseConnection.CerrarConexion();
+
+            // LoginWindow lee el servidor activo desde ConexionConfig,
+            // por lo que el seleccionado queda como predeterminado.
+            var login = new LoginWindow();
+            login.Show();
+
+            Window.GetWindow(this)?.Close();
         }
 
         // ─── Guardar ─────────────────────────────────────────────────────────

@@ -172,12 +172,15 @@ namespace WpfAppVba
                 }
                 else
                 {
+                    // Solo se registra. Agregar() marca activo automáticamente
+                    // únicamente cuando aún no hay ningún servidor activo (primer registro).
                     ConexionConfig.Agregar(s);
-                    ConexionConfig.EstablecerActivo(s.Id); // el servidor nuevo queda activo inmediatamente
                 }
 
-                // Reconfigurar siempre la conexión global con el servidor guardado.
-                DatabaseConnection.Configurar(s.Servidor, s.BaseDatos, s.Usuario, s.Contrasena);
+                // Reconfigurar la conexión global SOLO si el servidor guardado es el activo;
+                // así, agregar o editar un servidor distinto al conectado solo lo registra.
+                if (s.Id == ConexionConfig.ObtenerActivoId())
+                    DatabaseConnection.Configurar(s.Servidor, s.BaseDatos, s.Usuario, s.Contrasena);
 
                 Resultado    = s;
                 DialogResult = true;
