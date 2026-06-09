@@ -180,7 +180,7 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - **Botón X de pestañas dinámicas**: ahora llama `IntentarCerrar()` vía reflexión si el contenido lo implementa, protegiendo cambios no guardados antes de cerrar.
 - **CONTEXT.md**: actualizado para reflejar que `CorreccionesDetalle` y `ArticulosDetalle` ya estaban migrados a pestañas en sesiones anteriores.
 
-### Sesión actual (2026-06-09) — rama `master`
+### Sesión 2026-06-09 (parte 1) — rama `master`
 > Nota: esta sesión trabajó directamente en `master` por instrucción del usuario.
 
 #### Rediseño general de vistas (esquinas redondeadas)
@@ -212,34 +212,82 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - **Row 2 — Barra de totales** (Grid con dos grupos):
   - **Izquierda**: `TxtTotalUnidades` (Total unidades) + `TxtUnidadesDiferentes` (Diferentes) — números alineados a la derecha dentro de cada tarjeta `MetricCard`.
   - **Derecha**: `TxtTotalImporte` (verde `#065F46`) + `TxtTotalCuenta` (azul `#1E40AF`) + `TxtTotalSaldo` (rojo `#991B1B`) — números alineados a la derecha.
-  - `TxtTotalPeq`, `TxtTotalMed`, `TxtTotalGra`, `TxtTotalOtros`: `Visibility="Collapsed"`, presentes para compatibilidad con `CargarTotales()` en code-behind.
-
-**Estilos en `UserControl.Resources`:**
-| Clave | Tipo | Descripción |
-|-------|------|-------------|
-| `BtnBase` | Button | CornerRadius=6, height=28, hover opacity 0.9, pressed 0.75 |
-| `BtnPrimario` | Button (BasedOn BtnBase) | Background #3B82F6, Foreground White |
-| `BtnSecundario` | Button (BasedOn BtnBase) | ThemeBtnSecBg/Fg, BorderThickness=1 |
-| `BtnPeligro` | Button (BasedOn BtnBase) | Background #EF4444 |
-| `BtnAmarillo` | Button (BasedOn BtnBase) | Background #F59E0B |
-| `ModernInput` | TextBox | ControlTemplate con CornerRadius=6, PART_ContentHost |
-| `MetricCard` | Border | CornerRadius=8, Padding=10,8, ThemeBgSurface |
-| `SectionHeader` | TextBlock | FontSize=10, SemiBold, ThemeTextoSec |
-| `LblMuted` | TextBlock | FontSize=10, ThemeTextoSec |
-| `Lbl` | TextBlock | FontSize=11, ThemeTextoSec, Margin 0,0,5,0 |
-| `RightCell` | TextBlock | HorizontalAlignment=Right |
 
 **Code-behind destacado:**
 - `ActualizarBadges()`: colorea dinámicamente `BadgeEstado`/`BadgeCuenta` con `SolidColorBrush(Color.FromRgb(...))` según valores de `Box_Estado`/`Box_Cuenta`. Actualiza `LblIconoTipo` (V/C) y `LblDocBadge`.
 - `CargarTotalesCategoria()`: lee todas las categorías de `Sql.CategoriasObj`; suma cantidades de `_pedidos` por categoría (campo `"categoria"` del artículo); líneas sin `ArticuloId` o sin categoría reconocida → "Otros". Asigna a `GridCategorias.ItemsSource`.
 - `ActualizarTotales()` llama: `CargarTotales()`, `CargarTotalesDivisas()`, `CargarEstadosCuenta()`, `CargarTotalesCategoria()`, y `CargarEstados()` si `tipoPedido=="normal"`.
-- `CategoriaCantFila`: clase de fila para `GridCategorias` (renombrada desde `CategoriaFila` para evitar conflicto CS0101 con `CategoriasGeneral.xaml.cs`).
+- `CategoriaCantFila`: clase pública compartida por PedidosDetalle, CorreccionesDetalle, TraspasosDetalle e InventariosDetalle para filas de `GridCategorias`.
 
-**Correcciones realizadas en esta sesión:**
+**Correcciones realizadas:**
 - CS0101: `CategoriaFila` duplicada con `CategoriasGeneral` → renombrada a `CategoriaCantFila` en PedidosDetalle.
-- Alineación de la barra de totales: pasó de un solo `StackPanel HorizontalAlignment="Right"` a un `Grid` con grupo izquierdo (contadores) y grupo derecho (importes).
-- Texto de `TxtTotalUnidades` y `TxtUnidadesDiferentes`: `HorizontalAlignment="Right"` dentro de su tarjeta.
+- Normalización `.ToLower()` en `PedidosGeneral.xaml.cs` al leer `estado`/`estadoC` desde DB (previene badges negros por case mismatch).
+- `GridEntregas_CellEditEnding` y `GridTrasacciones_CellEditEnding`: leen manualmente de TextBox antes de que WPF haga commit (patrón para `DataGridTextColumn` numérico + `RefrescarGrid` via `Dispatcher.BeginInvoke`).
+- `FechaDate` como propiedad calculada en `TrasaccionItemFila` y `EntregaItemFila` para que el DatePicker siempre tenga valor al editar.
+- `"entrega parcial"` → `"pendiente parcial"` en todo PedidosDetalle.
+- Badge colors: pendiente=rojo, pendiente parcial=amarillo, entregado/cancelado=verde.
+- `"Pend. parcial"` → `"Pendiente parcial"` en botón de filtro de PedidosGeneral.
 
+### Sesión 2026-06-09 (parte 2) — rama `master`
+
+#### TraspasosDetalle — rediseño completo + mejoras
+**Estructura XAML (5 filas):**
+- **Row 0 — Encabezado** (`ThemeBgSurface`, borde inferior): ícono dinámico (SA/EN) + título + `LblDocNum` + `BadgeEstado` + Guardar/Cancelar en fila superior; todos los campos en línea en fila inferior: Doc. Traspaso · Fecha · Hora · Sucursal (código + botón `···` + descripción readonly) · Referencia · Estado · Tipo; emisión/edición al pie.
+- **Row 1 — Toolbar** (`ThemeBgSurface`, borde inferior): label "Artículos del traspaso" + botones (Importar artículos / Buscar artículo / Insertar / Nueva línea / Eliminar línea).
+- **Row 2 — GridItems**: DataGrid a todo el ancho, sin borde exterior, `RowHeight=32`, `ColumnHeaderStyle` unificado.
+- **Row 3 — Stock + Observaciones** (altura 140): panel horizontal — Stock (260px) | separador 1px | Observaciones (*); ambos con `Border CornerRadius="6"`.
+- **Row 4 — Barra de totales** (`ThemeBgSurface`, borde superior): `MetricCard` Total unidades + `MetricCard` Diferentes + `MetricCard` Categorías (DataGrid `GridCategorias` 170×78px).
+
+**Estilos en `UserControl.Resources`:**
+- `BtnBase` con `ControlTemplate` + `CornerRadius="6"` + triggers hover/pressed.
+- `ModernInput` (TextBox): ControlTemplate con `CornerRadius="6"`, `PART_ContentHost`.
+- `MetricCard` (Border): `CornerRadius="8"`, `Padding="10,8"`.
+- `LblMuted`, `SectionHeader`: igual al patrón de PedidosDetalle.
+
+**Code-behind destacado:**
+- `ActualizarBadgeEstado()`: badge de estado (pendiente=amarillo, pendiente revisar=rojo, entregado=verde); ícono dinámico (SA=naranja, EN=verde); `LblSucursalTipo` dinámico ("Sucursal destino"/"Sucursal origen"); `LblDocNum` actualizado. Llamado desde `CargarParaEditar`, `CargarParaNuevo`, `Campo_SelectionChanged` (when `Box_Estado`), `CboMovimiento_SelectionChanged`.
+- `CargarTotales()`: ya no usa categorías fijas (Peq/Med/Gra/Otros); agrupa por categoría real de la DB y asigna `CategoriaCantFila` a `GridCategorias.ItemsSource`.
+- **Validación sucursal activa**: `Box_Sucursal_Identificador_TextChanged` y `BtnBuscarSucursal_Click` bloquean seleccionar `AppState.SucursalActiva` como destino/origen (muestra advertencia y limpia el campo).
+
+#### CorreccionesDetalle — rediseño completo
+**Estructura XAML (5 filas):**
+- **Row 0 — Encabezado**: ícono dinámico (EG/IN) + título + `LblDocNum` + `BadgeEstado` + Guardar/Cancelar; campos en línea: Doc. Corrección · Fecha · Hora · Movimiento · Motivo · Referencia.
+- **Row 1 — Toolbar**: label + botones artículos.
+- **Row 2 — GridItems**: DataGrid a todo el ancho.
+- **Row 3 — Observación** (altura 90): `Box_Observacion` en borde redondeado.
+- **Row 4 — Barra de totales**: MetricCard Unidades + Diferentes + GridCategorias.
+
+**Code-behind:**
+- `ActualizarBadge()`: ingreso=verde/"IN", egreso=rojo/"EG"; actualiza ícono, badge y `LblDocNum`. Llamado al cargar y en `Box_Movimiento_SelectionChanged`.
+- `LblDocNum` se actualiza en vivo en `Campo_TextChanged` cuando `sender == Box_DocumentoC`.
+
+#### InventariosDetalle — rediseño completo
+**Estructura XAML (5 filas):**
+- **Row 0 — Encabezado**: ícono fijo "IV" (azul `#1E40AF` / fondo `#DBEAFE`) + título + `LblDocNum` + badge fijo "Inventario físico" (azul) + Guardar/Cancelar; campos en línea: Doc. Inventario · Fecha · Hora.
+- **Row 1 — Toolbar**: label + botones artículos.
+- **Row 2 — GridItems**: DataGrid a todo el ancho.
+- **Row 3 — Observaciones** (altura 90): `Box_Observacion` en borde redondeado.
+- **Row 4 — Barra de totales**: MetricCard Unidades + **Diferentes** (nuevo) + **GridCategorias** (nuevo).
+
+**Code-behind:**
+- Nuevo `CargarTotalesCategoria()`: mismo patrón que CorreccionesDetalle — itera `Sql.CategoriasObj`, acumula por artículo, añade fila "Otros", asigna a `GridCategorias.ItemsSource`.
+- `RefrescarGrid()` ahora también calcula `TxtUnidadesDiferentes` y llama `CargarTotalesCategoria()`.
+- `LblDocNum` actualizado en `CargarUserform()` y en `Campo_TextChanged` cuando `sender == Box_DocumentoI`.
+
+#### Sistema de estilos compartido (TraspasosDetalle → Correcciones → Inventarios)
+Todos comparten el mismo modelo visual:
+```
+Encabezado surface   [ícono][título + doc]  [badge]  [Cancelar][Guardar]
+                     [campo1][campo2]...[campoN]
+─────────────────────────────────────────────────────────────────────────
+Toolbar surface      Artículos de...         [btn][btn][btn][btn][peligro]
+─────────────────────────────────────────────────────────────────────────
+GridItems (*)        Lín. | Código | Descripción | Cantidad
+─────────────────────────────────────────────────────────────────────────
+Panel inferior       Observación / Stock + Observaciones
+─────────────────────────────────────────────────────────────────────────
+Totales surface      [MetricCard Unidades] [MetricCard Diferentes] [MetricCard Categorías]
+```
 ## Comandos Importantes
 
 ### Clonar y abrir el proyecto
