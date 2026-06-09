@@ -90,10 +90,10 @@
                                 <Setter Property="Background" Value="#D1FAE5"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding Estado}" Value="pendiente">
-                                <Setter Property="Background" Value="#FEF3C7"/>
+                                <Setter Property="Background" Value="#FEE2E2"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding Estado}" Value="pendiente parcial">
-                                <Setter Property="Background" Value="#FEE2E2"/>
+                                <Setter Property="Background" Value="#FEF3C7"/>
                             </DataTrigger>
                         </Style.Triggers>
                         <Setter Property="Background" Value="{DynamicResource ThemeBgReadOnly}"/>
@@ -107,10 +107,10 @@
                                     <Setter Property="Foreground" Value="#065F46"/>
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding Estado}" Value="pendiente">
-                                    <Setter Property="Foreground" Value="#92400E"/>
+                                    <Setter Property="Foreground" Value="#991B1B"/>
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding Estado}" Value="pendiente parcial">
-                                    <Setter Property="Foreground" Value="#991B1B"/>
+                                    <Setter Property="Foreground" Value="#92400E"/>
                                 </DataTrigger>
                             </Style.Triggers>
                             <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
@@ -126,13 +126,13 @@
                     <Style TargetType="Border">
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding Cuenta}" Value="cancelado">
-                                <Setter Property="Background" Value="#DBEAFE"/>
+                                <Setter Property="Background" Value="#D1FAE5"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding Cuenta}" Value="pendiente">
-                                <Setter Property="Background" Value="#FEF3C7"/>
+                                <Setter Property="Background" Value="#FEE2E2"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding Cuenta}" Value="pendiente parcial">
-                                <Setter Property="Background" Value="#F3F4F6"/>
+                                <Setter Property="Background" Value="#FEF3C7"/>
                             </DataTrigger>
                         </Style.Triggers>
                         <Setter Property="Background" Value="{DynamicResource ThemeBgReadOnly}"/>
@@ -143,13 +143,13 @@
                         <Style TargetType="TextBlock">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding Cuenta}" Value="cancelado">
-                                    <Setter Property="Foreground" Value="#1E40AF"/>
+                                    <Setter Property="Foreground" Value="#065F46"/>
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding Cuenta}" Value="pendiente">
-                                    <Setter Property="Foreground" Value="#92400E"/>
+                                    <Setter Property="Foreground" Value="#991B1B"/>
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding Cuenta}" Value="pendiente parcial">
-                                    <Setter Property="Foreground" Value="#6B7280"/>
+                                    <Setter Property="Foreground" Value="#92400E"/>
                                 </DataTrigger>
                             </Style.Triggers>
                             <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
@@ -282,7 +282,7 @@
                                      Style="{StaticResource FilterRadio}"
                                      Checked="FiltroCuenta_Checked"/>
                         <RadioButton x:Name="BtnCuentaParcial"
-                                     Content="Pend. parcial"
+                                     Content="Pendiente parcial"
                                      GroupName="CuentaP"
                                      Style="{StaticResource FilterRadio}"
                                      Checked="FiltroCuenta_Checked"/>

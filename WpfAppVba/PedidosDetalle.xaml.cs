@@ -405,11 +405,11 @@ namespace WpfAppVba
                 "entregado"       => (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
                                       new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)),
                                       "Entregado"),
-                "entrega parcial" => (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
-                                      new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)),
-                                      "Entrega parcial"),
-                _                 => (new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)),
+                "entrega parcial" => (new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)),
                                       new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E)),
+                                      "Entrega parcial"),
+                _                 => (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
+                                      new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)),
                                       "Pendiente")
             };
 
@@ -417,14 +417,14 @@ namespace WpfAppVba
             string cuenta = Box_Cuenta.Text.ToLower();
             (BadgeCuenta.Background, TxtBadgeCuenta.Foreground, TxtBadgeCuenta.Text) = cuenta switch
             {
-                "cancelado"         => (new SolidColorBrush(Color.FromRgb(0xDB, 0xEA, 0xFE)),
-                                        new SolidColorBrush(Color.FromRgb(0x1E, 0x40, 0xAF)),
+                "cancelado"         => (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
+                                        new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)),
                                         "Cta: Cancelado"),
-                "pendiente parcial" => (new SolidColorBrush(Color.FromRgb(0xF3, 0xF4, 0xF6)),
-                                        new SolidColorBrush(Color.FromRgb(0x6B, 0x72, 0x80)),
-                                        "Cta: Pend. parcial"),
-                _                   => (new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)),
+                "pendiente parcial" => (new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)),
                                         new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E)),
+                                        "Cta: Pendiente parcial"),
+                _                   => (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
+                                        new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)),
                                         "Cta: Pendiente")
             };
 
