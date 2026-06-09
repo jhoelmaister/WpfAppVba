@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
@@ -114,6 +115,7 @@ namespace WpfAppVba
             RefrescarGridTrasacciones();
             RefrescarGridEntregas();
             ActualizarTotales();
+            ActualizarBadges();
         }
 
         // ─── Modo editar ──────────────────────────────────────────────────────
@@ -241,6 +243,7 @@ namespace WpfAppVba
             RefrescarGridTrasacciones();
             RefrescarGridEntregas();
             ActualizarTotales();
+            ActualizarBadges();
         }
 
         // ─── Helpers ──────────────────────────────────────────────────────────
@@ -383,6 +386,50 @@ namespace WpfAppVba
             _cargando = true;
             Box_Cuenta.Text = nuevaCuenta;
             _cargando = prev;
+            ActualizarBadges();
+        }
+
+        private void ActualizarBadges()
+        {
+            // Badge Estado
+            string estado = Box_Estado.Text.ToLower();
+            (BadgeEstado.Background, TxtBadgeEstado.Foreground, TxtBadgeEstado.Text) = estado switch
+            {
+                "entregado"       => (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
+                                      new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)),
+                                      "Entregado"),
+                "entrega parcial" => (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
+                                      new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)),
+                                      "Entrega parcial"),
+                _                 => (new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)),
+                                      new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E)),
+                                      "Pendiente")
+            };
+
+            // Badge Cuenta
+            string cuenta = Box_Cuenta.Text.ToLower();
+            (BadgeCuenta.Background, TxtBadgeCuenta.Foreground, TxtBadgeCuenta.Text) = cuenta switch
+            {
+                "cancelado"         => (new SolidColorBrush(Color.FromRgb(0xDB, 0xEA, 0xFE)),
+                                        new SolidColorBrush(Color.FromRgb(0x1E, 0x40, 0xAF)),
+                                        "Cta: Cancelado"),
+                "pendiente parcial" => (new SolidColorBrush(Color.FromRgb(0xF3, 0xF4, 0xF6)),
+                                        new SolidColorBrush(Color.FromRgb(0x6B, 0x72, 0x80)),
+                                        "Cta: Pend. parcial"),
+                _                   => (new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)),
+                                        new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E)),
+                                        "Cta: Pendiente")
+            };
+
+            // Ícono y color del encabezado según tipo de movimiento
+            string tipo = AppState.TipoMovimiento.ToLower();
+            LblIconoTipo.Text       = tipo == "compra" ? "C" : "V";
+            LblIconoTipo.Foreground = tipo == "compra"
+                ? new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46))
+                : new SolidColorBrush(Color.FromRgb(0x1E, 0x40, 0xAF));
+
+            // Sincronizar badge del número de documento
+            LblDocBadge.Text = Box_DocumentoP.Text;
         }
 
         private void CargarEstados()
