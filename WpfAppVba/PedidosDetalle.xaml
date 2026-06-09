@@ -143,7 +143,7 @@
                     <!-- Ícono + Título -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal"
                                 VerticalAlignment="Center" Margin="0,0,14,0">
-                        <Border Width="36" Height="36" CornerRadius="8"
+                        <Border x:Name="IconoBorde" Width="36" Height="36" CornerRadius="8"
                                 Background="#DBEAFE" Margin="0,0,10,0">
                             <TextBlock x:Name="LblIconoTipo"
                                        Text="V" FontSize="16" FontWeight="SemiBold"
