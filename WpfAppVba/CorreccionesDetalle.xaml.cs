@@ -211,6 +211,57 @@ namespace WpfAppVba
                 GridItems.SelectedItem = seleccionado;
 
             TxtTotalUnidades.Text = _items.Sum(x => x.Cantidad).ToString("N2");
+            TxtUnidadesDiferentes.Text = _items
+                .Where(x => !string.IsNullOrEmpty(x.ArticuloId))
+                .Select(x => x.ArticuloId)
+                .Distinct()
+                .Count()
+                .ToString();
+            CargarTotalesCategoria();
+        }
+
+        // ─── Totales por categoría ────────────────────────────────────────────
+        private void CargarTotalesCategoria()
+        {
+            int ufCat = Sql.CategoriasObj.ContarFilas;
+            var categoriaIds     = new List<string>();
+            var categoriaDescs   = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var cantPorCategoria = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+
+            for (int i = 1; i <= ufCat; i++)
+            {
+                var idObj = Sql.CategoriasObj.Mover(i);
+                if (idObj == null) continue;
+                string catId   = idObj.ToString()!;
+                string catDesc = Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? catId;
+                categoriaIds.Add(catId);
+                categoriaDescs[catId]   = catDesc;
+                cantPorCategoria[catId] = 0;
+            }
+
+            double cantOtros = 0;
+            foreach (var item in _items)
+            {
+                if (string.IsNullOrEmpty(item.ArticuloId))
+                { cantOtros += item.Cantidad; continue; }
+
+                string catId = Sql.ArticulosObj.ObtenerItem("categoria", item.ArticuloId)?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(catId) && cantPorCategoria.ContainsKey(catId))
+                    cantPorCategoria[catId] += item.Cantidad;
+                else
+                    cantOtros += item.Cantidad;
+            }
+
+            var filas = categoriaIds
+                .Select(id => new CategoriaCantFila
+                {
+                    Categoria = categoriaDescs[id],
+                    Cantidad  = cantPorCategoria[id].ToString("N0")
+                })
+                .ToList();
+
+            filas.Add(new CategoriaCantFila { Categoria = "Otros", Cantidad = cantOtros.ToString("N0") });
+            GridCategorias.ItemsSource = filas;
         }
 
         // ─── Detectar cambios ─────────────────────────────────────────────────
