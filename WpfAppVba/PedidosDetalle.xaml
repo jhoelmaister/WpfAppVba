@@ -824,13 +824,8 @@
                     </Border>
                 </StackPanel>
 
-                <!-- Derecha: totales de importe + ocultos de categoría -->
+                <!-- Derecha: totales de importe -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <!-- Ocultos: usados por code-behind -->
-                    <TextBlock x:Name="TxtTotalPeq"   Visibility="Collapsed"/>
-                    <TextBlock x:Name="TxtTotalMed"   Visibility="Collapsed"/>
-                    <TextBlock x:Name="TxtTotalGra"   Visibility="Collapsed"/>
-                    <TextBlock x:Name="TxtTotalOtros" Visibility="Collapsed"/>
                     <!-- Importe -->
                     <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
                         <StackPanel>

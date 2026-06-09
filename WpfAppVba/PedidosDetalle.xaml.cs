@@ -331,28 +331,17 @@ namespace WpfAppVba
 
         private void CargarTotales()
         {
-            double totalUnid = 0, totalPeq = 0, totalMed = 0, totalGra = 0, totalOtros = 0;
+            double totalUnid = 0;
             var articulosUnicos = new HashSet<string>();
 
             foreach (var p in _pedidos)
             {
                 if (!string.IsNullOrEmpty(p.ArticuloId)) articulosUnicos.Add(p.ArticuloId);
                 totalUnid += p.Cantidad;
-
-                string catId   = Sql.ArticulosObj.ObtenerItem("categoria", p.ArticuloId)?.ToString() ?? "";
-                string catDesc = Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString()?.ToLower() ?? "";
-                if (catDesc == "pequeña" || catDesc == "pequena")  totalPeq   += p.Cantidad;
-                else if (catDesc == "mediana")                     totalMed   += p.Cantidad;
-                else if (catDesc == "grande")                      totalGra   += p.Cantidad;
-                else                                               totalOtros += p.Cantidad;
             }
 
-            TxtTotalUnidades.Text        = totalUnid.ToString("N0");
-            TxtUnidadesDiferentes.Text   = articulosUnicos.Count.ToString();
-            TxtTotalPeq.Text             = totalPeq.ToString("N0");
-            TxtTotalMed.Text             = totalMed.ToString("N0");
-            TxtTotalGra.Text             = totalGra.ToString("N0");
-            TxtTotalOtros.Text           = totalOtros.ToString("N0");
+            TxtTotalUnidades.Text      = totalUnid.ToString("N0");
+            TxtUnidadesDiferentes.Text = articulosUnicos.Count.ToString();
         }
 
         private void CargarTotalesDivisas()
