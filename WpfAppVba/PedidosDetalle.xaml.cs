@@ -402,15 +402,15 @@ namespace WpfAppVba
             string estado = Box_Estado.Text.ToLower();
             (BadgeEstado.Background, TxtBadgeEstado.Foreground, TxtBadgeEstado.Text) = estado switch
             {
-                "entregado"       => (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
-                                      new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)),
-                                      "Entregado"),
-                "entrega parcial" => (new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)),
-                                      new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E)),
-                                      "Entrega parcial"),
-                _                 => (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
-                                      new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)),
-                                      "Pendiente")
+                "entregado"        => (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
+                                       new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)),
+                                       "Entregado"),
+                "pendiente parcial" => (new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)),
+                                        new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E)),
+                                        "Pendiente parcial"),
+                _                  => (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
+                                       new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)),
+                                       "Pendiente")
             };
 
             // Badge Cuenta
@@ -513,7 +513,7 @@ namespace WpfAppVba
             {
                 double entregado = cantEntrega.TryGetValue(kv.Key, out double val) ? val : 0;
                 if (entregado < kv.Value && hayEntregas)
-                { estado = "entrega parcial"; break; }
+                { estado = "pendiente parcial"; break; }
                 if (entregado >= kv.Value)
                     estado = "entregado";
             }
@@ -923,8 +923,17 @@ namespace WpfAppVba
         private void GridTrasacciones_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
         {
             if (e.EditAction != DataGridEditAction.Commit) return;
-            if (e.Row.Item is TrasaccionItemFila fila && e.Column.Header?.ToString() == "Fecha")
+            if (e.Row.Item is not TrasaccionItemFila fila) return;
+
+            if (e.Column.Header?.ToString() == "Fecha")
                 fila.FechaStr = fila.FechaDate?.ToString("d") ?? fila.FechaStr;
+
+            if (e.Column.Header?.ToString() == "Importe" && e.EditingElement is TextBox tbImp)
+            {
+                if (double.TryParse(tbImp.Text.Trim(), NumberStyles.Any, CultureInfo.CurrentCulture, out double imp))
+                    fila.Importe = imp;
+            }
+
             _cambioTrasaccion = true;
             Dispatcher.BeginInvoke(new Action(() =>
             {
