@@ -320,32 +320,54 @@ namespace WpfAppVba
         }
 
         // ─── Accesos rápidos del top bar ──────────────────────────────────────
+        private PedidosDetalle? BuscarTabPedidoRapido()
+        {
+            foreach (TabItem t in TabContenido.Items)
+                if (t.Tag as string == "nuevo-pedido" && t.Content is PedidosDetalle pd) return pd;
+            return null;
+        }
+
+        private TraspasosDetalle? BuscarTabTraspasoRapido()
+        {
+            foreach (TabItem t in TabContenido.Items)
+                if (t.Tag as string == "nuevo-traspaso" && t.Content is TraspasosDetalle td) return td;
+            return null;
+        }
+
         private void BtnQuick_Venta_Click(object sender, RoutedEventArgs e)
         {
             MostrarPanel("pedidos");
             MarcarActivo(BtnNav_Pedidos);
-            _panelPedidos.AbrirNuevoPedido("rapido", "venta");
+            var existing = BuscarTabPedidoRapido();
+            if (existing != null) { existing.CambiarTipoMovimiento("venta"); foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
+            else _panelPedidos.AbrirNuevoPedido("rapido", "venta");
         }
 
         private void BtnQuick_Compra_Click(object sender, RoutedEventArgs e)
         {
             MostrarPanel("pedidos");
             MarcarActivo(BtnNav_Pedidos);
-            _panelPedidos.AbrirNuevoPedido("rapido", "compra");
+            var existing = BuscarTabPedidoRapido();
+            if (existing != null) { existing.CambiarTipoMovimiento("compra"); foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
+            else _panelPedidos.AbrirNuevoPedido("rapido", "compra");
         }
 
         private void BtnQuick_Salida_Click(object sender, RoutedEventArgs e)
         {
             MostrarPanel("traspasos");
             MarcarActivo(BtnNav_Traspasos);
-            _panelTraspasos.AbrirNuevoTraspaso("salida");
+            var existing = BuscarTabTraspasoRapido();
+            if (existing != null) { existing.CambiarTipoMovimiento("salida"); foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
+            else _panelTraspasos.AbrirNuevoTraspaso("salida");
         }
 
         private void BtnQuick_Entrada_Click(object sender, RoutedEventArgs e)
         {
             MostrarPanel("traspasos");
             MarcarActivo(BtnNav_Traspasos);
-            _panelTraspasos.AbrirNuevoTraspaso("entrada");
+            var existing = BuscarTabTraspasoRapido();
+            if (existing != null) { existing.CambiarTipoMovimiento("entrada"); foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
+            else _panelTraspasos.AbrirNuevoTraspaso("entrada");
         }
 
         private void BtnCerrarSesion_Click(object sender, RoutedEventArgs e)

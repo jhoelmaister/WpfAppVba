@@ -41,6 +41,13 @@ namespace WpfAppVba
             Loaded    += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
         }
 
+        // ─── Cambiar tipo de movimiento en pestaña existente ─────────────────
+        public void CambiarTipoMovimiento(string tipo)
+        {
+            AppState.TipoMovimiento = tipo.ToLower();
+            CboMovimiento.SelectedIndex = tipo.ToLower() == "salida" ? 1 : 0;
+        }
+
         // ─── Carga inicial ────────────────────────────────────────────────────
         private void CargarUserform()
         {

@@ -212,13 +212,12 @@ namespace WpfAppVba
             string regionId   = Sql.PreciosObj.ObtenerItem("region", id)?.ToString() ?? "";
             string regionDesc = Sql.RegionesObj.ObtenerItem("descripcion", regionId)?.ToString() ?? regionId;
             string articuloId = Sql.PreciosObj.ObtenerItem("articulo", id)?.ToString() ?? "";
-            string codigo     = Sql.ArticulosObj.ObtenerItem("codigo", articuloId)?.ToString() ?? "";
 
             return new PrecioHistFila
             {
                 Linea    = linea,
                 Id       = id,
-                Codigo   = codigo,
+                Codigo   = id,
                 Fecha    = fecha,
                 FechaStr = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                 Region   = regionDesc,
