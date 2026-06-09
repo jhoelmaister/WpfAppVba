@@ -810,7 +810,6 @@
                                    Foreground="{DynamicResource ThemeTextoSec}"/>
                         <TextBlock x:Name="TxtTotalUnidades"
                                    FontSize="17" FontWeight="SemiBold"
-                                   HorizontalAlignment="Right"
                                    Foreground="{DynamicResource ThemeTexto}"/>
                     </StackPanel>
                 </Border>
@@ -821,7 +820,6 @@
                                    Foreground="{DynamicResource ThemeTextoSec}"/>
                         <TextBlock x:Name="TxtUnidadesDiferentes"
                                    FontSize="17" FontWeight="SemiBold"
-                                   HorizontalAlignment="Right"
                                    Foreground="{DynamicResource ThemeTexto}"/>
                     </StackPanel>
                 </Border>

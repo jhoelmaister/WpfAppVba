@@ -465,14 +465,14 @@ namespace WpfAppVba
             }
 
             var filas = categoriaIds
-                .Select(id => new CategoriaFila
+                .Select(id => new CategoriaCantFila
                 {
                     Categoria = categoriaDescs[id],
                     Cantidad  = cantPorCategoria[id].ToString("N0")
                 })
                 .ToList();
 
-            filas.Add(new CategoriaFila { Categoria = "Otros", Cantidad = cantOtros.ToString("N0") });
+            filas.Add(new CategoriaCantFila { Categoria = "Otros", Cantidad = cantOtros.ToString("N0") });
             GridCategorias.ItemsSource = filas;
         }
 
@@ -1486,7 +1486,7 @@ namespace WpfAppVba
         public string Stock      { get; set; } = "";
     }
 
-    public class CategoriaFila
+    public class CategoriaCantFila
     {
         public string Categoria { get; set; } = "";
         public string Cantidad  { get; set; } = "";
