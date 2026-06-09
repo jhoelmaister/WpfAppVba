@@ -17,10 +17,65 @@
             <Setter Property="Padding" Value="10,0"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
-            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Background" Value="{DynamicResource ThemeInputBg}"/>
             <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
             <Setter Property="CaretBrush" Value="#4F8EF7"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="BtnBase" TargetType="Button">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="BtnPrimario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="#1A73E8"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style x:Key="BtnSecundario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="{DynamicResource ThemeBtnSecBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeBtnSecFg}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorde}"/>
         </Style>
 
         <Style x:Key="CardBorder" TargetType="Border">
@@ -163,15 +218,11 @@
                 Padding="20,10">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="Cancelar"
-                        Height="36" Padding="18,0" FontSize="13"
-                        Background="{DynamicResource ThemeBtnSecBg}"
-                        Foreground="{DynamicResource ThemeBtnSecFg}"
-                        BorderThickness="0" Cursor="Hand" Margin="0,0,10,0"
+                        Padding="18,0" Style="{StaticResource BtnSecundario}"
+                        Margin="0,0,10,0"
                         Click="BtnCancelar_Click"/>
                 <Button Content="&#x1F4BE; Guardar"
-                        Height="36" Padding="18,0" FontSize="13" FontWeight="SemiBold"
-                        Background="#1A73E8" Foreground="White"
-                        BorderThickness="0" Cursor="Hand"
+                        Padding="18,0" Style="{StaticResource BtnPrimario}"
                         Click="BtnGuardar_Click"/>
             </StackPanel>
         </Border>
