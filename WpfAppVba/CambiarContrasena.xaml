@@ -7,6 +7,64 @@
         ResizeMode="CanResize"
         Background="{DynamicResource ThemeBgPrincipal}">
 
+    <Window.Resources>
+
+        <Style x:Key="ModernPassword" TargetType="PasswordBox">
+            <Setter Property="Height"                   Value="32"/>
+            <Setter Property="FontSize"                 Value="12"/>
+            <Setter Property="Padding"                  Value="8,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush"              Value="{DynamicResource ThemeBordeInput}"/>
+            <Setter Property="BorderThickness"          Value="1"/>
+            <Setter Property="Background"               Value="{DynamicResource ThemeInputBg}"/>
+            <Setter Property="Foreground"               Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="BtnPrimario" TargetType="Button">
+            <Setter Property="Height"          Value="34"/>
+            <Setter Property="FontSize"        Value="13"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Background"      Value="#1A73E8"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+
     <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -22,25 +80,25 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
             <StackPanel>
-                <TextBlock Text="Contraseña Actual:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-                <PasswordBox x:Name="PwdActual" Height="30" FontSize="12"
-                             Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,12"/>
+                <TextBlock Text="Contraseña Actual:" FontSize="11"
+                           Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,4"/>
+                <PasswordBox x:Name="PwdActual" Style="{StaticResource ModernPassword}"
+                             Margin="0,0,0,14"/>
 
-                <TextBlock Text="Nueva Contraseña:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-                <PasswordBox x:Name="PwdNueva" Height="30" FontSize="12"
-                             Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,12"/>
+                <TextBlock Text="Nueva Contraseña:" FontSize="11"
+                           Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,4"/>
+                <PasswordBox x:Name="PwdNueva" Style="{StaticResource ModernPassword}"
+                             Margin="0,0,0,14"/>
 
-                <TextBlock Text="Confirmar Nueva Contraseña:" FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-                <PasswordBox x:Name="PwdConfirmar" Height="30" FontSize="12"
-                             Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,0,0"/>
+                <TextBlock Text="Confirmar Nueva Contraseña:" FontSize="11"
+                           Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,4"/>
+                <PasswordBox x:Name="PwdConfirmar" Style="{StaticResource ModernPassword}"/>
             </StackPanel>
         </ScrollViewer>
 
         <!-- Botón -->
         <Button Grid.Row="2" Content="Guardar Contraseña"
-                Height="34" FontSize="13" FontWeight="SemiBold"
-                Background="#1A73E8" Foreground="White"
-                BorderThickness="0" Cursor="Hand"
+                Style="{StaticResource BtnPrimario}"
                 Margin="0,18,0,0"
                 Click="BtnGuardar_Click"/>
     </Grid>

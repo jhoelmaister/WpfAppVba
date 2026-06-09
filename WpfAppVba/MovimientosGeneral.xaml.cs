@@ -266,8 +266,19 @@ namespace WpfAppVba
         }
 
         // ─── Eventos ─────────────────────────────────────────────────────────
+
+        // Abre el selector de artículo (igual que BtnBuscarArticulo en TraspasosDetalle)
         private void BtnBuscar_Click(object sender, RoutedEventArgs e)
-            => BuscarArticulo();
+        {
+            var ventana = Window.GetWindow(this);
+            if (ventana == null) return;
+
+            ArticulosGeneral.OpenAsTab(ventana, null, art =>
+            {
+                TxtCodigo.Text = art.Codigo;
+                BuscarArticulo();
+            }, contexto: "movimientos-buscar", llamador: this);
+        }
 
         private void TxtCodigo_KeyDown(object sender, KeyEventArgs e)
         {

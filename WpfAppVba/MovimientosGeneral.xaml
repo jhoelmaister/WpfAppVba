@@ -42,6 +42,32 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush"     Value="{DynamicResource ThemeBorde}"/>
         </Style>
+
+        <!-- Input redondeado -->
+        <Style x:Key="ModernInput" TargetType="TextBox">
+            <Setter Property="Height"                   Value="30"/>
+            <Setter Property="FontSize"                 Value="12"/>
+            <Setter Property="Padding"                  Value="8,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush"              Value="{DynamicResource ThemeBordeInput}"/>
+            <Setter Property="BorderThickness"          Value="1"/>
+            <Setter Property="Background"               Value="{DynamicResource ThemeInputBg}"/>
+            <Setter Property="Foreground"               Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <Grid Margin="16">
@@ -63,10 +89,10 @@
 
             <TextBlock Grid.Column="0" Text="Código:" VerticalAlignment="Center"
                        FontSize="12" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,6,0"/>
-            <TextBox x:Name="TxtCodigo" Grid.Column="1" Height="30" FontSize="12"
-                     Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,6,0"
+            <TextBox x:Name="TxtCodigo" Grid.Column="1"
+                     Style="{StaticResource ModernInput}" Margin="0,0,6,0"
                      KeyDown="TxtCodigo_KeyDown"/>
-            <Button x:Name="BtnBuscar" Grid.Column="2" Content="Buscar"
+            <Button x:Name="BtnBuscar" Grid.Column="2" Content="🔍 Buscar artículo"
                     Style="{StaticResource BtnPrimario}" Margin="0,0,12,0"
                     Click="BtnBuscar_Click"/>
             <TextBlock x:Name="LblDescripcion" Grid.Column="3"
