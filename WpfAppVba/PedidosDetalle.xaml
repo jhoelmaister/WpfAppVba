@@ -796,67 +796,77 @@
                 BorderBrush="{DynamicResource ThemeBorde}"
                 BorderThickness="0,1,0,0"
                 Padding="14,8">
-            <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Right" VerticalAlignment="Center">
-                <!-- Chips de categoría (ocultos, usados por code-behind) -->
-                <TextBlock x:Name="TxtTotalPeq"   Visibility="Collapsed"/>
-                <TextBlock x:Name="TxtTotalMed"   Visibility="Collapsed"/>
-                <TextBlock x:Name="TxtTotalGra"   Visibility="Collapsed"/>
-                <TextBlock x:Name="TxtTotalOtros" Visibility="Collapsed"/>
-                <!-- Total unidades -->
-                <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
-                    <StackPanel>
-                        <TextBlock Text="Total unidades" FontSize="10"
-                                   Foreground="{DynamicResource ThemeTextoSec}"/>
-                        <TextBlock x:Name="TxtTotalUnidades"
-                                   FontSize="17" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource ThemeTexto}"/>
-                    </StackPanel>
-                </Border>
-                <!-- Diferentes -->
-                <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
-                    <StackPanel>
-                        <TextBlock Text="Diferentes" FontSize="10"
-                                   Foreground="{DynamicResource ThemeTextoSec}"/>
-                        <TextBlock x:Name="TxtUnidadesDiferentes"
-                                   FontSize="17" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource ThemeTexto}"/>
-                    </StackPanel>
-                </Border>
-                <!-- Importe -->
-                <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
-                    <StackPanel>
-                        <TextBlock Text="Importe total" FontSize="10"
-                                   Foreground="{DynamicResource ThemeTextoSec}"/>
-                        <TextBlock x:Name="TxtTotalImporte"
-                                   FontSize="17" FontWeight="SemiBold"
-                                   HorizontalAlignment="Right"
-                                   Foreground="#065F46"/>
-                    </StackPanel>
-                </Border>
-                <!-- Cuenta -->
-                <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
-                    <StackPanel>
-                        <TextBlock Text="Pagado / Cobrado" FontSize="10"
-                                   Foreground="{DynamicResource ThemeTextoSec}"/>
-                        <TextBlock x:Name="TxtTotalCuenta"
-                                   FontSize="17" FontWeight="SemiBold"
-                                   HorizontalAlignment="Right"
-                                   Foreground="#1E40AF"/>
-                    </StackPanel>
-                </Border>
-                <!-- Saldo -->
-                <Border Style="{StaticResource MetricCard}">
-                    <StackPanel>
-                        <TextBlock Text="Saldo" FontSize="10"
-                                   Foreground="{DynamicResource ThemeTextoSec}"/>
-                        <TextBlock x:Name="TxtTotalSaldo"
-                                   FontSize="17" FontWeight="SemiBold"
-                                   HorizontalAlignment="Right"
-                                   Foreground="#991B1B"/>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+            <Grid VerticalAlignment="Center">
+
+                <!-- Izquierda: contadores de unidades -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                    <!-- Total unidades -->
+                    <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
+                        <StackPanel>
+                            <TextBlock Text="Total unidades" FontSize="10"
+                                       Foreground="{DynamicResource ThemeTextoSec}"/>
+                            <TextBlock x:Name="TxtTotalUnidades"
+                                       FontSize="17" FontWeight="SemiBold"
+                                       HorizontalAlignment="Right"
+                                       Foreground="{DynamicResource ThemeTexto}"/>
+                        </StackPanel>
+                    </Border>
+                    <!-- Diferentes -->
+                    <Border Style="{StaticResource MetricCard}">
+                        <StackPanel>
+                            <TextBlock Text="Diferentes" FontSize="10"
+                                       Foreground="{DynamicResource ThemeTextoSec}"/>
+                            <TextBlock x:Name="TxtUnidadesDiferentes"
+                                       FontSize="17" FontWeight="SemiBold"
+                                       HorizontalAlignment="Right"
+                                       Foreground="{DynamicResource ThemeTexto}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Derecha: totales de importe + ocultos de categoría -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <!-- Ocultos: usados por code-behind -->
+                    <TextBlock x:Name="TxtTotalPeq"   Visibility="Collapsed"/>
+                    <TextBlock x:Name="TxtTotalMed"   Visibility="Collapsed"/>
+                    <TextBlock x:Name="TxtTotalGra"   Visibility="Collapsed"/>
+                    <TextBlock x:Name="TxtTotalOtros" Visibility="Collapsed"/>
+                    <!-- Importe -->
+                    <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
+                        <StackPanel>
+                            <TextBlock Text="Importe total" FontSize="10"
+                                       Foreground="{DynamicResource ThemeTextoSec}"/>
+                            <TextBlock x:Name="TxtTotalImporte"
+                                       FontSize="17" FontWeight="SemiBold"
+                                       HorizontalAlignment="Right"
+                                       Foreground="#065F46"/>
+                        </StackPanel>
+                    </Border>
+                    <!-- Cuenta -->
+                    <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
+                        <StackPanel>
+                            <TextBlock Text="Pagado / Cobrado" FontSize="10"
+                                       Foreground="{DynamicResource ThemeTextoSec}"/>
+                            <TextBlock x:Name="TxtTotalCuenta"
+                                       FontSize="17" FontWeight="SemiBold"
+                                       HorizontalAlignment="Right"
+                                       Foreground="#1E40AF"/>
+                        </StackPanel>
+                    </Border>
+                    <!-- Saldo -->
+                    <Border Style="{StaticResource MetricCard}">
+                        <StackPanel>
+                            <TextBlock Text="Saldo" FontSize="10"
+                                       Foreground="{DynamicResource ThemeTextoSec}"/>
+                            <TextBlock x:Name="TxtTotalSaldo"
+                                       FontSize="17" FontWeight="SemiBold"
+                                       HorizontalAlignment="Right"
+                                       Foreground="#991B1B"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+            </Grid>
         </Border>
 
     </Grid>
