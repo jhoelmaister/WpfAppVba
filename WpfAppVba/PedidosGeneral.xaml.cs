@@ -105,10 +105,10 @@ namespace WpfAppVba
                 string terceroId   = Sql.DocumentosPObj.ObtenerItem("tercero", id)?.ToString() ?? "";
                 string terceroDesc = Sql.TercerosObj.ObtenerItem("descripcion", terceroId)?.ToString() ?? terceroId;
 
-                string estado = Sql.DocumentosPObj.ObtenerItem("estado", id)?.ToString() ?? "";
+                string estado = (Sql.DocumentosPObj.ObtenerItem("estado", id)?.ToString() ?? "").ToLower();
 
                 // ── Usar estadoC (campo correcto en VBA) para cuenta ──────────
-                string estadoC = Sql.DocumentosPObj.ObtenerItem("estadoC", id)?.ToString() ?? "";
+                string estadoC = (Sql.DocumentosPObj.ObtenerItem("estadoC", id)?.ToString() ?? "").ToLower();
 
                 // Filtro por estado
                 if (!string.IsNullOrEmpty(filtroEstado) &&
@@ -217,8 +217,8 @@ namespace WpfAppVba
             DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
             string terceroId   = Sql.DocumentosPObj.ObtenerItem("tercero", id)?.ToString() ?? "";
             string terceroDesc = Sql.TercerosObj.ObtenerItem("descripcion", terceroId)?.ToString() ?? terceroId;
-            string estado  = Sql.DocumentosPObj.ObtenerItem("estado",  id)?.ToString() ?? "";
-            string estadoC = Sql.DocumentosPObj.ObtenerItem("estadoC", id)?.ToString() ?? "";
+            string estado  = (Sql.DocumentosPObj.ObtenerItem("estado",  id)?.ToString() ?? "").ToLower();
+            string estadoC = (Sql.DocumentosPObj.ObtenerItem("estadoC", id)?.ToString() ?? "").ToLower();
             string movDoc  = Sql.DocumentosPObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
 
             return new PedidoFila

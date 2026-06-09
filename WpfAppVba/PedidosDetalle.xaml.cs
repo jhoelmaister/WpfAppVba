@@ -1022,6 +1022,12 @@ namespace WpfAppVba
             if (e.Column.Header?.ToString() == "Fecha")
                 fila.FechaStr = fila.FechaDate?.ToString("d") ?? fila.FechaStr;
 
+            if (e.Column.Header?.ToString() == "Cantidad" && e.EditingElement is TextBox tbCant)
+            {
+                if (double.TryParse(tbCant.Text.Trim(), NumberStyles.Any, CultureInfo.CurrentCulture, out double cant))
+                    fila.Cantidad = cant;
+            }
+
             if (e.Column.Header?.ToString() == "Código" && e.EditingElement is TextBox tbCod)
             {
                 string codigo = tbCod.Text.Trim();
