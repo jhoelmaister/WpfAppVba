@@ -111,7 +111,7 @@
 
         <!-- ══ CONTENIDO ══════════════════════════════════════════════ -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16,20,0">
-            <StackPanel MaxWidth="700" HorizontalAlignment="Left">
+            <StackPanel MaxWidth="650" HorizontalAlignment="Center">
 
                 <!-- ▸ CARD: GENERAL -->
                 <Border Style="{StaticResource CardBorder}">
@@ -177,11 +177,11 @@
                                     <GridView ColumnHeaderContainerStyle="{StaticResource ServerListHeaderStyle}">
                                         <GridViewColumn Header="" Width="32"
                                                         DisplayMemberBinding="{Binding Activo}"/>
-                                        <GridViewColumn Header="Alias" Width="140"
+                                        <GridViewColumn Header="Alias" Width="160"
                                                         DisplayMemberBinding="{Binding Nombre}"/>
-                                        <GridViewColumn Header="Servidor" Width="160"
+                                        <GridViewColumn Header="Servidor" Width="200"
                                                         DisplayMemberBinding="{Binding Servidor}"/>
-                                        <GridViewColumn Header="Base de datos" Width="150"
+                                        <GridViewColumn Header="Base de datos" Width="200"
                                                         DisplayMemberBinding="{Binding BaseDatos}"/>
                                     </GridView>
                                 </ListView.View>
