@@ -278,8 +278,9 @@ namespace WpfAppVba
         // ─── Totales por categoría ────────────────────────────────────────────
         private void CargarTotales()
         {
-            double totalPeq = 0, totalMed = 0, totalGra = 0, totalOtros = 0, totalUnidades = 0;
+            double totalUnidades = 0;
             var distintos = new HashSet<string>();
+            var porCategoria = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var item in _items)
             {
@@ -288,24 +289,19 @@ namespace WpfAppVba
                     distintos.Add(item.ArticuloId);
 
                 string catId   = Sql.ArticulosObj.ObtenerItem("categoria",   item.ArticuloId)?.ToString() ?? "";
-                string catDesc = string.IsNullOrEmpty(catId) ? "" :
-                                 Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "";
-
-                switch (catDesc.ToLower())
-                {
-                    case "pequeña": totalPeq   += item.Cantidad; break;
-                    case "mediana": totalMed   += item.Cantidad; break;
-                    case "grande":  totalGra   += item.Cantidad; break;
-                    default:        totalOtros += item.Cantidad; break;
-                }
+                string catDesc = string.IsNullOrEmpty(catId) ? "(Sin cat.)" :
+                                 Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "(Sin cat.)";
+                if (!porCategoria.ContainsKey(catDesc)) porCategoria[catDesc] = 0;
+                porCategoria[catDesc] += item.Cantidad;
             }
 
-            TxtTotalPeq.Text            = totalPeq.ToString("N0");
-            TxtTotalMed.Text            = totalMed.ToString("N0");
-            TxtTotalGra.Text            = totalGra.ToString("N0");
-            TxtTotalOtros.Text          = totalOtros.ToString("N0");
-            TxtTotalUnidades.Text       = totalUnidades.ToString("N0");
-            TxtUnidadesDiferentes.Text  = distintos.Count.ToString();
+            TxtTotalUnidades.Text      = totalUnidades.ToString("N0");
+            TxtUnidadesDiferentes.Text = distintos.Count.ToString();
+
+            GridCategorias.ItemsSource = porCategoria
+                .OrderByDescending(kv => kv.Value)
+                .Select(kv => new CategoriaCantFila { Categoria = kv.Key, Cantidad = kv.Value.ToString("N0") })
+                .ToList();
         }
 
         // ─── Stock del artículo seleccionado (GridStock / Lista3) ─────────────
