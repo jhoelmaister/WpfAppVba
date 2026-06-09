@@ -499,6 +499,7 @@ namespace WpfAppVba
             _cargando = true;
             SeleccionarEstado(estado);
             _cargando = prev;
+            ActualizarBadges();
         }
 
         // ─── Stock y precios del artículo seleccionado ────────────────────────
@@ -1441,7 +1442,12 @@ namespace WpfAppVba
         public string    TrasaccionId { get; set; } = "";
         public int       Linea        { get; set; }
         public string    FechaStr     { get; set; } = "";
-        public DateTime? FechaDate    { get; set; }
+        // Derivada de FechaStr para mantener sincronizado el DatePicker de edición.
+        public DateTime? FechaDate
+        {
+            get => DateTime.TryParse(FechaStr, out var d) ? d : null;
+            set { if (value.HasValue) FechaStr = value.Value.ToString("d"); }
+        }
         public string    HoraStr      { get; set; } = "";
         public string    Descripcion  { get; set; } = "";
         public string    Forma        { get; set; } = "efectivo";
@@ -1457,7 +1463,12 @@ namespace WpfAppVba
         public string    Descripcion { get; set; } = "";
         public double    Cantidad    { get; set; }
         public string    FechaStr    { get; set; } = "";
-        public DateTime? FechaDate   { get; set; }
+        // Derivada de FechaStr para mantener sincronizado el DatePicker de edición.
+        public DateTime? FechaDate
+        {
+            get => DateTime.TryParse(FechaStr, out var d) ? d : null;
+            set { if (value.HasValue) FechaStr = value.Value.ToString("d"); }
+        }
         public string    HoraStr     { get; set; } = "";
     }
 

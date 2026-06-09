@@ -169,11 +169,13 @@
                     <!-- Badges de estado + cuenta -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal"
                                 VerticalAlignment="Center" Margin="0,0,10,0">
+                        <TextBlock Text="Estado de entrega:" Style="{StaticResource LblMuted}"/>
                         <Border x:Name="BadgeEstado"
                                 CornerRadius="10" Padding="8,3" Margin="0,0,6,0">
                             <TextBlock x:Name="TxtBadgeEstado"
                                        FontSize="11" FontWeight="SemiBold"/>
                         </Border>
+                        <TextBlock Text="Estado de cuenta:" Style="{StaticResource LblMuted}" Margin="12,0,4,0"/>
                         <Border x:Name="BadgeCuenta"
                                 CornerRadius="10" Padding="8,3">
                             <TextBlock x:Name="TxtBadgeCuenta"
