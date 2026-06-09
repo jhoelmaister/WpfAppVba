@@ -381,11 +381,18 @@ namespace WpfAppVba
 
         private void Box_Sucursal_Identificador_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (!_cargando)
+            if (_cargando) return;
+            string id = Box_Sucursal_Identificador.Text.Trim();
+            if (id == AppState.SucursalActiva.ToString())
             {
-                ActualizarDescripcionSucursal();
-                _hayCambios = true;
+                MessageBox.Show("No puede seleccionar la sucursal activa como destino/origen.",
+                    "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
+                Box_Sucursal_Identificador.Text = "";
+                Box_Sucursal_Descripcion.Text   = "";
+                return;
             }
+            ActualizarDescripcionSucursal();
+            _hayCambios = true;
         }
 
         private void Box_Numeros_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -403,9 +410,16 @@ namespace WpfAppVba
             {
                 if (SucursalesGeneral.SucursalSeleccionada != null)
                 {
-                    Box_Sucursal_Identificador.Text = SucursalesGeneral.SucursalSeleccionada;
-                    ActualizarDescripcionSucursal();
+                    string selId = SucursalesGeneral.SucursalSeleccionada;
                     SucursalesGeneral.SucursalSeleccionada = null;
+                    if (selId == AppState.SucursalActiva.ToString())
+                    {
+                        MessageBox.Show("No puede seleccionar la sucursal activa como destino/origen.",
+                            "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    Box_Sucursal_Identificador.Text = selId;
+                    ActualizarDescripcionSucursal();
                     _hayCambios = true;
                 }
             });
