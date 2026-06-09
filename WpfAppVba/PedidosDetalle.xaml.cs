@@ -68,8 +68,10 @@ namespace WpfAppVba
             string tipoPedido = AppState.TipoPedido.ToLower();
             if (tipoPedido == "rapido")
             {
-                if (TabCobros   != null) TabCobros.Visibility   = Visibility.Collapsed;
-                if (TabEntregas != null) TabEntregas.Visibility = Visibility.Collapsed;
+                if (TabCobros              != null) TabCobros.Visibility              = Visibility.Collapsed;
+                if (TabEntregas            != null) TabEntregas.Visibility            = Visibility.Collapsed;
+                if (GrupoTotalesEntregas   != null) GrupoTotalesEntregas.Visibility   = Visibility.Collapsed;
+                if (SeparadorTotales       != null) SeparadorTotales.Visibility       = Visibility.Collapsed;
             }
 
             if (AppState.EventoFormularioM == "editar")
@@ -430,10 +432,14 @@ namespace WpfAppVba
 
             // Ícono y color del encabezado según tipo de movimiento
             string tipo = AppState.TipoMovimiento.ToLower();
-            LblIconoTipo.Text       = tipo == "compra" ? "C" : "V";
-            LblIconoTipo.Foreground = tipo == "compra"
+            bool esCompra = tipo == "compra";
+            LblIconoTipo.Text       = esCompra ? "CO" : "VE";
+            LblIconoTipo.Foreground = esCompra
                 ? new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46))
-                : new SolidColorBrush(Color.FromRgb(0x1E, 0x40, 0xAF));
+                : new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B));
+            IconoBorde.Background   = esCompra
+                ? new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5))
+                : new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2));
 
             // Sincronizar badge del número de documento
             LblDocBadge.Text = Box_DocumentoP.Text;

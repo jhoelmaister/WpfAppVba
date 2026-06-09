@@ -111,7 +111,7 @@
 
         <!-- ══ CONTENIDO ══════════════════════════════════════════════ -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16,20,0">
-            <StackPanel>
+            <StackPanel MaxWidth="700" HorizontalAlignment="Left">
 
                 <!-- ▸ CARD: GENERAL -->
                 <Border Style="{StaticResource CardBorder}">

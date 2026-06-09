@@ -820,10 +820,10 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <Rectangle Width="1" Fill="{DynamicResource ThemeBorde}" Margin="2,4"/>
+                    <Rectangle x:Name="SeparadorTotales" Width="1" Fill="{DynamicResource ThemeBorde}" Margin="2,4"/>
 
                     <!-- ── Grupo ENTREGAS ── -->
-                    <StackPanel Orientation="Vertical" Margin="10,0,0,0">
+                    <StackPanel x:Name="GrupoTotalesEntregas" Orientation="Vertical" Margin="10,0,0,0">
                         <TextBlock Text="Entregas" Style="{StaticResource SectionHeader}"/>
                         <StackPanel Orientation="Horizontal">
                             <!-- Total unidades entregadas -->
