@@ -87,9 +87,10 @@
 
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="150"/>
                                 <ColumnDefinition Width="16"/>
                                 <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0">
@@ -145,7 +146,7 @@
                         <TextBlock Style="{StaticResource CardHeader}" Text="● PRECIO"/>
                         <TextBlock Style="{StaticResource SectionLabel}" Text="VALOR"/>
                         <TextBox x:Name="Box_Precio" Style="{StaticResource ModernInput}"
-                                 MaxWidth="200" HorizontalAlignment="Left"
+                                 Width="150" HorizontalAlignment="Left"
                                  TextChanged="Campo_TextChanged"
                                  PreviewTextInput="Box_Decimales_PreviewTextInput"/>
                     </StackPanel>
