@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Generar Informe Excel — Artículos"
-        Width="380" Height="260"
+        Width="420" Height="310"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
         ResizeMode="NoResize"
@@ -76,20 +76,49 @@
         <StackPanel Grid.Row="0" Margin="0,0,0,12">
             <TextBlock Text="Nombre del informe:" FontSize="12" Margin="0,0,0,5"
                        Foreground="{DynamicResource ThemeTextoSec}"/>
-            <TextBox x:Name="TxtNombre" Style="{StaticResource ModernInput}"/>
+            <TextBox x:Name="TxtNombre" Style="{StaticResource ModernInput}"
+                     TextChanged="TxtNombre_TextChanged"/>
         </StackPanel>
 
-        <!-- Fecha de corte -->
-        <StackPanel Grid.Row="1" Margin="0,0,0,18">
-            <TextBlock Text="Fecha de corte (dd/mm/aaaa):" FontSize="12" Margin="0,0,0,5"
-                       Foreground="{DynamicResource ThemeTextoSec}"/>
-            <TextBox x:Name="TxtFecha" Style="{StaticResource ModernInput}"
-                     ToolTip="Ingrese la fecha de corte en formato dd/mm/aaaa"/>
-        </StackPanel>
+        <!-- Fecha y hora de corte -->
+        <Grid Grid.Row="1" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="120"/>
+            </Grid.ColumnDefinitions>
 
-        <!-- Botón crear -->
-        <Button Grid.Row="2" x:Name="BtnCrearInforme" Content="Crear Informe"
-                Style="{StaticResource BtnPrimario}"
-                Click="BtnCrearInforme_Click"/>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Fecha de corte (dd/mm/aaaa):" FontSize="12" Margin="0,0,0,5"
+                           Foreground="{DynamicResource ThemeTextoSec}"/>
+                <TextBox x:Name="TxtFecha" Style="{StaticResource ModernInput}"
+                         TextChanged="TxtFechaHora_TextChanged"
+                         ToolTip="Ingrese la fecha de corte en formato dd/mm/aaaa"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="Hora (HH:mm:ss):" FontSize="12" Margin="0,0,0,5"
+                           Foreground="{DynamicResource ThemeTextoSec}"/>
+                <TextBox x:Name="TxtHora" Style="{StaticResource ModernInput}"
+                         TextChanged="TxtFechaHora_TextChanged"
+                         ToolTip="Hora de corte en formato HH:mm:ss"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Vista previa + Botón crear -->
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock x:Name="TxtNombrePreview" Grid.Row="0"
+                       FontSize="10" Foreground="{DynamicResource ThemeTextoSec}"
+                       Margin="0,0,0,10" TextWrapping="Wrap"/>
+
+            <Button Grid.Row="1" x:Name="BtnCrearInforme" Content="Crear Informe"
+                    Style="{StaticResource BtnPrimario}"
+                    Click="BtnCrearInforme_Click"/>
+        </Grid>
     </Grid>
 </Window>

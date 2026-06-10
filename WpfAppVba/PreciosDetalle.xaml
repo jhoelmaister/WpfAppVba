@@ -202,7 +202,10 @@
                         <TextBlock Style="{StaticResource SectionLabel}" Text="VALOR"/>
                         <TextBox x:Name="Box_Precio" Style="{StaticResource ModernInput}"
                                  Width="150" HorizontalAlignment="Left"
+                                 HorizontalContentAlignment="Right"
+                                 TextAlignment="Right"
                                  TextChanged="Campo_TextChanged"
+                                 LostFocus="Box_Precio_LostFocus"
                                  PreviewTextInput="Box_Decimales_PreviewTextInput"/>
                     </StackPanel>
                 </Border>

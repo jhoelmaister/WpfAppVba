@@ -95,7 +95,7 @@ namespace WpfAppVba
 
             var precioObj = Sql.PreciosObj.ObtenerItem("precio", id);
             Box_Precio.Text = precioObj != null
-                ? Convert.ToDouble(precioObj).ToString(CultureInfo.InvariantCulture)
+                ? Convert.ToDouble(precioObj).ToString("N2", CultureInfo.CurrentCulture)
                 : "";
         }
 
@@ -132,6 +132,17 @@ namespace WpfAppVba
 
         private void Box_Decimales_PreviewTextInput(object sender, TextCompositionEventArgs e)
             => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: true);
+
+        private void Box_Precio_LostFocus(object sender, RoutedEventArgs e)
+        {
+            double valor = ParsearPrecio();
+            if (valor > 0)
+            {
+                _cargando = true;
+                Box_Precio.Text = valor.ToString("N2", CultureInfo.CurrentCulture);
+                _cargando = false;
+            }
+        }
 
         // ─── Guardar ─────────────────────────────────────────────────────────
         private bool Guardar()
@@ -199,8 +210,10 @@ namespace WpfAppVba
 
         private double ParsearPrecio()
         {
-            string txt = Box_Precio.Text.Trim().Replace(",", ".");
-            return double.TryParse(txt, NumberStyles.Any, CultureInfo.InvariantCulture, out double p) ? p : 0;
+            string txt = Box_Precio.Text.Trim();
+            if (double.TryParse(txt, NumberStyles.Any, CultureInfo.CurrentCulture, out double p)) return p;
+            txt = txt.Replace(",", ".");
+            return double.TryParse(txt, NumberStyles.Any, CultureInfo.InvariantCulture, out double p2) ? p2 : 0;
         }
 
         // ─── Botones Guardar / Cancelar ───────────────────────────────────────

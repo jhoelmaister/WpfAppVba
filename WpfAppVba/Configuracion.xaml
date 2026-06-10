@@ -176,28 +176,39 @@
 
                         <Border BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
                                 CornerRadius="6">
-                            <ListView x:Name="LstServidores" Height="350"
+                            <DataGrid x:Name="LstServidores" Height="350"
                                       BorderThickness="0"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      IsReadOnly="True"
+                                      SelectionMode="Single"
+                                      HeadersVisibility="Column"
+                                      GridLinesVisibility="Horizontal"
                                       Background="{DynamicResource ThemeInputBg}"
                                       Foreground="{DynamicResource ThemeTexto}"
                                       FontSize="12"
-                                      SelectionMode="Single"
-                                      ItemContainerStyle="{StaticResource ServerListItemStyle}"
                                       MouseDoubleClick="LstServidores_MouseDoubleClick"
                                       SelectionChanged="LstServidores_SelectionChanged">
-                                <ListView.View>
-                                    <GridView ColumnHeaderContainerStyle="{StaticResource ServerListHeaderStyle}">
-                                        <GridViewColumn Header="" Width="32"
-                                                        DisplayMemberBinding="{Binding Activo}"/>
-                                        <GridViewColumn Header="Alias" Width="160"
-                                                        DisplayMemberBinding="{Binding Nombre}"/>
-                                        <GridViewColumn Header="Servidor" Width="200"
-                                                        DisplayMemberBinding="{Binding Servidor}"/>
-                                        <GridViewColumn Header="Base de datos" Width="200"
-                                                        DisplayMemberBinding="{Binding BaseDatos}"/>
-                                    </GridView>
-                                </ListView.View>
-                            </ListView>
+                                <DataGrid.ColumnHeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="Background"      Value="{DynamicResource ThemeBgSurface}"/>
+                                        <Setter Property="Foreground"      Value="{DynamicResource ThemeTextoSec}"/>
+                                        <Setter Property="BorderBrush"     Value="{DynamicResource ThemeBorde}"/>
+                                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                        <Setter Property="Padding"         Value="6,5"/>
+                                        <Setter Property="FontSize"        Value="11"/>
+                                        <Setter Property="FontWeight"      Value="SemiBold"/>
+                                        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                                    </Style>
+                                </DataGrid.ColumnHeaderStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header=""              Binding="{Binding Activo}"    Width="32"  IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Alias"         Binding="{Binding Nombre}"    Width="160" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Servidor"      Binding="{Binding Servidor}"  Width="200" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Base de datos" Binding="{Binding BaseDatos}" Width="*"   IsReadOnly="True"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
                         </Border>
 
                         <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
