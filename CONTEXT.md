@@ -180,6 +180,51 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - **Botón X de pestañas dinámicas**: ahora llama `IntentarCerrar()` vía reflexión si el contenido lo implementa, protegiendo cambios no guardados antes de cerrar.
 - **CONTEXT.md**: actualizado para reflejar que `CorreccionesDetalle` y `ArticulosDetalle` ya estaban migrados a pestañas en sesiones anteriores.
 
+### Sesión 2026-06-10 — rama `master`
+
+#### Accesos rápidos en top bar (ConsolaMovimientos)
+- Añadidos 4 botones en la barra superior (derecha del usuario): **Venta** (rojo `#E53935`), **Compra** (azul `#1E88E5`), **Salida** (naranja `#FB8C00`), **Entrada** (verde `#43A047`).
+- Estilo `QuickBtn` con `CornerRadius="6"`, `Height="32"`, separador visual antes de `LblUsuario`.
+- Venta/Compra abren `PedidosDetalle` (tipo rápido) forzando `TipoMovimiento`; Salida/Entrada abren `TraspasosDetalle`.
+- **Si ya existe pestaña rápida** (`"nuevo-pedido"` / `"nuevo-traspaso"`): en lugar de abrir una nueva, se llama `CambiarTipoMovimiento(tipo)` en el detalle existente y se enfoca esa pestaña.
+- `PedidosDetalle.CambiarTipoMovimiento(string tipo)`: sets `AppState.TipoMovimiento` + `CboMovimiento.SelectedIndex`.
+- `TraspasosDetalle.CambiarTipoMovimiento(string tipo)`: sets `AppState.TipoMovimiento` + `CboMovimiento.SelectedIndex`.
+- `PedidosGeneral.AbrirNuevoPedido` made public, acepta `tipoMovimiento` opcional.
+- `TraspasosGeneral.AbrirNuevoTraspaso` made public, acepta `tipoMovimiento` opcional.
+
+#### Configuracion — reorganización de layout y botones
+- Grid 2 columnas: izquierda (GENERAL fila 0 + MI CUENTA fila 1), derecha (CONEXIÓN SQL SERVER RowSpan=2).
+- **Botón "Guardar Cambios"** movido al card MI CUENTA; guarda solo nombres, apellidos, sucursal y periodo.
+- **Botón "Cambiar Contraseña"** movido a la barra de acciones inferior.
+- Si se cambia la **sucursal activa** al guardar → cierra sesión y reabre `LoginWindow`.
+- `BtnConectarServidor`: seleccionar servidor diferente al activo → confirma, `EstablecerActivo`, luego `CerrarSesionYReabrirLogin()`.
+- Editar servidor activo después de guardar → `CerrarSesionYReabrirLogin()`.
+- Agregar/editar servidor no-activo → solo registra, no conecta.
+
+#### PreciosGeneral — columna Código y título de pestaña
+- Añadida columna "Código" en `GridPrecios` (entre Línea y Fecha).
+- La columna muestra el **ID del registro de precio** (de la tabla precios), no el código del artículo.
+- Título de pestaña de edición: `"Precio {id}"` en lugar del código del artículo.
+
+#### InventariosGeneral — botón Actualizar
+- Añadido botón **Actualizar** a la derecha de "Eliminar Inventario".
+- Llama `CargarInventarios()` para refrescar la lista.
+
+#### TraspasosGeneral — métricas de estado
+- Métrica **"Estado pendientes"**: ahora cuenta solo `estado == "pendiente"` (antes incluía "pendiente revisar").
+- Métrica **"Pendientes revisar"** (renombrada de "Entregados"): cuenta `estado == "pendiente revisar"`.
+
+#### Detalles de formularios — esquinas redondeadas y layout
+- **ProductosDetalle, RegionesDetalle, CategoriasDetalle, IndustriasDetalle**: código + descripción lado a lado (`Grid 160|16|*`).
+- **SucursalesDetalle, TercerosDetalle, PreciosDetalle, FamiliasDetalle, ProductosDetalle, RegionesDetalle, CategoriasDetalle, IndustriasDetalle**: `ModernInput` con `ControlTemplate CornerRadius="6"`; estilos `BtnBase`/`BtnPrimario`/`BtnSecundario`.
+- **ConfiguracionDbWindow**: trigger `IsEnabled=False` → `Opacity=0.45` en `BtnBase`.
+
+#### Rama de trabajo
+- Esta sesión trabajó directamente en `master` (por instrucción del usuario).
+- Los commits son verificados (`user.email noreply@anthropic.com`).
+
+---
+
 ### Sesión 2026-06-09 (parte 1) — rama `master`
 > Nota: esta sesión trabajó directamente en `master` por instrucción del usuario.
 
