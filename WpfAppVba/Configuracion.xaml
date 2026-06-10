@@ -176,7 +176,7 @@
 
                         <Border BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
                                 CornerRadius="6">
-                            <ListView x:Name="LstServidores" Height="150"
+                            <ListView x:Name="LstServidores" Height="350"
                                       BorderThickness="0"
                                       Background="{DynamicResource ThemeInputBg}"
                                       Foreground="{DynamicResource ThemeTexto}"

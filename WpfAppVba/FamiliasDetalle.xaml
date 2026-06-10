@@ -135,19 +135,24 @@
                 <Border Style="{StaticResource CardBorder}">
                     <StackPanel>
                         <TextBlock Style="{StaticResource CardHeader}" Text="● IDENTIFICACIÓN"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel  Grid.Column="0" Margin="0,0,0,12">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="CÓDIGO"/>
+                                <TextBox x:Name="Box_Codigo" Style="{StaticResource ModernInput}"
+                                         TextChanged="Campo_TextChanged"/>
+                            </StackPanel>
 
-                        <StackPanel Margin="0,0,0,12">
-                            <TextBlock Style="{StaticResource SectionLabel}" Text="CÓDIGO"/>
-                            <TextBox x:Name="Box_Codigo" Style="{StaticResource ModernInput}"
-                                     MaxWidth="200" HorizontalAlignment="Left"
-                                     TextChanged="Campo_TextChanged"/>
-                        </StackPanel>
-
-                        <StackPanel>
-                            <TextBlock Style="{StaticResource SectionLabel}" Text="DESCRIPCIÓN"/>
-                            <TextBox x:Name="Box_Descripcion" Style="{StaticResource ModernInput}"
-                                     TextChanged="Campo_TextChanged"/>
-                        </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="DESCRIPCIÓN"/>
+                                <TextBox x:Name="Box_Descripcion" Style="{StaticResource ModernInput}"
+                                         TextChanged="Campo_TextChanged"/>
+                            </StackPanel>
+                        </Grid>    
                     </StackPanel>
                 </Border>
 
