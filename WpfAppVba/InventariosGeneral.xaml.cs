@@ -131,6 +131,11 @@ namespace WpfAppVba
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
             => AbrirEditar();
 
+        private void BtnActualizar_Click(object sender, RoutedEventArgs e)
+        {
+            CargarInventarios();
+        }
+
         private void BtnEliminar_Click(object sender, RoutedEventArgs e)
         {
             if (Grid1.SelectedItem is not InventarioFila fila) return;

@@ -308,7 +308,7 @@
 
                 <Border Grid.Column="6" Style="{StaticResource MetricCard}">
                     <StackPanel>
-                        <TextBlock Text="Entregados"
+                        <TextBlock Text="Pendientes revisar"
                                    FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
                         <TextBlock x:Name="TxtTotalEntregados"
                                    FontSize="20" FontWeight="SemiBold"

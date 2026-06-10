@@ -161,9 +161,8 @@ namespace WpfAppVba
             Grid1.ItemsSource        = lista;
             TxtTotalCantidad.Text    = totalCant.ToString("N0");
             TxtTotalDocumentos.Text  = lista.Count.ToString("N0");
-            TxtTotalPendientes.Text  = lista.Count(f => f.Estado == "pendiente"
-                                                     || f.Estado == "pendiente revisar").ToString();
-            TxtTotalEntregados.Text  = lista.Count(f => f.Estado == "entregado").ToString();
+            TxtTotalPendientes.Text  = lista.Count(f => f.Estado == "pendiente").ToString();
+            TxtTotalEntregados.Text  = lista.Count(f => f.Estado == "pendiente revisar").ToString();
             LblTipoMovimiento.Text = tipoMov switch
             {
                 "salida"  => "Salidas de Productos",
@@ -253,9 +252,8 @@ namespace WpfAppVba
             }
             TxtTotalCantidad.Text    = totalCant.ToString("N0");
             TxtTotalDocumentos.Text  = lista.Count.ToString("N0");
-            TxtTotalPendientes.Text  = lista.Count(f => f.Estado == "pendiente"
-                                                     || f.Estado == "pendiente revisar").ToString();
-            TxtTotalEntregados.Text  = lista.Count(f => f.Estado == "entregado").ToString();
+            TxtTotalPendientes.Text  = lista.Count(f => f.Estado == "pendiente").ToString();
+            TxtTotalEntregados.Text  = lista.Count(f => f.Estado == "pendiente revisar").ToString();
             Grid1.Items.Refresh();
         }
 

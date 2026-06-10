@@ -373,6 +373,13 @@ namespace WpfAppVba
                 MessageBox.Show("Guardado exitoso", "Configuración",
                                 MessageBoxButton.OK, MessageBoxImage.Information);
 
+                // Si se cambió la sucursal activa, cerrar sesión y reabrir login.
+                if (sucursalCambio)
+                {
+                    CerrarSesionYReabrirLogin();
+                    return;
+                }
+
                 // Si está embebido en ConsolaMovimientos (tab), actualizar header; si es diálogo, cerrar
                 var w = Window.GetWindow(this);
                 if (w is ConsolaMovimientos cm)

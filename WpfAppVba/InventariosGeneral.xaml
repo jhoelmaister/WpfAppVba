@@ -76,7 +76,8 @@
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
             <Button Content="Nuevo Inventario"    Margin="0,0,6,0" Background="#1A73E8" Foreground="White"   Click="BtnNuevo_Click"    Style="{StaticResource Btn}"/>
             <Button Content="Editar Inventario"   Margin="0,0,6,0" Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeTexto}" Click="BtnEditar_Click"   Style="{StaticResource Btn}"/>
-            <Button Content="Eliminar Inventario" Margin="0,0,0,0" Background="#D93025" Foreground="White"   Click="BtnEliminar_Click" Style="{StaticResource Btn}"/>
+            <Button Content="Eliminar Inventario" Margin="0,0,6,0" Background="#D93025" Foreground="White"   Click="BtnEliminar_Click" Style="{StaticResource Btn}"/>
+            <Button Content="Actualizar"          Margin="0,0,0,0" Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeTexto}" Click="BtnActualizar_Click" Style="{StaticResource Btn}"/>
         </StackPanel>
     </Grid>
 </UserControl>
