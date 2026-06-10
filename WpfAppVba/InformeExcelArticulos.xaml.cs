@@ -160,8 +160,8 @@ namespace WpfAppVba
             var ws = wb.Worksheets.Add("Artículos");
 
             // ── Encabezados ───────────────────────────────────────────────
-            ws.Cell(1, 1).Value = "Id";
-            ws.Cell(1, 2).Value = "Productos";
+            ws.Cell(1, 1).Value = "Productos";
+            ws.Cell(1, 2).Value = "id";
             ws.Cell(1, 3).Value = "Categoría";
             ws.Cell(1, 4).Value = "Familia";
             ws.Cell(1, 5).Value = "Descripción Completa";
@@ -207,8 +207,8 @@ namespace WpfAppVba
             int row = 2;
             foreach (var item in datos)
             {
-                ws.Cell(row, 1).Value = item.id;
-                ws.Cell(row, 2).Value = item.prodDesc;
+                ws.Cell(row, 1).Value = item.prodDesc;
+                ws.Cell(row, 2).Value = item.id;
                 ws.Cell(row, 3).Value = item.catDesc;
                 ws.Cell(row, 4).Value = item.famDesc;
                 ws.Cell(row, 5).Value = item.descCompleta;
