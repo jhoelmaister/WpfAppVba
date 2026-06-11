@@ -74,7 +74,7 @@ namespace WpfAppVba
         {
             Box_DocumentoT.IsEnabled = false;
             string codigoDocEdit = Sql.DocumentosTObj.ObtenerItem("codigo", _idEditar)?.ToString() ?? "";
-            string signoEdit     = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
+            string signoEdit     = Sql.EmpresasObj.ObtenerItem("signo", AppState.EmpresaActiva)?.ToString() ?? "";
             Box_DocumentoT.Text = codigoDocEdit.StartsWith(signoEdit, StringComparison.OrdinalIgnoreCase)
                 ? codigoDocEdit.Substring(signoEdit.Length) : codigoDocEdit;
 
@@ -176,7 +176,7 @@ namespace WpfAppVba
         {
             _editarFormulario = true;
             Box_DocumentoT.IsEnabled = false;
-            string signo  = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
+            string signo  = Sql.EmpresasObj.ObtenerItem("signo", AppState.EmpresaActiva)?.ToString() ?? "";
             int    numero = Sql.DocumentosTObj.SiguienteNumeroDoc(signo, "sucursal", AppState.SucursalActiva);
             _codigoDocT          = $"{signo.ToUpper()}{numero}";
             Box_DocumentoT.Text      = numero.ToString();
