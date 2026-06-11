@@ -81,33 +81,18 @@ namespace WpfAppVba.Data
         /// </summary>
         public static void ConectarBases()
         {
-            string sucScope = ScopeSucursales();
+            string suc = AppState.SucursalActiva;
 
             Sql.DocumentosIObj.Conectar("documentosI",
                 $"SELECT * FROM documentosI " +
-                $"WHERE estadof = 'normal' AND sucursal {sucScope} " +
+                $"WHERE estadof = 'normal' AND sucursal = '{suc}' " +
                 $"ORDER BY fecha ASC");
 
             Sql.InventariosObj.Conectar("inventarios",
                 $"SELECT ctb2.* FROM inventarios AS ctb2 " +
                 $"INNER JOIN documentosI AS ctb ON ctb2.documentoI = ctb.id " +
-                $"WHERE ctb.estadof = 'normal' AND ctb.sucursal {sucScope} " +
+                $"WHERE ctb.estadof = 'normal' AND ctb.sucursal = '{suc}' " +
                 $"ORDER BY documentoI ASC, indice ASC");
-        }
-
-        // ─── Scope de sucursales según la empresa activa ─────────────────────
-        /// <summary>
-        /// Cláusula de filtrado de sucursales para los documentos: todas las
-        /// sucursales de la empresa activa (cascada empresa → sucursales). Si no
-        /// hay empresa activa, cae a la sucursal activa (comportamiento previo).
-        /// Se usa como: <c>sucursal {Scope}</c> o <c>origen {Scope}</c>.
-        /// </summary>
-        private static string ScopeSucursales()
-        {
-            string emp = AppState.EmpresaActiva;
-            return string.IsNullOrEmpty(emp)
-                ? $"= '{AppState.SucursalActiva}'"
-                : $"IN (SELECT id FROM sucursales WHERE empresa = '{emp}')";
         }
 
         // ─── ConectarDocumentos ───────────────────────────────────────────────
@@ -117,7 +102,7 @@ namespace WpfAppVba.Data
         /// </summary>
         public static void ConectarDocumentos(DateTime apertura, DateTime cierre)
         {
-            string sucScope = ScopeSucursales();
+            string suc = AppState.SucursalActiva;
             string aper = apertura.ToString("yyyyMMdd HH:mm:ss");
             string cier = cierre.ToString("yyyyMMdd HH:mm:ss");
 
@@ -126,7 +111,7 @@ namespace WpfAppVba.Data
                 $"SELECT * FROM documentosP " +
                 $"WHERE estadof = 'normal' " +
                 $"AND fecha >= '{aper}' AND fecha <= '{cier}' " +
-                $"AND sucursal {sucScope} " +
+                $"AND sucursal = '{suc}' " +
                 $"ORDER BY fecha ASC");
 
             // ── Pedidos ──────────────────────────────────────────────────────
@@ -135,7 +120,7 @@ namespace WpfAppVba.Data
                 $"INNER JOIN documentosP AS vg ON vd.documentoP = vg.id " +
                 $"WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
-                $"AND vg.sucursal {sucScope} " +
+                $"AND vg.sucursal = '{suc}' " +
                 $"ORDER BY vd.documentoP ASC, vd.indice ASC");
 
             // ── Transacciones ────────────────────────────────────────────────
@@ -144,7 +129,7 @@ namespace WpfAppVba.Data
                 $"INNER JOIN documentosP AS vg ON vd.documentoP = vg.id " +
                 $"WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
-                $"AND vg.sucursal {sucScope} " +
+                $"AND vg.sucursal = '{suc}' " +
                 $"ORDER BY vd.fecha ASC");
 
             // ── Entregas ─────────────────────────────────────────────────────
@@ -153,7 +138,7 @@ namespace WpfAppVba.Data
                 $"INNER JOIN documentosP AS vg ON vd.documentoP = vg.id " +
                 $"WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
-                $"AND vg.sucursal {sucScope} " +
+                $"AND vg.sucursal = '{suc}' " +
                 $"ORDER BY vd.documentoP ASC, vd.indice ASC");
 
             // ── DocumentosT (traspasos) ───────────────────────────────────────
@@ -161,7 +146,7 @@ namespace WpfAppVba.Data
                 $"SELECT * FROM documentosT " +
                 $"WHERE estadof = 'normal' " +
                 $"AND fecha >= '{aper}' AND fecha <= '{cier}' " +
-                $"AND (destino {sucScope} OR origen {sucScope}) " +
+                $"AND (destino = '{suc}' OR origen = '{suc}') " +
                 $"ORDER BY fecha ASC");
 
             // ── Traspasos ─────────────────────────────────────────────────────
@@ -170,7 +155,7 @@ namespace WpfAppVba.Data
                 $"INNER JOIN documentosT AS vg ON vd.documentoT = vg.id " +
                 $"WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
-                $"AND (vg.origen {sucScope} OR vg.destino {sucScope}) " +
+                $"AND (vg.origen = '{suc}' OR vg.destino = '{suc}') " +
                 $"ORDER BY vd.documentoT ASC, vd.indice ASC");
 
             // ── DocumentosC (correcciones de stock) ───────────────────────────
@@ -178,7 +163,7 @@ namespace WpfAppVba.Data
                 $"SELECT * FROM documentosC " +
                 $"WHERE estadof = 'normal' " +
                 $"AND fecha >= '{aper}' AND fecha <= '{cier}' " +
-                $"AND sucursal {sucScope} " +
+                $"AND sucursal = '{suc}' " +
                 $"ORDER BY fecha ASC");
 
             // ── Correcciones ──────────────────────────────────────────────────
@@ -187,7 +172,7 @@ namespace WpfAppVba.Data
                 $"INNER JOIN documentosC AS vg ON vd.documentoC = vg.id " +
                 $"WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
-                $"AND vg.sucursal {sucScope} " +
+                $"AND vg.sucursal = '{suc}' " +
                 $"ORDER BY vd.documentoC ASC, vd.indice ASC");
         }
     }
