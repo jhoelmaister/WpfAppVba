@@ -10,7 +10,7 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 - **Reportes Excel**: `ClosedXML 0.102.2`
 - **IDE recomendado**: Visual Studio 2022 / VS Code + extensión C#
 - **Proyecto**: `WpfAppVba/WpfAppVba.csproj`
-- **Rama de desarrollo activa**: `sistemaControl_1.5`
+- **Rama de desarrollo activa**: `claude/funny-franklin-tdjjrr`
 
 ## Lo Que Está Implementado y Funciona
 
@@ -161,7 +161,7 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - **Sin herramientas de build en el entorno cloud**: todos los cambios se aplican siguiendo patrones existentes, pero no pueden compilarse ni ejecutarse remotamente. Siempre verificar localmente antes de merge a producción.
 - **`AppState.TipoPedido` y `AppState.TipoMovimiento` son globales**: en `PedidosGeneral.AbrirEditar` se leen del DB antes de abrir la pestaña para garantizar el valor correcto. Si se abrieran dos pestañas de edición simultáneas muy rápido, podría haber condición de carrera (actualmente no es un problema práctico).
 - **`CorreccionesDetalle` ya es pestaña**: usa `OpenAsTab` de ArticulosGeneral para buscar artículos, igual que Pedidos/Traspasos.
-- **Rama de trabajo**: todos los cambios van a `sistemaControl_1.5`. Los commits se generan primero en una rama de sesión (`claude/...`) y luego se pasan a `sistemaControl_1.5` por fast-forward.
+- **Rama de trabajo**: todos los cambios van a `claude/funny-franklin-tdjjrr`. Es la rama activa de desarrollo.
 
 ## Historial de Cambios por Sesión
 
@@ -178,7 +178,44 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 
 ### Sesión anterior (antes de compactación)
 - **Botón X de pestañas dinámicas**: ahora llama `IntentarCerrar()` vía reflexión si el contenido lo implementa, protegiendo cambios no guardados antes de cerrar.
-- **CONTEXT.md**: actualizado para reflejar que `CorreccionesDetalle` y `ArticulosDetalle` ya estaban migrados a pestañas en sesiones anteriores.
+
+### Sesión 2026-06-11 — Refactor id/codigo (commit c5002d6)
+Separación completa del campo `id` interno (UUID) del campo `codigo` visible al usuario en todos los formularios. **41 archivos modificados.**
+
+#### Infraestructura
+- **`AppState.cs`**: `SucursalActiva`, `RegionActiva`, `UsuarioActivo`, `AperturaIdActiva` cambiados de `long` a `string`.
+- **`DataConsulta.cs`**:
+  - `BuscarIdentificador()` ahora devuelve `string` en vez de `long`.
+  - Nuevo método `SiguienteCodigoInt()`: `MAX(CAST(codigo AS INT)) + 1` para tablas maestras.
+  - Nuevo método `SiguienteNumeroDoc(signo, filtroColumna, filtroValor)`: siguiente número de documento filtrado por sucursal o región activa; devuelve solo el número (sin el signo).
+  - Nuevo método `CodigoExiste(codigo, idActual?)`: verifica duplicados antes de guardar.
+  - Fix DELETE: ids UUID se citan correctamente en SQL (`'uuid'` con comillas).
+- **`AppLoader.cs`, `StockCalculator.cs`, `LoginWindow.xaml.cs`, `Configuracion.xaml.cs`, `ConsolaMovimientos.xaml.cs`**: actualizados para usar `AppState` con campos `string`.
+
+#### Formularios maestros (Productos, Industrias, Categorías, Regiones, Terceros, Familias, Sucursales, Artículos)
+- Modo nuevo: `id = Guid.NewGuid().ToString()`; `codigo` = entero autoincremental sugerido via `SiguienteCodigoInt()`, editable por el usuario.
+- Modo editar: usa `_idEditar` (UUID) como clave interna; `Box_Codigo` muestra el `codigo` legible.
+- Validación: `CodigoExiste()` antes de guardar nuevo; si ya existe, sugiere el siguiente disponible.
+- `OrdenarData(("codigo", false))` en todos (antes `("id", false)`).
+- Campos FK en formularios: muestran `codigo` del registro referenciado (no el UUID). Al guardar, se resuelve el UUID internamente con `BuscarIdentificador("codigo", cod)`.
+- Helpers `ResolverXxxId()` agregados en los formularios con FK (Familias→Producto, Sucursales→Región, Artículos→Familia/Industria/Categoría).
+
+#### Formularios de documentos (Pedidos, Traspasos, Correcciones, Inventarios, Precios)
+- `codigo` del documento = `signo_sucursal + numero` (ej. `"A5"`); al usuario solo se muestra el número (`"5"`); el campo Box_DocumentoX queda deshabilitado.
+- `id` del documento = `Guid.NewGuid().ToString()` (nunca visible).
+- Precios: usa `signo_region` (de `AppState.RegionActiva`) en vez de signo de sucursal.
+- Sub-registros de líneas (pedidos, trasacciones, entregas, corrección-líneas, inventario-líneas): también usan `Guid.NewGuid().ToString()` como id (antes `$"{docP}{i:D3}"`).
+- FK de tercero: `Box_Tercero_Identificador` muestra `codigo` del tercero; se resuelve UUID con `ResolverTerceroId()` al guardar.
+- Eliminado `VerificarId()` para documentos; la generación automática de UUID garantiza unicidad.
+
+#### Formularios General (todas las secciones)
+- `Seleccionar()` devuelve `fila.Codigo` (antes `fila.Id`).
+- Títulos de pestañas usan `fila.Codigo` (ej. `"Artículo A123"` en vez de UUID).
+- Columnas de DataGrid vinculadas a `Binding="{Binding Codigo}"` donde antes usaban `Id`.
+- `ConstruirFila()`: poblada con `Codigo = Sql.XxxObj.ObtenerItem("codigo", id)?.ToString() ?? ""`.
+
+#### Limpieza
+- Eliminadas todas las llamadas redundantes `.ToString()` sobre propiedades `string` de `AppState` en: `PedidosGeneral`, `TraspasosGeneral`, `CorreccionesGeneral`, `MovimientosGeneral`, `MovimientosWindow`, `InventariosGeneral`.
 
 ### Sesión 2026-06-10 — rama `master`
 
@@ -376,9 +413,9 @@ dotnet run --project WpfAppVba.csproj
 
 ### Git (rama activa)
 ```bash
-git checkout sistemaControl_1.5
-git pull origin sistemaControl_1.5
-git push -u origin sistemaControl_1.5
+git checkout claude/funny-franklin-tdjjrr
+git pull origin claude/funny-franklin-tdjjrr
+git push -u origin claude/funny-franklin-tdjjrr
 ```
 
 ### Restaurar paquetes NuGet (si es necesario)
