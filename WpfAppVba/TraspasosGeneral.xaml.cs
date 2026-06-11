@@ -149,6 +149,7 @@ namespace WpfAppVba
                 {
                     Linea        = linea++,
                     DocumentoT   = id,
+                    Codigo       = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                     FechaStr     = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                     Movimiento   = movActual,
                     SucursalDesc = otroSucDesc,
@@ -232,6 +233,7 @@ namespace WpfAppVba
             {
                 Linea        = linea,
                 DocumentoT   = id,
+                Codigo       = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 FechaStr     = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                 Movimiento   = esSalida ? "salida" : "entrada",
                 SucursalDesc = otroSucDesc,
@@ -507,6 +509,7 @@ namespace WpfAppVba
     {
         public int    Linea        { get; set; }
         public string DocumentoT   { get; set; } = "";
+        public string Codigo       { get; set; } = "";
         public string FechaStr     { get; set; } = "";
         public string Movimiento   { get; set; } = "";
         public string SucursalDesc { get; set; } = "";

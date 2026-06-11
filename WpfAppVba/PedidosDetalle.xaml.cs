@@ -99,7 +99,7 @@ namespace WpfAppVba
         {
             string signoN = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
             int    numN   = Sql.DocumentosPObj.SiguienteNumeroDoc(signoN, "sucursal", AppState.SucursalActiva);
-            _codigoDocP          = $"{signoN}{numN}";
+            _codigoDocP          = $"{signoN.ToUpper()}{numN}";
             Box_DocumentoP.Text      = numN.ToString();
             Box_DocumentoP.IsEnabled = false;
 

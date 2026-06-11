@@ -187,7 +187,7 @@ namespace WpfAppVba
                 // Código del precio = signo de la región activa + correlativo
                 string signo  = Sql.RegionesObj.ObtenerItem("signo", AppState.RegionActiva)?.ToString() ?? "";
                 int    numero = Sql.PreciosObj.SiguienteNumeroDoc(signo, "region", AppState.RegionActiva);
-                string codigoPrecio = $"{signo}{numero}";
+                string codigoPrecio = $"{signo.ToUpper()}{numero}";
 
                 Sql.PreciosObj.Nuevo(id);
                 Sql.PreciosObj.EstablecerItem("codigo",   id, codigoPrecio);

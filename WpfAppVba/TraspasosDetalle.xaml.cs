@@ -178,7 +178,7 @@ namespace WpfAppVba
             Box_DocumentoT.IsEnabled = false;
             string signo  = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
             int    numero = Sql.DocumentosTObj.SiguienteNumeroDoc(signo, "sucursal", AppState.SucursalActiva);
-            _codigoDocT          = $"{signo}{numero}";
+            _codigoDocT          = $"{signo.ToUpper()}{numero}";
             Box_DocumentoT.Text      = numero.ToString();
 
             DateTime ahora = DateTime.Now;

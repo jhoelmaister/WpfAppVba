@@ -40,6 +40,7 @@ namespace WpfAppVba
                 {
                     Linea         = linea++,
                     Id            = id,
+                    Codigo        = Sql.DocumentosIObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                     Fecha         = fecha,
                     FechaStr      = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                     CantidadTotal = cantidad
@@ -61,6 +62,7 @@ namespace WpfAppVba
             {
                 Linea         = linea,
                 Id            = id,
+                Codigo        = Sql.DocumentosIObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 Fecha         = fecha,
                 FechaStr      = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                 CantidadTotal = CalcularCantidad(id)
@@ -243,6 +245,7 @@ namespace WpfAppVba
     {
         public int      Linea         { get; set; }
         public string   Id            { get; set; } = "";
+        public string   Codigo        { get; set; } = "";
         public DateTime Fecha         { get; set; }
         public string   FechaStr      { get; set; } = "";
         public double   CantidadTotal { get; set; }

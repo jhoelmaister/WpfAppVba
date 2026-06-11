@@ -108,6 +108,7 @@ namespace WpfAppVba
                 {
                     Linea         = linea++,
                     Id            = id,
+                    Codigo        = Sql.DocumentosCObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                     Fecha         = fechaDoc,
                     FechaStr      = fechaDoc != default ? $"{fechaDoc:d} {fechaDoc:HH:mm:ss}" : "",
                     Movimiento    = movimiento,
@@ -168,6 +169,7 @@ namespace WpfAppVba
             {
                 Linea         = linea,
                 Id            = id,
+                Codigo        = Sql.DocumentosCObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 Fecha         = fecha,
                 FechaStr      = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                 Movimiento    = Sql.DocumentosCObj.ObtenerItem("movimiento", id)?.ToString() ?? "",
@@ -438,6 +440,7 @@ namespace WpfAppVba
     {
         public int      Linea         { get; set; }
         public string   Id            { get; set; } = "";
+        public string   Codigo        { get; set; } = "";
         public DateTime Fecha         { get; set; }
         public string   FechaStr      { get; set; } = "";
         public string   Movimiento    { get; set; } = "";

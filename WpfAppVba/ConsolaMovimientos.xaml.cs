@@ -78,7 +78,13 @@ namespace WpfAppVba
         // ─── Info usuario ─────────────────────────────────────────────────────
         public void ActualizarInfoUsuario()
         {
-            LblUsuario.Text = $"Usuario: {AppState.UsuarioActivo}  |  Período: {AppState.PeriodoActivo}";
+            var sql = SqlData.Instance;
+            string nombres = sql.UsuariosObj.ObtenerItem("nombres", AppState.UsuarioActivo)?.ToString() ?? "";
+            if (string.IsNullOrWhiteSpace(nombres)) nombres = AppState.UsuarioActivo;
+            string sucursalDesc = sql.SucursalesObj.ObtenerItem("descripcion", AppState.SucursalActiva)?.ToString() ?? "";
+
+            LblUsuario.Text  = $"Usuario: {nombres}  |  Período: {AppState.PeriodoActivo}";
+            LblSucursal.Text = $"Sucursal: {sucursalDesc}";
         }
 
         // ─── Navegación por pestañas ──────────────────────────────────────────

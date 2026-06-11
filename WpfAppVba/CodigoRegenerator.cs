@@ -81,7 +81,7 @@ namespace WpfAppVba.Data
         {
             string sql =
                 $";WITH cte AS (" +
-                $"  SELECT d.codigo AS codigo, ISNULL(s.signo, '') AS signo, " +
+                $"  SELECT d.codigo AS codigo, ISNULL(UPPER(s.signo), '') AS signo, " +
                 $"         ROW_NUMBER() OVER (PARTITION BY d.{colSucursal} ORDER BY d.fecha, d.id) AS rn " +
                 $"  FROM {tabla} AS d " +
                 $"  LEFT JOIN sucursales AS s ON s.id = d.{colSucursal} " +
@@ -94,7 +94,7 @@ namespace WpfAppVba.Data
         {
             string sql =
                 ";WITH cte AS (" +
-                "  SELECT p.codigo AS codigo, ISNULL(r.signo, '') AS signo, " +
+                "  SELECT p.codigo AS codigo, ISNULL(UPPER(r.signo), '') AS signo, " +
                 "         ROW_NUMBER() OVER (PARTITION BY p.region ORDER BY p.fecha, p.id) AS rn " +
                 "  FROM precios AS p " +
                 "  LEFT JOIN regiones AS r ON r.id = p.region " +
