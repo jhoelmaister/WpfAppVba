@@ -294,7 +294,8 @@ namespace WpfAppVba
 
         private void MostrarDetalle(string documentoP)
         {
-            LblDetalleHeader.Text = $"Artículos del documento {documentoP}";
+            string codigoDoc = Sql.DocumentosPObj.ObtenerItem("codigo", documentoP)?.ToString() ?? documentoP;
+            LblDetalleHeader.Text = $"Artículos del documento {codigoDoc}";
             var detalles = new List<PedidoDetalleFila>();
             int linea = 1;
 
@@ -508,7 +509,7 @@ namespace WpfAppVba
             AppState.TipoPedido     = Sql.DocumentosPObj.ObtenerItem("tipo",       docSel)?.ToString() ?? "rapido";
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            var dlg = new PedidosDetalle(this, docSel, tituloTab: $"Pedido {docSel}");
+            var dlg = new PedidosDetalle(this, docSel, tituloTab: $"Pedido {fila.Codigo}");
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);
@@ -523,7 +524,7 @@ namespace WpfAppVba
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña($"Pedido {docSel}", dlg, $"pedido-{docSel}");
+            consola.AbrirPestaña($"Pedido {fila.Codigo}", dlg, $"pedido-{docSel}");
         }
     }
 

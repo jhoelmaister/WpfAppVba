@@ -279,7 +279,8 @@ namespace WpfAppVba
 
         private void MostrarDetalle(string documentoT)
         {
-            LblDetalleHeader.Text = $"Artículos del documento {documentoT}";
+            string codigoDoc = Sql.DocumentosTObj.ObtenerItem("codigo", documentoT)?.ToString() ?? documentoT;
+            LblDetalleHeader.Text = $"Artículos del documento {codigoDoc}";
             var detalles = new List<TraspasoDetalleFila>();
             int linea = 1;
 
@@ -485,7 +486,7 @@ namespace WpfAppVba
             AppState.TipoMovimiento = origenDoc == AppState.SucursalActiva ? "salida" : "entrada";
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            var dlg = new TraspasosDetalle(this, docSel, tituloTab: $"Traspaso {docSel}");
+            var dlg = new TraspasosDetalle(this, docSel, tituloTab: $"Traspaso {fila.Codigo}");
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);
@@ -500,7 +501,7 @@ namespace WpfAppVba
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña($"Traspaso {docSel}", dlg, $"traspaso-{docSel}");
+            consola.AbrirPestaña($"Traspaso {fila.Codigo}", dlg, $"traspaso-{docSel}");
         }
     }
 

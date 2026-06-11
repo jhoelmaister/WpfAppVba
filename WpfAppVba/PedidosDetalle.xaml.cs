@@ -100,7 +100,7 @@ namespace WpfAppVba
             string signoN = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
             int    numN   = Sql.DocumentosPObj.SiguienteNumeroDoc(signoN, "sucursal", AppState.SucursalActiva);
             _codigoDocP          = $"{signoN.ToUpper()}{numN}";
-            Box_DocumentoP.Text      = numN.ToString();
+            Box_DocumentoP.Text      = _codigoDocP;
             Box_DocumentoP.IsEnabled = false;
 
             string tipoPedido = AppState.TipoPedido.ToLower();
@@ -135,9 +135,7 @@ namespace WpfAppVba
         {
             Box_DocumentoP.IsEnabled = false;
             string codigoDocEdit = Sql.DocumentosPObj.ObtenerItem("codigo", _idEditar)?.ToString() ?? "";
-            string signoEdit     = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
-            Box_DocumentoP.Text = codigoDocEdit.StartsWith(signoEdit, StringComparison.OrdinalIgnoreCase)
-                ? codigoDocEdit.Substring(signoEdit.Length) : codigoDocEdit;
+            Box_DocumentoP.Text = codigoDocEdit;
 
             var fechaObj = Sql.DocumentosPObj.ObtenerItem("fecha", _idEditar);
             DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : DateTime.Now;

@@ -75,9 +75,7 @@ namespace WpfAppVba
         {
             Box_DocumentoI.IsEnabled = false;
             string codigoDocEdit = Sql.DocumentosIObj.ObtenerItem("codigo", _idEditar)?.ToString() ?? "";
-            string signoEdit     = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
-            Box_DocumentoI.Text = codigoDocEdit.StartsWith(signoEdit, StringComparison.OrdinalIgnoreCase)
-                ? codigoDocEdit.Substring(signoEdit.Length) : codigoDocEdit;
+            Box_DocumentoI.Text = codigoDocEdit;
 
             var fechaObj = Sql.DocumentosIObj.ObtenerItem("fecha", _idEditar);
             DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : DateTime.Now;
@@ -122,7 +120,7 @@ namespace WpfAppVba
             string signo  = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
             int    numero = Sql.DocumentosIObj.SiguienteNumeroDoc(signo, "sucursal", AppState.SucursalActiva);
             _codigoDocI          = $"{signo.ToUpper()}{numero}";
-            Box_DocumentoI.Text  = numero.ToString();
+            Box_DocumentoI.Text  = _codigoDocI;
             Box_Fecha.SelectedDate = DateTime.Today;
             Box_Hora.Text          = DateTime.Now.ToString("HH:mm:ss");
             _items.Clear();

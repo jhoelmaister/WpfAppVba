@@ -214,7 +214,8 @@ namespace WpfAppVba
         // ─── Panel de detalle artículos (Lista2) ─────────────────────────────
         private void MostrarDetalle(string documentoC)
         {
-            LblDetalleHeader.Text = $"Artículos del documento {documentoC}";
+            string codigoDoc = Sql.DocumentosCObj.ObtenerItem("codigo", documentoC)?.ToString() ?? documentoC;
+            LblDetalleHeader.Text = $"Artículos del documento {codigoDoc}";
             var detalles = new List<CorreccionDetalleFila>();
             int linea = 1;
 
@@ -415,7 +416,7 @@ namespace WpfAppVba
 
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            string titulo = $"Corrección {idSel}";
+            string titulo = $"Corrección {fila.Codigo}";
             var dlg = new CorreccionesDetalle(this, idSel, tituloTab: titulo);
             dlg.Cerrando += () =>
             {

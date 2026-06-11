@@ -236,7 +236,7 @@ namespace WpfAppVba
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña($"Inventario {idSel}", detalle, $"inventario-{idSel}");
+            consola.AbrirPestaña($"Inventario {fila.Codigo}", detalle, $"inventario-{idSel}");
         }
     }
 
