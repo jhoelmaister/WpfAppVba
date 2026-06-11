@@ -126,6 +126,11 @@
                         Background="#D93025" Foreground="White"
                         BorderThickness="0" Cursor="Hand"
                         Click="BtnEliminarServidor_Click"/>
+                <Button x:Name="BtnRegenerarCodigos" Content="🔢 Regenerar códigos"
+                        Height="32" FontSize="12" FontWeight="SemiBold" Padding="14,0"
+                        Background="#6A1B9A" Foreground="White"
+                        BorderThickness="0" Cursor="Hand" Margin="8,0,0,0"
+                        Click="BtnRegenerarCodigos_Click"/>
             </StackPanel>
 
             <TextBlock Grid.Row="3" FontSize="11" Foreground="{DynamicResource ThemeTextoMuted}"
