@@ -21,9 +21,14 @@ namespace WpfAppVba.Data
         };
 
         // Documentos → código = signo de la sucursal + correlativo por sucursal.
-        private static readonly string[] Documentos =
+        // Cada documento indica la columna que identifica su sucursal:
+        //   documentosT (traspasos) no tiene 'sucursal'; se agrupa por 'emitido'.
+        private static readonly (string tabla, string colSucursal)[] Documentos =
         {
-            "documentosT", "documentosI", "documentosP", "documentosC"
+            ("documentosT", "emitido"),
+            ("documentosI", "sucursal"),
+            ("documentosP", "sucursal"),
+            ("documentosC", "sucursal")
         };
 
         /// <summary>
@@ -41,8 +46,8 @@ namespace WpfAppVba.Data
                 foreach (var t in Maestras)
                     resumen.AppendLine($"{t}: {RenumerarMaestra(conn, tx, t)}");
 
-                foreach (var t in Documentos)
-                    resumen.AppendLine($"{t}: {RenumerarDocumentoPorSucursal(conn, tx, t)}");
+                foreach (var (tabla, colSucursal) in Documentos)
+                    resumen.AppendLine($"{tabla}: {RenumerarDocumentoPorSucursal(conn, tx, tabla, colSucursal)}");
 
                 resumen.AppendLine($"precios: {RenumerarPreciosPorRegion(conn, tx)}");
 
@@ -69,14 +74,17 @@ namespace WpfAppVba.Data
         }
 
         // ─── Documentos: codigo = signo + correlativo por sucursal ───────────
-        private static int RenumerarDocumentoPorSucursal(SqlConnection conn, SqlTransaction tx, string tabla)
+        // <paramref name="colSucursal"/> es la columna del documento que apunta
+        // al id de la sucursal (p. ej. 'sucursal' o 'emitido').
+        private static int RenumerarDocumentoPorSucursal(SqlConnection conn, SqlTransaction tx,
+                                                         string tabla, string colSucursal)
         {
             string sql =
                 $";WITH cte AS (" +
                 $"  SELECT d.codigo AS codigo, ISNULL(s.signo, '') AS signo, " +
-                $"         ROW_NUMBER() OVER (PARTITION BY d.sucursal ORDER BY d.fecha, d.id) AS rn " +
+                $"         ROW_NUMBER() OVER (PARTITION BY d.{colSucursal} ORDER BY d.fecha, d.id) AS rn " +
                 $"  FROM {tabla} AS d " +
-                $"  LEFT JOIN sucursales AS s ON s.id = d.sucursal " +
+                $"  LEFT JOIN sucursales AS s ON s.id = d.{colSucursal} " +
                 $") UPDATE cte SET codigo = signo + CAST(rn AS NVARCHAR(50));";
             return Ejecutar(conn, tx, sql);
         }
