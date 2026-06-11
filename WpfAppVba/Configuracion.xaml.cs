@@ -173,6 +173,7 @@ namespace WpfAppVba
         {
             AppState.SesionActiva  = false;
             AppState.UsuarioActivo = "";
+            AppState.EmpresaActiva = "";
             DatabaseConnection.CerrarConexion();
 
             // LoginWindow lee el servidor activo desde ConexionConfig,

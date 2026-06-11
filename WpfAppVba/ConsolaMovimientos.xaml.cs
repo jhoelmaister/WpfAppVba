@@ -380,6 +380,7 @@ namespace WpfAppVba
         {
             AppState.SesionActiva  = false;
             AppState.UsuarioActivo = "";
+            AppState.EmpresaActiva = "";
             DatabaseConnection.CerrarConexion();
 
             var login = new LoginWindow();

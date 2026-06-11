@@ -126,6 +126,7 @@ namespace WpfAppVba
             if (encontrado)
             {
                 AppState.UsuarioActivo  = idEncontrado;
+                AppState.EmpresaActiva  = Sql.UsuariosObj.ObtenerItem("empresa",  idEncontrado)?.ToString() ?? "";
                 AppState.SucursalActiva = Sql.UsuariosObj.ObtenerItem("sucursal", idEncontrado)?.ToString() ?? "";
                 AppState.RegionActiva   = Sql.SucursalesObj.ObtenerItem("region", AppState.SucursalActiva)?.ToString() ?? "";
                 AppState.SesionActiva   = true;
@@ -136,6 +137,10 @@ namespace WpfAppVba
                     ? ThemeManager.TemaOscuro
                     : ThemeManager.TemaClaro;
                 ThemeManager.AplicarTema(AppState.TemaActivo);
+
+                // Recargar catálogos ya filtrados por la empresa del usuario.
+                MostrarEstado("Cargando catálogos de la empresa...", Colors.Green);
+                await Task.Run(() => AppLoader.ConectarProductos());
 
                 MostrarEstado("Conectando a base de datos principal...", Colors.Green);
                 await Task.Run(() => AppLoader.ConectarBases());

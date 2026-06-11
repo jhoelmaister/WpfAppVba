@@ -12,6 +12,7 @@ namespace WpfAppVba.Data
     {
         // ─── Estado de sesión ─────────────────────────────────────────────────
         public static bool   SesionActiva      { get; set; } = false;
+        public static string EmpresaActiva     { get; set; } = "";
         public static string RegionActiva      { get; set; } = "";
         public static string SucursalActiva    { get; set; } = "";
         public static string UsuarioActivo     { get; set; } = "";
