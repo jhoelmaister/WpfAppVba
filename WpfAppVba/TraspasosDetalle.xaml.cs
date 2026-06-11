@@ -177,7 +177,7 @@ namespace WpfAppVba
             _editarFormulario = true;
             Box_DocumentoT.IsEnabled = false;
             string signo  = Sql.EmpresasObj.ObtenerItem("signo", AppState.EmpresaActiva)?.ToString() ?? "";
-            int    numero = Sql.DocumentosTObj.SiguienteNumeroDoc(signo, "sucursal", AppState.SucursalActiva);
+            int    numero = Sql.DocumentosTObj.SiguienteNumeroDocPorEmpresa(signo, AppState.EmpresaActiva);
             _codigoDocT          = $"{signo.ToUpper()}{numero}";
             Box_DocumentoT.Text      = numero.ToString();
 
