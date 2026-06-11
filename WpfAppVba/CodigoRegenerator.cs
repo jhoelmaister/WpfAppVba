@@ -9,14 +9,14 @@ namespace WpfAppVba.Data
     ///   • Maestras  → numeración secuencial 1..N.
     ///   • documentosT/I/P/C → signo de la sucursal + correlativo por sucursal.
     ///   • precios   → signo de la región + correlativo por región.
-    /// Trabaja directamente sobre SQL Server (solo filas en estado normal).
+    /// Trabaja directamente sobre SQL Server y reescribe TODAS las filas.
     /// </summary>
     public static class CodigoRegenerator
     {
         // Tablas maestras → código entero secuencial.
         private static readonly string[] Maestras =
         {
-            "familias", "productos", "Categorias", "industrias",
+            "usuarios", "familias", "productos", "Categorias", "industrias",
             "terceros", "sucursales", "regiones"
         };
 
@@ -63,7 +63,7 @@ namespace WpfAppVba.Data
             string sql =
                 $";WITH cte AS (" +
                 $"  SELECT codigo, ROW_NUMBER() OVER (ORDER BY id) AS rn " +
-                $"  FROM {tabla} WHERE estadof = 'normal'" +
+                $"  FROM {tabla}" +
                 $") UPDATE cte SET codigo = CAST(rn AS NVARCHAR(50));";
             return Ejecutar(conn, tx, sql);
         }
@@ -77,7 +77,6 @@ namespace WpfAppVba.Data
                 $"         ROW_NUMBER() OVER (PARTITION BY d.sucursal ORDER BY d.fecha, d.id) AS rn " +
                 $"  FROM {tabla} AS d " +
                 $"  LEFT JOIN sucursales AS s ON s.id = d.sucursal " +
-                $"  WHERE d.estadof = 'normal'" +
                 $") UPDATE cte SET codigo = signo + CAST(rn AS NVARCHAR(50));";
             return Ejecutar(conn, tx, sql);
         }
@@ -91,7 +90,6 @@ namespace WpfAppVba.Data
                 "         ROW_NUMBER() OVER (PARTITION BY p.region ORDER BY p.fecha, p.id) AS rn " +
                 "  FROM precios AS p " +
                 "  LEFT JOIN regiones AS r ON r.id = p.region " +
-                "  WHERE p.estadof = 'normal'" +
                 ") UPDATE cte SET codigo = signo + CAST(rn AS NVARCHAR(50));";
             return Ejecutar(conn, tx, sql);
         }
