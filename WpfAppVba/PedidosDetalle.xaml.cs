@@ -29,6 +29,7 @@ namespace WpfAppVba
 
         private readonly HashSet<string> _articulosAlertados = new();
         private string                   _observaciones = "";
+        private string                   _codigoDocP    = "";
 
         public string? DocumentoCreadoId { get; private set; }
 
@@ -96,9 +97,11 @@ namespace WpfAppVba
         // ─── Modo nuevo ───────────────────────────────────────────────────────
         private void CargarParaNuevo()
         {
-            Box_DocumentoP.IsEnabled = true;
-            long siguiente = Convert.ToInt64(Sql.DocumentosPObj.Maximo("id") ?? 0) + 1;
-            Box_DocumentoP.Text = siguiente.ToString();
+            string signoN = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
+            int    numN   = Sql.DocumentosPObj.SiguienteNumeroDoc(signoN, "sucursal", AppState.SucursalActiva);
+            _codigoDocP          = $"{signoN}{numN}";
+            Box_DocumentoP.Text      = numN.ToString();
+            Box_DocumentoP.IsEnabled = false;
 
             string tipoPedido = AppState.TipoPedido.ToLower();
             DateTime ahora = DateTime.Now;
@@ -131,15 +134,18 @@ namespace WpfAppVba
         private void CargarParaEditar()
         {
             Box_DocumentoP.IsEnabled = false;
-            Box_DocumentoP.Text = _idEditar;
+            string codigoDocEdit = Sql.DocumentosPObj.ObtenerItem("codigo", _idEditar)?.ToString() ?? "";
+            string signoEdit     = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
+            Box_DocumentoP.Text = codigoDocEdit.StartsWith(signoEdit, StringComparison.OrdinalIgnoreCase)
+                ? codigoDocEdit.Substring(signoEdit.Length) : codigoDocEdit;
 
             var fechaObj = Sql.DocumentosPObj.ObtenerItem("fecha", _idEditar);
             DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : DateTime.Now;
             Box_Fecha.SelectedDate = fecha.Date;
             Box_Hora.Text = fecha.ToString("HH:mm:ss");
 
-            string terceroId = Sql.DocumentosPObj.ObtenerItem("tercero", _idEditar)?.ToString() ?? "";
-            Box_Tercero_Identificador.Text = terceroId;
+            string terceroUuid = Sql.DocumentosPObj.ObtenerItem("tercero", _idEditar)?.ToString() ?? "";
+            Box_Tercero_Identificador.Text = Sql.TercerosObj.ObtenerItem("codigo", terceroUuid)?.ToString() ?? "";
             ActualizarDescripcionTercero();
 
             string estadoVal = Sql.DocumentosPObj.ObtenerItem("estado", _idEditar)?.ToString() ?? "pendiente";
@@ -258,10 +264,16 @@ namespace WpfAppVba
         // ─── Helpers ──────────────────────────────────────────────────────────
         private void SeleccionarEstado(string valor) => Box_Estado.Text = valor;
 
+        private string ResolverTerceroId()
+        {
+            string cod = Box_Tercero_Identificador.Text.Trim();
+            return cod == "" ? "" : Sql.TercerosObj.BuscarIdentificador("codigo", cod);
+        }
+
         private void ActualizarDescripcionTercero()
         {
-            string id = Box_Tercero_Identificador.Text.Trim();
-            Box_Tercero_Descripcion.Text = Sql.TercerosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+            string id = ResolverTerceroId();
+            Box_Tercero_Descripcion.Text = id == "" ? "" : Sql.TercerosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
         }
 
         private static string ObtenerDescripcionArticulo(string artId)
@@ -685,10 +697,9 @@ namespace WpfAppVba
             if (col == "Código" && e.EditingElement is TextBox tbCod)
             {
                 string codigo = tbCod.Text.Trim();
-                long artIdNum = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
-                if (artIdNum > 0)
+                string artId = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
+                if (!string.IsNullOrEmpty(artId))
                 {
-                    string artId = artIdNum.ToString();
                     fila.ArticuloId  = artId;
                     fila.Codigo      = codigo;
                     fila.Descripcion = ObtenerDescripcionArticulo(artId);
@@ -1054,10 +1065,10 @@ namespace WpfAppVba
             if (e.Column.Header?.ToString() == "Código" && e.EditingElement is TextBox tbCod)
             {
                 string codigo = tbCod.Text.Trim();
-                long artIdNum = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
-                if (artIdNum > 0)
+                string artId = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
+                if (!string.IsNullOrEmpty(artId))
                 {
-                    fila.ArticuloId  = artIdNum.ToString();
+                    fila.ArticuloId  = artId;
                     fila.Codigo      = codigo;
                     fila.Descripcion = ObtenerDescripcionArticulo(fila.ArticuloId);
                 }
@@ -1269,44 +1280,41 @@ namespace WpfAppVba
 
         private bool GuardarNuevo()
         {
-            string docP = Box_DocumentoP.Text.Trim();
-            if (string.IsNullOrEmpty(docP))
-            { MessageBox.Show("Ingrese el número de documento.", "Consola", MessageBoxButton.OK, MessageBoxImage.Warning); return false; }
-
             try
             {
-                if (!Sql.DocumentosPObj.VerificarId(docP, "id"))
-                { MessageBox.Show("El número de documento ya existe.", "Consola", MessageBoxButton.OK, MessageBoxImage.Warning); return false; }
+                string id     = Guid.NewGuid().ToString();
+                string codigo = _codigoDocP;
 
                 DateTime fechaFinal = CombinarFechaHora(Box_Fecha.SelectedDate ?? DateTime.Today, Box_Hora.Text);
                 string estado  = Box_Estado.Text;
                 string cuenta  = Box_Cuenta.Text;
                 string tipoPed = AppState.TipoPedido.ToLower();
 
-                Sql.DocumentosPObj.Nuevo(docP);
-                Sql.DocumentosPObj.EstablecerItem("sucursal",    docP, AppState.SucursalActiva);
-                Sql.DocumentosPObj.EstablecerItem("tercero",     docP, Box_Tercero_Identificador.Text.Trim());
-                Sql.DocumentosPObj.EstablecerItem("movimiento",  docP, AppState.TipoMovimiento);
-                Sql.DocumentosPObj.EstablecerItem("estado",      docP, estado);
-                Sql.DocumentosPObj.EstablecerItem("fecha",       docP, fechaFinal);
-                Sql.DocumentosPObj.EstablecerItem("referencia",  docP, Box_Referencia.Text.Trim());
-                Sql.DocumentosPObj.EstablecerItem("observacion", docP, _observaciones);
-                Sql.DocumentosPObj.EstablecerItem("estadoC",     docP, cuenta);
-                Sql.DocumentosPObj.EstablecerItem("tipo",        docP, tipoPed);
-                Sql.DocumentosPObj.EstablecerItem("emision",     docP, DateTime.Now);
-                Sql.DocumentosPObj.EstablecerItem("edicion",     docP, DateTime.Now);
-                Sql.DocumentosPObj.EstablecerItem("emitido",     docP, AppState.SucursalActiva);
-                Sql.DocumentosPObj.EstablecerItem("usuario",     docP, AppState.UsuarioActivo);
-                Sql.DocumentosPObj.EstablecerItem("usuarioE",    docP, AppState.UsuarioActivo);
+                Sql.DocumentosPObj.Nuevo(id);
+                Sql.DocumentosPObj.EstablecerItem("codigo",      id, codigo);
+                Sql.DocumentosPObj.EstablecerItem("sucursal",    id, AppState.SucursalActiva);
+                Sql.DocumentosPObj.EstablecerItem("tercero",     id, ResolverTerceroId());
+                Sql.DocumentosPObj.EstablecerItem("movimiento",  id, AppState.TipoMovimiento);
+                Sql.DocumentosPObj.EstablecerItem("estado",      id, estado);
+                Sql.DocumentosPObj.EstablecerItem("fecha",       id, fechaFinal);
+                Sql.DocumentosPObj.EstablecerItem("referencia",  id, Box_Referencia.Text.Trim());
+                Sql.DocumentosPObj.EstablecerItem("observacion", id, _observaciones);
+                Sql.DocumentosPObj.EstablecerItem("estadoC",     id, cuenta);
+                Sql.DocumentosPObj.EstablecerItem("tipo",        id, tipoPed);
+                Sql.DocumentosPObj.EstablecerItem("emision",     id, DateTime.Now);
+                Sql.DocumentosPObj.EstablecerItem("edicion",     id, DateTime.Now);
+                Sql.DocumentosPObj.EstablecerItem("emitido",     id, AppState.SucursalActiva);
+                Sql.DocumentosPObj.EstablecerItem("usuario",     id, AppState.UsuarioActivo);
+                Sql.DocumentosPObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
 
-                GuardarLineasPedido(docP);
-                GuardarLineasTrasaccion(docP);
-                GuardarLineasEntrega(docP);
+                GuardarLineasPedido(id);
+                GuardarLineasTrasaccion(id);
+                GuardarLineasEntrega(id);
                 OrdenarTablas();
 
                 MessageBox.Show("Guardado exitoso.", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 _cambioDocumento = _cambioPedido = _cambioTrasaccion = _cambioEntrega = false;
-                DocumentoCreadoId = docP;   // Bug 3: comunica el id al padre
+                DocumentoCreadoId = id;
                 return true;
             }
             catch (Exception ex)
@@ -1322,7 +1330,7 @@ namespace WpfAppVba
                 string estado = Box_Estado.Text;
                 string cuenta = Box_Cuenta.Text;
 
-                Sql.DocumentosPObj.EstablecerItem("tercero",     docP, Box_Tercero_Identificador.Text.Trim());
+                Sql.DocumentosPObj.EstablecerItem("tercero",     docP, ResolverTerceroId());
                 Sql.DocumentosPObj.EstablecerItem("fecha",       docP, fechaFinal);
                 Sql.DocumentosPObj.EstablecerItem("estado",      docP, estado);
                 Sql.DocumentosPObj.EstablecerItem("referencia",  docP, Box_Referencia.Text.Trim());
@@ -1380,7 +1388,7 @@ namespace WpfAppVba
             for (int i = 0; i < _pedidos.Count; i++)
             {
                 var item  = _pedidos[i];
-                string id = $"{docP}{(i + 1):D3}";
+                string id = Guid.NewGuid().ToString();
                 Sql.PedidosObj.Nuevo(id);
                 Sql.PedidosObj.EstablecerItem("documentoP", id, docP);
                 Sql.PedidosObj.EstablecerItem("articulo",   id, item.ArticuloId);
@@ -1398,7 +1406,7 @@ namespace WpfAppVba
             for (int i = 0; i < _trasacciones.Count; i++)
             {
                 var item  = _trasacciones[i];
-                string id = $"{docP}{(i + 1):D3}";
+                string id = Guid.NewGuid().ToString();
                 DateTime fechaT = CombinarFechaHora(
                     DateTime.TryParse(item.FechaStr, out var fd) ? fd : DateTime.Today,
                     item.HoraStr);
@@ -1417,7 +1425,7 @@ namespace WpfAppVba
             for (int i = 0; i < _entregas.Count; i++)
             {
                 var item  = _entregas[i];
-                string id = $"{docP}{(i + 1):D3}";
+                string id = Guid.NewGuid().ToString();
                 DateTime fechaE = CombinarFechaHora(
                     DateTime.TryParse(item.FechaStr, out var fd) ? fd : DateTime.Today,
                     item.HoraStr);

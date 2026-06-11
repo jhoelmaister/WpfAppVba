@@ -62,8 +62,8 @@ namespace WpfAppVba
             string codigo = TxtCodigo.Text.Trim();
             if (string.IsNullOrEmpty(codigo)) return;
 
-            long id = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
-            if (id == 0)
+            string id = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
+            if (string.IsNullOrEmpty(id))
             {
                 LblDescripcion.Text = "Artículo no encontrado.";
                 _identificadorArticulo = "";
@@ -71,7 +71,7 @@ namespace WpfAppVba
                 return;
             }
 
-            _identificadorArticulo = id.ToString();
+            _identificadorArticulo = id;
 
             string desc    = Sql.ArticulosObj.ObtenerItem("descripcion", _identificadorArticulo)?.ToString() ?? "";
             string modelo  = Sql.ArticulosObj.ObtenerItem("modelo",      _identificadorArticulo)?.ToString() ?? "";
@@ -160,11 +160,11 @@ namespace WpfAppVba
                 string destino = Sql.DocumentosTObj.ObtenerItem("destino",  docT)?.ToString() ?? "";
                 string emitido = Sql.DocumentosTObj.ObtenerItem("emitido",  docT)?.ToString() ?? "";
 
-                if (emitido != AppState.SucursalActiva.ToString() && estado == "pendiente")
+                if (emitido != AppState.SucursalActiva && estado == "pendiente")
                     estado = "pendiente revisar";
 
-                string movimiento = (origen == AppState.SucursalActiva.ToString() &&
-                                     destino != AppState.SucursalActiva.ToString())
+                string movimiento = (origen == AppState.SucursalActiva &&
+                                     destino != AppState.SucursalActiva)
                                     ? "salida" : "entrada";
 
                 var fechaObj   = Sql.DocumentosTObj.ObtenerItem("fecha", docT);

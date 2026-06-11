@@ -75,16 +75,18 @@ namespace WpfAppVba
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
 
-                string desc = Sql.RegionesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                string desc   = Sql.RegionesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                string codigo = Sql.RegionesObj.ObtenerItem("codigo",      id)?.ToString() ?? "";
 
                 if (busqueda == "" ||
                     desc.ToLower().Contains(busqueda) ||
-                    id.ToLower().Contains(busqueda))
+                    codigo.ToLower().Contains(busqueda))
                 {
                     filas.Add(new RegionFila
                     {
                         Linea       = linea++,
                         Id          = id,
+                        Codigo      = codigo,
                         Descripcion = desc
                     });
                 }
@@ -103,6 +105,7 @@ namespace WpfAppVba
             {
                 Linea       = linea,
                 Id          = id,
+                Codigo      = Sql.RegionesObj.ObtenerItem("codigo",      id)?.ToString() ?? "",
                 Descripcion = Sql.RegionesObj.ObtenerItem("descripcion", id)?.ToString() ?? ""
             };
         }
@@ -142,7 +145,7 @@ namespace WpfAppVba
         private void Seleccionar()
         {
             if (Grid1.SelectedItem is not RegionFila fila) return;
-            _callbackSeleccion?.Invoke(fila.Id);
+            _callbackSeleccion?.Invoke(fila.Codigo);
             Cerrando?.Invoke();
         }
 
@@ -227,7 +230,7 @@ namespace WpfAppVba
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña($"Región {idSel}", detalle, $"region-{idSel}");
+            consola.AbrirPestaña($"Región {fila.Codigo}", detalle, $"region-{idSel}");
         }
     }
 
@@ -236,6 +239,7 @@ namespace WpfAppVba
     {
         public int    Linea       { get; set; }
         public string Id          { get; set; } = "";
+        public string Codigo      { get; set; } = "";
         public string Descripcion { get; set; } = "";
     }
 }

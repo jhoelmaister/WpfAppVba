@@ -73,15 +73,17 @@ namespace WpfAppVba
                 string id = idObj.ToString()!;
 
                 string desc = Sql.ProductosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                string codigo = Sql.ProductosObj.ObtenerItem("codigo", id)?.ToString() ?? "";
 
                 if (busqueda == "" ||
                     desc.ToLower().Contains(busqueda) ||
-                    id.ToLower().Contains(busqueda))
+                    codigo.ToLower().Contains(busqueda))
                 {
                     filas.Add(new ProductoFila
                     {
                         Linea       = linea++,
                         Id          = id,
+                        Codigo      = codigo,
                         Descripcion = desc
                     });
                 }
@@ -100,6 +102,7 @@ namespace WpfAppVba
             {
                 Linea       = linea,
                 Id          = id,
+                Codigo      = Sql.ProductosObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 Descripcion = Sql.ProductosObj.ObtenerItem("descripcion", id)?.ToString() ?? ""
             };
         }
@@ -142,7 +145,7 @@ namespace WpfAppVba
         private void Seleccionar()
         {
             if (Grid1.SelectedItem is not ProductoFila fila) return;
-            _callbackSeleccion?.Invoke(fila.Id);
+            _callbackSeleccion?.Invoke(fila.Codigo);
             Cerrando?.Invoke();
         }
 
@@ -210,7 +213,7 @@ namespace WpfAppVba
             int    linea = fila.Linea;
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            string titulo = $"Producto {idSel}";
+            string titulo = $"Producto {fila.Codigo}";
             var dlg = new ProductosDetalle(idSel, tituloTab: titulo);
             dlg.Cerrando += () =>
             {
@@ -235,6 +238,7 @@ namespace WpfAppVba
     {
         public int    Linea       { get; set; }
         public string Id          { get; set; } = "";
+        public string Codigo      { get; set; } = "";
         public string Descripcion { get; set; } = "";
     }
 }

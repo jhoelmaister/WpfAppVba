@@ -73,18 +73,20 @@ namespace WpfAppVba
                 string id = idObj.ToString()!;
 
                 string desc = Sql.FamiliasObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                string codigo = Sql.FamiliasObj.ObtenerItem("codigo", id)?.ToString() ?? "";
                 string productoId = Sql.FamiliasObj.ObtenerItem("producto", id)?.ToString() ?? "";
                 string productoDesc = Sql.ProductosObj.ObtenerItem("descripcion", productoId)?.ToString() ?? "";
 
                 if (busqueda == "" ||
                     desc.ToLower().Contains(busqueda) ||
-                    id.ToLower().Contains(busqueda) ||
+                    codigo.ToLower().Contains(busqueda) ||
                     productoDesc.ToLower().Contains(busqueda))
                 {
                     filas.Add(new FamiliaFila
                     {
                         Linea       = linea++,
                         Id          = id,
+                        Codigo      = codigo,
                         Descripcion = desc,
                         Producto    = productoDesc
                     });
@@ -106,6 +108,7 @@ namespace WpfAppVba
             {
                 Linea       = linea,
                 Id          = id,
+                Codigo      = Sql.FamiliasObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 Descripcion = Sql.FamiliasObj.ObtenerItem("descripcion", id)?.ToString() ?? "",
                 Producto    = productoDesc
             };
@@ -149,7 +152,7 @@ namespace WpfAppVba
         private void Seleccionar()
         {
             if (Grid1.SelectedItem is not FamiliaFila fila) return;
-            _callbackSeleccion?.Invoke(fila.Id);
+            _callbackSeleccion?.Invoke(fila.Codigo);
             Cerrando?.Invoke();
         }
 
@@ -219,7 +222,7 @@ namespace WpfAppVba
             AppState.EventoFormularioF = "modificar";
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            string titulo = $"Familia {idSel}";
+            string titulo = $"Familia {fila.Codigo}";
             var dlg = new FamiliasDetalle(this, idSel, tituloTab: titulo);
             dlg.Cerrando += () =>
             {
@@ -244,6 +247,7 @@ namespace WpfAppVba
     {
         public int    Linea       { get; set; }
         public string Id          { get; set; } = "";
+        public string Codigo      { get; set; } = "";
         public string Descripcion { get; set; } = "";
         public string Producto    { get; set; } = "";
     }

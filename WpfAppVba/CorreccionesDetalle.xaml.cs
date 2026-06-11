@@ -23,6 +23,7 @@ namespace WpfAppVba
 
         private bool _iniciado = false;
         private readonly string _tituloTab;
+        private string _codigoDocC = "";
 
         /// <summary>ID del documento de corrección recién creado.</summary>
         public string? ItemCreadoId { get; private set; }
@@ -64,7 +65,10 @@ namespace WpfAppVba
         private void CargarParaEditar()
         {
             Box_DocumentoC.IsEnabled = false;
-            Box_DocumentoC.Text      = _idEditar;
+            string codigoDocEdit = Sql.DocumentosCObj.ObtenerItem("codigo", _idEditar)?.ToString() ?? "";
+            string signoEdit     = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
+            Box_DocumentoC.Text = codigoDocEdit.StartsWith(signoEdit, StringComparison.OrdinalIgnoreCase)
+                ? codigoDocEdit.Substring(signoEdit.Length) : codigoDocEdit;
 
             var fechaObj = Sql.DocumentosCObj.ObtenerItem("fecha", _idEditar);
             DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : DateTime.Now;
@@ -112,9 +116,11 @@ namespace WpfAppVba
 
         private void CargarParaNuevo()
         {
-            Box_DocumentoC.IsEnabled = true;
-            long siguiente = Convert.ToInt64(Sql.DocumentosCObj.Maximo("id") ?? 0) + 1;
-            Box_DocumentoC.Text    = siguiente.ToString();
+            Box_DocumentoC.IsEnabled = false;
+            string signo  = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
+            int    numero = Sql.DocumentosCObj.SiguienteNumeroDoc(signo, "sucursal", AppState.SucursalActiva);
+            _codigoDocC          = $"{signo}{numero}";
+            Box_DocumentoC.Text  = numero.ToString();
             Box_Fecha.SelectedDate = DateTime.Today;
             Box_Hora.Text          = DateTime.Now.ToString("HH:mm:ss");
 
@@ -452,10 +458,9 @@ namespace WpfAppVba
                 e.EditingElement is TextBox tb)
             {
                 string codigo = tb.Text.Trim();
-                long artIdNum = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
-                if (artIdNum > 0)
+                string artId  = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
+                if (!string.IsNullOrEmpty(artId))
                 {
-                    string artId     = artIdNum.ToString();
                     fila.ArticuloId  = artId;
                     fila.Codigo      = codigo;
                     fila.Descripcion = ObtenerDescripcionArticulo(artId);
@@ -599,26 +604,13 @@ namespace WpfAppVba
         {
             if (!ValidarCabecera()) return false;
 
-            string docId = Box_DocumentoC.Text.Trim();
-            if (string.IsNullOrEmpty(docId))
-            {
-                MessageBox.Show("Ingrese el número de documento.", "Consola",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return false;
-            }
-
             try
             {
-                if (!Sql.DocumentosCObj.VerificarId(docId, "id"))
-                {
-                    MessageBox.Show("El código de corrección ya existe.", "Consola",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return false;
-                }
-
+                string docId = Guid.NewGuid().ToString();
                 DateTime fecha = CombinarFechaHora();
 
                 Sql.DocumentosCObj.Nuevo(docId);
+                Sql.DocumentosCObj.EstablecerItem("codigo",      docId, _codigoDocC);
                 Sql.DocumentosCObj.EstablecerItem("fecha",       docId, fecha);
                 Sql.DocumentosCObj.EstablecerItem("sucursal",    docId, AppState.SucursalActiva);
                 Sql.DocumentosCObj.EstablecerItem("movimiento",  docId, MovimientoSeleccionado);
@@ -692,13 +684,13 @@ namespace WpfAppVba
             }
         }
 
-        // ─── Crear líneas con ID = documentoC + indice 3 dígitos (igual VBA) ──
+        // ─── Crear líneas con UUID ──
         private void CrearLineas(string docId)
         {
             for (int i = 0; i < _items.Count; i++)
             {
                 var item   = _items[i];
-                string nid = $"{docId}{(i + 1):D3}";
+                string nid = Guid.NewGuid().ToString();
                 Sql.CorreccionesObj.Nuevo(nid);
                 Sql.CorreccionesObj.EstablecerItem("documentoC", nid, docId);
                 Sql.CorreccionesObj.EstablecerItem("articulo",   nid, item.ArticuloId);

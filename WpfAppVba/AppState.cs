@@ -12,10 +12,10 @@ namespace WpfAppVba.Data
     {
         // ─── Estado de sesión ─────────────────────────────────────────────────
         public static bool   SesionActiva      { get; set; } = false;
-        public static long   RegionActiva      { get; set; }
-        public static long   SucursalActiva    { get; set; }
-        public static long   UsuarioActivo     { get; set; }
-        public static long   AperturaIdActiva  { get; set; }
+        public static string RegionActiva      { get; set; } = "";
+        public static string SucursalActiva    { get; set; } = "";
+        public static string UsuarioActivo     { get; set; } = "";
+        public static string AperturaIdActiva  { get; set; } = "";
         public static string TemaActivo        { get; set; } = "claro";
 
         // ─── Rango de fechas activo ───────────────────────────────────────────
@@ -107,7 +107,7 @@ namespace WpfAppVba.Data
             {
                 var idSucObj = Sql.SucursalesObj.Mover(ciclo);
                 if (idSucObj == null) continue;
-                long idSuc = Convert.ToInt64(idSucObj);
+                string idSuc = idSucObj.ToString()!;
 
                 if (idSuc != SucursalActiva) continue;
 
@@ -120,7 +120,7 @@ namespace WpfAppVba.Data
                     string id2 = id2Obj.ToString()!;
 
                     indice++;
-                    string nuevoId = $"{idSuc}{indice:D3}";
+                    string nuevoId = Guid.NewGuid().ToString();
 
                     Sql.StocksObj.Nuevo(nuevoId);
                     Sql.StocksObj.EstablecerItem("sucursal", nuevoId, idSuc);
@@ -176,7 +176,7 @@ namespace WpfAppVba.Data
                 // Apertura desde el último inventario
                 inicio        = maximo;
                 AperturaFecha = inicio;
-                AperturaIdActiva = Convert.ToInt64(aperturaidEncontrada);
+                AperturaIdActiva = aperturaidEncontrada;
 
                 int ufArticulos   = Sql.ArticulosObj.ContarFilas;
                 int ufInventarios = Sql.InventariosObj.ContarFilas;
@@ -221,7 +221,7 @@ namespace WpfAppVba.Data
             else
             {
                 // Sin inventario previo: usar la fecha de creación de la sucursal
-                var fechaSucObj = Sql.SucursalesObj.ObtenerItem("fecha", SucursalActiva.ToString());
+                var fechaSucObj = Sql.SucursalesObj.ObtenerItem("fecha", SucursalActiva);
                 inicio        = fechaSucObj != null ? Convert.ToDateTime(fechaSucObj) : DateTime.Today;
                 AperturaFecha = inicio;
 

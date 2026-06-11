@@ -125,11 +125,9 @@ namespace WpfAppVba
 
             if (encontrado)
             {
-                AppState.UsuarioActivo  = Convert.ToInt64(idEncontrado);
-                AppState.SucursalActiva = Convert.ToInt64(
-                    Sql.UsuariosObj.ObtenerItem("sucursal", idEncontrado) ?? 0);
-                AppState.RegionActiva   = Convert.ToInt64(
-                    Sql.SucursalesObj.ObtenerItem("region", AppState.SucursalActiva.ToString()) ?? 0);
+                AppState.UsuarioActivo  = idEncontrado;
+                AppState.SucursalActiva = Sql.UsuariosObj.ObtenerItem("sucursal", idEncontrado)?.ToString() ?? "";
+                AppState.RegionActiva   = Sql.SucursalesObj.ObtenerItem("region", AppState.SucursalActiva)?.ToString() ?? "";
                 AppState.SesionActiva   = true;
                 AppState.PeriodoActivo  = DateTime.Now.Year.ToString();
 

@@ -78,7 +78,7 @@ namespace WpfAppVba
 
                 // Filtrar por sucursal activa
                 string suc = Sql.DocumentosCObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
-                if (suc != AppState.SucursalActiva.ToString()) continue;
+                if (suc != AppState.SucursalActiva) continue;
 
                 // Filtrar por tipo de movimiento (ingreso / egreso)
                 string movimiento = Sql.DocumentosCObj.ObtenerItem("movimiento", id)?.ToString() ?? "";

@@ -68,7 +68,7 @@ namespace WpfAppVba.Data
         /// </summary>
         public static void ConectarBases()
         {
-            long suc = AppState.SucursalActiva;
+            string suc = AppState.SucursalActiva;
 
             Sql.DocumentosIObj.Conectar("documentosI",
                 $"SELECT * FROM documentosI " +
@@ -89,7 +89,7 @@ namespace WpfAppVba.Data
         /// </summary>
         public static void ConectarDocumentos(DateTime apertura, DateTime cierre)
         {
-            long suc = AppState.SucursalActiva;
+            string suc = AppState.SucursalActiva;
             string aper = apertura.ToString("yyyyMMdd HH:mm:ss");
             string cier = cierre.ToString("yyyyMMdd HH:mm:ss");
 

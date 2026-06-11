@@ -373,7 +373,7 @@ namespace WpfAppVba
         private void BtnCerrarSesion_Click(object sender, RoutedEventArgs e)
         {
             AppState.SesionActiva  = false;
-            AppState.UsuarioActivo = 0;
+            AppState.UsuarioActivo = "";
             DatabaseConnection.CerrarConexion();
 
             var login = new LoginWindow();

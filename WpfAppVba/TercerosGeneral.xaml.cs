@@ -74,17 +74,20 @@ namespace WpfAppVba
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
 
-                string desc = Sql.TercerosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
-                string nit  = Sql.TercerosObj.ObtenerItem("nit",         id)?.ToString() ?? "";
+                string desc   = Sql.TercerosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                string nit    = Sql.TercerosObj.ObtenerItem("nit",         id)?.ToString() ?? "";
+                string codigo = Sql.TercerosObj.ObtenerItem("codigo",      id)?.ToString() ?? "";
 
                 if (busqueda == "" ||
                     desc.ToLower().Contains(busqueda) ||
-                    nit.ToLower().Contains(busqueda))
+                    nit.ToLower().Contains(busqueda) ||
+                    codigo.ToLower().Contains(busqueda))
                 {
                     filas.Add(new TerceroFila
                     {
                         Linea       = linea++,
                         Id          = id,
+                        Codigo      = codigo,
                         Nit         = nit,
                         Descripcion = desc,
                         Telefono    = Sql.TercerosObj.ObtenerItem("telefono", id)?.ToString() ?? ""
@@ -105,6 +108,7 @@ namespace WpfAppVba
             {
                 Linea       = linea,
                 Id          = id,
+                Codigo      = Sql.TercerosObj.ObtenerItem("codigo",      id)?.ToString() ?? "",
                 Nit         = Sql.TercerosObj.ObtenerItem("nit",         id)?.ToString() ?? "",
                 Descripcion = Sql.TercerosObj.ObtenerItem("descripcion", id)?.ToString() ?? "",
                 Telefono    = Sql.TercerosObj.ObtenerItem("telefono",    id)?.ToString() ?? ""
@@ -146,7 +150,7 @@ namespace WpfAppVba
         private void Seleccionar()
         {
             if (Grid1.SelectedItem is not TerceroFila fila) return;
-            TerceroSeleccionado = fila.Id;
+            TerceroSeleccionado = fila.Codigo;
             Cerrando?.Invoke();
         }
 
@@ -234,7 +238,7 @@ namespace WpfAppVba
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña($"Tercero {idSel}", detalle, $"tercero-{idSel}");
+            consola.AbrirPestaña($"Tercero {fila.Codigo}", detalle, $"tercero-{idSel}");
         }
     }
 
@@ -243,6 +247,7 @@ namespace WpfAppVba
     {
         public int    Linea       { get; set; }
         public string Id          { get; set; } = "";
+        public string Codigo      { get; set; } = "";
         public string Nit         { get; set; } = "";
         public string Descripcion { get; set; } = "";
         public string Telefono    { get; set; } = "";

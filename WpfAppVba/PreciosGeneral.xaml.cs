@@ -217,7 +217,7 @@ namespace WpfAppVba
             {
                 Linea    = linea,
                 Id       = id,
-                Codigo   = id,
+                Codigo   = Sql.PreciosObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 Fecha    = fecha,
                 FechaStr = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                 Region   = regionDesc,

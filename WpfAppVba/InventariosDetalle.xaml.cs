@@ -18,6 +18,7 @@ namespace WpfAppVba
         private bool _cargando   = true;
         private bool _iniciado   = false;
         private string _tituloTab = "";
+        private string _codigoDocI = "";
         private List<InventarioItemFila> _items = new();
 
         public event Action? Cerrando;
@@ -73,7 +74,10 @@ namespace WpfAppVba
         private void CargarParaEditar()
         {
             Box_DocumentoI.IsEnabled = false;
-            Box_DocumentoI.Text      = _idEditar;
+            string codigoDocEdit = Sql.DocumentosIObj.ObtenerItem("codigo", _idEditar)?.ToString() ?? "";
+            string signoEdit     = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
+            Box_DocumentoI.Text = codigoDocEdit.StartsWith(signoEdit, StringComparison.OrdinalIgnoreCase)
+                ? codigoDocEdit.Substring(signoEdit.Length) : codigoDocEdit;
 
             var fechaObj = Sql.DocumentosIObj.ObtenerItem("fecha", _idEditar);
             DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : DateTime.Now;
@@ -114,9 +118,11 @@ namespace WpfAppVba
 
         private void CargarParaNuevo()
         {
-            Box_DocumentoI.IsEnabled = true;
-            long siguiente = Convert.ToInt64(Sql.DocumentosIObj.Maximo("id") ?? 0) + 1;
-            Box_DocumentoI.Text    = siguiente.ToString();
+            Box_DocumentoI.IsEnabled = false;
+            string signo  = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
+            int    numero = Sql.DocumentosIObj.SiguienteNumeroDoc(signo, "sucursal", AppState.SucursalActiva);
+            _codigoDocI          = $"{signo}{numero}";
+            Box_DocumentoI.Text  = numero.ToString();
             Box_Fecha.SelectedDate = DateTime.Today;
             Box_Hora.Text          = DateTime.Now.ToString("HH:mm:ss");
             _items.Clear();
@@ -362,10 +368,9 @@ namespace WpfAppVba
                 e.EditingElement is TextBox tb)
             {
                 string codigo = tb.Text.Trim();
-                long artIdNum = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
-                if (artIdNum > 0)
+                string artId  = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
+                if (!string.IsNullOrEmpty(artId))
                 {
-                    string artId     = artIdNum.ToString();
                     fila.ArticuloId  = artId;
                     fila.Codigo      = codigo;
                     fila.Descripcion = ObtenerDescripcionArticulo(artId);
@@ -468,12 +473,11 @@ namespace WpfAppVba
                 foreach (string id in idsEliminar)
                     Sql.InventariosObj.Eliminar(id);
 
-                // Re-crear inventarios desde _items
-                long maxInv = Convert.ToInt64(Sql.InventariosObj.Maximo("id") ?? 0);
+                // Re-crear inventarios desde _items con UUID
                 for (int i = 0; i < _items.Count; i++)
                 {
                     var item   = _items[i];
-                    string nid = (maxInv + i + 1).ToString();
+                    string nid = Guid.NewGuid().ToString();
                     Sql.InventariosObj.Nuevo(nid);
                     Sql.InventariosObj.EstablecerItem("documentoI", nid, docId);
                     Sql.InventariosObj.EstablecerItem("articulo",   nid, item.ArticuloId);
@@ -482,7 +486,7 @@ namespace WpfAppVba
                 }
 
                 Sql.InventariosObj.OrdenarData(("documentoI", false), ("indice", false));
-                Sql.DocumentosIObj.OrdenarData(("id", false));
+                Sql.DocumentosIObj.OrdenarData(("fecha", false));
 
                 int periodo = string.IsNullOrEmpty(AppState.PeriodoActivo)
                     ? DateTime.Now.Year
@@ -502,19 +506,13 @@ namespace WpfAppVba
 
         private bool GuardarNuevo()
         {
-            string docId = Box_DocumentoI.Text.Trim();
             try
             {
-                if (!Sql.DocumentosIObj.VerificarId(docId, "id"))
-                {
-                    MessageBox.Show("El código de inventario ya existe.", "Consola",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return false;
-                }
-
+                string docId = Guid.NewGuid().ToString();
                 DateTime fecha = CombinarFechaHora();
 
                 Sql.DocumentosIObj.Nuevo(docId);
+                Sql.DocumentosIObj.EstablecerItem("codigo",      docId, _codigoDocI);
                 Sql.DocumentosIObj.EstablecerItem("fecha",       docId, fecha);
                 Sql.DocumentosIObj.EstablecerItem("observacion", docId, Box_Observacion.Text);
                 Sql.DocumentosIObj.EstablecerItem("sucursal",    docId, AppState.SucursalActiva);
@@ -523,11 +521,10 @@ namespace WpfAppVba
                 Sql.DocumentosIObj.EstablecerItem("usuario",     docId, AppState.UsuarioActivo);
                 Sql.DocumentosIObj.EstablecerItem("usuarioE",    docId, AppState.UsuarioActivo);
 
-                long maxInv = Convert.ToInt64(Sql.InventariosObj.Maximo("id") ?? 0);
                 for (int i = 0; i < _items.Count; i++)
                 {
                     var item   = _items[i];
-                    string nid = (maxInv + i + 1).ToString();
+                    string nid = Guid.NewGuid().ToString();
                     Sql.InventariosObj.Nuevo(nid);
                     Sql.InventariosObj.EstablecerItem("documentoI", nid, docId);
                     Sql.InventariosObj.EstablecerItem("articulo",   nid, item.ArticuloId);
@@ -536,7 +533,7 @@ namespace WpfAppVba
                 }
 
                 Sql.InventariosObj.OrdenarData(("documentoI", false), ("indice", false));
-                Sql.DocumentosIObj.OrdenarData(("id", false));
+                Sql.DocumentosIObj.OrdenarData(("fecha", false));
 
                 int periodo = string.IsNullOrEmpty(AppState.PeriodoActivo)
                     ? DateTime.Now.Year

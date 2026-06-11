@@ -87,7 +87,7 @@ namespace WpfAppVba
                     !string.Equals(movDoc, tipoMov, StringComparison.OrdinalIgnoreCase)) continue;
 
                 string sucursal = Sql.DocumentosPObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
-                if (sucursal != AppState.SucursalActiva.ToString()) continue;
+                if (sucursal != AppState.SucursalActiva) continue;
 
                 // Filtro por mes (solo en modo "filtros", independiente de TxtBuscar)
                 if (!string.IsNullOrEmpty(mesFiltro))

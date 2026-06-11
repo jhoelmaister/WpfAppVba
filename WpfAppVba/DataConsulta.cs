@@ -66,10 +66,12 @@ namespace WpfAppVba.Data
             return null;
         }
 
-        public long BuscarIdentificador(string columna, string valor)
+        /// <summary>Devuelve el id (UUID) de la fila cuyo <paramref name="columna"/> = <paramref name="valor"/>.
+        /// Cadena vacía si no se encuentra.</summary>
+        public string BuscarIdentificador(string columna, string valor)
         {
             var res = Buscar(columna, valor, "id");
-            return res != null ? Convert.ToInt64(res) : 0;
+            return res?.ToString() ?? "";
         }
 
         /// <summary>Devuelve el ID de la fila por índice (base 1).</summary>
@@ -108,6 +110,66 @@ namespace WpfAppVba.Data
             cmd.Parameters.AddWithValue("@val", valor);
             int total = (int)cmd.ExecuteScalar()!;
             return total == 0;
+        }
+
+        // ─── GENERACIÓN DE CÓDIGO ─────────────────────────────────────────────
+
+        /// <summary>
+        /// Siguiente código entero para tablas maestras (familias, productos, etc.):
+        /// MAX(codigo) + 1 considerando solo filas en estado normal.
+        /// </summary>
+        public int SiguienteCodigoInt()
+        {
+            var conn = DatabaseConnection.ObtenerConexion();
+            using var cmd = new SqlCommand(
+                $"SELECT ISNULL(MAX(CAST(codigo AS INT)), 0) + 1 FROM {_nombreTabla} " +
+                $"WHERE estadof = 'normal' AND ISNUMERIC(codigo) = 1", conn);
+            var r = cmd.ExecuteScalar();
+            return (r is null or DBNull) ? 1 : Convert.ToInt32(r);
+        }
+
+        /// <summary>
+        /// Siguiente número correlativo para documentos cuyo codigo = signo + número
+        /// (ej. "A5"). Toma el MAX(número) de las filas en estado normal cuyo
+        /// <paramref name="filtroColumna"/> = <paramref name="filtroValor"/>
+        /// (ej. sucursal/region/origen activa) y devuelve número + 1.
+        /// </summary>
+        public int SiguienteNumeroDoc(string signo, string filtroColumna, string filtroValor)
+        {
+            var conn = DatabaseConnection.ObtenerConexion();
+            using var cmd = new SqlCommand(
+                $"SELECT codigo FROM {_nombreTabla} " +
+                $"WHERE estadof = 'normal' AND {filtroColumna} = @f", conn);
+            cmd.Parameters.AddWithValue("@f", filtroValor);
+
+            int max = 0;
+            using var rd = cmd.ExecuteReader();
+            while (rd.Read())
+            {
+                string c = rd[0]?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(signo) && c.StartsWith(signo, StringComparison.OrdinalIgnoreCase))
+                    c = c.Substring(signo.Length);
+                if (int.TryParse(c, out int n) && n > max) max = n;
+            }
+            return max + 1;
+        }
+
+        /// <summary>
+        /// Indica si ya existe otra fila (en estado normal) con el mismo codigo.
+        /// Si se indica <paramref name="idActual"/>, esa fila se excluye (modo editar).
+        /// </summary>
+        public bool CodigoExiste(string codigo, string idActual = "")
+        {
+            var conn = DatabaseConnection.ObtenerConexion();
+            string sql = $"SELECT COUNT(*) FROM {_nombreTabla} WHERE estadof = 'normal' AND codigo = @c";
+            if (!string.IsNullOrEmpty(idActual)) sql += " AND id <> @id";
+
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@c", codigo);
+            if (!string.IsNullOrEmpty(idActual)) cmd.Parameters.AddWithValue("@id", idActual);
+
+            int total = (int)cmd.ExecuteScalar()!;
+            return total > 0;
         }
 
         // ─── CRUD EN MEMORIA ──────────────────────────────────────────────────
@@ -196,7 +258,8 @@ namespace WpfAppVba.Data
             // ── ELIMINACIONES ────────────────────────────────────────────────
             foreach (var bloque in Chunks(deleteIds, 1000))
             {
-                string lista = string.Join(",", bloque);
+                string lista = string.Join(",",
+                    bloque.Select(x => $"'{x.Replace("'", "''")}'"));
                 using var cmd = new SqlCommand(
                     $"DELETE FROM {_nombreTabla} WHERE id IN ({lista})", conn);
                 cmd.ExecuteNonQuery();

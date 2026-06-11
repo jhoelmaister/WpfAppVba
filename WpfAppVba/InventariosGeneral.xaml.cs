@@ -141,7 +141,7 @@ namespace WpfAppVba
             if (Grid1.SelectedItem is not InventarioFila fila) return;
 
             // Solo se puede eliminar la apertura más reciente
-            if (fila.Id != AppState.AperturaIdActiva.ToString())
+            if (fila.Id != AppState.AperturaIdActiva)
             {
                 MessageBox.Show("Solo se puede eliminar la última apertura.", "Consola",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -207,7 +207,7 @@ namespace WpfAppVba
             if (Grid1.SelectedItem is not InventarioFila fila) return;
 
             // Solo se puede editar la apertura más reciente
-            if (fila.Id != AppState.AperturaIdActiva.ToString())
+            if (fila.Id != AppState.AperturaIdActiva)
             {
                 MessageBox.Show("Solo se puede editar la última apertura.", "Consola",
                     MessageBoxButton.OK, MessageBoxImage.Warning);

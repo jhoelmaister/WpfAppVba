@@ -90,8 +90,8 @@ namespace WpfAppVba
                 // Filtrar por sucursal activa según tipo de movimiento
                 string origen  = Sql.DocumentosTObj.ObtenerItem("origen",  id)?.ToString() ?? "";
                 string destino = Sql.DocumentosTObj.ObtenerItem("destino", id)?.ToString() ?? "";
-                bool esSalida  = origen  == AppState.SucursalActiva.ToString();
-                bool esEntrada = destino == AppState.SucursalActiva.ToString();
+                bool esSalida  = origen  == AppState.SucursalActiva;
+                bool esEntrada = destino == AppState.SucursalActiva;
 
                 string movActual;
                 if (tipoMov == "salida")
@@ -131,7 +131,7 @@ namespace WpfAppVba
                 string emitido = Sql.DocumentosTObj.ObtenerItem("emitido", id)?.ToString() ?? "";
 
                 // Si fue emitido por otra sucursal y está "pendiente" → "pendiente revisar"
-                if (emitido != AppState.SucursalActiva.ToString() && estado == "pendiente")
+                if (emitido != AppState.SucursalActiva && estado == "pendiente")
                     estado = "pendiente revisar";
 
                 // Filtro por estado
@@ -214,7 +214,7 @@ namespace WpfAppVba
         private TraspasoFila ConstruirFilaTraspaso(string id, int linea)
         {
             string origen   = Sql.DocumentosTObj.ObtenerItem("origen",  id)?.ToString() ?? "";
-            bool esSalida   = origen == AppState.SucursalActiva.ToString();
+            bool esSalida   = origen == AppState.SucursalActiva;
             string campOtro = esSalida ? "destino" : "origen";
 
             var fechaDocObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
@@ -225,7 +225,7 @@ namespace WpfAppVba
 
             string estado  = Sql.DocumentosTObj.ObtenerItem("estado",  id)?.ToString() ?? "";
             string emitido = Sql.DocumentosTObj.ObtenerItem("emitido", id)?.ToString() ?? "";
-            if (emitido != AppState.SucursalActiva.ToString() && estado == "pendiente")
+            if (emitido != AppState.SucursalActiva && estado == "pendiente")
                 estado = "pendiente revisar";
 
             return new TraspasoFila
@@ -480,7 +480,7 @@ namespace WpfAppVba
             int    linea  = fila.Linea;
             AppState.EventoFormularioM = "editar";
             string origenDoc = Sql.DocumentosTObj.ObtenerItem("origen", docSel)?.ToString() ?? "";
-            AppState.TipoMovimiento = origenDoc == AppState.SucursalActiva.ToString() ? "salida" : "entrada";
+            AppState.TipoMovimiento = origenDoc == AppState.SucursalActiva ? "salida" : "entrada";
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
             var dlg = new TraspasosDetalle(this, docSel, tituloTab: $"Traspaso {docSel}");

@@ -314,7 +314,7 @@ namespace WpfAppVba
         private void CerrarSesionYReabrirLogin()
         {
             AppState.SesionActiva  = false;
-            AppState.UsuarioActivo = 0;
+            AppState.UsuarioActivo = "";
             DatabaseConnection.CerrarConexion();
 
             // LoginWindow lee el servidor activo desde ConexionConfig,
@@ -346,9 +346,8 @@ namespace WpfAppVba
                         Sql.UsuariosObj.EstablecerItem("sucursal", usuId, sucItem.Id);
                         sucursalCambio = true;
                     }
-                    AppState.SucursalActiva = Convert.ToInt64(sucItem.Id);
-                    AppState.RegionActiva   = Convert.ToInt64(
-                        Sql.SucursalesObj.ObtenerItem("region", sucItem.Id) ?? 0);
+                    AppState.SucursalActiva = sucItem.Id;
+                    AppState.RegionActiva   = Sql.SucursalesObj.ObtenerItem("region", sucItem.Id)?.ToString() ?? "";
                 }
 
                 // Persistir cambios de usuarios en SQL Server
