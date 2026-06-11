@@ -263,6 +263,17 @@ namespace WpfAppVba.Data
 
         // ─── EXPORTAR A SQL SERVER ────────────────────────────────────────────
 
+        // Columnas autogeneradas por SQL Server que el app NO debe escribir
+        // (columna IDENTITY 'secuencia'). Se excluyen de INSERT y UPDATE.
+        private static bool EsAutogenerada(DataColumn c)
+        {
+            string n = c.ColumnName.ToLowerInvariant();
+            return n == "secuencia" || n == "secuensia";
+        }
+
+        private IEnumerable<DataColumn> ColumnasPersistibles =>
+            _tabla.Columns.Cast<DataColumn>().Where(c => !EsAutogenerada(c));
+
         public void ExportarItems()
         {
             if (!_tabla.Columns.Contains("estadof")) return;
@@ -297,7 +308,7 @@ namespace WpfAppVba.Data
             if (insertRows.Count > 0)
             {
                 string colsStr = string.Join(",",
-                    _tabla.Columns.Cast<DataColumn>().Select(c => c.ColumnName));
+                    ColumnasPersistibles.Select(c => c.ColumnName));
 
                 foreach (var bloque in Chunks(insertRows, 1000))
                 {
@@ -316,7 +327,9 @@ namespace WpfAppVba.Data
             // ── ACTUALIZACIONES ──────────────────────────────────────────────
             if (updateRows.Count > 0)
             {
-                var cols = _tabla.Columns.Cast<DataColumn>().Skip(1).ToList(); // saltar id
+                var cols = ColumnasPersistibles
+                    .Where(c => !string.Equals(c.ColumnName, "id", StringComparison.OrdinalIgnoreCase))
+                    .ToList(); // sin id ni columnas autogeneradas (secuencia)
                 string setParts  = string.Join(", ", cols.Select((c, i) => $"{c.ColumnName} = @p{i}"));
                 string sqlUpdate = $"UPDATE {_nombreTabla} SET {setParts} WHERE id = @id";
 
@@ -383,7 +396,7 @@ namespace WpfAppVba.Data
         private string FormatearFila(DataRow row)
         {
             var partes = new List<string>();
-            foreach (DataColumn col in _tabla.Columns)
+            foreach (DataColumn col in ColumnasPersistibles)
             {
                 var val = row[col];
                 if (val == null || val is DBNull || val.ToString() == "")
