@@ -7,7 +7,9 @@ namespace WpfAppVba.Data
     /// <summary>
     /// Regenera la columna <c>codigo</c> de las tablas del sistema:
     ///   • Maestras  → numeración secuencial 1..N.
-    ///   • documentosT/I/P/C → signo de la sucursal + correlativo por sucursal.
+    ///   • documentosI/P/C → signo de la sucursal + correlativo por sucursal.
+    ///   • documentosT (traspasos) → signo de la empresa + correlativo por empresa
+    ///     (la empresa se obtiene por la cascada emitido → sucursales → empresas).
     ///   • precios   → signo de la región + correlativo por región.
     /// Trabaja directamente sobre SQL Server y reescribe TODAS las filas.
     /// </summary>
@@ -20,12 +22,10 @@ namespace WpfAppVba.Data
             "terceros", "sucursales", "regiones"
         };
 
-        // Documentos → código = signo de la sucursal + correlativo por sucursal.
-        // Cada documento indica la columna que identifica su sucursal:
-        //   documentosT (traspasos) no tiene 'sucursal'; se agrupa por 'emitido'.
+        // Documentos con columna 'sucursal' → signo de la sucursal + correlativo
+        // por sucursal. (documentosT se trata aparte: signo/correlativo por empresa.)
         private static readonly (string tabla, string colSucursal)[] Documentos =
         {
-            ("documentosT", "emitido"),
             ("documentosI", "sucursal"),
             ("documentosP", "sucursal"),
             ("documentosC", "sucursal")
@@ -48,6 +48,8 @@ namespace WpfAppVba.Data
 
                 foreach (var (tabla, colSucursal) in Documentos)
                     resumen.AppendLine($"{tabla}: {RenumerarDocumentoPorSucursal(conn, tx, tabla, colSucursal)}");
+
+                resumen.AppendLine($"documentosT: {RenumerarTraspasosPorEmpresa(conn, tx)}");
 
                 resumen.AppendLine($"precios: {RenumerarPreciosPorRegion(conn, tx)}");
 
@@ -86,6 +88,22 @@ namespace WpfAppVba.Data
                 $"  FROM {tabla} AS d " +
                 $"  LEFT JOIN sucursales AS s ON s.id = d.{colSucursal} " +
                 $") UPDATE cte SET codigo = signo + CAST(rn AS NVARCHAR(50));";
+            return Ejecutar(conn, tx, sql);
+        }
+
+        // ─── Traspasos: codigo = signo empresa + correlativo por empresa ─────
+        // La empresa se obtiene por la cascada: documentosT.emitido (sucursal) →
+        // sucursales.empresa → empresas.signo. Se numera por empresa.
+        private static int RenumerarTraspasosPorEmpresa(SqlConnection conn, SqlTransaction tx)
+        {
+            string sql =
+                ";WITH cte AS (" +
+                "  SELECT d.codigo AS codigo, ISNULL(UPPER(e.signo), '') AS signo, " +
+                "         ROW_NUMBER() OVER (PARTITION BY e.id ORDER BY d.fecha, d.id) AS rn " +
+                "  FROM documentosT AS d " +
+                "  LEFT JOIN sucursales AS s ON s.id = d.emitido " +
+                "  LEFT JOIN empresas   AS e ON e.id = s.empresa " +
+                ") UPDATE cte SET codigo = signo + CAST(rn AS NVARCHAR(50));";
             return Ejecutar(conn, tx, sql);
         }
 
