@@ -128,13 +128,16 @@ namespace WpfAppVba
             }
 
             // Marcar el servidor elegido como activo y reconfigurar la conexión
-            // global. El login reconecta al cerrarse este formulario.
+            // global. El formulario permanece abierto; el login reconecta al cerrarlo.
             ConexionConfig.EstablecerActivo(sel.Id);
             var s = ConexionConfig.ObtenerPorId(sel.Id);
             if (s != null)
                 DatabaseConnection.Configurar(s.Servidor, s.BaseDatos, s.Usuario, s.Contrasena);
 
-            DialogResult = true;
+            RefrescarServidores();
+
+            MessageBox.Show($"Servidor activo establecido: \"{sel.Nombre}\".", "Conectar",
+                            MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void BtnCerrar_Click(object sender, RoutedEventArgs e)
