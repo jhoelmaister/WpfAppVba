@@ -10,7 +10,6 @@ namespace WpfAppVba
     {
         private static SqlData Sql => SqlData.Instance;
         private bool _cargando;
-        private string? _lastSelectedServId;
 
         public Configuracion()
         {
@@ -22,17 +21,6 @@ namespace WpfAppVba
         {
             public string Id          { get; set; } = "";
             public string Descripcion { get; set; } = "";
-        }
-
-        // Fila de la lista de servidores (sin exponer credenciales).
-        private class ServidorVista
-        {
-            public string Id        { get; set; } = "";
-            public string Nombre    { get; set; } = "";
-            public string Servidor  { get; set; } = "";
-            public string BaseDatos { get; set; } = "";
-            public bool   EsActivo  { get; set; }
-            public string Activo    => EsActivo ? "●" : "";
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
@@ -54,9 +42,6 @@ namespace WpfAppVba
                 TxtNombres.Text   = nombres;
                 TxtApellidos.Text = apellidos;
                 TxtTipo.Text      = tipo;
-
-                // Lista de servidores SQL Server registrados
-                RefrescarServidores();
 
                 // Tema: si el valor de BD no es válido, usar el tema activo o "claro"
                 string temaInicial = temaDb.Trim().ToLowerInvariant() == ThemeManager.TemaOscuro
@@ -181,133 +166,6 @@ namespace WpfAppVba
                 MessageBox.Show($"Error al guardar el tema: {ex.Message}", "Configuración",
                                 MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
-
-        // ─── Conexión SQL Server (lista de servidores) ───────────────────────
-
-        private void RefrescarServidores()
-        {
-            string activo = ConexionConfig.ObtenerActivoId();
-            var items = ConexionConfig.CargarLista()
-                .Select(s => new ServidorVista
-                {
-                    Id        = s.Id,
-                    Nombre    = s.Nombre,
-                    Servidor  = s.Servidor,
-                    BaseDatos = s.BaseDatos,
-                    EsActivo  = s.Id == activo
-                })
-                .ToList();
-            LstServidores.ItemsSource = items;
-        }
-
-        private ServidorVista? ServidorSeleccionado() =>
-            LstServidores.SelectedItem as ServidorVista;
-
-        private void LstServidores_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (LstServidores.SelectedItem is ServidorVista sv)
-                _lastSelectedServId = sv.Id;
-        }
-
-        private void BtnAgregarServidor_Click(object sender, RoutedEventArgs e)
-        {
-            var dlg = new ConfiguracionDbWindow { Owner = Window.GetWindow(this) };
-            if (dlg.ShowDialog() == true)
-                RefrescarServidores();
-        }
-
-        private void LstServidores_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            EditarServidorSeleccionado();
-        }
-
-        private void BtnEditarServidor_Click(object sender, RoutedEventArgs e)
-        {
-            EditarServidorSeleccionado();
-        }
-
-        private void EditarServidorSeleccionado()
-        {
-            var sel = ServidorSeleccionadoOUltimo();
-            if (sel == null)
-            {
-                MessageBox.Show("Selecciona un servidor de la lista.", "Editar servidor",
-                                MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            var original = ConexionConfig.ObtenerPorId(sel.Id);
-            if (original == null) { RefrescarServidores(); return; }
-
-            bool eraActivo = sel.Id == ConexionConfig.ObtenerActivoId();
-
-            var dlg = new ConfiguracionDbWindow(original) { Owner = Window.GetWindow(this) };
-            if (dlg.ShowDialog() == true)
-            {
-                // Si se editó el servidor al que estamos conectados, cerrar sesión
-                // y reabrir login para aplicar las credenciales actualizadas.
-                if (eraActivo)
-                {
-                    CerrarSesionYReabrirLogin();
-                    return;
-                }
-                RefrescarServidores();
-            }
-        }
-
-        private ServidorVista? ServidorSeleccionadoOUltimo()
-        {
-            var sel = ServidorSeleccionado();
-            if (sel == null && _lastSelectedServId != null)
-                sel = (LstServidores.ItemsSource as System.Collections.Generic.List<ServidorVista>)
-                          ?.FirstOrDefault(s => s.Id == _lastSelectedServId);
-            return sel;
-        }
-
-        private void BtnEliminarServidor_Click(object sender, RoutedEventArgs e)
-        {
-            var sel = ServidorSeleccionadoOUltimo();
-            if (sel == null)
-            {
-                MessageBox.Show("Selecciona un servidor de la lista.", "Eliminar servidor",
-                                MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            var r = MessageBox.Show($"¿Eliminar el servidor \"{sel.Nombre}\"?", "Eliminar servidor",
-                                    MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (r != MessageBoxResult.Yes) return;
-
-            ConexionConfig.Eliminar(sel.Id);
-            RefrescarServidores();
-        }
-
-        private void BtnConectarServidor_Click(object sender, RoutedEventArgs e)
-        {
-            var sel = ServidorSeleccionadoOUltimo();
-            if (sel == null)
-            {
-                MessageBox.Show("Selecciona un servidor de la lista.", "Conectar",
-                                MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            // Si ya estamos conectados a ese servidor, no hay nada que hacer.
-            if (sel.Id == ConexionConfig.ObtenerActivoId())
-            {
-                MessageBox.Show("Ya estás conectado a este servidor.", "Conectar",
-                                MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            var r = MessageBox.Show(
-                $"Se cerrará la sesión actual y se iniciará sesión en \"{sel.Nombre}\".\n¿Continuar?",
-                "Conectar", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (r != MessageBoxResult.Yes) return;
-
-            ConexionConfig.EstablecerActivo(sel.Id);
-            CerrarSesionYReabrirLogin();
         }
 
         // ─── Cerrar sesión y reabrir login con el servidor activo ────────────

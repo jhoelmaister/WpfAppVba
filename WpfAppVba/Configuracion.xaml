@@ -58,17 +58,6 @@
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
         </Style>
-        <Style x:Key="SelectorBtn" TargetType="Button">
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="Padding" Value="14,0"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
-            <Setter Property="Background" Value="{DynamicResource ThemeBgSurface}"/>
-            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Margin" Value="0,0,8,0"/>
-        </Style>
         <Style x:Key="CardBorder" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource ThemeBgSurface}"/>
             <Setter Property="CornerRadius" Value="10"/>
@@ -114,7 +103,6 @@
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -122,9 +110,9 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- ▸ CARD: GENERAL (columna izquierda, fila 0) -->
+                <!-- ▸ CARD: GENERAL (fila 0) -->
                 <Border Style="{StaticResource CardBorder}"
-                        Grid.Column="0" Grid.Row="0" Margin="0,0,6,12">
+                        Grid.Column="0" Grid.Row="0" Margin="0,0,0,12">
                     <StackPanel>
                         <TextBlock Style="{StaticResource CardHeader}" Text="● GENERAL"/>
 
@@ -155,87 +143,9 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ▸ CARD: CONEXIÓN SQL SERVER (columna derecha) -->
+                <!-- ▸ CARD: MI CUENTA (fila 1) -->
                 <Border Style="{StaticResource CardBorder}"
-                        Grid.Column="1" Grid.Row="0" Grid.RowSpan="2"
-                        VerticalAlignment="Top" Margin="6,0,0,12">
-                    <StackPanel>
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Style="{StaticResource CardHeader}"
-                                       Text="● CONEXIÓN SQL SERVER" Margin="0"/>
-                            <Button Grid.Column="1" x:Name="BtnAgregarServidor" Content="＋ Agregar"
-                                    Height="30" FontSize="12" FontWeight="SemiBold" Padding="14,0"
-                                    Background="#1A73E8" Foreground="White"
-                                    BorderThickness="0" Cursor="Hand"
-                                    Click="BtnAgregarServidor_Click"/>
-                        </Grid>
-
-                        <Border BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
-                                CornerRadius="6">
-                            <DataGrid x:Name="LstServidores" Height="350"
-                                      BorderThickness="0"
-                                      AutoGenerateColumns="False"
-                                      CanUserAddRows="False"
-                                      CanUserDeleteRows="False"
-                                      IsReadOnly="True"
-                                      SelectionMode="Single"
-                                      HeadersVisibility="Column"
-                                      GridLinesVisibility="Horizontal"
-                                      Background="{DynamicResource ThemeInputBg}"
-                                      Foreground="{DynamicResource ThemeTexto}"
-                                      FontSize="12"
-                                      MouseDoubleClick="LstServidores_MouseDoubleClick"
-                                      SelectionChanged="LstServidores_SelectionChanged">
-                                <DataGrid.ColumnHeaderStyle>
-                                    <Style TargetType="DataGridColumnHeader">
-                                        <Setter Property="Background"      Value="{DynamicResource ThemeBgSurface}"/>
-                                        <Setter Property="Foreground"      Value="{DynamicResource ThemeTextoSec}"/>
-                                        <Setter Property="BorderBrush"     Value="{DynamicResource ThemeBorde}"/>
-                                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                                        <Setter Property="Padding"         Value="6,5"/>
-                                        <Setter Property="FontSize"        Value="11"/>
-                                        <Setter Property="FontWeight"      Value="SemiBold"/>
-                                        <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                                    </Style>
-                                </DataGrid.ColumnHeaderStyle>
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header=""              Binding="{Binding Activo}"    Width="32"  IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="Alias"         Binding="{Binding Nombre}"    Width="160" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="Servidor"      Binding="{Binding Servidor}"  Width="200" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="Base de datos" Binding="{Binding BaseDatos}" Width="*"   IsReadOnly="True"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </Border>
-
-                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                            <Button x:Name="BtnConectarServidor" Content="🔌 Conectar"
-                                    Height="32" FontSize="12" FontWeight="SemiBold" Padding="14,0"
-                                    Background="#2E7D32" Foreground="White"
-                                    BorderThickness="0" Cursor="Hand" Margin="0,0,8,0"
-                                    Click="BtnConectarServidor_Click"/>
-                            <Button x:Name="BtnEditarServidor" Content="✎ Editar"
-                                    Style="{StaticResource SelectorBtn}"
-                                    Click="BtnEditarServidor_Click"/>
-                            <Button x:Name="BtnEliminarServidor" Content="🗑 Eliminar"
-                                    Height="32" FontSize="12" Padding="14,0"
-                                    Background="#D93025" Foreground="White"
-                                    BorderThickness="0" Cursor="Hand"
-                                    Click="BtnEliminarServidor_Click"/>
-                        </StackPanel>
-
-                        <TextBlock FontSize="11" Foreground="{DynamicResource ThemeTextoMuted}"
-                                   TextWrapping="Wrap" Margin="0,10,0,0"
-                                   Text="Los cambios de servidor activo se aplican al reiniciar la aplicación. Al editar no se muestran las credenciales guardadas."/>
-                    </StackPanel>
-                </Border>
-
-                <!-- ▸ CARD: MI CUENTA (columna izquierda, fila 1) -->
-                <Border Style="{StaticResource CardBorder}"
-                        Grid.Column="0" Grid.Row="1" Margin="0,0,6,12">
+                        Grid.Column="0" Grid.Row="1" Margin="0,0,0,12">
                     <StackPanel>
                         <TextBlock Style="{StaticResource CardHeader}" Text="● MI CUENTA"/>
 

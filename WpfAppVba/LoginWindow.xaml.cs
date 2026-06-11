@@ -69,16 +69,16 @@ namespace WpfAppVba
         // ─── Configurar conexión desde el login ───────────────────────────────
         private async void BtnConfigurarConexion_Click(object sender, RoutedEventArgs e)
         {
-            // Abrir en modo edición si ya hay un servidor activo, para que al guardar
-            // se actualice el servidor existente y DatabaseConnection quede reconfigurado.
-            string activoId = ConexionConfig.ObtenerActivoId();
-            ServidorConexion? servidorActivo = string.IsNullOrEmpty(activoId)
-                ? null
-                : ConexionConfig.ObtenerPorId(activoId);
+            // Abrir el listado de servidores para agregar / editar / conectar.
+            var dlg = new ConexionServidoresWindow { Owner = this };
+            dlg.ShowDialog();
 
-            var dlg = new ConfiguracionDbWindow(servidorActivo) { Owner = this };
-            if (dlg.ShowDialog() == true)
+            // Tras gestionar los servidores, recargar la conexión activa y reconectar.
+            if (ConexionConfig.HayConfiguracion())
+            {
+                DatabaseConnection.CargarDesdeConfiguracion();
                 await ConectarBaseDatosAsync();
+            }
         }
 
         // ─── Lógica de inicio de sesión (equivalente a CommandButton1_Click) ──
