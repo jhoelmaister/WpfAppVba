@@ -20,6 +20,8 @@ namespace WpfAppVba
         private string _tituloTab = "";
         private string _codigoDocI = "";
         private List<InventarioItemFila> _items = new();
+        // IDs de las líneas existentes al abrir para editar (para el guardado diferencial).
+        private HashSet<string> _itemsOrig = new();
 
         public event Action? Cerrando;
 
@@ -111,6 +113,7 @@ namespace WpfAppVba
                 });
             }
 
+            _itemsOrig = new HashSet<string>(_items.Select(x => x.InventarioId));
             RefrescarGrid();
         }
 
@@ -124,6 +127,7 @@ namespace WpfAppVba
             Box_Fecha.SelectedDate = DateTime.Today;
             Box_Hora.Text          = DateTime.Now.ToString("HH:mm:ss");
             _items.Clear();
+            _itemsOrig.Clear();
             RefrescarGrid();
         }
 
@@ -457,32 +461,8 @@ namespace WpfAppVba
                 Sql.DocumentosIObj.EstablecerItem("usuario",     docId, AppState.UsuarioActivo);
                 Sql.DocumentosIObj.EstablecerItem("usuarioE",    docId, AppState.UsuarioActivo);
 
-                // Eliminar inventarios existentes de esta apertura
-                int uf = Sql.InventariosObj.ContarFilas;
-                var idsEliminar = new List<string>();
-                for (int i = 1; i <= uf; i++)
-                {
-                    var idObj = Sql.InventariosObj.Mover(i);
-                    if (idObj == null) continue;
-                    string id = idObj.ToString()!;
-                    if (Sql.InventariosObj.ObtenerItem("documentoI", id)?.ToString() == docId)
-                        idsEliminar.Add(id);
-                }
-                foreach (string id in idsEliminar)
-                    Sql.InventariosObj.Eliminar(id);
-
-                // Re-crear inventarios desde _items con UUID
-                int baseIdx = Sql.InventariosObj.SiguienteIndice("documentoI", docId);
-                for (int i = 0; i < _items.Count; i++)
-                {
-                    var item   = _items[i];
-                    string nid = Guid.NewGuid().ToString();
-                    Sql.InventariosObj.Nuevo(nid);
-                    Sql.InventariosObj.EstablecerItem("documentoI", nid, docId);
-                    Sql.InventariosObj.EstablecerItem("articulo",   nid, item.ArticuloId);
-                    Sql.InventariosObj.EstablecerItem("cantidad",   nid, item.Cantidad);
-                    Sql.InventariosObj.EstablecerItem("indice",     nid, baseIdx + i);
-                }
+                // Guardado diferencial de líneas (inserta/actualiza/oculta)
+                GuardarLineasInventario(docId);
 
                 Sql.InventariosObj.OrdenarData(("documentoI", false), ("indice", false));
                 Sql.DocumentosIObj.OrdenarData(("fecha", false));
@@ -520,17 +500,7 @@ namespace WpfAppVba
                 Sql.DocumentosIObj.EstablecerItem("usuario",     docId, AppState.UsuarioActivo);
                 Sql.DocumentosIObj.EstablecerItem("usuarioE",    docId, AppState.UsuarioActivo);
 
-                int baseIdx = Sql.InventariosObj.SiguienteIndice("documentoI", docId);
-                for (int i = 0; i < _items.Count; i++)
-                {
-                    var item   = _items[i];
-                    string nid = Guid.NewGuid().ToString();
-                    Sql.InventariosObj.Nuevo(nid);
-                    Sql.InventariosObj.EstablecerItem("documentoI", nid, docId);
-                    Sql.InventariosObj.EstablecerItem("articulo",   nid, item.ArticuloId);
-                    Sql.InventariosObj.EstablecerItem("cantidad",   nid, item.Cantidad);
-                    Sql.InventariosObj.EstablecerItem("indice",     nid, baseIdx + i);
-                }
+                GuardarLineasInventario(docId);
 
                 Sql.InventariosObj.OrdenarData(("documentoI", false), ("indice", false));
                 Sql.DocumentosIObj.OrdenarData(("fecha", false));
@@ -550,6 +520,36 @@ namespace WpfAppVba
                 MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
+        }
+
+        // ─── Guardado diferencial de líneas (inserta/actualiza/oculta) ────────
+        private void GuardarLineasInventario(string docId)
+        {
+            var vigentes = new HashSet<string>(
+                _items.Where(x => !string.IsNullOrEmpty(x.InventarioId)).Select(x => x.InventarioId));
+            foreach (var idOrig in _itemsOrig)
+                if (!vigentes.Contains(idOrig)) Sql.InventariosObj.Ocultar(idOrig);
+
+            int baseIdx = Sql.InventariosObj.SiguienteIndice("documentoI", docId);
+            int nuevoOff = 0;
+            foreach (var item in _items)
+            {
+                string id;
+                if (string.IsNullOrEmpty(item.InventarioId))
+                {
+                    id = Guid.NewGuid().ToString();
+                    Sql.InventariosObj.Nuevo(id);
+                    Sql.InventariosObj.EstablecerItem("documentoI", id, docId);
+                    Sql.InventariosObj.EstablecerItem("indice",     id, baseIdx + nuevoOff);
+                    nuevoOff++;
+                    item.InventarioId = id;
+                }
+                else id = item.InventarioId;
+
+                Sql.InventariosObj.EstablecerItem("articulo", id, item.ArticuloId);
+                Sql.InventariosObj.EstablecerItem("cantidad", id, item.Cantidad);
+            }
+            _itemsOrig = new HashSet<string>(_items.Select(x => x.InventarioId));
         }
 
         // ─── Helper: combinar fecha del DatePicker y hora del TextBox ─────────

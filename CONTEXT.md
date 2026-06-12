@@ -167,6 +167,15 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 
 ## Historial de Cambios por Sesión
 
+### Sesión 2026-06-12 — Guardado diferencial de líneas de documentos (rama `claude/cool-hopper-vo3mxo`)
+- Los detalles de documentos ya NO borran todas las líneas y las recrean al guardar. Ahora hacen un **guardado diferencial**:
+  - Línea **nueva** (id de fila vacío) → `Nuevo()` + insertar, con índice libre (`SiguienteIndice`).
+  - Línea **existente** (id sigue en la grilla) → `EstablecerItem` sobre su mismo id (UPDATE), conservando id e índice.
+  - Línea **quitada** (estaba al abrir y ya no está) → `Ocultar()` (estadof).
+- Cada detalle captura los ids existentes al abrir para editar (`_xxxOrig`) y los limpia en modo nuevo.
+- Aplicado en: **PedidosDetalle** (pedidos/transacciones/entregas), **TraspasosDetalle**, **CorreccionesDetalle**, **InventariosDetalle**.
+- Se eliminaron los métodos/loops de "borrar todo": `EliminarLineas` (Pedidos) y los loops `idsEliminar`+`Eliminar` (Traspasos/Correcciones/Inventarios). Métodos de creación de líneas convertidos a diferenciales (Traspasos: `GuardarLineasTraspaso`; Inventarios: `GuardarLineasInventario`).
+
 ### Sesión 2026-06-12 — Índices sin duplicar, empresa en topbar, validación de sucursal (rama `claude/cool-hopper-vo3mxo`)
 - **Índices de líneas de documentos sin duplicar** (efecto del borrado lógico): nuevo `DataConsulta.SiguienteIndice(filtroColumna, filtroValor)` = `MAX(indice)+1` **sin filtrar estadof** (cuenta ocultas/eliminadas). Se usa como base en las re-creaciones de líneas de: Pedidos (`pedidos`/`transacciones`/`entregas`), Traspasos (nuevo/editar), Correcciones, Inventarios (nuevo/editar). Cada línea: `indice = base + i`. Antes se reusaba `i+1` y colisionaba con las filas ocultas del mismo documento.
 - **TOP BAR**: nuevo `LblEmpresa` ("Empresa: {desc}") a la derecha de `LblSucursal`; se setea en `ActualizarInfoUsuario()` desde `EmpresasObj`.

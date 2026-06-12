@@ -20,6 +20,8 @@ namespace WpfAppVba
         private bool _hayCambios = false;
         private bool _cargando   = true;
         private List<CorreccionItemFila> _items = new();
+        // IDs de las líneas existentes al abrir para editar (para el guardado diferencial).
+        private HashSet<string> _itemsOrig = new();
 
         private bool _iniciado = false;
         private readonly string _tituloTab;
@@ -109,6 +111,7 @@ namespace WpfAppVba
                 });
             }
 
+            _itemsOrig = new HashSet<string>(_items.Select(x => x.CorreccionId));
             RefrescarGrid();
         }
 
@@ -127,6 +130,7 @@ namespace WpfAppVba
             SeleccionarMovimiento(tipo);   // dispara ActualizarMotivos
 
             _items.Clear();
+            _itemsOrig.Clear();
             RefrescarGrid();
         }
 
@@ -653,20 +657,7 @@ namespace WpfAppVba
                 Sql.DocumentosCObj.EstablecerItem("edicion",     docId, DateTime.Now);
                 Sql.DocumentosCObj.EstablecerItem("usuarioE",    docId, AppState.UsuarioActivo);
 
-                // Eliminar líneas existentes de esta corrección
-                int uf = Sql.CorreccionesObj.ContarFilas;
-                var idsEliminar = new List<string>();
-                for (int i = 1; i <= uf; i++)
-                {
-                    var idObj = Sql.CorreccionesObj.Mover(i);
-                    if (idObj == null) continue;
-                    string id = idObj.ToString()!;
-                    if (Sql.CorreccionesObj.ObtenerItem("documentoC", id)?.ToString() == docId)
-                        idsEliminar.Add(id);
-                }
-                foreach (string id in idsEliminar)
-                    Sql.CorreccionesObj.Eliminar(id);
-
+                // Guardado diferencial de líneas (inserta/actualiza/oculta)
                 CrearLineas(docId);
 
                 Sql.CorreccionesObj.OrdenarData(("documentoC", false), ("indice", false));
@@ -682,20 +673,34 @@ namespace WpfAppVba
             }
         }
 
-        // ─── Crear líneas con UUID ──
+        // ─── Guardado diferencial de líneas (inserta/actualiza/oculta) ──
         private void CrearLineas(string docId)
         {
+            var vigentes = new HashSet<string>(
+                _items.Where(x => !string.IsNullOrEmpty(x.CorreccionId)).Select(x => x.CorreccionId));
+            foreach (var idOrig in _itemsOrig)
+                if (!vigentes.Contains(idOrig)) Sql.CorreccionesObj.Ocultar(idOrig);
+
             int baseIdx = Sql.CorreccionesObj.SiguienteIndice("documentoC", docId);
-            for (int i = 0; i < _items.Count; i++)
+            int nuevoOff = 0;
+            foreach (var item in _items)
             {
-                var item   = _items[i];
-                string nid = Guid.NewGuid().ToString();
-                Sql.CorreccionesObj.Nuevo(nid);
-                Sql.CorreccionesObj.EstablecerItem("documentoC", nid, docId);
-                Sql.CorreccionesObj.EstablecerItem("articulo",   nid, item.ArticuloId);
-                Sql.CorreccionesObj.EstablecerItem("cantidad",   nid, item.Cantidad);
-                Sql.CorreccionesObj.EstablecerItem("indice",     nid, baseIdx + i);
+                string id;
+                if (string.IsNullOrEmpty(item.CorreccionId))
+                {
+                    id = Guid.NewGuid().ToString();
+                    Sql.CorreccionesObj.Nuevo(id);
+                    Sql.CorreccionesObj.EstablecerItem("documentoC", id, docId);
+                    Sql.CorreccionesObj.EstablecerItem("indice",     id, baseIdx + nuevoOff);
+                    nuevoOff++;
+                    item.CorreccionId = id;
+                }
+                else id = item.CorreccionId;
+
+                Sql.CorreccionesObj.EstablecerItem("articulo", id, item.ArticuloId);
+                Sql.CorreccionesObj.EstablecerItem("cantidad", id, item.Cantidad);
             }
+            _itemsOrig = new HashSet<string>(_items.Select(x => x.CorreccionId));
         }
 
         // ─── Helper: combinar fecha del DatePicker y hora del TextBox ─────────

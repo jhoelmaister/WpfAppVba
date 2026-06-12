@@ -27,6 +27,12 @@ namespace WpfAppVba
         private List<TrasaccionItemFila> _trasacciones  = new();
         private List<EntregaItemFila>    _entregas      = new();
 
+        // IDs de las líneas existentes al abrir para editar; sirven para detectar
+        // bajas (lo que estaba y ya no está) y aplicar un guardado diferencial.
+        private HashSet<string> _pedidosOrig      = new();
+        private HashSet<string> _trasaccionesOrig = new();
+        private HashSet<string> _entregasOrig     = new();
+
         private readonly HashSet<string> _articulosAlertados = new();
         private string                   _observaciones = "";
         private string                   _codigoDocP    = "";
@@ -123,6 +129,9 @@ namespace WpfAppVba
             _pedidos.Clear();
             _trasacciones.Clear();
             _entregas.Clear();
+            _pedidosOrig.Clear();
+            _trasaccionesOrig.Clear();
+            _entregasOrig.Clear();
             RefrescarGridPedidos();
             RefrescarGridTrasacciones();
             RefrescarGridEntregas();
@@ -251,6 +260,11 @@ namespace WpfAppVba
                     HoraStr     = fe.ToString("HH:mm:ss")
                 });
             }
+
+            // Snapshot de los ids existentes para el guardado diferencial
+            _pedidosOrig      = new HashSet<string>(_pedidos.Select(p => p.PedidoId));
+            _trasaccionesOrig = new HashSet<string>(_trasacciones.Select(t => t.TrasaccionId));
+            _entregasOrig     = new HashSet<string>(_entregas.Select(e => e.EntregaId));
 
             RefrescarGridPedidos();
             RefrescarGridTrasacciones();
@@ -1338,24 +1352,10 @@ namespace WpfAppVba
                 Sql.DocumentosPObj.EstablecerItem("usuario",     docP, AppState.UsuarioActivo);
                 Sql.DocumentosPObj.EstablecerItem("usuarioE",    docP, AppState.UsuarioActivo);
 
-                // Solo eliminar y recrear las líneas que realmente cambiaron.
-                // EliminarLineas sin su correspondiente Guardar ocultaría
-                // las filas existentes sin volver a crearlas (Bug 2).
-                if (_cambioPedido)
-                {
-                    EliminarLineas(Sql.PedidosObj, "documentoP", docP);
-                    GuardarLineasPedido(docP);
-                }
-                if (_cambioTrasaccion)
-                {
-                    EliminarLineas(Sql.TrasaccionesObj, "documentoP", docP);
-                    GuardarLineasTrasaccion(docP);
-                }
-                if (_cambioEntrega)
-                {
-                    EliminarLineas(Sql.EntregasObj, "documentoP", docP);
-                    GuardarLineasEntrega(docP);
-                }
+                // Guardado diferencial: solo inserta/actualiza/oculta lo que cambió.
+                if (_cambioPedido)     GuardarLineasPedido(docP);
+                if (_cambioTrasaccion) GuardarLineasTrasaccion(docP);
+                if (_cambioEntrega)    GuardarLineasEntrega(docP);
                 OrdenarTablas();
 
                 MessageBox.Show("Guardado exitoso.", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -1366,77 +1366,107 @@ namespace WpfAppVba
             { MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error); return false; }
         }
 
-        private void EliminarLineas(DataConsulta tabla, string campo, string docP)
-        {
-            int uf = tabla.ContarFilas;
-            var ids = new List<string>();
-            for (int i = 1; i <= uf; i++)
-            {
-                var idObj = tabla.Mover(i);
-                if (idObj == null) continue;
-                string id = idObj.ToString()!;
-                if (tabla.ObtenerItem(campo, id)?.ToString() == docP)
-                    ids.Add(id);
-            }
-            foreach (var id in ids) tabla.Eliminar(id);
-        }
-
+        // Guardado diferencial: las líneas nuevas (id vacío) se insertan, las
+        // existentes se actualizan sobre su mismo id, y las que se quitaron de la
+        // grilla se ocultan (estadof). Ya no se borran y recrean todas.
         private void GuardarLineasPedido(string docP)
         {
+            var vigentes = new HashSet<string>(
+                _pedidos.Where(p => !string.IsNullOrEmpty(p.PedidoId)).Select(p => p.PedidoId));
+            foreach (var idOrig in _pedidosOrig)
+                if (!vigentes.Contains(idOrig)) Sql.PedidosObj.Ocultar(idOrig);
+
             int baseIdx = Sql.PedidosObj.SiguienteIndice("documentoP", docP);
-            for (int i = 0; i < _pedidos.Count; i++)
+            int nuevoOff = 0;
+            foreach (var item in _pedidos)
             {
-                var item  = _pedidos[i];
-                string id = Guid.NewGuid().ToString();
-                Sql.PedidosObj.Nuevo(id);
-                Sql.PedidosObj.EstablecerItem("documentoP", id, docP);
-                Sql.PedidosObj.EstablecerItem("articulo",   id, item.ArticuloId);
-                Sql.PedidosObj.EstablecerItem("indice",     id, baseIdx + i);
-                Sql.PedidosObj.EstablecerItem("cantidad",   id, item.Cantidad);
-                Sql.PedidosObj.EstablecerItem("importe",    id, item.Importe);
-                Sql.PedidosObj.EstablecerItem("forma",      id, item.Forma);
-                Sql.PedidosObj.EstablecerItem("contable",   id, item.Contable);
-                Sql.PedidosObj.EstablecerItem("tipo",       id, item.Tipo);
+                string id;
+                if (string.IsNullOrEmpty(item.PedidoId))
+                {
+                    id = Guid.NewGuid().ToString();
+                    Sql.PedidosObj.Nuevo(id);
+                    Sql.PedidosObj.EstablecerItem("documentoP", id, docP);
+                    Sql.PedidosObj.EstablecerItem("indice",     id, baseIdx + nuevoOff);
+                    nuevoOff++;
+                    item.PedidoId = id;
+                }
+                else id = item.PedidoId;
+
+                Sql.PedidosObj.EstablecerItem("articulo", id, item.ArticuloId);
+                Sql.PedidosObj.EstablecerItem("cantidad", id, item.Cantidad);
+                Sql.PedidosObj.EstablecerItem("importe",  id, item.Importe);
+                Sql.PedidosObj.EstablecerItem("forma",    id, item.Forma);
+                Sql.PedidosObj.EstablecerItem("contable", id, item.Contable);
+                Sql.PedidosObj.EstablecerItem("tipo",     id, item.Tipo);
             }
+            _pedidosOrig = new HashSet<string>(_pedidos.Select(p => p.PedidoId));
         }
 
         private void GuardarLineasTrasaccion(string docP)
         {
+            var vigentes = new HashSet<string>(
+                _trasacciones.Where(t => !string.IsNullOrEmpty(t.TrasaccionId)).Select(t => t.TrasaccionId));
+            foreach (var idOrig in _trasaccionesOrig)
+                if (!vigentes.Contains(idOrig)) Sql.TrasaccionesObj.Ocultar(idOrig);
+
             int baseIdx = Sql.TrasaccionesObj.SiguienteIndice("documentoP", docP);
-            for (int i = 0; i < _trasacciones.Count; i++)
+            int nuevoOff = 0;
+            foreach (var item in _trasacciones)
             {
-                var item  = _trasacciones[i];
-                string id = Guid.NewGuid().ToString();
                 DateTime fechaT = CombinarFechaHora(
                     DateTime.TryParse(item.FechaStr, out var fd) ? fd : DateTime.Today,
                     item.HoraStr);
-                Sql.TrasaccionesObj.Nuevo(id);
-                Sql.TrasaccionesObj.EstablecerItem("documentoP",  id, docP);
-                Sql.TrasaccionesObj.EstablecerItem("indice",      id, baseIdx + i);
+                string id;
+                if (string.IsNullOrEmpty(item.TrasaccionId))
+                {
+                    id = Guid.NewGuid().ToString();
+                    Sql.TrasaccionesObj.Nuevo(id);
+                    Sql.TrasaccionesObj.EstablecerItem("documentoP", id, docP);
+                    Sql.TrasaccionesObj.EstablecerItem("indice",     id, baseIdx + nuevoOff);
+                    nuevoOff++;
+                    item.TrasaccionId = id;
+                }
+                else id = item.TrasaccionId;
+
                 Sql.TrasaccionesObj.EstablecerItem("fecha",       id, fechaT);
                 Sql.TrasaccionesObj.EstablecerItem("descripcion", id, item.Descripcion);
                 Sql.TrasaccionesObj.EstablecerItem("importe",     id, item.Importe);
                 Sql.TrasaccionesObj.EstablecerItem("forma",       id, item.Forma);
             }
+            _trasaccionesOrig = new HashSet<string>(_trasacciones.Select(t => t.TrasaccionId));
         }
 
         private void GuardarLineasEntrega(string docP)
         {
+            var vigentes = new HashSet<string>(
+                _entregas.Where(e => !string.IsNullOrEmpty(e.EntregaId)).Select(e => e.EntregaId));
+            foreach (var idOrig in _entregasOrig)
+                if (!vigentes.Contains(idOrig)) Sql.EntregasObj.Ocultar(idOrig);
+
             int baseIdx = Sql.EntregasObj.SiguienteIndice("documentoP", docP);
-            for (int i = 0; i < _entregas.Count; i++)
+            int nuevoOff = 0;
+            foreach (var item in _entregas)
             {
-                var item  = _entregas[i];
-                string id = Guid.NewGuid().ToString();
                 DateTime fechaE = CombinarFechaHora(
                     DateTime.TryParse(item.FechaStr, out var fd) ? fd : DateTime.Today,
                     item.HoraStr);
-                Sql.EntregasObj.Nuevo(id);
-                Sql.EntregasObj.EstablecerItem("documentoP", id, docP);
-                Sql.EntregasObj.EstablecerItem("articulo",   id, item.ArticuloId);
-                Sql.EntregasObj.EstablecerItem("indice",     id, baseIdx + i);
-                Sql.EntregasObj.EstablecerItem("cantidad",   id, item.Cantidad);
-                Sql.EntregasObj.EstablecerItem("fecha",      id, fechaE);
+                string id;
+                if (string.IsNullOrEmpty(item.EntregaId))
+                {
+                    id = Guid.NewGuid().ToString();
+                    Sql.EntregasObj.Nuevo(id);
+                    Sql.EntregasObj.EstablecerItem("documentoP", id, docP);
+                    Sql.EntregasObj.EstablecerItem("indice",     id, baseIdx + nuevoOff);
+                    nuevoOff++;
+                    item.EntregaId = id;
+                }
+                else id = item.EntregaId;
+
+                Sql.EntregasObj.EstablecerItem("articulo", id, item.ArticuloId);
+                Sql.EntregasObj.EstablecerItem("cantidad", id, item.Cantidad);
+                Sql.EntregasObj.EstablecerItem("fecha",    id, fechaE);
             }
+            _entregasOrig = new HashSet<string>(_entregas.Select(e => e.EntregaId));
         }
 
         private static void OrdenarTablas()

@@ -20,6 +20,8 @@ namespace WpfAppVba
         private bool _cargando        = true;
         private bool _editarFormulario = false;
         private List<TraspasoItemFila> _items = new();
+        // IDs de las líneas existentes al abrir para editar (para el guardado diferencial).
+        private HashSet<string> _itemsOrig = new();
 
         private readonly HashSet<string> _articulosAlertados = new();
 
@@ -166,6 +168,7 @@ namespace WpfAppVba
                     Cantidad    = cant
                 });
             }
+            _itemsOrig = new HashSet<string>(_items.Select(x => x.TraspasoId));
             RefrescarGrid();
         }
 
@@ -191,6 +194,7 @@ namespace WpfAppVba
             ActualizarBadgeEstado();
 
             _items.Clear();
+            _itemsOrig.Clear();
             RefrescarGrid();
         }
 
@@ -727,18 +731,8 @@ namespace WpfAppVba
                 Sql.DocumentosTObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
                 Sql.DocumentosTObj.EstablecerItem("emitido",     id, AppState.SucursalActiva);
 
-                // ── Crear líneas con UUID ──
-                int baseIdx = Sql.TraspasosObj.SiguienteIndice("documentoT", id);
-                for (int i = 0; i < _items.Count; i++)
-                {
-                    var item     = _items[i];
-                    string idStr = Guid.NewGuid().ToString();
-                    Sql.TraspasosObj.Nuevo(idStr);
-                    Sql.TraspasosObj.EstablecerItem("documentoT", idStr, id);
-                    Sql.TraspasosObj.EstablecerItem("articulo",   idStr, item.ArticuloId);
-                    Sql.TraspasosObj.EstablecerItem("cantidad",   idStr, item.Cantidad);
-                    Sql.TraspasosObj.EstablecerItem("indice",     idStr, baseIdx + i);
-                }
+                // ── Crear líneas (diferencial: documento nuevo → todas se insertan) ──
+                GuardarLineasTraspaso(id);
 
                 Sql.DocumentosTObj.OrdenarData(("fecha", false));
                 Sql.TraspasosObj.OrdenarData(("documentoT", false), ("indice", false));
@@ -780,32 +774,8 @@ namespace WpfAppVba
                 Sql.DocumentosTObj.EstablecerItem("edicion",     docT, DateTime.Now);
                 Sql.DocumentosTObj.EstablecerItem("usuarioE",    docT, AppState.UsuarioActivo);
 
-                // ── Eliminar líneas existentes (igual VBA: .eliminar, no .ocultar) ──
-                int uf = Sql.TraspasosObj.ContarFilas;
-                var idsEliminar = new List<string>();
-                for (int i = 1; i <= uf; i++)
-                {
-                    var idObj = Sql.TraspasosObj.Mover(i);
-                    if (idObj == null) continue;
-                    string id = idObj.ToString()!;
-                    if (Sql.TraspasosObj.ObtenerItem("documentoT", id)?.ToString() == docT)
-                        idsEliminar.Add(id);
-                }
-                foreach (var id in idsEliminar)
-                    Sql.TraspasosObj.Eliminar(id);
-
-                // ── Re-crear con UUID ──
-                int baseIdx = Sql.TraspasosObj.SiguienteIndice("documentoT", docT);
-                for (int i = 0; i < _items.Count; i++)
-                {
-                    var item  = _items[i];
-                    string idStr = Guid.NewGuid().ToString();
-                    Sql.TraspasosObj.Nuevo(idStr);
-                    Sql.TraspasosObj.EstablecerItem("documentoT", idStr, docT);
-                    Sql.TraspasosObj.EstablecerItem("articulo",   idStr, item.ArticuloId);
-                    Sql.TraspasosObj.EstablecerItem("cantidad",   idStr, item.Cantidad);
-                    Sql.TraspasosObj.EstablecerItem("indice",     idStr, baseIdx + i);
-                }
+                // ── Guardado diferencial de líneas (inserta/actualiza/oculta) ──
+                GuardarLineasTraspaso(docT);
 
                 Sql.DocumentosTObj.OrdenarData(("fecha", false));
                 Sql.TraspasosObj.OrdenarData(("documentoT", false), ("indice", false));
@@ -819,6 +789,36 @@ namespace WpfAppVba
                 MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
+        }
+
+        // ─── Guardado diferencial de líneas (inserta/actualiza/oculta) ────────
+        private void GuardarLineasTraspaso(string docT)
+        {
+            var vigentes = new HashSet<string>(
+                _items.Where(x => !string.IsNullOrEmpty(x.TraspasoId)).Select(x => x.TraspasoId));
+            foreach (var idOrig in _itemsOrig)
+                if (!vigentes.Contains(idOrig)) Sql.TraspasosObj.Ocultar(idOrig);
+
+            int baseIdx = Sql.TraspasosObj.SiguienteIndice("documentoT", docT);
+            int nuevoOff = 0;
+            foreach (var item in _items)
+            {
+                string id;
+                if (string.IsNullOrEmpty(item.TraspasoId))
+                {
+                    id = Guid.NewGuid().ToString();
+                    Sql.TraspasosObj.Nuevo(id);
+                    Sql.TraspasosObj.EstablecerItem("documentoT", id, docT);
+                    Sql.TraspasosObj.EstablecerItem("indice",     id, baseIdx + nuevoOff);
+                    nuevoOff++;
+                    item.TraspasoId = id;
+                }
+                else id = item.TraspasoId;
+
+                Sql.TraspasosObj.EstablecerItem("articulo", id, item.ArticuloId);
+                Sql.TraspasosObj.EstablecerItem("cantidad", id, item.Cantidad);
+            }
+            _itemsOrig = new HashSet<string>(_items.Select(x => x.TraspasoId));
         }
 
         // ─── Combinar fecha + hora ────────────────────────────────────────────
