@@ -183,20 +183,22 @@ namespace WpfAppVba.Data
         }
 
         /// <summary>
-        /// Siguiente índice libre para las líneas de un documento: MAX(indice) + 1
-        /// considerando TODAS las filas (incluidas ocultas/eliminadas) cuyo
-        /// <paramref name="filtroColumna"/> = <paramref name="filtroValor"/>.
-        /// Evita índices duplicados con el borrado lógico (las filas eliminadas
-        /// permanecen físicamente en SQL Server).
+        /// Índices ya ocupados por filas eliminadas/ocultas (estadof &lt;&gt; 'normal') del
+        /// documento cuyo <paramref name="filtroColumna"/> = <paramref name="filtroValor"/>.
+        /// Consulta directa a SQL Server (esas filas no están en el caché). Sirve para
+        /// no reutilizar esos índices al renumerar las líneas visibles.
         /// </summary>
-        public int SiguienteIndice(string filtroColumna, string filtroValor)
+        public HashSet<int> IndicesNoNormales(string filtroColumna, string filtroValor)
         {
+            var res  = new HashSet<int>();
             var conn = DatabaseConnection.ObtenerConexion();
             using var cmd = new SqlCommand(
-                $"SELECT ISNULL(MAX(indice), 0) FROM {_nombreTabla} WHERE {filtroColumna} = @f", conn);
+                $"SELECT indice FROM {_nombreTabla} WHERE estadof <> 'normal' AND {filtroColumna} = @f", conn);
             cmd.Parameters.AddWithValue("@f", filtroValor);
-            var r = cmd.ExecuteScalar();
-            return (r is null or DBNull) ? 1 : Convert.ToInt32(r) + 1;
+            using var rd = cmd.ExecuteReader();
+            while (rd.Read())
+                if (rd[0] != DBNull.Value && int.TryParse(rd[0].ToString(), out int n)) res.Add(n);
+            return res;
         }
 
         /// <summary>

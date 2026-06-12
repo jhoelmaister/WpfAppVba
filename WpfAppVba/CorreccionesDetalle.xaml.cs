@@ -678,10 +678,17 @@ namespace WpfAppVba
         {
             var vigentes = new HashSet<string>(
                 _items.Where(x => !string.IsNullOrEmpty(x.CorreccionId)).Select(x => x.CorreccionId));
-            foreach (var idOrig in _itemsOrig)
-                if (!vigentes.Contains(idOrig)) Sql.CorreccionesObj.Eliminar(idOrig);
 
-            int pos = 1;
+            var reservados = Sql.CorreccionesObj.IndicesNoNormales("documentoC", docId);
+            foreach (var idOrig in _itemsOrig)
+                if (!vigentes.Contains(idOrig))
+                {
+                    var ix = Sql.CorreccionesObj.ObtenerItem("indice", idOrig);
+                    if (ix != null && int.TryParse(ix.ToString(), out int n)) reservados.Add(n);
+                    Sql.CorreccionesObj.Eliminar(idOrig);
+                }
+
+            int next = 1;
             foreach (var item in _items)
             {
                 string id;
@@ -694,10 +701,11 @@ namespace WpfAppVba
                 }
                 else id = item.CorreccionId;
 
-                Sql.CorreccionesObj.EstablecerItem("indice",   id, pos);
+                while (reservados.Contains(next)) next++;
+                Sql.CorreccionesObj.EstablecerItem("indice",   id, next);
+                next++;
                 Sql.CorreccionesObj.EstablecerItem("articulo", id, item.ArticuloId);
                 Sql.CorreccionesObj.EstablecerItem("cantidad", id, item.Cantidad);
-                pos++;
             }
             _itemsOrig = new HashSet<string>(_items.Select(x => x.CorreccionId));
         }

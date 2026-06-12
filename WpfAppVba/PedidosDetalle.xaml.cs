@@ -1373,10 +1373,19 @@ namespace WpfAppVba
         {
             var vigentes = new HashSet<string>(
                 _pedidos.Where(p => !string.IsNullOrEmpty(p.PedidoId)).Select(p => p.PedidoId));
-            foreach (var idOrig in _pedidosOrig)
-                if (!vigentes.Contains(idOrig)) Sql.PedidosObj.Eliminar(idOrig);
 
-            int pos = 1;
+            // Índices reservados por filas eliminadas (no se reutilizan): las ya
+            // eliminadas en SQL + las que se eliminan en este guardado.
+            var reservados = Sql.PedidosObj.IndicesNoNormales("documentoP", docP);
+            foreach (var idOrig in _pedidosOrig)
+                if (!vigentes.Contains(idOrig))
+                {
+                    var ix = Sql.PedidosObj.ObtenerItem("indice", idOrig);
+                    if (ix != null && int.TryParse(ix.ToString(), out int n)) reservados.Add(n);
+                    Sql.PedidosObj.Eliminar(idOrig);
+                }
+
+            int next = 1;
             foreach (var item in _pedidos)
             {
                 string id;
@@ -1389,14 +1398,15 @@ namespace WpfAppVba
                 }
                 else id = item.PedidoId;
 
-                Sql.PedidosObj.EstablecerItem("indice",   id, pos);
+                while (reservados.Contains(next)) next++;
+                Sql.PedidosObj.EstablecerItem("indice",   id, next);
+                next++;
                 Sql.PedidosObj.EstablecerItem("articulo", id, item.ArticuloId);
                 Sql.PedidosObj.EstablecerItem("cantidad", id, item.Cantidad);
                 Sql.PedidosObj.EstablecerItem("importe",  id, item.Importe);
                 Sql.PedidosObj.EstablecerItem("forma",    id, item.Forma);
                 Sql.PedidosObj.EstablecerItem("contable", id, item.Contable);
                 Sql.PedidosObj.EstablecerItem("tipo",     id, item.Tipo);
-                pos++;
             }
             _pedidosOrig = new HashSet<string>(_pedidos.Select(p => p.PedidoId));
         }
@@ -1405,10 +1415,17 @@ namespace WpfAppVba
         {
             var vigentes = new HashSet<string>(
                 _trasacciones.Where(t => !string.IsNullOrEmpty(t.TrasaccionId)).Select(t => t.TrasaccionId));
-            foreach (var idOrig in _trasaccionesOrig)
-                if (!vigentes.Contains(idOrig)) Sql.TrasaccionesObj.Eliminar(idOrig);
 
-            int pos = 1;
+            var reservados = Sql.TrasaccionesObj.IndicesNoNormales("documentoP", docP);
+            foreach (var idOrig in _trasaccionesOrig)
+                if (!vigentes.Contains(idOrig))
+                {
+                    var ix = Sql.TrasaccionesObj.ObtenerItem("indice", idOrig);
+                    if (ix != null && int.TryParse(ix.ToString(), out int n)) reservados.Add(n);
+                    Sql.TrasaccionesObj.Eliminar(idOrig);
+                }
+
+            int next = 1;
             foreach (var item in _trasacciones)
             {
                 DateTime fechaT = CombinarFechaHora(
@@ -1424,12 +1441,13 @@ namespace WpfAppVba
                 }
                 else id = item.TrasaccionId;
 
-                Sql.TrasaccionesObj.EstablecerItem("indice",      id, pos);
+                while (reservados.Contains(next)) next++;
+                Sql.TrasaccionesObj.EstablecerItem("indice",      id, next);
+                next++;
                 Sql.TrasaccionesObj.EstablecerItem("fecha",       id, fechaT);
                 Sql.TrasaccionesObj.EstablecerItem("descripcion", id, item.Descripcion);
                 Sql.TrasaccionesObj.EstablecerItem("importe",     id, item.Importe);
                 Sql.TrasaccionesObj.EstablecerItem("forma",       id, item.Forma);
-                pos++;
             }
             _trasaccionesOrig = new HashSet<string>(_trasacciones.Select(t => t.TrasaccionId));
         }
@@ -1438,10 +1456,17 @@ namespace WpfAppVba
         {
             var vigentes = new HashSet<string>(
                 _entregas.Where(e => !string.IsNullOrEmpty(e.EntregaId)).Select(e => e.EntregaId));
-            foreach (var idOrig in _entregasOrig)
-                if (!vigentes.Contains(idOrig)) Sql.EntregasObj.Eliminar(idOrig);
 
-            int pos = 1;
+            var reservados = Sql.EntregasObj.IndicesNoNormales("documentoP", docP);
+            foreach (var idOrig in _entregasOrig)
+                if (!vigentes.Contains(idOrig))
+                {
+                    var ix = Sql.EntregasObj.ObtenerItem("indice", idOrig);
+                    if (ix != null && int.TryParse(ix.ToString(), out int n)) reservados.Add(n);
+                    Sql.EntregasObj.Eliminar(idOrig);
+                }
+
+            int next = 1;
             foreach (var item in _entregas)
             {
                 DateTime fechaE = CombinarFechaHora(
@@ -1457,11 +1482,12 @@ namespace WpfAppVba
                 }
                 else id = item.EntregaId;
 
-                Sql.EntregasObj.EstablecerItem("indice",   id, pos);
+                while (reservados.Contains(next)) next++;
+                Sql.EntregasObj.EstablecerItem("indice",   id, next);
+                next++;
                 Sql.EntregasObj.EstablecerItem("articulo", id, item.ArticuloId);
                 Sql.EntregasObj.EstablecerItem("cantidad", id, item.Cantidad);
                 Sql.EntregasObj.EstablecerItem("fecha",    id, fechaE);
-                pos++;
             }
             _entregasOrig = new HashSet<string>(_entregas.Select(e => e.EntregaId));
         }
