@@ -279,7 +279,6 @@ namespace WpfAppVba.Data
             if (!_tabla.Columns.Contains("estadof")) return;
 
             var conn       = DatabaseConnection.ObtenerConexion();
-            var deleteIds  = new List<string>();
             var insertRows = new List<DataRow>();
             var updateRows = new List<DataRow>();
 
@@ -287,21 +286,13 @@ namespace WpfAppVba.Data
             {
                 switch (row["estadof"]?.ToString() ?? "")
                 {
-                    case "eliminado": deleteIds.Add(row["id"]?.ToString() ?? ""); break;
                     case "nuevo":     insertRows.Add(row);                        break;
+                    // "ocultado" y "eliminado" son borrados LÓGICOS: se persisten con un
+                    // UPDATE del estadof. NUNCA se borra físicamente una fila en SQL Server.
                     case "editado":
-                    case "ocultado":  updateRows.Add(row);                        break;
+                    case "ocultado":
+                    case "eliminado": updateRows.Add(row);                        break;
                 }
-            }
-
-            // ── ELIMINACIONES ────────────────────────────────────────────────
-            foreach (var bloque in Chunks(deleteIds, 1000))
-            {
-                string lista = string.Join(",",
-                    bloque.Select(x => $"'{x.Replace("'", "''")}'"));
-                using var cmd = new SqlCommand(
-                    $"DELETE FROM {_nombreTabla} WHERE id IN ({lista})", conn);
-                cmd.ExecuteNonQuery();
             }
 
             // ── INSERCIONES ──────────────────────────────────────────────────

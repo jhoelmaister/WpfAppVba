@@ -70,6 +70,7 @@ namespace WpfAppVba
             string id = _idEditar;
             Box_Codigo.Text      = Sql.RegionesObj.ObtenerItem("codigo",      id)?.ToString() ?? "";
             Box_Descripcion.Text = Sql.RegionesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+            Box_Signo.Text       = Sql.RegionesObj.ObtenerItem("signo",       id)?.ToString() ?? "";
         }
 
         private void CargarParaNuevo()
@@ -93,6 +94,7 @@ namespace WpfAppVba
             try
             {
                 Sql.RegionesObj.EstablecerItem("descripcion", id, Box_Descripcion.Text);
+                Sql.RegionesObj.EstablecerItem("signo",       id, Box_Signo.Text.Trim().ToUpper());
                 Sql.RegionesObj.EstablecerItem("edicion",     id, DateTime.Now);
                 Sql.RegionesObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
 
@@ -124,6 +126,7 @@ namespace WpfAppVba
                 Sql.RegionesObj.Nuevo(id);
                 Sql.RegionesObj.EstablecerItem("codigo",      id, codigo);
                 Sql.RegionesObj.EstablecerItem("descripcion", id, Box_Descripcion.Text);
+                Sql.RegionesObj.EstablecerItem("signo",       id, Box_Signo.Text.Trim().ToUpper());
                 Sql.RegionesObj.EstablecerItem("emision",     id, DateTime.Now);
                 Sql.RegionesObj.EstablecerItem("edicion",     id, DateTime.Now);
                 Sql.RegionesObj.EstablecerItem("usuario",     id, AppState.UsuarioActivo);

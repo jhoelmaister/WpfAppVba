@@ -167,6 +167,11 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 
 ## Historial de Cambios por Sesión
 
+### Sesión 2026-06-12 — Borrado lógico y signo en Regiones/Sucursales (rama `claude/cool-hopper-vo3mxo`)
+- **Borrado lógico global**: `DataConsulta.ExportarItems` ya NO ejecuta `DELETE FROM` físico. Las filas con `estadof` = `"eliminado"` u `"ocultado"` se persisten con un `UPDATE` del `estadof` (se filtran al recargar, que solo trae `estadof='normal'`). Se eliminó el bloque DELETE y la lista `deleteIds`. Afecta a todos los callers de `.Eliminar(...)`/`.Ocultar(...)` (General de maestros, líneas de Pedidos/Traspasos/Correcciones/Inventarios, `ActualizarStocks`). Nota: las tablas pueden acumular filas con estadof≠normal (no se borran nunca).
+- **`RegionesDetalle`**: nuevo `Box_Signo` (SIGNO, MaxLength 4, mayúscula) a la derecha de DESCRIPCIÓN; se carga y guarda `regiones.signo`.
+- **`SucursalesDetalle`**: nuevo `Box_Signo` (SIGNO, MaxLength 4, mayúscula) a la derecha de DESCRIPCIÓN; se carga y guarda `sucursales.signo`.
+
 ### Sesión 2026-06-12 — Formularios de Empresas (rama `claude/cool-hopper-vo3mxo`)
 - Nueva sección **Empresas** en el sidebar, entre Precios y Configuración (botón `🏢 Empresas`).
 - `EmpresasGeneral` (UserControl): lista con columnas Línea/Código/Descripción/Signo; CRUD "Nueva/Editar/Eliminar Empresa" + Actualizar; patrón estándar (`_iniciado`, `Cerrando`/`IntentarCerrar`, actualización incremental, `OpenAsTab` selector con clave `seleccionar-empresa|{contexto}`). Usa `Sql.EmpresasObj`.

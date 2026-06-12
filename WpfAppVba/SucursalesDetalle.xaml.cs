@@ -59,6 +59,7 @@ namespace WpfAppVba
             Box_Codigo.Text      = Sql.SucursalesObj.ObtenerItem("codigo",      id)?.ToString() ?? "";
             Box_Nit.Text         = Sql.SucursalesObj.ObtenerItem("nit",         id)?.ToString() ?? "";
             Box_Descripcion.Text = Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+            Box_Signo.Text       = Sql.SucursalesObj.ObtenerItem("signo",       id)?.ToString() ?? "";
             Box_Telefono.Text    = Sql.SucursalesObj.ObtenerItem("telefono",    id)?.ToString() ?? "";
             Box_Direccion.Text   = Sql.SucursalesObj.ObtenerItem("direccion",   id)?.ToString() ?? "";
             Box_Observacion.Text = Sql.SucursalesObj.ObtenerItem("observacion", id)?.ToString() ?? "";
@@ -149,6 +150,7 @@ namespace WpfAppVba
             {
                 Sql.SucursalesObj.EstablecerItem("nit",         id, Box_Nit.Text);
                 Sql.SucursalesObj.EstablecerItem("descripcion", id, Box_Descripcion.Text);
+                Sql.SucursalesObj.EstablecerItem("signo",       id, Box_Signo.Text.Trim().ToUpper());
                 Sql.SucursalesObj.EstablecerItem("telefono",    id, Box_Telefono.Text);
                 Sql.SucursalesObj.EstablecerItem("region",      id, ResolverRegionId());
                 Sql.SucursalesObj.EstablecerItem("direccion",   id, Box_Direccion.Text);
@@ -186,6 +188,7 @@ namespace WpfAppVba
                 Sql.SucursalesObj.EstablecerItem("codigo",      id, codigo);
                 Sql.SucursalesObj.EstablecerItem("nit",         id, Box_Nit.Text);
                 Sql.SucursalesObj.EstablecerItem("descripcion", id, Box_Descripcion.Text);
+                Sql.SucursalesObj.EstablecerItem("signo",       id, Box_Signo.Text.Trim().ToUpper());
                 Sql.SucursalesObj.EstablecerItem("telefono",    id, Box_Telefono.Text);
                 Sql.SucursalesObj.EstablecerItem("region",      id, ResolverRegionId());
                 Sql.SucursalesObj.EstablecerItem("direccion",   id, Box_Direccion.Text);
