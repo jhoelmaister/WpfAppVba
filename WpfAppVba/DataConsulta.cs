@@ -200,6 +200,22 @@ namespace WpfAppVba.Data
         }
 
         /// <summary>
+        /// Máxima fecha (de filas en estado normal) cuyo <paramref name="filtroColumna"/> =
+        /// <paramref name="filtroValor"/>. Consulta directa a SQL Server (no usa el caché,
+        /// por lo que sirve para cualquier sucursal aunque el caché esté filtrado por otra).
+        /// Devuelve null si no hay filas.
+        /// </summary>
+        public DateTime? MaxFecha(string filtroColumna, string filtroValor)
+        {
+            var conn = DatabaseConnection.ObtenerConexion();
+            using var cmd = new SqlCommand(
+                $"SELECT MAX(fecha) FROM {_nombreTabla} WHERE estadof = 'normal' AND {filtroColumna} = @f", conn);
+            cmd.Parameters.AddWithValue("@f", filtroValor);
+            var r = cmd.ExecuteScalar();
+            return (r is null or DBNull) ? (DateTime?)null : Convert.ToDateTime(r);
+        }
+
+        /// <summary>
         /// Indica si ya existe otra fila (en estado normal) con el mismo codigo.
         /// Si se indica <paramref name="idActual"/>, esa fila se excluye (modo editar).
         /// </summary>

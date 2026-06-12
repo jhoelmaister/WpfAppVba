@@ -152,16 +152,26 @@ namespace WpfAppVba
         private void ActualizarPeriodos()
         {
             int inicioAno = DateTime.Now.Year;
-            if (CmbSucursal.SelectedItem is SucursalItem item && _sucursalesEmpresa != null)
+            if (CmbSucursal.SelectedItem is SucursalItem item)
             {
-                var fechaObj = _sucursalesEmpresa.ObtenerItem("fecha", item.Id);
-                if (fechaObj != null && DateTime.TryParse(fechaObj.ToString(), out DateTime fecha))
-                    inicioAno = fecha.Year;
+                // Base = año de la MÁXIMA fecha de inventario de la sucursal. Si la
+                // sucursal no tiene inventarios, se usa el año de sucursal.fecha.
+                DateTime? maxInv = Sql.DocumentosIObj.MaxFecha("sucursal", item.Id);
+                if (maxInv.HasValue)
+                {
+                    inicioAno = maxInv.Value.Year;
+                }
+                else if (_sucursalesEmpresa != null)
+                {
+                    var fechaObj = _sucursalesEmpresa.ObtenerItem("fecha", item.Id);
+                    if (fechaObj != null && DateTime.TryParse(fechaObj.ToString(), out DateTime fecha))
+                        inicioAno = fecha.Year;
+                }
             }
 
             string? selActual = CmbPeriodo.SelectedItem?.ToString();
             CmbPeriodo.Items.Clear();
-            int final = DateTime.Now.Year;
+            int final = Math.Max(DateTime.Now.Year, inicioAno);
             for (int y = inicioAno; y <= final; y++)
                 CmbPeriodo.Items.Add(y.ToString());
 
