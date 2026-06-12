@@ -134,6 +134,7 @@ namespace WpfAppVba
                 {
                     Fecha      = fecha,
                     Documento  = docP,
+                    DocumentoCodigo = Sql.DocumentosPObj.ObtenerItem("codigo", docP)?.ToString() ?? "",
                     Movimiento = movDoc,
                     Estado     = estado,
                     Cantidad   = cantidad,
@@ -175,6 +176,7 @@ namespace WpfAppVba
                 {
                     Fecha      = fecha,
                     Documento  = docT,
+                    DocumentoCodigo = Sql.DocumentosTObj.ObtenerItem("codigo", docT)?.ToString() ?? "",
                     Movimiento = movimiento,
                     Estado     = estado,
                     Cantidad   = cantidad,
@@ -207,6 +209,7 @@ namespace WpfAppVba
                 {
                     Fecha      = fecha,
                     Documento  = docC,
+                    DocumentoCodigo = Sql.DocumentosCObj.ObtenerItem("codigo", docC)?.ToString() ?? "",
                     Movimiento = movimiento,
                     Estado     = motivo,
                     Cantidad   = cantidad,
@@ -244,7 +247,7 @@ namespace WpfAppVba
                     FechaStr   = d.Fecha != default ? $"{d.Fecha:d} {d.Fecha:HH:mm:ss}" : "-",
                     Movimiento = string.IsNullOrEmpty(d.Documento) || d.Documento == "0"
                                  ? d.Movimiento
-                                 : $"{d.Documento.PadLeft(6, '0')}-{d.Movimiento}",
+                                 : $"{(string.IsNullOrEmpty(d.DocumentoCodigo) ? d.Documento : d.DocumentoCodigo)}-{d.Movimiento}",
                     Estado     = d.Estado,
                     Forma      = d.Forma,
                     Contable   = d.Contable,
@@ -287,5 +290,35 @@ namespace WpfAppVba
 
         private void BtnProcesar_Click(object sender, RoutedEventArgs e)
             => CargarMovimientos();
+    }
+
+    // ─── Dato interno (antes de ordenar) ─────────────────────────────────────
+    internal class MovimientoDato
+    {
+        public DateTime Fecha           { get; set; }
+        public string   Documento       { get; set; } = "";
+        public string   DocumentoCodigo { get; set; } = "";
+        public string   Movimiento      { get; set; } = "";
+        public string   Estado          { get; set; } = "";
+        public double   Cantidad        { get; set; }
+        public string   Unitario        { get; set; } = "";
+        public string   SubTotal        { get; set; } = "";
+        public string   Forma           { get; set; } = "";
+        public string   Contable        { get; set; } = "";
+    }
+
+    // ─── Fila del DataGrid ────────────────────────────────────────────────────
+    public class MovimientoFila
+    {
+        public int    Linea      { get; set; }
+        public string FechaStr   { get; set; } = "";
+        public string Movimiento { get; set; } = "";
+        public string Estado     { get; set; } = "";
+        public string Forma      { get; set; } = "";
+        public string Contable   { get; set; } = "";
+        public double Cantidad   { get; set; }
+        public string Unitario   { get; set; } = "";
+        public string SubTotal   { get; set; } = "";
+        public double Stock      { get; set; }
     }
 }

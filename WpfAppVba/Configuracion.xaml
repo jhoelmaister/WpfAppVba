@@ -185,12 +185,27 @@
                             </StackPanel>
                         </Grid>
 
-                        <StackPanel Margin="0,0,0,12">
-                            <TextBlock Style="{StaticResource SectionLabel}" Text="SUCURSAL ACTIVA"/>
-                            <ComboBox x:Name="CmbSucursal" Style="{StaticResource ModernCombo}"
-                                      DisplayMemberPath="Descripcion"
-                                      SelectionChanged="CmbSucursal_SelectionChanged"/>
-                        </StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="EMPRESA ACTIVA"/>
+                                <ComboBox x:Name="CmbEmpresa" Style="{StaticResource ModernCombo}"
+                                          DisplayMemberPath="Descripcion"
+                                          SelectionChanged="CmbEmpresa_SelectionChanged"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="SUCURSAL ACTIVA"/>
+                                <ComboBox x:Name="CmbSucursal" Style="{StaticResource ModernCombo}"
+                                          DisplayMemberPath="Descripcion"
+                                          SelectionChanged="CmbSucursal_SelectionChanged"/>
+                            </StackPanel>
+                        </Grid>
 
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>

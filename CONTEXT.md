@@ -174,6 +174,22 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - `ConsolaMovimientos`: panel `_panelEmpresas`, sección `"empresas"` en los diccionarios de pestañas, caso en `MostrarPanel`, handler `BtnNav_Empresas_Click`.
 - La columna `codigo` (INT) de `empresas` fue agregada por el usuario en SQL Server.
 
+#### Configuración — empresa activa + refresco sin logout
+- Nuevo `CmbEmpresa` ("EMPRESA ACTIVA") a la izquierda de `CmbSucursal`. `CmbSucursal` es **dependiente** de la empresa: al cambiar empresa se repueblan las sucursales mediante una consulta directa (`DataConsulta` temporal `_sucursalesEmpresa`), ya que el caché global está filtrado por la empresa activa.
+- `ActualizarFechaInicio`/`ActualizarPeriodos` leen la fecha desde `_sucursalesEmpresa` (no del caché global).
+- **Guardar ya NO cierra sesión.** Si cambia empresa/sucursal/periodo se recargan los cachés (`ConectarProductos` si cambió empresa, `ConectarBases`, `ActualizarBase`, `ConectarDocumentos`) y se llama `ConsolaMovimientos.RecargarContexto()`, que cierra las pestañas dinámicas y **recrea los paneles General** para que relean los cachés — manteniendo el enfoque en Configuración (como si recién se hubiera iniciado sesión). Tras recargar, `Configuracion.CargarDatos()` repuebla sus propios combos.
+- La empresa elegida se persiste en `usuarios.empresa` (queda como predeterminada en el próximo login), igual que la sucursal.
+- Se eliminó `CerrarSesionYReabrirLogin` (ya no se usa). Los paneles General de `ConsolaMovimientos` pasaron de `readonly` a mutables para poder recrearlos.
+
+#### MovimientosGeneral — columna "Movimiento" muestra código
+- `CargarMovimientos` ahora guarda `DocumentoCodigo` (de `Documentos[P/T/C]Obj.ObtenerItem("codigo", id)`) y la columna "Movimiento" muestra `código-tipo` en vez de `id(UUID)-tipo`.
+
+#### Diseño esquinas redondeadas
+- `EmpresasGeneral` y `RegionesGeneral` actualizados al estilo redondeado unificado: botones con `ControlTemplate CornerRadius=6`, `SearchInput` (TextBox) redondeado y `DataGrid` envuelto en `<Border CornerRadius="6">`.
+
+#### Limpieza
+- Eliminado `MovimientosWindow.xaml`/`.cs` (versión Window legacy del visor de movimientos, sin referencias; reemplazada por `MovimientosGeneral`). Las clases `MovimientoDato`/`MovimientoFila` se movieron a `MovimientosGeneral.xaml.cs`.
+
 ### Sesión 2026-06-12 — Empresas, regeneración de códigos y UI de conexión (rama `claude/brave-albattani-03ox62`)
 
 #### Nueva entidad: Empresa (multi-empresa)

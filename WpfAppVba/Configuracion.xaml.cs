@@ -11,6 +11,10 @@ namespace WpfAppVba
         private static SqlData Sql => SqlData.Instance;
         private bool _cargando;
 
+        // Sucursales de la empresa seleccionada en el combo (consulta directa, ya que el
+        // caché global está filtrado por la empresa activa y puede no tenerlas todas).
+        private DataConsulta? _sucursalesEmpresa;
+
         public Configuracion()
         {
             InitializeComponent();
@@ -18,6 +22,12 @@ namespace WpfAppVba
         }
 
         private class SucursalItem
+        {
+            public string Id          { get; set; } = "";
+            public string Descripcion { get; set; } = "";
+        }
+
+        private class EmpresaItem
         {
             public string Id          { get; set; } = "";
             public string Descripcion { get; set; } = "";
@@ -35,6 +45,7 @@ namespace WpfAppVba
                 string nombres  = Sql.UsuariosObj.ObtenerItem("nombres",   usuId)?.ToString() ?? "";
                 string apellidos= Sql.UsuariosObj.ObtenerItem("apellidos", usuId)?.ToString() ?? "";
                 string sucId    = Sql.UsuariosObj.ObtenerItem("sucursal",  usuId)?.ToString() ?? "";
+                string empId    = Sql.UsuariosObj.ObtenerItem("empresa",   usuId)?.ToString() ?? "";
                 string tipo     = Sql.UsuariosObj.ObtenerItem("tipo",      usuId)?.ToString() ?? "";
                 string temaDb   = Sql.UsuariosObj.ObtenerItem("temaC",     usuId)?.ToString() ?? "";
 
@@ -49,21 +60,30 @@ namespace WpfAppVba
                     : ThemeManager.TemaClaro;
                 SeleccionarTema(temaInicial);
 
-                // Llenar ComboBox de sucursales
-                CmbSucursal.Items.Clear();
-                int total = Sql.SucursalesObj.ContarFilas;
-                for (int i = 1; i <= total; i++)
+                // Llenar ComboBox de empresas
+                CmbEmpresa.Items.Clear();
+                int totalEmp = Sql.EmpresasObj.ContarFilas;
+                for (int i = 1; i <= totalEmp; i++)
                 {
-                    var idObj = Sql.SucursalesObj.Mover(i);
+                    var idObj = Sql.EmpresasObj.Mover(i);
                     if (idObj == null) continue;
                     string id = idObj.ToString()!;
-                    string desc = Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
-                    CmbSucursal.Items.Add(new SucursalItem { Id = id, Descripcion = desc });
+                    string desc = Sql.EmpresasObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                    CmbEmpresa.Items.Add(new EmpresaItem { Id = id, Descripcion = desc });
                 }
+
+                var empActual = CmbEmpresa.Items.OfType<EmpresaItem>()
+                                                .FirstOrDefault(x => x.Id == empId);
+                if (empActual != null) CmbEmpresa.SelectedItem = empActual;
+                else if (CmbEmpresa.Items.Count > 0) CmbEmpresa.SelectedIndex = 0;
+
+                // Llenar ComboBox de sucursales según la empresa seleccionada
+                PoblarSucursales((CmbEmpresa.SelectedItem as EmpresaItem)?.Id ?? "");
 
                 var actual = CmbSucursal.Items.OfType<SucursalItem>()
                                               .FirstOrDefault(s => s.Id == sucId);
                 if (actual != null) CmbSucursal.SelectedItem = actual;
+                else if (CmbSucursal.Items.Count > 0) CmbSucursal.SelectedIndex = 0;
 
                 ActualizarFechaInicio();
                 ActualizarPeriodos();
@@ -78,6 +98,41 @@ namespace WpfAppVba
             }
         }
 
+        // ─── Poblar sucursales según la empresa seleccionada ─────────────────
+        private void PoblarSucursales(string empresaId)
+        {
+            CmbSucursal.Items.Clear();
+            _sucursalesEmpresa = null;
+            if (string.IsNullOrEmpty(empresaId)) return;
+
+            // Consulta directa: las sucursales de la empresa elegida pueden no estar
+            // en el caché global (que está filtrado por la empresa activa).
+            var sucursales = new DataConsulta();
+            sucursales.Conectar("sucursales",
+                $"SELECT * FROM sucursales WHERE estadof = 'normal' AND empresa = '{empresaId}' ORDER BY id ASC");
+            _sucursalesEmpresa = sucursales;
+
+            int total = sucursales.ContarFilas;
+            for (int i = 1; i <= total; i++)
+            {
+                var idObj = sucursales.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                string desc = sucursales.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                CmbSucursal.Items.Add(new SucursalItem { Id = id, Descripcion = desc });
+            }
+        }
+
+        // ─── Empresa: refiltra las sucursales dependientes ───────────────────
+        private void CmbEmpresa_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_cargando) return;
+            PoblarSucursales((CmbEmpresa.SelectedItem as EmpresaItem)?.Id ?? "");
+            if (CmbSucursal.Items.Count > 0) CmbSucursal.SelectedIndex = 0;
+            ActualizarFechaInicio();
+            ActualizarPeriodos();
+        }
+
         // ─── Actualizar fecha de inicio según sucursal seleccionada ──────────
         private void CmbSucursal_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -88,8 +143,8 @@ namespace WpfAppVba
 
         private void ActualizarFechaInicio()
         {
-            if (CmbSucursal.SelectedItem is SucursalItem item)
-                TxtFechaInicio.Text = Sql.SucursalesObj.ObtenerItem("fecha", item.Id)?.ToString() ?? "";
+            if (CmbSucursal.SelectedItem is SucursalItem item && _sucursalesEmpresa != null)
+                TxtFechaInicio.Text = _sucursalesEmpresa.ObtenerItem("fecha", item.Id)?.ToString() ?? "";
             else
                 TxtFechaInicio.Text = "";
         }
@@ -97,9 +152,9 @@ namespace WpfAppVba
         private void ActualizarPeriodos()
         {
             int inicioAno = DateTime.Now.Year;
-            if (CmbSucursal.SelectedItem is SucursalItem item)
+            if (CmbSucursal.SelectedItem is SucursalItem item && _sucursalesEmpresa != null)
             {
-                var fechaObj = Sql.SucursalesObj.ObtenerItem("fecha", item.Id);
+                var fechaObj = _sucursalesEmpresa.ObtenerItem("fecha", item.Id);
                 if (fechaObj != null && DateTime.TryParse(fechaObj.ToString(), out DateTime fecha))
                     inicioAno = fecha.Year;
             }
@@ -168,22 +223,6 @@ namespace WpfAppVba
             }
         }
 
-        // ─── Cerrar sesión y reabrir login con el servidor activo ────────────
-        private void CerrarSesionYReabrirLogin()
-        {
-            AppState.SesionActiva  = false;
-            AppState.UsuarioActivo = "";
-            AppState.EmpresaActiva = "";
-            DatabaseConnection.CerrarConexion();
-
-            // LoginWindow lee el servidor activo desde ConexionConfig,
-            // por lo que el seleccionado queda como predeterminado.
-            var login = new LoginWindow();
-            login.Show();
-
-            Window.GetWindow(this)?.Close();
-        }
-
         // ─── Guardar ─────────────────────────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
@@ -194,6 +233,19 @@ namespace WpfAppVba
                 // Actualizar nombres y apellidos en memoria / SQL
                 Sql.UsuariosObj.EstablecerItem("nombres",   usuId, TxtNombres.Text.Trim());
                 Sql.UsuariosObj.EstablecerItem("apellidos", usuId, TxtApellidos.Text.Trim());
+
+                // Actualizar empresa activa
+                bool empresaCambio = false;
+                if (CmbEmpresa.SelectedItem is EmpresaItem empItem)
+                {
+                    string empActualBD = Sql.UsuariosObj.ObtenerItem("empresa", usuId)?.ToString() ?? "";
+                    if (empItem.Id != empActualBD)
+                    {
+                        Sql.UsuariosObj.EstablecerItem("empresa", usuId, empItem.Id);
+                        empresaCambio = true;
+                    }
+                    AppState.EmpresaActiva = empItem.Id;
+                }
 
                 // Actualizar sucursal activa
                 bool sucursalCambio = false;
@@ -206,15 +258,20 @@ namespace WpfAppVba
                         sucursalCambio = true;
                     }
                     AppState.SucursalActiva = sucItem.Id;
-                    AppState.RegionActiva   = Sql.SucursalesObj.ObtenerItem("region", sucItem.Id)?.ToString() ?? "";
+                    AppState.RegionActiva   = _sucursalesEmpresa?.ObtenerItem("region", sucItem.Id)?.ToString()
+                                              ?? Sql.SucursalesObj.ObtenerItem("region", sucItem.Id)?.ToString() ?? "";
                 }
 
                 // Persistir cambios de usuarios en SQL Server
                 Sql.UsuariosObj.ExportarItems();
 
-                // Si cambió la sucursal: recargar documentosI e inventarios de la nueva sucursal
-                // ANTES de ActualizarBase, para que calcule la apertura con los datos correctos
-                if (sucursalCambio)
+                // Si cambió la empresa: recargar maestros/cachés filtrados por la nueva empresa
+                if (empresaCambio)
+                    AppLoader.ConectarProductos();
+
+                // Si cambió empresa o sucursal: recargar documentosI e inventarios de la nueva
+                // sucursal ANTES de ActualizarBase, para calcular la apertura con datos correctos
+                if (empresaCambio || sucursalCambio)
                     AppLoader.ConectarBases();
 
                 // Actualizar periodo activo y recalcular apertura
@@ -225,25 +282,38 @@ namespace WpfAppVba
                 if (int.TryParse(periodoStr, out int periodo))
                     AppState.ActualizarBase(periodo);
 
-                if (periodoCambio || sucursalCambio)
+                if (empresaCambio || sucursalCambio || periodoCambio)
                     AppLoader.ConectarDocumentos(AppState.DataFechaInicio, AppState.DataFechaFinal);
 
                 MessageBox.Show("Guardado exitoso", "Configuración",
                                 MessageBoxButton.OK, MessageBoxImage.Information);
 
-                // Si se cambió la sucursal activa, cerrar sesión y reabrir login.
-                if (sucursalCambio)
-                {
-                    CerrarSesionYReabrirLogin();
-                    return;
-                }
+                bool contextoCambio = empresaCambio || sucursalCambio || periodoCambio;
 
-                // Si está embebido en ConsolaMovimientos (tab), actualizar header; si es diálogo, cerrar
+                // Si está embebido en ConsolaMovimientos (tab):
+                //   - con cambio de contexto: refrescar toda la consola SIN cerrar sesión,
+                //     manteniendo el enfoque en Configuración (como si recién iniciara sesión).
+                //   - sin cambio de contexto: solo actualizar el header.
+                // Si es diálogo independiente: cerrar.
                 var w = Window.GetWindow(this);
                 if (w is ConsolaMovimientos cm)
-                    cm.ActualizarInfoUsuario();
+                {
+                    if (contextoCambio)
+                    {
+                        cm.RecargarContexto();
+                        // RecargarContexto conserva este panel de Configuración como
+                        // panel fijo activo; repoblar sus combos con los datos recargados.
+                        CargarDatos();
+                    }
+                    else
+                    {
+                        cm.ActualizarInfoUsuario();
+                    }
+                }
                 else
+                {
                     w?.Close();
+                }
             }
             catch (Exception ex)
             {

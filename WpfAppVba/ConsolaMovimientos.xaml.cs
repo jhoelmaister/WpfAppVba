@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -12,22 +13,24 @@ namespace WpfAppVba
     {
         private Button? _btnActivo;
 
-        private readonly ArticulosGeneral    _panelArticulos    = new();
-        private readonly PedidosGeneral      _panelPedidos      = new();
-        private readonly TraspasosGeneral    _panelTraspasos    = new();
-        private readonly CorreccionesGeneral _panelCorrecciones = new();
-        private readonly TercerosGeneral     _panelTerceros     = new();
-        private readonly SucursalesGeneral   _panelSucursales   = new();
-        private readonly FamiliasGeneral     _panelFamilias     = new();
-        private readonly ProductosGeneral    _panelProductos    = new();
-        private readonly IndustriasGeneral   _panelIndustrias   = new();
-        private readonly CategoriasGeneral   _panelCategorias   = new();
-        private readonly InventariosGeneral  _panelInventarios  = new();
-        private readonly PreciosGeneral      _panelPrecios      = new();
-        private readonly RegionesGeneral     _panelRegiones     = new();
-        private readonly EmpresasGeneral     _panelEmpresas     = new();
+        // Paneles "General": mutables para poder recrearlos tras un cambio de contexto
+        // (empresa/sucursal/periodo) y que relean los cachés recién cargados.
+        private ArticulosGeneral    _panelArticulos    = new();
+        private PedidosGeneral      _panelPedidos      = new();
+        private TraspasosGeneral    _panelTraspasos    = new();
+        private CorreccionesGeneral _panelCorrecciones = new();
+        private TercerosGeneral     _panelTerceros     = new();
+        private SucursalesGeneral   _panelSucursales   = new();
+        private FamiliasGeneral     _panelFamilias     = new();
+        private ProductosGeneral    _panelProductos    = new();
+        private IndustriasGeneral   _panelIndustrias   = new();
+        private CategoriasGeneral   _panelCategorias   = new();
+        private InventariosGeneral  _panelInventarios  = new();
+        private PreciosGeneral      _panelPrecios      = new();
+        private RegionesGeneral     _panelRegiones     = new();
+        private EmpresasGeneral     _panelEmpresas     = new();
         private readonly Configuracion       _panelConfiguracion= new();
-        private readonly MovimientosGeneral  _panelMovimientos  = new();
+        private MovimientosGeneral  _panelMovimientos  = new();
 
         // Cada sección del menú lateral conserva su propio juego de pestañas dinámicas.
         private string _seccionActiva = "articulos";
@@ -88,6 +91,51 @@ namespace WpfAppVba
 
             LblUsuario.Text  = $"Usuario: {nombres}  |  Período: {AppState.PeriodoActivo}";
             LblSucursal.Text = $"Sucursal: {sucursalDesc}";
+        }
+
+        /// <summary>
+        /// Refresca toda la consola tras un cambio de contexto (empresa/sucursal/periodo)
+        /// hecho desde Configuración, sin cerrar sesión y manteniendo el enfoque en
+        /// Configuración. Recrea los paneles "General" para que relean los cachés
+        /// recién cargados (como si recién se hubiera iniciado sesión).
+        /// </summary>
+        public void RecargarContexto()
+        {
+            // 1. Cerrar todas las pestañas dinámicas (estado "recién iniciado")
+            for (int i = TabContenido.Items.Count - 1; i >= 0; i--)
+                if (TabContenido.Items[i] is TabItem t && t != TabFijo)
+                    TabContenido.Items.RemoveAt(i);
+            foreach (var clave in _pestañasPorSeccion.Keys.ToList())
+                _pestañasPorSeccion[clave].Clear();
+            foreach (var clave in _pestañaSeleccionadaPorSeccion.Keys.ToList())
+                _pestañaSeleccionadaPorSeccion[clave] = null;
+
+            // 2. Recrear los paneles "General" (no Configuración: se mantiene el enfoque)
+            _panelArticulos    = new();
+            _panelPedidos      = new();
+            _panelTraspasos    = new();
+            _panelCorrecciones = new();
+            _panelTerceros     = new();
+            _panelSucursales   = new();
+            _panelFamilias     = new();
+            _panelProductos    = new();
+            _panelIndustrias   = new();
+            _panelCategorias   = new();
+            _panelInventarios  = new();
+            _panelPrecios      = new();
+            _panelRegiones     = new();
+            _panelEmpresas     = new();
+            _panelMovimientos  = new();
+
+            // 3. Mantener Configuración como panel fijo enfocado
+            _seccionActiva = "configuracion";
+            TabFijoContenido.Content = _panelConfiguracion;
+            TabFijoTitulo.Text = "Configuración";
+            TabContenido.SelectedItem = TabFijo;
+            MarcarActivo(BtnNav_Configuracion);
+
+            // 4. Refrescar la barra superior
+            ActualizarInfoUsuario();
         }
 
         // ─── Navegación por pestañas ──────────────────────────────────────────
