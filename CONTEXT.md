@@ -193,6 +193,7 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 #### Ajustes
 - Configuración: al cambiar a una empresa sin sucursales y guardar, `usuarios.sucursal` se deja en **NULL** (rama `else` que llama `EstablecerItem(...,"")`, que persiste como NULL). Antes no se actualizaba si no había sucursal seleccionada.
 - `EmpresasDetalle`: `Box_Observacion` ahora alinea el texto arriba (TextBox plano dentro de `Border`, igual que `TercerosDetalle`) en vez de centrado.
+- **`AppLoader.ConectarBases`/`ConectarDocumentos`**: si `AppState.SucursalActiva` está vacía, se usa el GUID nulo `00000000-0000-0000-0000-000000000000` en vez de `''`. Antes, `sucursal = ''` contra una columna `uniqueidentifier` lanzaba *"Conversion failed when converting from a character string to uniqueidentifier"* (al guardar sin sucursal en Configuración y también en el login siguiente). Esa excepción abortaba el guardado antes de `RecargarContexto`, por lo que la consola tampoco se refrescaba (pestañas/grids quedaban cargados). Con el fix, el guardado completa y `RecargarContexto` limpia pestañas y recrea los paneles.
 
 ### Sesión 2026-06-12 — Empresas, regeneración de códigos y UI de conexión (rama `claude/brave-albattani-03ox62`)
 

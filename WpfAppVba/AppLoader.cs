@@ -81,7 +81,11 @@ namespace WpfAppVba.Data
         /// </summary>
         public static void ConectarBases()
         {
-            string suc = AppState.SucursalActiva;
+            // Sucursal vacía (usuario sin sucursal): usar un GUID nulo válido para que
+            // la comparación contra la columna uniqueidentifier no falle y devuelva 0 filas.
+            string suc = string.IsNullOrEmpty(AppState.SucursalActiva)
+                ? "00000000-0000-0000-0000-000000000000"
+                : AppState.SucursalActiva;
 
             Sql.DocumentosIObj.Conectar("documentosI",
                 $"SELECT * FROM documentosI " +
@@ -102,7 +106,11 @@ namespace WpfAppVba.Data
         /// </summary>
         public static void ConectarDocumentos(DateTime apertura, DateTime cierre)
         {
-            string suc = AppState.SucursalActiva;
+            // Sucursal vacía (usuario sin sucursal): usar un GUID nulo válido para que
+            // la comparación contra la columna uniqueidentifier no falle y devuelva 0 filas.
+            string suc = string.IsNullOrEmpty(AppState.SucursalActiva)
+                ? "00000000-0000-0000-0000-000000000000"
+                : AppState.SucursalActiva;
             string aper = apertura.ToString("yyyyMMdd HH:mm:ss");
             string cier = cierre.ToString("yyyyMMdd HH:mm:ss");
 
