@@ -10,7 +10,7 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 - **Reportes Excel**: `ClosedXML 0.102.2`
 - **IDE recomendado**: Visual Studio 2022 / VS Code + extensión C#
 - **Proyecto**: `WpfAppVba/WpfAppVba.csproj`
-- **Rama de desarrollo activa**: `claude/funny-franklin-tdjjrr`
+- **Rama de desarrollo activa**: `claude/brave-albattani-03ox62`
 
 ## Lo Que Está Implementado y Funciona
 
@@ -161,7 +161,7 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - **Sin herramientas de build en el entorno cloud**: todos los cambios se aplican siguiendo patrones existentes, pero no pueden compilarse ni ejecutarse remotamente. Siempre verificar localmente antes de merge a producción.
 - **`AppState.TipoPedido` y `AppState.TipoMovimiento` son globales**: en `PedidosGeneral.AbrirEditar` se leen del DB antes de abrir la pestaña para garantizar el valor correcto. Si se abrieran dos pestañas de edición simultáneas muy rápido, podría haber condición de carrera (actualmente no es un problema práctico).
 - **`CorreccionesDetalle` ya es pestaña**: usa `OpenAsTab` de ArticulosGeneral para buscar artículos, igual que Pedidos/Traspasos.
-- **Rama de trabajo**: todos los cambios van a `claude/funny-franklin-tdjjrr`. Es la rama activa de desarrollo.
+- **Rama de trabajo**: todos los cambios van a `claude/brave-albattani-03ox62`. Es la rama activa de desarrollo.
 
 ## Historial de Cambios por Sesión
 
@@ -460,9 +460,9 @@ dotnet run --project WpfAppVba.csproj
 
 ### Git (rama activa)
 ```bash
-git checkout claude/funny-franklin-tdjjrr
-git pull origin claude/funny-franklin-tdjjrr
-git push -u origin claude/funny-franklin-tdjjrr
+git checkout claude/brave-albattani-03ox62
+git pull origin claude/brave-albattani-03ox62
+git push -u origin claude/brave-albattani-03ox62
 ```
 
 ### Restaurar paquetes NuGet (si es necesario)
