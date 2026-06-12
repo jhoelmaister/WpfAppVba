@@ -190,6 +190,10 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 #### Limpieza
 - Eliminado `MovimientosWindow.xaml`/`.cs` (versión Window legacy del visor de movimientos, sin referencias; reemplazada por `MovimientosGeneral`). Las clases `MovimientoDato`/`MovimientoFila` se movieron a `MovimientosGeneral.xaml.cs`.
 
+#### Ajustes
+- Configuración: al cambiar a una empresa sin sucursales y guardar, `usuarios.sucursal` se deja en **NULL** (rama `else` que llama `EstablecerItem(...,"")`, que persiste como NULL). Antes no se actualizaba si no había sucursal seleccionada.
+- `EmpresasDetalle`: `Box_Observacion` ahora alinea el texto arriba (TextBox plano dentro de `Border`, igual que `TercerosDetalle`) en vez de centrado.
+
 ### Sesión 2026-06-12 — Empresas, regeneración de códigos y UI de conexión (rama `claude/brave-albattani-03ox62`)
 
 #### Nueva entidad: Empresa (multi-empresa)

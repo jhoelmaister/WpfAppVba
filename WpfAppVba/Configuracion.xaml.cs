@@ -261,6 +261,19 @@ namespace WpfAppVba
                     AppState.RegionActiva   = _sucursalesEmpresa?.ObtenerItem("region", sucItem.Id)?.ToString()
                                               ?? Sql.SucursalesObj.ObtenerItem("region", sucItem.Id)?.ToString() ?? "";
                 }
+                else
+                {
+                    // No hay sucursal seleccionada (p. ej. la empresa no tiene sucursales):
+                    // dejar usuarios.sucursal en NULL (EstablecerItem convierte "" → NULL).
+                    string sucActualBD = Sql.UsuariosObj.ObtenerItem("sucursal", usuId)?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(sucActualBD))
+                    {
+                        Sql.UsuariosObj.EstablecerItem("sucursal", usuId, "");
+                        sucursalCambio = true;
+                    }
+                    AppState.SucursalActiva = "";
+                    AppState.RegionActiva   = "";
+                }
 
                 // Persistir cambios de usuarios en SQL Server
                 Sql.UsuariosObj.ExportarItems();

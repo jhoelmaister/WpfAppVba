@@ -158,13 +158,18 @@
 
                         <StackPanel>
                             <TextBlock Style="{StaticResource SectionLabel}" Text="OBSERVACIÓN"/>
-                            <TextBox x:Name="Box_Observacion"
-                                     Style="{StaticResource ModernInput}"
-                                     Height="80" AcceptsReturn="True"
-                                     VerticalContentAlignment="Top"
-                                     TextWrapping="Wrap"
-                                     VerticalScrollBarVisibility="Auto"
-                                     TextChanged="Campo_TextChanged"/>
+                            <Border BorderBrush="{DynamicResource ThemeBordeInput}"
+                                    BorderThickness="1" CornerRadius="6"
+                                    Background="{DynamicResource ThemeInputBg}">
+                                <TextBox x:Name="Box_Observacion"
+                                         MinHeight="80" FontSize="13" Padding="10,8"
+                                         BorderThickness="0"
+                                         Background="Transparent"
+                                         Foreground="{DynamicResource ThemeTexto}"
+                                         TextWrapping="Wrap" AcceptsReturn="True"
+                                         VerticalScrollBarVisibility="Auto"
+                                         TextChanged="Campo_TextChanged"/>
+                            </Border>
                         </StackPanel>
                     </StackPanel>
                 </Border>
