@@ -226,6 +226,17 @@ namespace WpfAppVba
         // ─── Guardar ─────────────────────────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
+            // No se puede guardar sin una sucursal activa (empresa sin sucursales
+            // o combo vacío): se requiere una sucursal para el contexto de trabajo.
+            if (CmbSucursal.SelectedItem is not SucursalItem)
+            {
+                MessageBox.Show(
+                    "La empresa seleccionada no tiene sucursales o no hay una sucursal elegida.\n" +
+                    "Seleccioná una sucursal para poder guardar los cambios.",
+                    "Configuración", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             try
             {
                 string usuId = AppState.UsuarioActivo.ToString();
@@ -260,19 +271,6 @@ namespace WpfAppVba
                     AppState.SucursalActiva = sucItem.Id;
                     AppState.RegionActiva   = _sucursalesEmpresa?.ObtenerItem("region", sucItem.Id)?.ToString()
                                               ?? Sql.SucursalesObj.ObtenerItem("region", sucItem.Id)?.ToString() ?? "";
-                }
-                else
-                {
-                    // No hay sucursal seleccionada (p. ej. la empresa no tiene sucursales):
-                    // dejar usuarios.sucursal en NULL (EstablecerItem convierte "" → NULL).
-                    string sucActualBD = Sql.UsuariosObj.ObtenerItem("sucursal", usuId)?.ToString() ?? "";
-                    if (!string.IsNullOrEmpty(sucActualBD))
-                    {
-                        Sql.UsuariosObj.EstablecerItem("sucursal", usuId, "");
-                        sucursalCambio = true;
-                    }
-                    AppState.SucursalActiva = "";
-                    AppState.RegionActiva   = "";
                 }
 
                 // Persistir cambios de usuarios en SQL Server

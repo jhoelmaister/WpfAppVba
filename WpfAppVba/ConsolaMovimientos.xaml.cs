@@ -88,9 +88,11 @@ namespace WpfAppVba
             string nombres = sql.UsuariosObj.ObtenerItem("nombres", AppState.UsuarioActivo)?.ToString() ?? "";
             if (string.IsNullOrWhiteSpace(nombres)) nombres = AppState.UsuarioActivo;
             string sucursalDesc = sql.SucursalesObj.ObtenerItem("descripcion", AppState.SucursalActiva)?.ToString() ?? "";
+            string empresaDesc  = sql.EmpresasObj.ObtenerItem("descripcion", AppState.EmpresaActiva)?.ToString() ?? "";
 
             LblUsuario.Text  = $"Usuario: {nombres}  |  Período: {AppState.PeriodoActivo}";
             LblSucursal.Text = $"Sucursal: {sucursalDesc}";
+            LblEmpresa.Text  = $"Empresa: {empresaDesc}";
         }
 
         /// <summary>

@@ -183,6 +183,23 @@ namespace WpfAppVba.Data
         }
 
         /// <summary>
+        /// Siguiente índice libre para las líneas de un documento: MAX(indice) + 1
+        /// considerando TODAS las filas (incluidas ocultas/eliminadas) cuyo
+        /// <paramref name="filtroColumna"/> = <paramref name="filtroValor"/>.
+        /// Evita índices duplicados con el borrado lógico (las filas eliminadas
+        /// permanecen físicamente en SQL Server).
+        /// </summary>
+        public int SiguienteIndice(string filtroColumna, string filtroValor)
+        {
+            var conn = DatabaseConnection.ObtenerConexion();
+            using var cmd = new SqlCommand(
+                $"SELECT ISNULL(MAX(indice), 0) FROM {_nombreTabla} WHERE {filtroColumna} = @f", conn);
+            cmd.Parameters.AddWithValue("@f", filtroValor);
+            var r = cmd.ExecuteScalar();
+            return (r is null or DBNull) ? 1 : Convert.ToInt32(r) + 1;
+        }
+
+        /// <summary>
         /// Indica si ya existe otra fila (en estado normal) con el mismo codigo.
         /// Si se indica <paramref name="idActual"/>, esa fila se excluye (modo editar).
         /// </summary>

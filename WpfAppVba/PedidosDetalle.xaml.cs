@@ -1383,6 +1383,7 @@ namespace WpfAppVba
 
         private void GuardarLineasPedido(string docP)
         {
+            int baseIdx = Sql.PedidosObj.SiguienteIndice("documentoP", docP);
             for (int i = 0; i < _pedidos.Count; i++)
             {
                 var item  = _pedidos[i];
@@ -1390,7 +1391,7 @@ namespace WpfAppVba
                 Sql.PedidosObj.Nuevo(id);
                 Sql.PedidosObj.EstablecerItem("documentoP", id, docP);
                 Sql.PedidosObj.EstablecerItem("articulo",   id, item.ArticuloId);
-                Sql.PedidosObj.EstablecerItem("indice",     id, i + 1);
+                Sql.PedidosObj.EstablecerItem("indice",     id, baseIdx + i);
                 Sql.PedidosObj.EstablecerItem("cantidad",   id, item.Cantidad);
                 Sql.PedidosObj.EstablecerItem("importe",    id, item.Importe);
                 Sql.PedidosObj.EstablecerItem("forma",      id, item.Forma);
@@ -1401,6 +1402,7 @@ namespace WpfAppVba
 
         private void GuardarLineasTrasaccion(string docP)
         {
+            int baseIdx = Sql.TrasaccionesObj.SiguienteIndice("documentoP", docP);
             for (int i = 0; i < _trasacciones.Count; i++)
             {
                 var item  = _trasacciones[i];
@@ -1410,7 +1412,7 @@ namespace WpfAppVba
                     item.HoraStr);
                 Sql.TrasaccionesObj.Nuevo(id);
                 Sql.TrasaccionesObj.EstablecerItem("documentoP",  id, docP);
-                Sql.TrasaccionesObj.EstablecerItem("indice",      id, i + 1);
+                Sql.TrasaccionesObj.EstablecerItem("indice",      id, baseIdx + i);
                 Sql.TrasaccionesObj.EstablecerItem("fecha",       id, fechaT);
                 Sql.TrasaccionesObj.EstablecerItem("descripcion", id, item.Descripcion);
                 Sql.TrasaccionesObj.EstablecerItem("importe",     id, item.Importe);
@@ -1420,6 +1422,7 @@ namespace WpfAppVba
 
         private void GuardarLineasEntrega(string docP)
         {
+            int baseIdx = Sql.EntregasObj.SiguienteIndice("documentoP", docP);
             for (int i = 0; i < _entregas.Count; i++)
             {
                 var item  = _entregas[i];
@@ -1430,7 +1433,7 @@ namespace WpfAppVba
                 Sql.EntregasObj.Nuevo(id);
                 Sql.EntregasObj.EstablecerItem("documentoP", id, docP);
                 Sql.EntregasObj.EstablecerItem("articulo",   id, item.ArticuloId);
-                Sql.EntregasObj.EstablecerItem("indice",     id, i + 1);
+                Sql.EntregasObj.EstablecerItem("indice",     id, baseIdx + i);
                 Sql.EntregasObj.EstablecerItem("cantidad",   id, item.Cantidad);
                 Sql.EntregasObj.EstablecerItem("fecha",      id, fechaE);
             }

@@ -167,6 +167,12 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 
 ## Historial de Cambios por Sesión
 
+### Sesión 2026-06-12 — Índices sin duplicar, empresa en topbar, validación de sucursal (rama `claude/cool-hopper-vo3mxo`)
+- **Índices de líneas de documentos sin duplicar** (efecto del borrado lógico): nuevo `DataConsulta.SiguienteIndice(filtroColumna, filtroValor)` = `MAX(indice)+1` **sin filtrar estadof** (cuenta ocultas/eliminadas). Se usa como base en las re-creaciones de líneas de: Pedidos (`pedidos`/`transacciones`/`entregas`), Traspasos (nuevo/editar), Correcciones, Inventarios (nuevo/editar). Cada línea: `indice = base + i`. Antes se reusaba `i+1` y colisionaba con las filas ocultas del mismo documento.
+- **TOP BAR**: nuevo `LblEmpresa` ("Empresa: {desc}") a la derecha de `LblSucursal`; se setea en `ActualizarInfoUsuario()` desde `EmpresasObj`.
+- **Configuración**: no se puede guardar si `CmbSucursal` está vacío (empresa sin sucursales) → `MessageBox` de advertencia y `return`. Se quitó la rama que ponía `usuarios.sucursal` en NULL (ahora bloqueada).
+- Pendiente: problema de carga de documentos anteriores a la fecha máxima de inventario (a depurar con ejemplo del usuario).
+
 ### Sesión 2026-06-12 — Eliminación de la tabla `stocks` (rama `claude/cool-hopper-vo3mxo`)
 - El usuario eliminó la tabla `stocks` en SQL Server. Se quitó del proyecto todo lo que la usaba:
   - `SqlData.StocksObj` (eliminado).

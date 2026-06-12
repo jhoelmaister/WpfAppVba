@@ -728,6 +728,7 @@ namespace WpfAppVba
                 Sql.DocumentosTObj.EstablecerItem("emitido",     id, AppState.SucursalActiva);
 
                 // ── Crear líneas con UUID ──
+                int baseIdx = Sql.TraspasosObj.SiguienteIndice("documentoT", id);
                 for (int i = 0; i < _items.Count; i++)
                 {
                     var item     = _items[i];
@@ -736,7 +737,7 @@ namespace WpfAppVba
                     Sql.TraspasosObj.EstablecerItem("documentoT", idStr, id);
                     Sql.TraspasosObj.EstablecerItem("articulo",   idStr, item.ArticuloId);
                     Sql.TraspasosObj.EstablecerItem("cantidad",   idStr, item.Cantidad);
-                    Sql.TraspasosObj.EstablecerItem("indice",     idStr, i + 1);
+                    Sql.TraspasosObj.EstablecerItem("indice",     idStr, baseIdx + i);
                 }
 
                 Sql.DocumentosTObj.OrdenarData(("fecha", false));
@@ -794,6 +795,7 @@ namespace WpfAppVba
                     Sql.TraspasosObj.Eliminar(id);
 
                 // ── Re-crear con UUID ──
+                int baseIdx = Sql.TraspasosObj.SiguienteIndice("documentoT", docT);
                 for (int i = 0; i < _items.Count; i++)
                 {
                     var item  = _items[i];
@@ -802,7 +804,7 @@ namespace WpfAppVba
                     Sql.TraspasosObj.EstablecerItem("documentoT", idStr, docT);
                     Sql.TraspasosObj.EstablecerItem("articulo",   idStr, item.ArticuloId);
                     Sql.TraspasosObj.EstablecerItem("cantidad",   idStr, item.Cantidad);
-                    Sql.TraspasosObj.EstablecerItem("indice",     idStr, i + 1);
+                    Sql.TraspasosObj.EstablecerItem("indice",     idStr, baseIdx + i);
                 }
 
                 Sql.DocumentosTObj.OrdenarData(("fecha", false));

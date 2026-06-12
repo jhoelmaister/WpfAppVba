@@ -685,6 +685,7 @@ namespace WpfAppVba
         // ─── Crear líneas con UUID ──
         private void CrearLineas(string docId)
         {
+            int baseIdx = Sql.CorreccionesObj.SiguienteIndice("documentoC", docId);
             for (int i = 0; i < _items.Count; i++)
             {
                 var item   = _items[i];
@@ -693,7 +694,7 @@ namespace WpfAppVba
                 Sql.CorreccionesObj.EstablecerItem("documentoC", nid, docId);
                 Sql.CorreccionesObj.EstablecerItem("articulo",   nid, item.ArticuloId);
                 Sql.CorreccionesObj.EstablecerItem("cantidad",   nid, item.Cantidad);
-                Sql.CorreccionesObj.EstablecerItem("indice",     nid, i + 1);
+                Sql.CorreccionesObj.EstablecerItem("indice",     nid, baseIdx + i);
             }
         }
 

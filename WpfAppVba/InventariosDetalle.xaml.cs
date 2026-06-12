@@ -472,6 +472,7 @@ namespace WpfAppVba
                     Sql.InventariosObj.Eliminar(id);
 
                 // Re-crear inventarios desde _items con UUID
+                int baseIdx = Sql.InventariosObj.SiguienteIndice("documentoI", docId);
                 for (int i = 0; i < _items.Count; i++)
                 {
                     var item   = _items[i];
@@ -480,7 +481,7 @@ namespace WpfAppVba
                     Sql.InventariosObj.EstablecerItem("documentoI", nid, docId);
                     Sql.InventariosObj.EstablecerItem("articulo",   nid, item.ArticuloId);
                     Sql.InventariosObj.EstablecerItem("cantidad",   nid, item.Cantidad);
-                    Sql.InventariosObj.EstablecerItem("indice",     nid, i + 1);
+                    Sql.InventariosObj.EstablecerItem("indice",     nid, baseIdx + i);
                 }
 
                 Sql.InventariosObj.OrdenarData(("documentoI", false), ("indice", false));
@@ -519,6 +520,7 @@ namespace WpfAppVba
                 Sql.DocumentosIObj.EstablecerItem("usuario",     docId, AppState.UsuarioActivo);
                 Sql.DocumentosIObj.EstablecerItem("usuarioE",    docId, AppState.UsuarioActivo);
 
+                int baseIdx = Sql.InventariosObj.SiguienteIndice("documentoI", docId);
                 for (int i = 0; i < _items.Count; i++)
                 {
                     var item   = _items[i];
@@ -527,7 +529,7 @@ namespace WpfAppVba
                     Sql.InventariosObj.EstablecerItem("documentoI", nid, docId);
                     Sql.InventariosObj.EstablecerItem("articulo",   nid, item.ArticuloId);
                     Sql.InventariosObj.EstablecerItem("cantidad",   nid, item.Cantidad);
-                    Sql.InventariosObj.EstablecerItem("indice",     nid, i + 1);
+                    Sql.InventariosObj.EstablecerItem("indice",     nid, baseIdx + i);
                 }
 
                 Sql.InventariosObj.OrdenarData(("documentoI", false), ("indice", false));
