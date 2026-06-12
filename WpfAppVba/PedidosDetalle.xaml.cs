@@ -1374,10 +1374,9 @@ namespace WpfAppVba
             var vigentes = new HashSet<string>(
                 _pedidos.Where(p => !string.IsNullOrEmpty(p.PedidoId)).Select(p => p.PedidoId));
             foreach (var idOrig in _pedidosOrig)
-                if (!vigentes.Contains(idOrig)) Sql.PedidosObj.Ocultar(idOrig);
+                if (!vigentes.Contains(idOrig)) Sql.PedidosObj.Eliminar(idOrig);
 
-            int baseIdx = Sql.PedidosObj.SiguienteIndice("documentoP", docP);
-            int nuevoOff = 0;
+            int pos = 1;
             foreach (var item in _pedidos)
             {
                 string id;
@@ -1386,18 +1385,18 @@ namespace WpfAppVba
                     id = Guid.NewGuid().ToString();
                     Sql.PedidosObj.Nuevo(id);
                     Sql.PedidosObj.EstablecerItem("documentoP", id, docP);
-                    Sql.PedidosObj.EstablecerItem("indice",     id, baseIdx + nuevoOff);
-                    nuevoOff++;
                     item.PedidoId = id;
                 }
                 else id = item.PedidoId;
 
+                Sql.PedidosObj.EstablecerItem("indice",   id, pos);
                 Sql.PedidosObj.EstablecerItem("articulo", id, item.ArticuloId);
                 Sql.PedidosObj.EstablecerItem("cantidad", id, item.Cantidad);
                 Sql.PedidosObj.EstablecerItem("importe",  id, item.Importe);
                 Sql.PedidosObj.EstablecerItem("forma",    id, item.Forma);
                 Sql.PedidosObj.EstablecerItem("contable", id, item.Contable);
                 Sql.PedidosObj.EstablecerItem("tipo",     id, item.Tipo);
+                pos++;
             }
             _pedidosOrig = new HashSet<string>(_pedidos.Select(p => p.PedidoId));
         }
@@ -1407,10 +1406,9 @@ namespace WpfAppVba
             var vigentes = new HashSet<string>(
                 _trasacciones.Where(t => !string.IsNullOrEmpty(t.TrasaccionId)).Select(t => t.TrasaccionId));
             foreach (var idOrig in _trasaccionesOrig)
-                if (!vigentes.Contains(idOrig)) Sql.TrasaccionesObj.Ocultar(idOrig);
+                if (!vigentes.Contains(idOrig)) Sql.TrasaccionesObj.Eliminar(idOrig);
 
-            int baseIdx = Sql.TrasaccionesObj.SiguienteIndice("documentoP", docP);
-            int nuevoOff = 0;
+            int pos = 1;
             foreach (var item in _trasacciones)
             {
                 DateTime fechaT = CombinarFechaHora(
@@ -1422,16 +1420,16 @@ namespace WpfAppVba
                     id = Guid.NewGuid().ToString();
                     Sql.TrasaccionesObj.Nuevo(id);
                     Sql.TrasaccionesObj.EstablecerItem("documentoP", id, docP);
-                    Sql.TrasaccionesObj.EstablecerItem("indice",     id, baseIdx + nuevoOff);
-                    nuevoOff++;
                     item.TrasaccionId = id;
                 }
                 else id = item.TrasaccionId;
 
+                Sql.TrasaccionesObj.EstablecerItem("indice",      id, pos);
                 Sql.TrasaccionesObj.EstablecerItem("fecha",       id, fechaT);
                 Sql.TrasaccionesObj.EstablecerItem("descripcion", id, item.Descripcion);
                 Sql.TrasaccionesObj.EstablecerItem("importe",     id, item.Importe);
                 Sql.TrasaccionesObj.EstablecerItem("forma",       id, item.Forma);
+                pos++;
             }
             _trasaccionesOrig = new HashSet<string>(_trasacciones.Select(t => t.TrasaccionId));
         }
@@ -1441,10 +1439,9 @@ namespace WpfAppVba
             var vigentes = new HashSet<string>(
                 _entregas.Where(e => !string.IsNullOrEmpty(e.EntregaId)).Select(e => e.EntregaId));
             foreach (var idOrig in _entregasOrig)
-                if (!vigentes.Contains(idOrig)) Sql.EntregasObj.Ocultar(idOrig);
+                if (!vigentes.Contains(idOrig)) Sql.EntregasObj.Eliminar(idOrig);
 
-            int baseIdx = Sql.EntregasObj.SiguienteIndice("documentoP", docP);
-            int nuevoOff = 0;
+            int pos = 1;
             foreach (var item in _entregas)
             {
                 DateTime fechaE = CombinarFechaHora(
@@ -1456,15 +1453,15 @@ namespace WpfAppVba
                     id = Guid.NewGuid().ToString();
                     Sql.EntregasObj.Nuevo(id);
                     Sql.EntregasObj.EstablecerItem("documentoP", id, docP);
-                    Sql.EntregasObj.EstablecerItem("indice",     id, baseIdx + nuevoOff);
-                    nuevoOff++;
                     item.EntregaId = id;
                 }
                 else id = item.EntregaId;
 
+                Sql.EntregasObj.EstablecerItem("indice",   id, pos);
                 Sql.EntregasObj.EstablecerItem("articulo", id, item.ArticuloId);
                 Sql.EntregasObj.EstablecerItem("cantidad", id, item.Cantidad);
                 Sql.EntregasObj.EstablecerItem("fecha",    id, fechaE);
+                pos++;
             }
             _entregasOrig = new HashSet<string>(_entregas.Select(e => e.EntregaId));
         }

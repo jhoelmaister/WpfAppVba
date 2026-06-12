@@ -797,10 +797,9 @@ namespace WpfAppVba
             var vigentes = new HashSet<string>(
                 _items.Where(x => !string.IsNullOrEmpty(x.TraspasoId)).Select(x => x.TraspasoId));
             foreach (var idOrig in _itemsOrig)
-                if (!vigentes.Contains(idOrig)) Sql.TraspasosObj.Ocultar(idOrig);
+                if (!vigentes.Contains(idOrig)) Sql.TraspasosObj.Eliminar(idOrig);
 
-            int baseIdx = Sql.TraspasosObj.SiguienteIndice("documentoT", docT);
-            int nuevoOff = 0;
+            int pos = 1;
             foreach (var item in _items)
             {
                 string id;
@@ -809,14 +808,14 @@ namespace WpfAppVba
                     id = Guid.NewGuid().ToString();
                     Sql.TraspasosObj.Nuevo(id);
                     Sql.TraspasosObj.EstablecerItem("documentoT", id, docT);
-                    Sql.TraspasosObj.EstablecerItem("indice",     id, baseIdx + nuevoOff);
-                    nuevoOff++;
                     item.TraspasoId = id;
                 }
                 else id = item.TraspasoId;
 
+                Sql.TraspasosObj.EstablecerItem("indice",   id, pos);
                 Sql.TraspasosObj.EstablecerItem("articulo", id, item.ArticuloId);
                 Sql.TraspasosObj.EstablecerItem("cantidad", id, item.Cantidad);
+                pos++;
             }
             _itemsOrig = new HashSet<string>(_items.Select(x => x.TraspasoId));
         }

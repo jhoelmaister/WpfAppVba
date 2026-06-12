@@ -528,10 +528,9 @@ namespace WpfAppVba
             var vigentes = new HashSet<string>(
                 _items.Where(x => !string.IsNullOrEmpty(x.InventarioId)).Select(x => x.InventarioId));
             foreach (var idOrig in _itemsOrig)
-                if (!vigentes.Contains(idOrig)) Sql.InventariosObj.Ocultar(idOrig);
+                if (!vigentes.Contains(idOrig)) Sql.InventariosObj.Eliminar(idOrig);
 
-            int baseIdx = Sql.InventariosObj.SiguienteIndice("documentoI", docId);
-            int nuevoOff = 0;
+            int pos = 1;
             foreach (var item in _items)
             {
                 string id;
@@ -540,14 +539,14 @@ namespace WpfAppVba
                     id = Guid.NewGuid().ToString();
                     Sql.InventariosObj.Nuevo(id);
                     Sql.InventariosObj.EstablecerItem("documentoI", id, docId);
-                    Sql.InventariosObj.EstablecerItem("indice",     id, baseIdx + nuevoOff);
-                    nuevoOff++;
                     item.InventarioId = id;
                 }
                 else id = item.InventarioId;
 
+                Sql.InventariosObj.EstablecerItem("indice",   id, pos);
                 Sql.InventariosObj.EstablecerItem("articulo", id, item.ArticuloId);
                 Sql.InventariosObj.EstablecerItem("cantidad", id, item.Cantidad);
+                pos++;
             }
             _itemsOrig = new HashSet<string>(_items.Select(x => x.InventarioId));
         }
