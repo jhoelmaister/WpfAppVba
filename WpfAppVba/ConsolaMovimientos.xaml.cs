@@ -25,6 +25,7 @@ namespace WpfAppVba
         private readonly InventariosGeneral  _panelInventarios  = new();
         private readonly PreciosGeneral      _panelPrecios      = new();
         private readonly RegionesGeneral     _panelRegiones     = new();
+        private readonly EmpresasGeneral     _panelEmpresas     = new();
         private readonly Configuracion       _panelConfiguracion= new();
         private readonly MovimientosGeneral  _panelMovimientos  = new();
 
@@ -45,6 +46,7 @@ namespace WpfAppVba
             ["inventarios"]  = new List<TabItem>(),
             ["precios"]      = new List<TabItem>(),
             ["regiones"]     = new List<TabItem>(),
+            ["empresas"]     = new List<TabItem>(),
             ["configuracion"]= new List<TabItem>(),
             ["movimientos"]  = new List<TabItem>(),
         };
@@ -63,6 +65,7 @@ namespace WpfAppVba
             ["inventarios"]  = null,
             ["precios"]      = null,
             ["regiones"]     = null,
+            ["empresas"]     = null,
             ["configuracion"]= null,
             ["movimientos"]  = null,
         };
@@ -125,6 +128,7 @@ namespace WpfAppVba
                 case "inventarios":  TabFijoContenido.Content = _panelInventarios;  TabFijoTitulo.Text = "Inventarios";  break;
                 case "precios":      TabFijoContenido.Content = _panelPrecios;      TabFijoTitulo.Text = "Precios";      break;
                 case "regiones":     TabFijoContenido.Content = _panelRegiones;     TabFijoTitulo.Text = "Regiones";     break;
+                case "empresas":     TabFijoContenido.Content = _panelEmpresas;     TabFijoTitulo.Text = "Empresas";     break;
                 case "configuracion":TabFijoContenido.Content = _panelConfiguracion;TabFijoTitulo.Text = "Configuración";break;
                 case "movimientos":  TabFijoContenido.Content = _panelMovimientos;  TabFijoTitulo.Text = "Movimientos";  break;
             }
@@ -309,6 +313,12 @@ namespace WpfAppVba
         {
             MostrarPanel("precios");
             MarcarActivo(BtnNav_Precios);
+        }
+
+        private void BtnNav_Empresas_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("empresas");
+            MarcarActivo(BtnNav_Empresas);
         }
 
         private void BtnNav_Configuracion_Click(object sender, RoutedEventArgs e)

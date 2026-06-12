@@ -38,6 +38,7 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 | 📊 Inventarios | `InventariosGeneral` | `InventariosDetalle` (pestaña) | ArticulosGeneral (pestaña) |
 | 🌐 Regiones | `RegionesGeneral` | `RegionesDetalle` (pestaña) | — |
 | 💲 Precios | `PreciosGeneral` | `PreciosDetalle` (pestaña) | RegionesGeneral (pestaña-selector) |
+| 🏢 Empresas | `EmpresasGeneral` | `EmpresasDetalle` (pestaña) | — |
 | ⚙ Configuración | `Configuracion` (embedded) | — | — |
 
 ### Paneles declarados en ConsolaMovimientos
@@ -55,6 +56,7 @@ private readonly CategoriasGeneral   _panelCategorias    = new();
 private readonly InventariosGeneral  _panelInventarios   = new();
 private readonly PreciosGeneral      _panelPrecios       = new();
 private readonly RegionesGeneral     _panelRegiones      = new();
+private readonly EmpresasGeneral     _panelEmpresas      = new();
 private readonly Configuracion       _panelConfiguracion = new();
 ```
 
@@ -164,6 +166,13 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - **Rama de trabajo**: todos los cambios van a `claude/brave-albattani-03ox62`. Es la rama activa de desarrollo.
 
 ## Historial de Cambios por Sesión
+
+### Sesión 2026-06-12 — Formularios de Empresas (rama `claude/cool-hopper-vo3mxo`)
+- Nueva sección **Empresas** en el sidebar, entre Precios y Configuración (botón `🏢 Empresas`).
+- `EmpresasGeneral` (UserControl): lista con columnas Línea/Código/Descripción/Signo; CRUD "Nueva/Editar/Eliminar Empresa" + Actualizar; patrón estándar (`_iniciado`, `Cerrando`/`IntentarCerrar`, actualización incremental, `OpenAsTab` selector con clave `seleccionar-empresa|{contexto}`). Usa `Sql.EmpresasObj`.
+- `EmpresasDetalle` (UserControl): campos Código (int, autoincremental con `SiguienteCodigoInt()`, read-only al editar), Descripción, Signo (NVARCHAR(4), forzado a mayúscula), Observación. Valida `CodigoExiste()` al crear. Persiste `codigo, descripcion, signo, observacion, fecha, emision, edicion, usuario, usuarioE`.
+- `ConsolaMovimientos`: panel `_panelEmpresas`, sección `"empresas"` en los diccionarios de pestañas, caso en `MostrarPanel`, handler `BtnNav_Empresas_Click`.
+- La columna `codigo` (INT) de `empresas` fue agregada por el usuario en SQL Server.
 
 ### Sesión 2026-06-12 — Empresas, regeneración de códigos y UI de conexión (rama `claude/brave-albattani-03ox62`)
 

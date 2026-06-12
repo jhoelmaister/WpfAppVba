@@ -271,6 +271,10 @@
                                     Content="💲  Precios"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Precios_Click"/>
+                            <Button x:Name="BtnNav_Empresas"
+                                    Content="🏢  Empresas"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Empresas_Click"/>
                             <Button x:Name="BtnNav_Configuracion"
                                     Content="⚙  Configuración"
                                     Style="{StaticResource NavBtn}"
