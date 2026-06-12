@@ -40,9 +40,6 @@ namespace WpfAppVba.Data
             Sql.UsuariosObj.Conectar("usuarios",
                 "SELECT * FROM usuarios WHERE estadof = 'normal' ORDER BY id ASC");
 
-            Sql.StocksObj.Conectar("stocks",
-                $"SELECT * FROM stocks WHERE estadof = 'normal'{fEmp} ORDER BY id ASC");
-
             Sql.ArticulosObj.Conectar("articulos",
                 $"SELECT * FROM articulos WHERE estadof = 'normal'{fEmp} ORDER BY familia ASC, indice ASC");
 

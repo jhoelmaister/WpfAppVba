@@ -476,7 +476,6 @@ namespace WpfAppVba
                     Sql.ArticulosObj.EstablecerItem("indice", id, ind - 1);
             }
 
-            AppState.ActualizarStocks();
             Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
 
             // Quitar solo la fila eliminada del grid (sin recargar todo)

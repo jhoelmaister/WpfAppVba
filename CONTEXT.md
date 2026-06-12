@@ -167,6 +167,13 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 
 ## Historial de Cambios por Sesión
 
+### Sesión 2026-06-12 — Eliminación de la tabla `stocks` (rama `claude/cool-hopper-vo3mxo`)
+- El usuario eliminó la tabla `stocks` en SQL Server. Se quitó del proyecto todo lo que la usaba:
+  - `SqlData.StocksObj` (eliminado).
+  - `AppLoader.ConectarProductos`: se quitó el `Conectar("stocks", ...)`.
+  - `AppState.ActualizarStocks()` (eliminado por completo) y sus 3 llamadas (`ArticulosGeneral` al eliminar, `ArticulosDetalle` al guardar nuevo/editar).
+- **No** se tocó el cálculo de stock: `StockCalculator.ContarStock/ContarStock2`, `GridStock`, columnas "Stock", avisos de stock insuficiente — esos calculan con apertura + documentos y NO dependían de la tabla `stocks`.
+
 ### Sesión 2026-06-12 — Borrado lógico y signo en Regiones/Sucursales (rama `claude/cool-hopper-vo3mxo`)
 - **Borrado lógico global**: `DataConsulta.ExportarItems` ya NO ejecuta `DELETE FROM` físico. Las filas con `estadof` = `"eliminado"` u `"ocultado"` se persisten con un `UPDATE` del `estadof` (se filtran al recargar, que solo trae `estadof='normal'`). Se eliminó el bloque DELETE y la lista `deleteIds`. Afecta a todos los callers de `.Eliminar(...)`/`.Ocultar(...)` (General de maestros, líneas de Pedidos/Traspasos/Correcciones/Inventarios, `ActualizarStocks`). Nota: las tablas pueden acumular filas con estadof≠normal (no se borran nunca).
 - **`RegionesDetalle`**: nuevo `Box_Signo` (SIGNO, MaxLength 4, mayúscula) a la derecha de DESCRIPCIÓN; se carga y guarda `regiones.signo`.

@@ -315,7 +315,6 @@ namespace WpfAppVba
                 Sql.ArticulosObj.EstablecerItem("estado",     id, "mostrar");
 
                 Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
-                AppState.ActualizarStocks();
 
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 ItemCreadoId = id;
@@ -376,7 +375,6 @@ namespace WpfAppVba
                 Sql.ArticulosObj.EstablecerItem("usuarioE",   id, AppState.UsuarioActivo);
 
                 Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
-                AppState.ActualizarStocks();
 
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 ItemCreadoId = id;
