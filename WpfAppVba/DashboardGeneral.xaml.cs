@@ -12,28 +12,45 @@ namespace WpfAppVba
 {
     /// <summary>
     /// Panel Dashboard: totales en CANTIDAD (unidades) de la sucursal y período
-    /// activos. Lee del caché ya filtrado (PedidosObj / TraspasosObj). Los
-    /// segmentadores (Ventas / Compras / Entradas / Salidas) filtran los gráficos,
-    /// la tabla y la tarjeta de total; las cantidades de cada tipo se muestran
-    /// siempre (sin importar los segmentadores activos).
+    /// activos. Lee del caché ya filtrado (PedidosObj / TraspasosObj). El
+    /// segmentador (Ventas / Compras / Entradas / Salidas) es de selección única
+    /// y filtra los gráficos, la tabla y la tarjeta de total; las cantidades de
+    /// cada tipo se muestran siempre en sus chips.
+    /// El gráfico por mes es apilado por categoría (cada categoría con su color).
     /// </summary>
     public partial class DashboardGeneral : System.Windows.Controls.UserControl
     {
         private static SqlData Sql => SqlData.Instance;
         private bool _iniciado;
 
-        private readonly ObservableCollection<FamiliaCantFila> _familias = new();
+        private readonly ObservableCollection<FamiliaCantFila> _familias  = new();
+        private readonly ObservableCollection<ArticuloCantFila> _articulos = new();
 
-        // Cache artículo → (categoría desc, familia desc) para no repetir lookups.
-        private readonly Dictionary<string, (string cat, string fam)> _articuloMeta = new();
+        // Cache artículo → (categoría desc, familia desc, descripción) para no repetir lookups.
+        private readonly Dictionary<string, (string cat, string fam, string desc)> _articuloMeta = new();
 
-        private const double AlturaGrafico = 180;   // px de la zona de barras (meses)
+        // Color asignado a cada categoría en el render actual.
+        private readonly Dictionary<string, Brush> _colorCat = new();
+
+        private const double AlturaGrafico = 200;   // px de la zona de barras (meses)
         private const double AnchoBarraMax = 280;   // px de la barra más larga (categorías)
+
+        // Paleta de colores para categorías (se cicla si hay más categorías que colores).
+        private static readonly Color[] Paleta =
+        {
+            Color.FromRgb(0x4A,0x6F,0xE3), Color.FromRgb(0x2E,0x7D,0x32),
+            Color.FromRgb(0xFB,0x8C,0x00), Color.FromRgb(0xE5,0x39,0x35),
+            Color.FromRgb(0x8E,0x24,0xAA), Color.FromRgb(0x00,0xAC,0xC1),
+            Color.FromRgb(0xFD,0xD8,0x35), Color.FromRgb(0x6D,0x4C,0x41),
+            Color.FromRgb(0xEC,0x40,0x7A), Color.FromRgb(0x7C,0xB3,0x42),
+            Color.FromRgb(0x5C,0x6B,0xC0), Color.FromRgb(0x26,0xA6,0x9A),
+        };
 
         public DashboardGeneral()
         {
             InitializeComponent();
-            GridFamilias.ItemsSource = _familias;
+            GridFamilias.ItemsSource  = _familias;
+            GridArticulos.ItemsSource = _articulos;
             Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; Recalcular(); };
         }
 
@@ -47,8 +64,8 @@ namespace WpfAppVba
 
         private void Segmentador_Changed(object sender, RoutedEventArgs e)
         {
-            // Los toggles pueden dispararse antes de InitializeComponent al aplicar
-            // IsChecked por defecto; protegemos con _iniciado.
+            // RadioButton dispara Checked al aplicar IsChecked por defecto antes de
+            // que el panel esté listo; protegemos con _iniciado.
             if (!_iniciado) return;
             Recalcular();
         }
@@ -63,30 +80,42 @@ namespace WpfAppVba
 
             string suc = AppState.SucursalActiva;
 
-            // Totales por tipo (siempre, independientes de los segmentadores).
+            // Totales por tipo (siempre, independientes del segmentador).
             double totVenta = 0, totCompra = 0, totEntrada = 0, totSalida = 0;
 
-            // Estructuras filtradas por segmentadores activos.
-            var porMes      = new double[13];                 // 1..12
-            var porCategoria= new Dictionary<string, double>();
-            var porFamilia  = new Dictionary<string, double>();
-            var articulosSet= new HashSet<string>();
-            var documentos  = new HashSet<string>();
+            // Estructuras filtradas por el segmentador activo.
+            var porMes       = new double[13];                          // total del mes (1..12)
+            var porMesCat    = new Dictionary<int, Dictionary<string, double>>();
+            var porCategoria = new Dictionary<string, double>();
+            var porFamilia   = new Dictionary<string, double>();
+            var porArticulo  = new Dictionary<string, double>();
+            var articulosSet = new HashSet<string>();
+            var documentos   = new HashSet<string>();
             double totalActivos = 0;
 
-            void Acumular(bool activo, double cant, DateTime? fecha,
-                          string artId, string docId)
+            void Acumular(bool activo, double cant, DateTime? fecha, string artId, string docId)
             {
                 if (!activo || cant == 0) return;
                 totalActivos += cant;
-                if (fecha.HasValue && fecha.Value.Month is >= 1 and <= 12)
-                    porMes[fecha.Value.Month] += cant;
 
-                var (cat, fam) = MetaArticulo(artId);
+                var (cat, fam, _) = MetaArticulo(artId);
+
+                if (fecha.HasValue && fecha.Value.Month is >= 1 and <= 12)
+                {
+                    int mm = fecha.Value.Month;
+                    porMes[mm] += cant;
+                    if (!porMesCat.TryGetValue(mm, out var d)) { d = new(); porMesCat[mm] = d; }
+                    d[cat] = d.GetValueOrDefault(cat) + cant;
+                }
+
                 porCategoria[cat] = porCategoria.GetValueOrDefault(cat) + cant;
                 porFamilia[fam]   = porFamilia.GetValueOrDefault(fam) + cant;
 
-                if (!string.IsNullOrEmpty(artId)) articulosSet.Add(artId);
+                if (!string.IsNullOrEmpty(artId))
+                {
+                    articulosSet.Add(artId);
+                    porArticulo[artId] = porArticulo.GetValueOrDefault(artId) + cant;
+                }
                 if (!string.IsNullOrEmpty(docId)) documentos.Add(docId);
             }
 
@@ -147,6 +176,9 @@ namespace WpfAppVba
                 }
             }
 
+            // ── Asignar colores por categoría (orden estable por cantidad) ────
+            AsignarColores(porCategoria);
+
             // ── Actualizar UI ────────────────────────────────────────────────
             LblVentasVal.Text   = Fmt(totVenta);
             LblComprasVal.Text  = Fmt(totCompra);
@@ -157,13 +189,58 @@ namespace WpfAppVba
             LblMovimientos.Text  = Fmt(documentos.Count);
             LblArticulos.Text    = Fmt(articulosSet.Count);
 
-            RenderMeses(porMes);
+            RenderLeyenda(porCategoria);
+            RenderMeses(porMes, porMesCat);
             RenderCategorias(porCategoria);
             RenderFamilias(porFamilia);
+            RenderArticulos(porArticulo, totalActivos);
         }
 
-        // ─── Render: gráfico de barras verticales por mes ────────────────────
-        private void RenderMeses(double[] porMes)
+        // ─── Colores por categoría ────────────────────────────────────────────
+        private void AsignarColores(Dictionary<string, double> porCategoria)
+        {
+            _colorCat.Clear();
+            var cats = porCategoria.OrderByDescending(kv => kv.Value).Select(kv => kv.Key).ToList();
+            for (int i = 0; i < cats.Count; i++)
+                _colorCat[cats[i]] = new SolidColorBrush(Paleta[i % Paleta.Length]);
+        }
+
+        private Brush ColorDe(string cat) =>
+            _colorCat.TryGetValue(cat, out var b) ? b : new SolidColorBrush(Colors.Gray);
+
+        // ─── Leyenda de categorías ────────────────────────────────────────────
+        private void RenderLeyenda(Dictionary<string, double> porCategoria)
+        {
+            PanelLeyenda.Children.Clear();
+            foreach (var cat in porCategoria.Where(kv => kv.Value > 0)
+                                            .OrderByDescending(kv => kv.Value)
+                                            .Select(kv => kv.Key))
+            {
+                var chip = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Margin = new Thickness(0, 0, 14, 4),
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                chip.Children.Add(new Border
+                {
+                    Width = 12, Height = 12, CornerRadius = new CornerRadius(3),
+                    Background = ColorDe(cat),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(0, 0, 6, 0)
+                });
+                chip.Children.Add(new TextBlock
+                {
+                    Text = cat, FontSize = 11,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Foreground = Tema("ThemeTexto", Color.FromRgb(0x20, 0x20, 0x20))
+                });
+                PanelLeyenda.Children.Add(chip);
+            }
+        }
+
+        // ─── Gráfico de barras apiladas por mes y categoría ──────────────────
+        private void RenderMeses(double[] porMes, Dictionary<int, Dictionary<string, double>> porMesCat)
         {
             PanelMeses.Children.Clear();
             double max = porMes.Max();
@@ -177,55 +254,71 @@ namespace WpfAppVba
             LblMesesVacio.Visibility = Visibility.Collapsed;
             PanelMeses.Visibility    = Visibility.Visible;
 
-            var barBrush = new SolidColorBrush(Color.FromRgb(0x4A, 0x6F, 0xE3));
+            // Orden estable de categorías (por total) para apilar igual en cada mes.
+            var ordenCats = _colorCat.Keys.ToList();
+
             for (int m = 1; m <= 12; m++)
             {
-                double val = porMes[m];
-                double h   = max > 0 ? Math.Max(val > 0 ? 3 : 0, val / max * AlturaGrafico) : 0;
+                double totalMes = porMes[m];
 
                 var columna = new StackPanel
                 {
-                    Width = 50,
+                    Width = 54,
                     Margin = new Thickness(3, 0, 3, 0),
                     VerticalAlignment = VerticalAlignment.Bottom
                 };
 
-                columna.Children.Add(new TextBlock
-                {
-                    Text = val > 0 ? Fmt(val) : "",
-                    FontSize = 10,
-                    FontWeight = FontWeights.SemiBold,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    Foreground = Tema("ThemeTexto", Color.FromRgb(0x20,0x20,0x20)),
-                    Margin = new Thickness(0, 0, 0, 3)
-                });
-
+                // Zona de la barra (altura fija, barra apilada al fondo)
                 var zona = new Grid { Height = AlturaGrafico };
-                zona.Children.Add(new Border
+                var pila = new StackPanel
                 {
-                    Width = 28,
-                    Height = h,
-                    Background = barBrush,
-                    CornerRadius = new CornerRadius(4, 4, 0, 0),
+                    Orientation = Orientation.Vertical,
                     VerticalAlignment = VerticalAlignment.Bottom,
                     HorizontalAlignment = HorizontalAlignment.Center
-                });
+                };
+
+                porMesCat.TryGetValue(m, out var catsMes);
+                if (catsMes != null)
+                {
+                    foreach (var cat in ordenCats)
+                    {
+                        double val = catsMes.GetValueOrDefault(cat);
+                        if (val <= 0) continue;
+                        pila.Children.Add(new Border
+                        {
+                            Width = 30,
+                            Height = Math.Max(2, val / max * AlturaGrafico),
+                            Background = ColorDe(cat)
+                        });
+                    }
+                }
+                zona.Children.Add(pila);
                 columna.Children.Add(zona);
 
+                // Título del mes
                 columna.Children.Add(new TextBlock
                 {
                     Text = NombreMes(m),
-                    FontSize = 10,
+                    FontSize = 11, FontWeight = FontWeights.SemiBold,
                     HorizontalAlignment = HorizontalAlignment.Center,
-                    Foreground = Tema("ThemeTextoSec", Color.FromRgb(0x7A,0x7A,0x7A)),
+                    Foreground = Tema("ThemeTexto", Color.FromRgb(0x20, 0x20, 0x20)),
                     Margin = new Thickness(0, 4, 0, 0)
+                });
+
+                // Total del mes, DEBAJO del título del mes
+                columna.Children.Add(new TextBlock
+                {
+                    Text = totalMes > 0 ? Fmt(totalMes) : "",
+                    FontSize = 11, FontWeight = FontWeights.Bold,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Foreground = Tema("ThemeTextoSec", Color.FromRgb(0x7A, 0x7A, 0x7A))
                 });
 
                 PanelMeses.Children.Add(columna);
             }
         }
 
-        // ─── Render: barras horizontales por categoría ───────────────────────
+        // ─── Barras horizontales por categoría (color propio) ────────────────
         private void RenderCategorias(Dictionary<string, double> porCategoria)
         {
             PanelCategorias.Children.Clear();
@@ -240,7 +333,6 @@ namespace WpfAppVba
             LblCategoriasVacio.Visibility = Visibility.Collapsed;
 
             double max = orden[0].Value;
-            var barBrush = new SolidColorBrush(Color.FromRgb(0x2E, 0x7D, 0x32));
 
             foreach (var (cat, val) in orden)
             {
@@ -255,7 +347,7 @@ namespace WpfAppVba
                     FontSize = 11,
                     TextTrimming = TextTrimming.CharacterEllipsis,
                     VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = Tema("ThemeTexto", Color.FromRgb(0x20,0x20,0x20))
+                    Foreground = Tema("ThemeTexto", Color.FromRgb(0x20, 0x20, 0x20))
                 };
                 Grid.SetColumn(lbl, 0);
                 fila.Children.Add(lbl);
@@ -264,7 +356,7 @@ namespace WpfAppVba
                 {
                     Height = 18,
                     Width = Math.Max(4, val / max * AnchoBarraMax),
-                    Background = barBrush,
+                    Background = ColorDe(cat),
                     CornerRadius = new CornerRadius(4),
                     HorizontalAlignment = HorizontalAlignment.Left,
                     VerticalAlignment = VerticalAlignment.Center
@@ -279,7 +371,7 @@ namespace WpfAppVba
                     FontWeight = FontWeights.SemiBold,
                     Margin = new Thickness(8, 0, 0, 0),
                     VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = Tema("ThemeTexto", Color.FromRgb(0x20,0x20,0x20))
+                    Foreground = Tema("ThemeTexto", Color.FromRgb(0x20, 0x20, 0x20))
                 };
                 Grid.SetColumn(valTxt, 2);
                 fila.Children.Add(valTxt);
@@ -288,7 +380,7 @@ namespace WpfAppVba
             }
         }
 
-        // ─── Render: tabla por familia ────────────────────────────────────────
+        // ─── Tabla por familia ────────────────────────────────────────────────
         private void RenderFamilias(Dictionary<string, double> porFamilia)
         {
             _familias.Clear();
@@ -298,17 +390,35 @@ namespace WpfAppVba
             {
                 _familias.Add(new FamiliaCantFila
                 {
-                    Familia        = fam,
-                    Cantidad       = val,
+                    Familia         = fam,
+                    Cantidad        = val,
                     PorcentajeTexto = total > 0 ? (val / total).ToString("P1", CultureInfo.CurrentCulture) : "0%"
                 });
             }
         }
 
-        // ─── Helpers ──────────────────────────────────────────────────────────
-        private (string cat, string fam) MetaArticulo(string artId)
+        // ─── Lista de artículos (Familia · Descripción · Cantidad) ───────────
+        private void RenderArticulos(Dictionary<string, double> porArticulo, double total)
         {
-            if (string.IsNullOrEmpty(artId)) return ("Sin categoría", "Sin familia");
+            _articulos.Clear();
+            foreach (var (artId, val) in porArticulo.Where(kv => kv.Value > 0)
+                                                    .OrderByDescending(kv => kv.Value))
+            {
+                var (_, fam, desc) = MetaArticulo(artId);
+                _articulos.Add(new ArticuloCantFila
+                {
+                    Familia     = fam,
+                    Descripcion = desc,
+                    Cantidad    = val
+                });
+            }
+            LblArticulosTotal.Text = Fmt(total);
+        }
+
+        // ─── Helpers ──────────────────────────────────────────────────────────
+        private (string cat, string fam, string desc) MetaArticulo(string artId)
+        {
+            if (string.IsNullOrEmpty(artId)) return ("Sin categoría", "Sin familia", "(sin artículo)");
             if (_articuloMeta.TryGetValue(artId, out var meta)) return meta;
 
             string catId = Sql.ArticulosObj.ObtenerItem("categoria", artId)?.ToString() ?? "";
@@ -319,8 +429,9 @@ namespace WpfAppVba
             string fam = string.IsNullOrEmpty(famId)
                 ? "Sin familia"
                 : Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? "Sin familia";
+            string desc = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString() ?? "";
 
-            meta = (cat, fam);
+            meta = (cat, fam, desc);
             _articuloMeta[artId] = meta;
             return meta;
         }
@@ -353,13 +464,21 @@ namespace WpfAppVba
             return (m >= 1 && m <= 12) ? meses[m] : "";
         }
 
-        // ─── Fila de la tabla por familia ─────────────────────────────────────
+        // ─── Filas de tablas ──────────────────────────────────────────────────
         public class FamiliaCantFila
         {
             public string Familia         { get; set; } = "";
             public double Cantidad        { get; set; }
             public string CantidadTexto   => Cantidad.ToString("N0", CultureInfo.CurrentCulture);
             public string PorcentajeTexto { get; set; } = "";
+        }
+
+        public class ArticuloCantFila
+        {
+            public string Familia       { get; set; } = "";
+            public string Descripcion   { get; set; } = "";
+            public double Cantidad      { get; set; }
+            public string CantidadTexto => Cantidad.ToString("N0", CultureInfo.CurrentCulture);
         }
     }
 }

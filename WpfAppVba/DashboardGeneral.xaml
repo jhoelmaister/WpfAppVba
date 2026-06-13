@@ -17,15 +17,14 @@
             <Setter Property="Padding" Value="16,14"/>
         </Style>
 
-        <!-- Chip segmentador (ToggleButton): color lleno cuando está activo,
-             atenuado cuando está inactivo. El color se define por instancia. -->
+        <!-- Chip segmentador (selección única, RadioButton): color lleno cuando
+             está activo, atenuado cuando está inactivo. Color por instancia. -->
         <Style x:Key="Segmentador" TargetType="ToggleButton">
             <Setter Property="Height" Value="62"/>
             <Setter Property="MinWidth" Value="150"/>
             <Setter Property="Margin" Value="0,0,12,0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="IsChecked" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
@@ -114,34 +113,38 @@
                 <!-- ▸ SEGMENTADORES -->
                 <TextBlock Style="{StaticResource SectionHeader}" Text="● SEGMENTADORES"/>
                 <WrapPanel Margin="0,0,0,18">
-                    <ToggleButton x:Name="TglVentas" Style="{StaticResource Segmentador}" Background="#E53935"
-                                  Checked="Segmentador_Changed" Unchecked="Segmentador_Changed">
+                    <RadioButton x:Name="TglVentas" GroupName="seg" IsChecked="True"
+                                 Style="{StaticResource Segmentador}" Background="#E53935"
+                                 Checked="Segmentador_Changed">
                         <StackPanel>
                             <TextBlock Style="{StaticResource ChipTitulo}" Text="🛒  Ventas"/>
                             <TextBlock x:Name="LblVentasVal" Style="{StaticResource ChipValor}" Text="0"/>
                         </StackPanel>
-                    </ToggleButton>
-                    <ToggleButton x:Name="TglCompras" Style="{StaticResource Segmentador}" Background="#1E88E5"
-                                  Checked="Segmentador_Changed" Unchecked="Segmentador_Changed">
+                    </RadioButton>
+                    <RadioButton x:Name="TglCompras" GroupName="seg"
+                                 Style="{StaticResource Segmentador}" Background="#1E88E5"
+                                 Checked="Segmentador_Changed">
                         <StackPanel>
                             <TextBlock Style="{StaticResource ChipTitulo}" Text="📥  Compras"/>
                             <TextBlock x:Name="LblComprasVal" Style="{StaticResource ChipValor}" Text="0"/>
                         </StackPanel>
-                    </ToggleButton>
-                    <ToggleButton x:Name="TglEntradas" Style="{StaticResource Segmentador}" Background="#43A047"
-                                  Checked="Segmentador_Changed" Unchecked="Segmentador_Changed">
+                    </RadioButton>
+                    <RadioButton x:Name="TglEntradas" GroupName="seg"
+                                 Style="{StaticResource Segmentador}" Background="#43A047"
+                                 Checked="Segmentador_Changed">
                         <StackPanel>
                             <TextBlock Style="{StaticResource ChipTitulo}" Text="📦  Entradas"/>
                             <TextBlock x:Name="LblEntradasVal" Style="{StaticResource ChipValor}" Text="0"/>
                         </StackPanel>
-                    </ToggleButton>
-                    <ToggleButton x:Name="TglSalidas" Style="{StaticResource Segmentador}" Background="#FB8C00"
-                                  Checked="Segmentador_Changed" Unchecked="Segmentador_Changed">
+                    </RadioButton>
+                    <RadioButton x:Name="TglSalidas" GroupName="seg"
+                                 Style="{StaticResource Segmentador}" Background="#FB8C00"
+                                 Checked="Segmentador_Changed">
                         <StackPanel>
                             <TextBlock Style="{StaticResource ChipTitulo}" Text="📤  Salidas"/>
                             <TextBlock x:Name="LblSalidasVal" Style="{StaticResource ChipValor}" Text="0"/>
                         </StackPanel>
-                    </ToggleButton>
+                    </RadioButton>
                 </WrapPanel>
 
                 <!-- ▸ TARJETAS KPI -->
@@ -156,7 +159,7 @@
 
                     <Border Grid.Column="0" Style="{StaticResource CardBorder}">
                         <StackPanel>
-                            <TextBlock Style="{StaticResource KpiTitulo}" Text="TOTAL UNIDADES (TIPOS ACTIVOS)"/>
+                            <TextBlock Style="{StaticResource KpiTitulo}" Text="TOTAL UNIDADES (TIPO ACTIVO)"/>
                             <TextBlock x:Name="LblTotalGeneral" Style="{StaticResource KpiValor}" Text="0"/>
                         </StackPanel>
                     </Border>
@@ -174,16 +177,17 @@
                     </Border>
                 </Grid>
 
-                <!-- ▸ GRÁFICO POR MES -->
+                <!-- ▸ GRÁFICO POR MES (apilado por categoría) -->
                 <Border Style="{StaticResource CardBorder}" Margin="0,0,0,18">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource SectionHeader}" Text="● TOTAL EN CANTIDAD POR MES"/>
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="● CANTIDAD POR MES Y CATEGORÍA"/>
+                        <WrapPanel x:Name="PanelLeyenda" Margin="0,0,0,10"/>
                         <Grid>
-                            <TextBlock x:Name="LblMesesVacio" Text="Sin datos para los segmentadores activos."
+                            <TextBlock x:Name="LblMesesVacio" Text="Sin datos para el segmentador activo."
                                        FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
                                        Visibility="Collapsed"/>
                             <StackPanel x:Name="PanelMeses" Orientation="Horizontal"
-                                        HorizontalAlignment="Center" MinHeight="220"/>
+                                        HorizontalAlignment="Center" MinHeight="240"/>
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -236,6 +240,41 @@
                         </StackPanel>
                     </Border>
                 </Grid>
+
+                <!-- ▸ LISTA DE ARTÍCULOS -->
+                <Border Style="{StaticResource CardBorder}" Margin="0,16,0,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="● SUMA DE CANTIDAD POR ARTÍCULO"/>
+                        <DataGrid x:Name="GridArticulos"
+                                  AutoGenerateColumns="False" IsReadOnly="True"
+                                  HeadersVisibility="Column" CanUserAddRows="False"
+                                  GridLinesVisibility="Horizontal" RowHeight="28"
+                                  Background="Transparent" BorderThickness="0"
+                                  MaxHeight="420">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Familia" Binding="{Binding Familia}" Width="160"/>
+                                <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
+                                <DataGridTextColumn Header="Cantidad" Binding="{Binding CantidadTexto}" Width="110">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Border BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,1,0,0"
+                                Margin="0,6,0,0" Padding="0,8,0,0">
+                            <Grid>
+                                <TextBlock Text="Total" FontWeight="Bold" FontSize="12"
+                                           Foreground="{DynamicResource ThemeTexto}"/>
+                                <TextBlock x:Name="LblArticulosTotal" Text="0" FontWeight="Bold" FontSize="12"
+                                           HorizontalAlignment="Right"
+                                           Foreground="{DynamicResource ThemeTexto}"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
 
             </StackPanel>
         </ScrollViewer>
