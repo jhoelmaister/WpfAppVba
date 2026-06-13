@@ -186,8 +186,11 @@
                             <TextBlock x:Name="LblMesesVacio" Text="Sin datos para el segmentador activo."
                                        FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
                                        Visibility="Collapsed"/>
-                            <StackPanel x:Name="PanelMeses" Orientation="Horizontal"
-                                        HorizontalAlignment="Center" MinHeight="240"/>
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                          VerticalScrollBarVisibility="Disabled">
+                                <StackPanel x:Name="PanelMeses" Orientation="Horizontal"
+                                            HorizontalAlignment="Center" MinHeight="260"/>
+                            </ScrollViewer>
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -252,9 +255,17 @@
                                   Background="Transparent" BorderThickness="0"
                                   MaxHeight="420">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Familia" Binding="{Binding Familia}" Width="160"/>
+                                <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="80"/>
+                                <DataGridTextColumn Header="Familia" Binding="{Binding Familia}" Width="150"/>
                                 <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
-                                <DataGridTextColumn Header="Cantidad" Binding="{Binding CantidadTexto}" Width="110">
+                                <DataGridTextColumn Header="Cantidad" Binding="{Binding CantidadTexto}" Width="100">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="%" Binding="{Binding PorcentajeTexto}" Width="70">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Right"/>

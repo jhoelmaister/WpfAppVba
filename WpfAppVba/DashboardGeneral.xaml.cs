@@ -26,8 +26,8 @@ namespace WpfAppVba
         private readonly ObservableCollection<FamiliaCantFila> _familias  = new();
         private readonly ObservableCollection<ArticuloCantFila> _articulos = new();
 
-        // Cache artículo → (categoría desc, familia desc, descripción) para no repetir lookups.
-        private readonly Dictionary<string, (string cat, string fam, string desc)> _articuloMeta = new();
+        // Cache artículo → (categoría desc, familia desc, descripción, código) para no repetir lookups.
+        private readonly Dictionary<string, (string cat, string fam, string desc, string cod)> _articuloMeta = new();
 
         // Color asignado a cada categoría en el render actual.
         private readonly Dictionary<string, Brush> _colorCat = new();
@@ -98,7 +98,7 @@ namespace WpfAppVba
                 if (!activo || cant == 0) return;
                 totalActivos += cant;
 
-                var (cat, fam, _) = MetaArticulo(artId);
+                var (cat, fam, _, _) = MetaArticulo(artId);
 
                 if (fecha.HasValue && fecha.Value.Month is >= 1 and <= 12)
                 {
@@ -239,11 +239,13 @@ namespace WpfAppVba
             }
         }
 
-        // ─── Gráfico de barras apiladas por mes y categoría ──────────────────
+        // ─── Gráfico de barras agrupadas por mes (una barra por categoría) ──
         private void RenderMeses(double[] porMes, Dictionary<int, Dictionary<string, double>> porMesCat)
         {
             PanelMeses.Children.Clear();
-            double max = porMes.Max();
+
+            // Escala = máximo valor (categoría, mes), ya que las barras son por categoría.
+            double max = porMesCat.Values.SelectMany(d => d.Values).DefaultIfEmpty(0).Max();
 
             if (max <= 0)
             {
@@ -254,46 +256,63 @@ namespace WpfAppVba
             LblMesesVacio.Visibility = Visibility.Collapsed;
             PanelMeses.Visibility    = Visibility.Visible;
 
-            // Orden estable de categorías (por total) para apilar igual en cada mes.
+            // Orden estable de categorías (por total) para agrupar igual en cada mes.
             var ordenCats = _colorCat.Keys.ToList();
 
             for (int m = 1; m <= 12; m++)
             {
                 double totalMes = porMes[m];
+                porMesCat.TryGetValue(m, out var catsMes);
 
                 var columna = new StackPanel
                 {
-                    Width = 54,
-                    Margin = new Thickness(3, 0, 3, 0),
+                    Margin = new Thickness(6, 0, 6, 0),
                     VerticalAlignment = VerticalAlignment.Bottom
                 };
 
-                // Zona de la barra (altura fija, barra apilada al fondo)
-                var zona = new Grid { Height = AlturaGrafico };
-                var pila = new StackPanel
+                // Grupo de barras (una por categoría con valor > 0 en el mes)
+                var grupo = new StackPanel
                 {
-                    Orientation = Orientation.Vertical,
-                    VerticalAlignment = VerticalAlignment.Bottom,
+                    Orientation = Orientation.Horizontal,
                     HorizontalAlignment = HorizontalAlignment.Center
                 };
 
-                porMesCat.TryGetValue(m, out var catsMes);
                 if (catsMes != null)
                 {
                     foreach (var cat in ordenCats)
                     {
                         double val = catsMes.GetValueOrDefault(cat);
                         if (val <= 0) continue;
-                        pila.Children.Add(new Border
+
+                        var barCol = new StackPanel
                         {
-                            Width = 30,
-                            Height = Math.Max(2, val / max * AlturaGrafico),
-                            Background = ColorDe(cat)
+                            Margin = new Thickness(2, 0, 2, 0),
+                            VerticalAlignment = VerticalAlignment.Bottom
+                        };
+                        // Valor (cantidad por categoría y mes) ARRIBA de la barra
+                        barCol.Children.Add(new TextBlock
+                        {
+                            Text = Fmt(val),
+                            FontSize = 9, FontWeight = FontWeights.SemiBold,
+                            HorizontalAlignment = HorizontalAlignment.Center,
+                            Foreground = Tema("ThemeTexto", Color.FromRgb(0x20, 0x20, 0x20)),
+                            Margin = new Thickness(0, 0, 0, 2)
                         });
+                        // Zona de altura fija → barras alineadas al mismo eje base
+                        var zona = new Grid { Height = AlturaGrafico };
+                        zona.Children.Add(new Border
+                        {
+                            Width = 18,
+                            Height = Math.Max(2, val / max * AlturaGrafico),
+                            Background = ColorDe(cat),
+                            CornerRadius = new CornerRadius(3, 3, 0, 0),
+                            VerticalAlignment = VerticalAlignment.Bottom
+                        });
+                        barCol.Children.Add(zona);
+                        grupo.Children.Add(barCol);
                     }
                 }
-                zona.Children.Add(pila);
-                columna.Children.Add(zona);
+                columna.Children.Add(grupo);
 
                 // Título del mes
                 columna.Children.Add(new TextBlock
@@ -404,21 +423,23 @@ namespace WpfAppVba
             foreach (var (artId, val) in porArticulo.Where(kv => kv.Value > 0)
                                                     .OrderByDescending(kv => kv.Value))
             {
-                var (_, fam, desc) = MetaArticulo(artId);
+                var (_, fam, desc, cod) = MetaArticulo(artId);
                 _articulos.Add(new ArticuloCantFila
                 {
-                    Familia     = fam,
-                    Descripcion = desc,
-                    Cantidad    = val
+                    Codigo          = cod,
+                    Familia         = fam,
+                    Descripcion     = desc,
+                    Cantidad        = val,
+                    PorcentajeTexto = total > 0 ? (val / total).ToString("P1", CultureInfo.CurrentCulture) : "0%"
                 });
             }
             LblArticulosTotal.Text = Fmt(total);
         }
 
         // ─── Helpers ──────────────────────────────────────────────────────────
-        private (string cat, string fam, string desc) MetaArticulo(string artId)
+        private (string cat, string fam, string desc, string cod) MetaArticulo(string artId)
         {
-            if (string.IsNullOrEmpty(artId)) return ("Sin categoría", "Sin familia", "(sin artículo)");
+            if (string.IsNullOrEmpty(artId)) return ("Sin categoría", "Sin familia", "(sin artículo)", "");
             if (_articuloMeta.TryGetValue(artId, out var meta)) return meta;
 
             string catId = Sql.ArticulosObj.ObtenerItem("categoria", artId)?.ToString() ?? "";
@@ -430,8 +451,9 @@ namespace WpfAppVba
                 ? "Sin familia"
                 : Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? "Sin familia";
             string desc = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString() ?? "";
+            string cod  = Sql.ArticulosObj.ObtenerItem("codigo", artId)?.ToString() ?? "";
 
-            meta = (cat, fam, desc);
+            meta = (cat, fam, desc, cod);
             _articuloMeta[artId] = meta;
             return meta;
         }
@@ -475,10 +497,12 @@ namespace WpfAppVba
 
         public class ArticuloCantFila
         {
-            public string Familia       { get; set; } = "";
-            public string Descripcion   { get; set; } = "";
-            public double Cantidad      { get; set; }
-            public string CantidadTexto => Cantidad.ToString("N0", CultureInfo.CurrentCulture);
+            public string Codigo          { get; set; } = "";
+            public string Familia         { get; set; } = "";
+            public string Descripcion     { get; set; } = "";
+            public double Cantidad        { get; set; }
+            public string CantidadTexto   => Cantidad.ToString("N0", CultureInfo.CurrentCulture);
+            public string PorcentajeTexto { get; set; } = "";
         }
     }
 }
