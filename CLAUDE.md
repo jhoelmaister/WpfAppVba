@@ -1,12 +1,5 @@
 # CLAUDE.md — WpfAppVba-sistemaControl
 
-## REGLA CRÍTICA - Control de versiones (Git)
-- NUNCA ejecutes git checkout -b ni ningún comando que cree una rama nueva.
-- Trabajá EXCLUSIVAMENTE sobre la rama que ya está activa al iniciar la sesión.
-- Antes de hacer cualquier commit, verificá la rama actual con git branch --show-current.
-- Si por algún motivo ya estás en una rama nueva tipo claude/... que no fue pedida, avisá al usuario antes de continuar y preguntá si hacer checkout de vuelta a la rama original.
-- No crear ramas intermedias de sesión bajo ningún concepto.
-
 ## Reglas obligatorias de cada sesión
 
 1. Contexto primero
@@ -19,5 +12,9 @@
 
 3. Ante la duda
    - Preguntar antes de asumir, especialmente en cambios estructurales o que afecten varios archivos.
+
+4. CONTEXT.md
+   - NO actualizar CONTEXT.md automáticamente después de cada cambio confirmado.
+   - El usuario actualiza CONTEXT.md manualmente al finalizar la sesión.
 
 Estas reglas aplican durante toda la sesión, no solo al inicio.
