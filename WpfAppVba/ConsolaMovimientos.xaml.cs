@@ -31,6 +31,7 @@ namespace WpfAppVba
         private EmpresasGeneral     _panelEmpresas     = new();
         private readonly Configuracion       _panelConfiguracion= new();
         private MovimientosGeneral  _panelMovimientos  = new();
+        private DashboardGeneral    _panelDashboard    = new();
 
         // Cada sección del menú lateral conserva su propio juego de pestañas dinámicas.
         private string _seccionActiva = "articulos";
@@ -52,6 +53,7 @@ namespace WpfAppVba
             ["empresas"]     = new List<TabItem>(),
             ["configuracion"]= new List<TabItem>(),
             ["movimientos"]  = new List<TabItem>(),
+            ["dashboard"]    = new List<TabItem>(),
         };
         private readonly Dictionary<string, TabItem?> _pestañaSeleccionadaPorSeccion = new()
         {
@@ -71,6 +73,7 @@ namespace WpfAppVba
             ["empresas"]     = null,
             ["configuracion"]= null,
             ["movimientos"]  = null,
+            ["dashboard"]    = null,
         };
 
         public ConsolaMovimientos()
@@ -128,6 +131,7 @@ namespace WpfAppVba
             _panelRegiones     = new();
             _panelEmpresas     = new();
             _panelMovimientos  = new();
+            _panelDashboard    = new();
 
             // 3. Mantener Configuración como panel fijo enfocado
             _seccionActiva = "configuracion";
@@ -181,6 +185,7 @@ namespace WpfAppVba
                 case "empresas":     TabFijoContenido.Content = _panelEmpresas;     TabFijoTitulo.Text = "Empresas";     break;
                 case "configuracion":TabFijoContenido.Content = _panelConfiguracion;TabFijoTitulo.Text = "Configuración";break;
                 case "movimientos":  TabFijoContenido.Content = _panelMovimientos;  TabFijoTitulo.Text = "Movimientos";  break;
+                case "dashboard":    TabFijoContenido.Content = _panelDashboard;    TabFijoTitulo.Text = "Dashboard";    break;
             }
 
             // 3. Restaurar las pestañas propias de la nueva sección
@@ -383,6 +388,12 @@ namespace WpfAppVba
         {
             MostrarPanel("movimientos");
             MarcarActivo(BtnNav_Movimientos);
+        }
+
+        private void BtnNav_Dashboard_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("dashboard");
+            MarcarActivo(BtnNav_Dashboard);
         }
 
         // ─── Accesos rápidos del top bar ──────────────────────────────────────

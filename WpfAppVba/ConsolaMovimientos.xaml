@@ -218,6 +218,10 @@
                                   HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="0,8,0,8">
 
+                            <Button x:Name="BtnNav_Dashboard"
+                                    Content="📊  Dashboard"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Dashboard_Click"/>
                             <Button x:Name="BtnNav_Articulos"
                                     Content="📋  Artículos"
                                     Style="{StaticResource NavBtn}"

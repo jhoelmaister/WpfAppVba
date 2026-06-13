@@ -1,0 +1,243 @@
+<UserControl x:Class="WpfAppVba.DashboardGeneral"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Background="{DynamicResource ThemeBgPrincipal}">
+
+    <UserControl.Resources>
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#4F8EF7"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+
+        <Style x:Key="CardBorder" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ThemeBgSurface}"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="16,14"/>
+        </Style>
+
+        <!-- Chip segmentador (ToggleButton): color lleno cuando está activo,
+             atenuado cuando está inactivo. El color se define por instancia. -->
+        <Style x:Key="Segmentador" TargetType="ToggleButton">
+            <Setter Property="Height" Value="62"/>
+            <Setter Property="MinWidth" Value="150"/>
+            <Setter Property="Margin" Value="0,0,12,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="IsChecked" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Chip" CornerRadius="10"
+                                Background="{TemplateBinding Background}"
+                                Padding="16,8">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="False">
+                                <Setter TargetName="Chip" Property="Opacity" Value="0.32"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chip" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ChipTitulo" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Opacity" Value="0.92"/>
+        </Style>
+        <Style x:Key="ChipValor" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+        </Style>
+
+        <Style x:Key="KpiTitulo" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+        </Style>
+        <Style x:Key="KpiValor" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="26"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ══ ENCABEZADO ══════════════════════════════════════════════ -->
+        <Border Grid.Row="0" Background="{DynamicResource ThemeBgSurface}"
+                BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,0,0,1"
+                Padding="20,14">
+            <Grid>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="36" Height="36" CornerRadius="8"
+                            Background="#1A3A6B" Margin="0,0,12,0">
+                        <TextBlock Text="&#x1F4CA;" FontSize="18" HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" Foreground="White"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Dashboard" FontSize="14" FontWeight="Bold"
+                                   Foreground="{DynamicResource ThemeTexto}"/>
+                        <TextBlock x:Name="LblSubtitulo" Text="Totales en cantidad de la sucursal y período activos"
+                                   FontSize="11" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,1,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <Button x:Name="BtnActualizar" Content="↻ Actualizar"
+                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Height="34" FontSize="12" FontWeight="SemiBold" Padding="16,0"
+                        Background="#1A73E8" Foreground="White"
+                        BorderThickness="0" Cursor="Hand"
+                        Click="BtnActualizar_Click"/>
+            </Grid>
+        </Border>
+
+        <!-- ══ CONTENIDO ══════════════════════════════════════════════ -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16,20,16">
+            <StackPanel>
+
+                <!-- ▸ SEGMENTADORES -->
+                <TextBlock Style="{StaticResource SectionHeader}" Text="● SEGMENTADORES"/>
+                <WrapPanel Margin="0,0,0,18">
+                    <ToggleButton x:Name="TglVentas" Style="{StaticResource Segmentador}" Background="#E53935"
+                                  Checked="Segmentador_Changed" Unchecked="Segmentador_Changed">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource ChipTitulo}" Text="🛒  Ventas"/>
+                            <TextBlock x:Name="LblVentasVal" Style="{StaticResource ChipValor}" Text="0"/>
+                        </StackPanel>
+                    </ToggleButton>
+                    <ToggleButton x:Name="TglCompras" Style="{StaticResource Segmentador}" Background="#1E88E5"
+                                  Checked="Segmentador_Changed" Unchecked="Segmentador_Changed">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource ChipTitulo}" Text="📥  Compras"/>
+                            <TextBlock x:Name="LblComprasVal" Style="{StaticResource ChipValor}" Text="0"/>
+                        </StackPanel>
+                    </ToggleButton>
+                    <ToggleButton x:Name="TglEntradas" Style="{StaticResource Segmentador}" Background="#43A047"
+                                  Checked="Segmentador_Changed" Unchecked="Segmentador_Changed">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource ChipTitulo}" Text="📦  Entradas"/>
+                            <TextBlock x:Name="LblEntradasVal" Style="{StaticResource ChipValor}" Text="0"/>
+                        </StackPanel>
+                    </ToggleButton>
+                    <ToggleButton x:Name="TglSalidas" Style="{StaticResource Segmentador}" Background="#FB8C00"
+                                  Checked="Segmentador_Changed" Unchecked="Segmentador_Changed">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource ChipTitulo}" Text="📤  Salidas"/>
+                            <TextBlock x:Name="LblSalidasVal" Style="{StaticResource ChipValor}" Text="0"/>
+                        </StackPanel>
+                    </ToggleButton>
+                </WrapPanel>
+
+                <!-- ▸ TARJETAS KPI -->
+                <Grid Margin="0,0,0,18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource CardBorder}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource KpiTitulo}" Text="TOTAL UNIDADES (TIPOS ACTIVOS)"/>
+                            <TextBlock x:Name="LblTotalGeneral" Style="{StaticResource KpiValor}" Text="0"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="2" Style="{StaticResource CardBorder}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource KpiTitulo}" Text="MOVIMIENTOS"/>
+                            <TextBlock x:Name="LblMovimientos" Style="{StaticResource KpiValor}" Text="0"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="4" Style="{StaticResource CardBorder}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource KpiTitulo}" Text="ARTÍCULOS DISTINTOS"/>
+                            <TextBlock x:Name="LblArticulos" Style="{StaticResource KpiValor}" Text="0"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- ▸ GRÁFICO POR MES -->
+                <Border Style="{StaticResource CardBorder}" Margin="0,0,0,18">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="● TOTAL EN CANTIDAD POR MES"/>
+                        <Grid>
+                            <TextBlock x:Name="LblMesesVacio" Text="Sin datos para los segmentadores activos."
+                                       FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
+                                       Visibility="Collapsed"/>
+                            <StackPanel x:Name="PanelMeses" Orientation="Horizontal"
+                                        HorizontalAlignment="Center" MinHeight="220"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ▸ GRÁFICO POR CATEGORÍA + TABLA POR FAMILIA -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource CardBorder}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionHeader}" Text="● TOTAL EN CANTIDAD POR CATEGORÍA"/>
+                            <TextBlock x:Name="LblCategoriasVacio" Text="Sin datos para los segmentadores activos."
+                                       FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
+                                       Visibility="Collapsed"/>
+                            <StackPanel x:Name="PanelCategorias"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource CardBorder}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionHeader}" Text="● TOTAL EN CANTIDAD POR FAMILIA"/>
+                            <DataGrid x:Name="GridFamilias"
+                                      AutoGenerateColumns="False" IsReadOnly="True"
+                                      HeadersVisibility="Column" CanUserAddRows="False"
+                                      GridLinesVisibility="Horizontal" RowHeight="30"
+                                      Background="Transparent" BorderThickness="0"
+                                      MaxHeight="360">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Familia" Binding="{Binding Familia}" Width="*"/>
+                                    <DataGridTextColumn Header="Cantidad" Binding="{Binding CantidadTexto}" Width="110">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="%" Binding="{Binding PorcentajeTexto}" Width="70">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
