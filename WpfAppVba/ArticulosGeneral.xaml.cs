@@ -452,29 +452,11 @@ namespace WpfAppVba
 
             if (res != MessageBoxResult.Yes) return;
 
-            // Capturar familia e indice antes de ocultar
-            string famEliminada = Sql.ArticulosObj.ObtenerItem("familia", fila.Id)?.ToString() ?? "";
-            int    indEliminado = Convert.ToInt32(Sql.ArticulosObj.ObtenerItem("indice", fila.Id) ?? 0);
-
+            // Ocultar el artículo: su índice queda RESERVADO y NO se reutiliza, por lo
+            // que NO se corren los índices de los demás artículos de la familia.
             Sql.ArticulosObj.EstablecerItem("edicion",  fila.Id, DateTime.Now);
             Sql.ArticulosObj.EstablecerItem("usuarioE", fila.Id, AppState.UsuarioActivo);
             Sql.ArticulosObj.Ocultar(fila.Id);
-
-            // Rellenar el hueco: restar 1 a los índices > indEliminado dentro de la misma familia
-            int uf = Sql.ArticulosObj.ContarFilas;
-            for (int i = 1; i <= uf; i++)
-            {
-                var idObj = Sql.ArticulosObj.Mover(i);
-                if (idObj == null) continue;
-                string id = idObj.ToString()!;
-
-                string fam = Sql.ArticulosObj.ObtenerItem("familia", id)?.ToString() ?? "";
-                if (fam != famEliminada) continue;
-
-                int ind = Convert.ToInt32(Sql.ArticulosObj.ObtenerItem("indice", id) ?? 0);
-                if (ind > indEliminado)
-                    Sql.ArticulosObj.EstablecerItem("indice", id, ind - 1);
-            }
 
             Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
 
@@ -494,6 +476,39 @@ namespace WpfAppVba
             AppState.ActualizarProductos();
             CargarArbol();
             CargarArticulos();
+        }
+
+        /// <summary>
+        /// Renumera los artículos ACTIVOS de una familia por su orden de índice actual,
+        /// saltando los índices ya ocupados por artículos eliminados/ocultos de esa familia
+        /// (que NO se reutilizan). No persiste: el llamador hace OrdenarData/ExportarItems.
+        /// </summary>
+        public static void RenumerarFamilia(string famId)
+        {
+            if (string.IsNullOrEmpty(famId)) return;
+            var sql = SqlData.Instance;
+            var reservados = sql.ArticulosObj.IndicesNoNormales("familia", famId);
+
+            var activos = new List<(string id, int ind)>();
+            int uf = sql.ArticulosObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = sql.ArticulosObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                if (sql.ArticulosObj.ObtenerItem("familia", id)?.ToString() != famId) continue;
+                int ind = Convert.ToInt32(sql.ArticulosObj.ObtenerItem("indice", id) ?? 0);
+                activos.Add((id, ind));
+            }
+            activos.Sort((a, b) => a.ind.CompareTo(b.ind));
+
+            int next = 1;
+            foreach (var (id, _) in activos)
+            {
+                while (reservados.Contains(next)) next++;
+                sql.ArticulosObj.EstablecerItem("indice", id, next);
+                next++;
+            }
         }
 
         private void BtnInformeExcel_Click(object sender, RoutedEventArgs e)

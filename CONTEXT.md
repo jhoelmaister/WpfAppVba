@@ -167,6 +167,13 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 
 ## Historial de Cambios por Sesión
 
+### Sesión 2026-06-13 — Regla de índices aplicada a `articulos` (rama `claude/cool-hopper-vo3mxo`)
+- Se aplicó la misma regla de índices (no reutilizar índices de filas eliminadas) a la tabla `articulos`, cuyo `indice` es la **posición del artículo dentro de su familia**:
+  - **Eliminar** (`ArticulosGeneral`): ya NO corre (resta 1) los índices de los demás; solo oculta el artículo, cuyo índice queda **reservado** (puede quedar hueco).
+  - **Insertar** (`ArticulosDetalle.GuardarInsertar`): tras ubicar el nuevo en `indNuevo`, llama `ArticulosGeneral.RenumerarFamilia(fam)`, que renumera los artículos activos de la familia por su orden **saltando los índices reservados** por eliminados.
+  - **Nuevo/append** (`RecalcularIndicePorFamilia`): el índice sugerido ahora considera también los índices reservados (`IndicesNoNormales`), quedando más allá de todos (no reutiliza reservados).
+- Nuevo helper `ArticulosGeneral.RenumerarFamilia(famId)` (estático). Tablas con columna `indice` ya cubiertas por la regla: pedidos, transacciones, entregas, traspasos, correcciones, inventarios y articulos (stocks fue eliminada).
+
 ### Sesión 2026-06-12 — Guardado diferencial de líneas de documentos (rama `claude/cool-hopper-vo3mxo`)
 - Los detalles de documentos ya NO borran todas las líneas y las recrean al guardar. Ahora hacen un **guardado diferencial**:
   - Línea **nueva** (id de fila vacío) → `Nuevo()` + insertar.

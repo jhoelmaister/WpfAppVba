@@ -152,6 +152,11 @@ namespace WpfAppVba
                 if (ind > indiceMax) indiceMax = ind;
             }
 
+            // También considerar los índices reservados por artículos eliminados, para
+            // sugerir un índice que NO reutilice uno reservado (queda más allá de todos).
+            foreach (int r in Sql.ArticulosObj.IndicesNoNormales("familia", famId))
+                if (r > indiceMax) indiceMax = r;
+
             Box_Indice.Text = (indiceMax + 1).ToString();
         }
 
@@ -373,6 +378,10 @@ namespace WpfAppVba
                 Sql.ArticulosObj.EstablecerItem("edicion",    id, DateTime.Now);
                 Sql.ArticulosObj.EstablecerItem("usuario",    id, AppState.UsuarioActivo);
                 Sql.ArticulosObj.EstablecerItem("usuarioE",   id, AppState.UsuarioActivo);
+
+                // Reasignar índices de la familia por su orden, saltando los reservados
+                // por artículos eliminados (sin reutilizarlos).
+                ArticulosGeneral.RenumerarFamilia(famNuevaId);
 
                 Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
 
