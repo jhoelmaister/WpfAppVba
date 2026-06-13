@@ -193,31 +193,27 @@
                                 </Grid.ColumnDefinitions>
                                 <Canvas x:Name="PanelEjeY" Grid.Column="0" Width="48"
                                         VerticalAlignment="Top"/>
-                                <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto"
-                                              VerticalScrollBarVisibility="Disabled">
-                                    <Grid x:Name="PanelPlot" SizeChanged="PanelPlot_SizeChanged">
-                                        <Canvas x:Name="PanelGrid"/>
-                                        <StackPanel x:Name="PanelMeses" Orientation="Horizontal"
-                                                    HorizontalAlignment="Left"/>
-                                    </Grid>
-                                </ScrollViewer>
+                                <Grid x:Name="PanelPlot" Grid.Column="1" SizeChanged="PanelPlot_SizeChanged">
+                                    <Canvas x:Name="PanelGrid"/>
+                                    <UniformGrid x:Name="PanelMeses" Rows="1"/>
+                                </Grid>
                             </Grid>
                         </Grid>
                     </StackPanel>
                 </Border>
 
-                <!-- ▸ GRÁFICO POR CATEGORÍA + TABLA POR FAMILIA -->
+                <!-- ▸ CATEGORÍA + LISTA DE ARTÍCULOS (misma fila) -->
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="1*"/>
                         <ColumnDefinition Width="16"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="1.6*"/>
                     </Grid.ColumnDefinitions>
 
                     <Border Grid.Column="0" Style="{StaticResource CardBorder}">
                         <StackPanel>
                             <TextBlock Style="{StaticResource SectionHeader}" Text="● TOTAL EN CANTIDAD POR CATEGORÍA"/>
-                            <TextBlock x:Name="LblCategoriasVacio" Text="Sin datos para los segmentadores activos."
+                            <TextBlock x:Name="LblCategoriasVacio" Text="Sin datos para el segmentador activo."
                                        FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
                                        Visibility="Collapsed"/>
                             <StackPanel x:Name="PanelCategorias"/>
@@ -226,55 +222,55 @@
 
                     <Border Grid.Column="2" Style="{StaticResource CardBorder}">
                         <StackPanel>
-                            <TextBlock Style="{StaticResource SectionHeader}" Text="● TOTAL EN CANTIDAD POR FAMILIA"/>
-                            <TextBlock x:Name="LblFamiliasVacio" Text="Sin datos para el segmentador activo."
-                                       FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
-                                       Visibility="Collapsed"/>
-                            <StackPanel x:Name="PanelFamilias"/>
+                            <TextBlock Style="{StaticResource SectionHeader}" Text="● SUMA DE CANTIDAD POR ARTÍCULO"/>
+                            <DataGrid x:Name="GridArticulos"
+                                      AutoGenerateColumns="False" IsReadOnly="True"
+                                      HeadersVisibility="Column" CanUserAddRows="False"
+                                      GridLinesVisibility="Horizontal" RowHeight="28"
+                                      Background="Transparent" BorderThickness="0"
+                                      MaxHeight="420">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="80"/>
+                                    <DataGridTextColumn Header="Familia" Binding="{Binding Familia}" Width="150"/>
+                                    <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
+                                    <DataGridTextColumn Header="Cantidad" Binding="{Binding CantidadTexto}" Width="100">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="%" Binding="{Binding PorcentajeTexto}" Width="70">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Border BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,1,0,0"
+                                    Margin="0,6,0,0" Padding="0,8,0,0">
+                                <Grid>
+                                    <TextBlock Text="Total" FontWeight="Bold" FontSize="12"
+                                               Foreground="{DynamicResource ThemeTexto}"/>
+                                    <TextBlock x:Name="LblArticulosTotal" Text="0" FontWeight="Bold" FontSize="12"
+                                               HorizontalAlignment="Right"
+                                               Foreground="{DynamicResource ThemeTexto}"/>
+                                </Grid>
+                            </Border>
                         </StackPanel>
                     </Border>
                 </Grid>
 
-                <!-- ▸ LISTA DE ARTÍCULOS -->
+                <!-- ▸ TOTAL EN CANTIDAD POR FAMILIA (ancho completo) -->
                 <Border Style="{StaticResource CardBorder}" Margin="0,16,0,0">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource SectionHeader}" Text="● SUMA DE CANTIDAD POR ARTÍCULO"/>
-                        <DataGrid x:Name="GridArticulos"
-                                  AutoGenerateColumns="False" IsReadOnly="True"
-                                  HeadersVisibility="Column" CanUserAddRows="False"
-                                  GridLinesVisibility="Horizontal" RowHeight="28"
-                                  Background="Transparent" BorderThickness="0"
-                                  MaxHeight="420">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="80"/>
-                                <DataGridTextColumn Header="Familia" Binding="{Binding Familia}" Width="150"/>
-                                <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
-                                <DataGridTextColumn Header="Cantidad" Binding="{Binding CantidadTexto}" Width="100">
-                                    <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="HorizontalAlignment" Value="Right"/>
-                                        </Style>
-                                    </DataGridTextColumn.ElementStyle>
-                                </DataGridTextColumn>
-                                <DataGridTextColumn Header="%" Binding="{Binding PorcentajeTexto}" Width="70">
-                                    <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="HorizontalAlignment" Value="Right"/>
-                                        </Style>
-                                    </DataGridTextColumn.ElementStyle>
-                                </DataGridTextColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        <Border BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,1,0,0"
-                                Margin="0,6,0,0" Padding="0,8,0,0">
-                            <Grid>
-                                <TextBlock Text="Total" FontWeight="Bold" FontSize="12"
-                                           Foreground="{DynamicResource ThemeTexto}"/>
-                                <TextBlock x:Name="LblArticulosTotal" Text="0" FontWeight="Bold" FontSize="12"
-                                           HorizontalAlignment="Right"
-                                           Foreground="{DynamicResource ThemeTexto}"/>
-                            </Grid>
-                        </Border>
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="● TOTAL EN CANTIDAD POR FAMILIA"/>
+                        <TextBlock x:Name="LblFamiliasVacio" Text="Sin datos para el segmentador activo."
+                                   FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
+                                   Visibility="Collapsed"/>
+                        <StackPanel x:Name="PanelFamilias"/>
                     </StackPanel>
                 </Border>
 

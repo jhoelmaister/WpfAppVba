@@ -269,12 +269,14 @@ namespace WpfAppVba
             for (int m = 1; m <= 12; m++)
             {
                 double totalMes = porMes[m];
+                if (totalMes <= 0) continue;   // solo meses con registros
                 porMesCat.TryGetValue(m, out var catsMes);
 
                 var columna = new StackPanel
                 {
                     Margin = new Thickness(6, 0, 6, 0),
-                    VerticalAlignment = VerticalAlignment.Bottom
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Top
                 };
 
                 // Zona de altura fija → barras alineadas al mismo eje base
