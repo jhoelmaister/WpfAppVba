@@ -243,6 +243,11 @@
                 BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,1,0,0"
                 Padding="20,10">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="BtnSincronizarAppsheets" Content="🧾 Sincronizar AppSheets"
+                        Height="36" FontSize="13" FontWeight="SemiBold" Padding="18,0"
+                        Background="#2E7D32" Foreground="White"
+                        BorderThickness="0" Cursor="Hand" Margin="0,0,10,0"
+                        Click="BtnSincronizarAppsheets_Click"/>
                 <Button x:Name="BtnCambiarContrasena" Content="🔑 Cambiar Contraseña"
                         Height="36" FontSize="13" FontWeight="SemiBold" Padding="18,0"
                         Background="#5C6BC0" Foreground="White"

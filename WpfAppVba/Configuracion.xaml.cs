@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
@@ -196,6 +197,32 @@ namespace WpfAppVba
         private void CmbTema_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             // El tema solo se aplica al guardar con BtnGuardarTema
+        }
+
+        // ─── Sincronizar AppSheets ────────────────────────────────────────────
+        private void BtnSincronizarAppsheets_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as Button;
+            try
+            {
+                if (btn != null) btn.IsEnabled = false;
+                Mouse.OverrideCursor = Cursors.Wait;
+
+                string resumen = AppsheetsSync.Sincronizar();
+
+                MessageBox.Show(resumen, "Sincronizar AppSheets",
+                                MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al sincronizar AppSheets: {ex.Message}",
+                                "Sincronizar AppSheets", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+                if (btn != null) btn.IsEnabled = true;
+            }
         }
 
         // ─── Cambiar contraseña ───────────────────────────────────────────────
