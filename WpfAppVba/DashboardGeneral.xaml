@@ -193,10 +193,14 @@
                                 </Grid.ColumnDefinitions>
                                 <Canvas x:Name="PanelEjeY" Grid.Column="0" Width="48"
                                         VerticalAlignment="Top"/>
-                                <Grid x:Name="PanelPlot" Grid.Column="1" SizeChanged="PanelPlot_SizeChanged">
-                                    <Canvas x:Name="PanelGrid"/>
-                                    <UniformGrid x:Name="PanelMeses" Rows="1"/>
-                                </Grid>
+                                <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto"
+                                              VerticalScrollBarVisibility="Disabled">
+                                    <Grid x:Name="PanelPlot" SizeChanged="PanelPlot_SizeChanged">
+                                        <Canvas x:Name="PanelGrid"/>
+                                        <StackPanel x:Name="PanelMeses" Orientation="Horizontal"
+                                                    HorizontalAlignment="Left"/>
+                                    </Grid>
+                                </ScrollViewer>
                             </Grid>
                         </Grid>
                     </StackPanel>
@@ -223,7 +227,10 @@
                             <TextBlock x:Name="LblCategoriasVacio" Text="Sin datos para el segmentador activo."
                                        FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
                                        Visibility="Collapsed"/>
-                            <StackPanel x:Name="PanelCategorias"/>
+                            <ScrollViewer MaxHeight="240" HorizontalScrollBarVisibility="Auto"
+                                          VerticalScrollBarVisibility="Auto">
+                                <StackPanel x:Name="PanelCategorias"/>
+                            </ScrollViewer>
                         </StackPanel>
                     </Border>
 
@@ -278,7 +285,10 @@
                             <TextBlock x:Name="LblFamiliasVacio" Text="Sin datos para el segmentador activo."
                                        FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
                                        Visibility="Collapsed"/>
-                            <StackPanel x:Name="PanelFamilias"/>
+                            <ScrollViewer MaxHeight="600" HorizontalScrollBarVisibility="Auto"
+                                          VerticalScrollBarVisibility="Auto">
+                                <StackPanel x:Name="PanelFamilias"/>
+                            </ScrollViewer>
                         </StackPanel>
                     </Border>
                 </Grid>
