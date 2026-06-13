@@ -227,30 +227,10 @@
                     <Border Grid.Column="2" Style="{StaticResource CardBorder}">
                         <StackPanel>
                             <TextBlock Style="{StaticResource SectionHeader}" Text="● TOTAL EN CANTIDAD POR FAMILIA"/>
-                            <DataGrid x:Name="GridFamilias"
-                                      AutoGenerateColumns="False" IsReadOnly="True"
-                                      HeadersVisibility="Column" CanUserAddRows="False"
-                                      GridLinesVisibility="Horizontal" RowHeight="30"
-                                      Background="Transparent" BorderThickness="0"
-                                      MaxHeight="360">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Familia" Binding="{Binding Familia}" Width="*"/>
-                                    <DataGridTextColumn Header="Cantidad" Binding="{Binding CantidadTexto}" Width="110">
-                                        <DataGridTextColumn.ElementStyle>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="HorizontalAlignment" Value="Right"/>
-                                            </Style>
-                                        </DataGridTextColumn.ElementStyle>
-                                    </DataGridTextColumn>
-                                    <DataGridTextColumn Header="%" Binding="{Binding PorcentajeTexto}" Width="70">
-                                        <DataGridTextColumn.ElementStyle>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="HorizontalAlignment" Value="Right"/>
-                                            </Style>
-                                        </DataGridTextColumn.ElementStyle>
-                                    </DataGridTextColumn>
-                                </DataGrid.Columns>
-                            </DataGrid>
+                            <TextBlock x:Name="LblFamiliasVacio" Text="Sin datos para el segmentador activo."
+                                       FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
+                                       Visibility="Collapsed"/>
+                            <StackPanel x:Name="PanelFamilias"/>
                         </StackPanel>
                     </Border>
                 </Grid>

@@ -23,7 +23,6 @@ namespace WpfAppVba
         private static SqlData Sql => SqlData.Instance;
         private bool _iniciado;
 
-        private readonly ObservableCollection<FamiliaCantFila> _familias  = new();
         private readonly ObservableCollection<ArticuloCantFila> _articulos = new();
 
         // Cache artículo → (categoría desc, familia desc, descripción, código) para no repetir lookups.
@@ -33,7 +32,6 @@ namespace WpfAppVba
         private readonly Dictionary<string, Brush> _colorCat = new();
 
         private const double AlturaGrafico = 200;   // px de la zona de barras (meses)
-        private const double AnchoBarraMax = 280;   // px de la barra más larga (categorías)
 
         // Paleta de colores para categorías (se cicla si hay más categorías que colores).
         private static readonly Color[] Paleta =
@@ -49,7 +47,6 @@ namespace WpfAppVba
         public DashboardGeneral()
         {
             InitializeComponent();
-            GridFamilias.ItemsSource  = _familias;
             GridArticulos.ItemsSource = _articulos;
             Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; Recalcular(); };
         }
@@ -413,84 +410,155 @@ namespace WpfAppVba
             return nice * pot;
         }
 
-        // ─── Barras horizontales por categoría (color propio) ────────────────
+        // ─── Barras horizontales por categoría (color propio por categoría) ──
         private void RenderCategorias(Dictionary<string, double> porCategoria)
         {
-            PanelCategorias.Children.Clear();
             var orden = porCategoria.Where(kv => kv.Value > 0)
                                     .OrderByDescending(kv => kv.Value)
                                     .ToList();
             if (orden.Count == 0)
             {
                 LblCategoriasVacio.Visibility = Visibility.Visible;
+                PanelCategorias.Children.Clear();
                 return;
             }
             LblCategoriasVacio.Visibility = Visibility.Collapsed;
 
-            double max = orden[0].Value;
+            var datos = orden.Select(kv => (kv.Key, kv.Value, ColorDe(kv.Key))).ToList();
+            RenderBarrasH(PanelCategorias, datos);
+        }
 
-            foreach (var (cat, val) in orden)
+        // ─── Barras horizontales por familia (color único) ───────────────────
+        private void RenderFamilias(Dictionary<string, double> porFamilia)
+        {
+            var orden = porFamilia.Where(kv => kv.Value > 0)
+                                  .OrderByDescending(kv => kv.Value)
+                                  .ToList();
+            if (orden.Count == 0)
+            {
+                LblFamiliasVacio.Visibility = Visibility.Visible;
+                PanelFamilias.Children.Clear();
+                return;
+            }
+            LblFamiliasVacio.Visibility = Visibility.Collapsed;
+
+            Brush color = new SolidColorBrush(Color.FromRgb(0x4A, 0x6F, 0xE3));
+            var datos = orden.Select(kv => (kv.Key, kv.Value, color)).ToList();
+            RenderBarrasH(PanelFamilias, datos);
+        }
+
+        // ─── Helper: gráfico de barras horizontales con eje X y cuadrícula ───
+        // Usa columnas en proporción (star) para que las barras, la cuadrícula y
+        // el eje queden alineados sin depender del ancho real (sin medir píxeles).
+        private const double LabelW = 130;
+
+        private void RenderBarrasH(Panel destino, List<(string label, double val, Brush color)> datos)
+        {
+            destino.Children.Clear();
+            if (datos.Count == 0) return;
+
+            double max = NiceCeil(datos.Max(d => d.val));
+            if (max <= 0) return;
+
+            var lineBrush  = Tema("ThemeBorde", Color.FromRgb(0xDD, 0xDD, 0xDD));
+            var textBrush  = Tema("ThemeTexto", Color.FromRgb(0x20, 0x20, 0x20));
+            var mutedBrush = Tema("ThemeTextoSec", Color.FromRgb(0x7A, 0x7A, 0x7A));
+
+            // Contenedor: cuadrícula (detrás) + filas (delante)
+            var cont = new Grid();
+
+            // Cuadrícula vertical: 4 columnas iguales con línea a la derecha (25/50/75/100%)
+            var gl = new Grid { Margin = new Thickness(LabelW, 0, 0, 0) };
+            for (int i = 0; i < 4; i++)
+            {
+                gl.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                var line = new Border
+                {
+                    BorderBrush = lineBrush,
+                    BorderThickness = new Thickness(0, 0, 1, 0),
+                    Opacity = 0.6
+                };
+                Grid.SetColumn(line, i);
+                gl.Children.Add(line);
+            }
+            cont.Children.Add(gl);
+
+            // Filas (etiqueta + barra proporcional + valor)
+            var filas = new StackPanel();
+            foreach (var (label, val, color) in datos)
             {
                 var fila = new Grid { Margin = new Thickness(0, 0, 0, 8) };
-                fila.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(130) });
+                fila.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(LabelW) });
                 fila.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
                 var lbl = new TextBlock
                 {
-                    Text = cat,
-                    FontSize = 11,
+                    Text = label, FontSize = 11,
                     TextTrimming = TextTrimming.CharacterEllipsis,
                     VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = Tema("ThemeTexto", Color.FromRgb(0x20, 0x20, 0x20))
+                    Margin = new Thickness(0, 0, 8, 0),
+                    Foreground = textBrush
                 };
                 Grid.SetColumn(lbl, 0);
                 fila.Children.Add(lbl);
 
-                // Barra + valor en un StackPanel horizontal → el valor queda pegado
-                // al final de la barra (no al borde derecho de la fila).
-                var barYval = new StackPanel
-                {
-                    Orientation = Orientation.Horizontal,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-                barYval.Children.Add(new Border
+                // Zona de barra: col0 = valor (star), col1 = resto (star) → ancho ∝ valor/max
+                var bz = new Grid();
+                bz.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(0.0001, val), GridUnitType.Star) });
+                bz.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(0.0001, max - val), GridUnitType.Star) });
+
+                var bar = new Border
                 {
                     Height = 18,
-                    Width = Math.Max(4, val / max * AnchoBarraMax),
-                    Background = ColorDe(cat),
-                    CornerRadius = new CornerRadius(4)
-                });
-                barYval.Children.Add(new TextBlock
+                    Background = color,
+                    CornerRadius = new CornerRadius(4),
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                Grid.SetColumn(bar, 0);
+                bz.Children.Add(bar);
+
+                var v = new TextBlock
                 {
-                    Text = Fmt(val),
-                    FontSize = 11,
-                    FontWeight = FontWeights.SemiBold,
-                    Margin = new Thickness(8, 0, 0, 0),
+                    Text = Fmt(val), FontSize = 11, FontWeight = FontWeights.SemiBold,
                     VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = Tema("ThemeTexto", Color.FromRgb(0x20, 0x20, 0x20))
-                });
-                Grid.SetColumn(barYval, 1);
-                fila.Children.Add(barYval);
+                    Margin = new Thickness(6, 0, 0, 0),
+                    Foreground = textBrush
+                };
+                Grid.SetColumn(v, 1);
+                bz.Children.Add(v);
 
-                PanelCategorias.Children.Add(fila);
+                Grid.SetColumn(bz, 1);
+                fila.Children.Add(bz);
+
+                filas.Children.Add(fila);
             }
-        }
+            cont.Children.Add(filas);
+            destino.Children.Add(cont);
 
-        // ─── Tabla por familia ────────────────────────────────────────────────
-        private void RenderFamilias(Dictionary<string, double> porFamilia)
-        {
-            _familias.Clear();
-            double total = porFamilia.Values.Sum();
-            foreach (var (fam, val) in porFamilia.Where(kv => kv.Value > 0)
-                                                 .OrderByDescending(kv => kv.Value))
+            // Eje X: 0 a la izquierda + marcas 25/50/75/100% del máximo
+            var eje = new Grid { Margin = new Thickness(LabelW, 4, 0, 0) };
+            for (int i = 0; i < 4; i++)
             {
-                _familias.Add(new FamiliaCantFila
+                eje.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                var t = new TextBlock
                 {
-                    Familia         = fam,
-                    Cantidad        = val,
-                    PorcentajeTexto = total > 0 ? (val / total).ToString("P1", CultureInfo.CurrentCulture) : "0%"
-                });
+                    Text = Fmt(max * (i + 1) / 4.0),
+                    FontSize = 10, TextAlignment = TextAlignment.Right,
+                    Foreground = mutedBrush
+                };
+                Grid.SetColumn(t, i);
+                eje.Children.Add(t);
             }
+            var cero = new TextBlock
+            {
+                Text = "0", FontSize = 10,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Foreground = mutedBrush
+            };
+            Grid.SetColumn(cero, 0);
+            eje.Children.Add(cero);
+            destino.Children.Add(eje);
         }
 
         // ─── Lista de artículos (Familia · Descripción · Cantidad) ───────────
@@ -564,14 +632,6 @@ namespace WpfAppVba
         }
 
         // ─── Filas de tablas ──────────────────────────────────────────────────
-        public class FamiliaCantFila
-        {
-            public string Familia         { get; set; } = "";
-            public double Cantidad        { get; set; }
-            public string CantidadTexto   => Cantidad.ToString("N0", CultureInfo.CurrentCulture);
-            public string PorcentajeTexto { get; set; } = "";
-        }
-
         public class ArticuloCantFila
         {
             public string Codigo          { get; set; } = "";
