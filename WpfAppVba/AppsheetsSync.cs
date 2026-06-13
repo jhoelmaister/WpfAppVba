@@ -16,8 +16,8 @@ namespace WpfAppVba.Data
     /// Reglas (por cada sucursal procesada):
     ///   • INSERT: una fila por cada artículo activo (estadof='normal', empresa
     ///     activa) que aún NO tenga una fila 'normal' en appsheets para esa
-    ///     sucursal. Rellena articulo, indice (de articulos.indice), sucursal,
-    ///     empresa, usuario, emision y estadof='normal'. Los que ya existen NO se tocan.
+    ///     sucursal. Rellena articulo, sucursal, empresa, usuario, emision y
+    ///     estadof='normal'. Los que ya existen NO se tocan.
     ///   • UPDATE: marca estadof='eliminado' las filas 'normal' de appsheets cuyo
     ///     artículo ya no exista como artículo activo (artículo eliminado).
     /// </summary>
@@ -102,8 +102,8 @@ namespace WpfAppVba.Data
             string existsSuc = suc == null ? "s.id" : "@suc";
 
             string sql =
-                "INSERT INTO appsheets (id, indice, articulo, sucursal, empresa, usuario, emision, estadof) " +
-                $"SELECT NEWID(), a.indice, a.id, {sucExpr}, @emp, @usu, GETDATE(), 'normal' " +
+                "INSERT INTO appsheets (id, articulo, sucursal, empresa, usuario, emision, estadof) " +
+                $"SELECT NEWID(), a.id, {sucExpr}, @emp, @usu, GETDATE(), 'normal' " +
                 "FROM articulos AS a " +
                 fromSuc +
                 "WHERE a.estadof = 'normal' AND a.empresa = @emp " +

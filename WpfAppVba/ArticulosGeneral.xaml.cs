@@ -469,6 +469,9 @@ namespace WpfAppVba
 
             if (lista.Count > 0)
                 EnfocarFila(lista[Math.Min(idx, lista.Count - 1)]);
+
+            // Artículo eliminado → sincronizar AppSheets (todas las sucursales).
+            SincronizarAppsheetsTrasCambio();
         }
 
         private void BtnActualizar_Click(object sender, RoutedEventArgs e)
@@ -508,6 +511,25 @@ namespace WpfAppVba
                 while (reservados.Contains(next)) next++;
                 sql.ArticulosObj.EstablecerItem("indice", id, next);
                 next++;
+            }
+        }
+
+        /// <summary>
+        /// Re-sincroniza la tabla appsheets (todas las sucursales de la empresa activa)
+        /// tras agregar o eliminar un artículo. Un fallo aquí NO revierte el cambio del
+        /// artículo (ya persistido): solo se informa con una advertencia.
+        /// </summary>
+        public static void SincronizarAppsheetsTrasCambio()
+        {
+            try
+            {
+                AppsheetsSync.SincronizarTodasLasSucursales();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"El artículo se guardó, pero falló la sincronización de AppSheets:\n{ex.Message}",
+                    "AppSheets", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 

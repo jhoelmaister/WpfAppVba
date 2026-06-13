@@ -322,6 +322,10 @@ namespace WpfAppVba
                 Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
 
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Artículo nuevo → sincronizar AppSheets (todas las sucursales).
+                ArticulosGeneral.SincronizarAppsheetsTrasCambio();
+
                 ItemCreadoId = id;
                 return true;
             }
@@ -386,6 +390,10 @@ namespace WpfAppVba
                 Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
 
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Artículo insertado → sincronizar AppSheets (todas las sucursales).
+                ArticulosGeneral.SincronizarAppsheetsTrasCambio();
+
                 ItemCreadoId = id;
                 return true;
             }
