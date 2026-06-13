@@ -135,7 +135,7 @@ namespace WpfAppVba.Data
                 $"WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
                 $"AND vg.sucursal = '{suc}' " +
-                $"ORDER BY vd.fecha ASC");
+                $"ORDER BY vd.documentoP ASC, vd.indice ASC");
 
             // ── Entregas ─────────────────────────────────────────────────────
             Sql.EntregasObj.Conectar("entregas",
