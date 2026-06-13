@@ -193,14 +193,10 @@
                                 </Grid.ColumnDefinitions>
                                 <Canvas x:Name="PanelEjeY" Grid.Column="0" Width="48"
                                         VerticalAlignment="Top"/>
-                                <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto"
-                                              VerticalScrollBarVisibility="Disabled">
-                                    <Grid x:Name="PanelPlot" SizeChanged="PanelPlot_SizeChanged">
-                                        <Canvas x:Name="PanelGrid"/>
-                                        <StackPanel x:Name="PanelMeses" Orientation="Horizontal"
-                                                    HorizontalAlignment="Left"/>
-                                    </Grid>
-                                </ScrollViewer>
+                                <Grid x:Name="PanelPlot" Grid.Column="1" SizeChanged="PanelPlot_SizeChanged">
+                                    <Canvas x:Name="PanelGrid"/>
+                                    <UniformGrid x:Name="PanelMeses" Rows="1"/>
+                                </Grid>
                             </Grid>
                         </Grid>
                     </StackPanel>
@@ -227,7 +223,7 @@
                             <TextBlock x:Name="LblCategoriasVacio" Text="Sin datos para el segmentador activo."
                                        FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
                                        Visibility="Collapsed"/>
-                            <ScrollViewer MaxHeight="240" HorizontalScrollBarVisibility="Auto"
+                            <ScrollViewer MaxHeight="320" HorizontalScrollBarVisibility="Disabled"
                                           VerticalScrollBarVisibility="Auto">
                                 <StackPanel x:Name="PanelCategorias"/>
                             </ScrollViewer>

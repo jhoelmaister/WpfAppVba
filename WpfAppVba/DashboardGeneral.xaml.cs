@@ -31,8 +31,8 @@ namespace WpfAppVba
         // Color asignado a cada categoría en el render actual.
         private readonly Dictionary<string, Brush> _colorCat = new();
 
-        private const double AlturaGrafico = 200;   // px de la zona de barras (meses)
-        private const double AnchoBarra    = 300;   // px del área de barra (categoría/familia, fijo)
+        private const double AlturaGrafico = 280;   // px de la zona de barras (meses)
+        private const double AnchoBarra    = 300;   // px de la barra apilada de familia (fijo)
 
         // Paleta de colores para categorías (se cicla si hay más categorías que colores).
         private static readonly Color[] Paleta =
@@ -544,9 +544,10 @@ namespace WpfAppVba
             }
         }
 
-        // ─── Helper: barras horizontales de ancho FIJO con eje X y cuadrícula ─
-        // El área de barra es fija (AnchoBarra px); el contenedor va dentro de un
-        // ScrollViewer (no se estira). El valor queda pegado al final de la barra.
+        // ─── Helper: barras horizontales que LLENAN el ancho disponible ──────
+        // Usa columnas en proporción (star): la barra más larga = 100% del ancho
+        // de la zona de barras. El contenedor debe estar en un ScrollViewer con
+        // scroll horizontal deshabilitado (para que el ancho sea finito).
         private const double LabelW = 130;
 
         private void RenderBarrasH(Panel destino, List<(string label, double val, Brush color)> datos)
@@ -561,85 +562,11 @@ namespace WpfAppVba
             var textBrush  = Tema("ThemeTexto", Color.FromRgb(0x20, 0x20, 0x20));
             var mutedBrush = Tema("ThemeTextoSec", Color.FromRgb(0x7A, 0x7A, 0x7A));
 
-            foreach (var (label, val, color) in datos)
-            {
-                var fila = new StackPanel
-                {
-                    Orientation = Orientation.Horizontal,
-                    Margin = new Thickness(0, 0, 0, 8)
-                };
+            // Contenedor: cuadrícula (detrás) + filas (delante)
+            var cont = new Grid();
 
-                fila.Children.Add(new TextBlock
-                {
-                    Text = label, FontSize = 11,
-                    Width = LabelW, TextTrimming = TextTrimming.CharacterEllipsis,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(0, 0, 8, 0),
-                    Foreground = textBrush
-                });
-
-                // Área de barra de ancho fijo: cuadrícula (detrás) + barra+valor (delante)
-                var barArea = new Grid { Width = AnchoBarra };
-                barArea.Children.Add(CuadriculaVertical(lineBrush));
-
-                var bv = new StackPanel
-                {
-                    Orientation = Orientation.Horizontal,
-                    HorizontalAlignment = HorizontalAlignment.Left,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-                bv.Children.Add(new Border
-                {
-                    Height = 18,
-                    Width = Math.Max(2, val / max * AnchoBarra),
-                    Background = color,
-                    CornerRadius = new CornerRadius(4)
-                });
-                bv.Children.Add(new TextBlock
-                {
-                    Text = Fmt(val), FontSize = 11, FontWeight = FontWeights.SemiBold,
-                    Margin = new Thickness(6, 0, 0, 0),
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = textBrush
-                });
-                barArea.Children.Add(bv);
-
-                fila.Children.Add(barArea);
-                destino.Children.Add(fila);
-            }
-
-            // Eje X: 0 + marcas 25/50/75/100% del máximo (ancho fijo)
-            var eje = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0) };
-            eje.Children.Add(new Border { Width = LabelW + 8 });  // espaciador alineado a las barras
-            var ejeArea = new Grid { Width = AnchoBarra };
-            for (int i = 0; i < 4; i++)
-            {
-                ejeArea.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                var t = new TextBlock
-                {
-                    Text = Fmt(max * (i + 1) / 4.0),
-                    FontSize = 10, TextAlignment = TextAlignment.Right,
-                    Foreground = mutedBrush
-                };
-                Grid.SetColumn(t, i);
-                ejeArea.Children.Add(t);
-            }
-            var cero = new TextBlock
-            {
-                Text = "0", FontSize = 10,
-                HorizontalAlignment = HorizontalAlignment.Left,
-                Foreground = mutedBrush
-            };
-            Grid.SetColumn(cero, 0);
-            ejeArea.Children.Add(cero);
-            eje.Children.Add(ejeArea);
-            destino.Children.Add(eje);
-        }
-
-        // Cuadrícula vertical fija (4 columnas iguales con línea a la derecha).
-        private static Grid CuadriculaVertical(Brush lineBrush)
-        {
-            var gl = new Grid();
+            // Cuadrícula vertical: 4 columnas iguales con línea a la derecha
+            var gl = new Grid { Margin = new Thickness(LabelW, 0, 0, 0) };
             for (int i = 0; i < 4; i++)
             {
                 gl.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -652,7 +579,84 @@ namespace WpfAppVba
                 Grid.SetColumn(line, i);
                 gl.Children.Add(line);
             }
-            return gl;
+            cont.Children.Add(gl);
+
+            // Filas (etiqueta + barra proporcional + valor)
+            var filas = new StackPanel();
+            foreach (var (label, val, color) in datos)
+            {
+                var fila = new Grid { Margin = new Thickness(0, 0, 0, 10) };
+                fila.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(LabelW) });
+                fila.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                var lbl = new TextBlock
+                {
+                    Text = label, FontSize = 11,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(0, 0, 8, 0),
+                    Foreground = textBrush
+                };
+                Grid.SetColumn(lbl, 0);
+                fila.Children.Add(lbl);
+
+                // Zona de barra: col0 = valor (star), col1 = resto (star) → ancho ∝ valor/max
+                var bz = new Grid();
+                bz.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(0.0001, val), GridUnitType.Star) });
+                bz.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(0.0001, max - val), GridUnitType.Star) });
+
+                var bar = new Border
+                {
+                    Height = 24,
+                    Background = color,
+                    CornerRadius = new CornerRadius(4),
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                Grid.SetColumn(bar, 0);
+                bz.Children.Add(bar);
+
+                var v = new TextBlock
+                {
+                    Text = Fmt(val), FontSize = 11, FontWeight = FontWeights.SemiBold,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(6, 0, 0, 0),
+                    Foreground = textBrush
+                };
+                Grid.SetColumn(v, 1);
+                bz.Children.Add(v);
+
+                Grid.SetColumn(bz, 1);
+                fila.Children.Add(bz);
+
+                filas.Children.Add(fila);
+            }
+            cont.Children.Add(filas);
+            destino.Children.Add(cont);
+
+            // Eje X: 0 a la izquierda + marcas 25/50/75/100% del máximo
+            var eje = new Grid { Margin = new Thickness(LabelW, 4, 0, 0) };
+            for (int i = 0; i < 4; i++)
+            {
+                eje.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                var t = new TextBlock
+                {
+                    Text = Fmt(max * (i + 1) / 4.0),
+                    FontSize = 10, TextAlignment = TextAlignment.Right,
+                    Foreground = mutedBrush
+                };
+                Grid.SetColumn(t, i);
+                eje.Children.Add(t);
+            }
+            var cero = new TextBlock
+            {
+                Text = "0", FontSize = 10,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Foreground = mutedBrush
+            };
+            Grid.SetColumn(cero, 0);
+            eje.Children.Add(cero);
+            destino.Children.Add(eje);
         }
 
         // ─── Lista de artículos (Familia · Descripción · Cantidad) ───────────
