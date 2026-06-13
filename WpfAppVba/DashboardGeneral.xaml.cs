@@ -240,9 +240,15 @@ namespace WpfAppVba
         }
 
         // ─── Gráfico de barras agrupadas por mes (una barra por categoría) ──
+        // Guardamos los datos del último render para redibujar la cuadrícula
+        // cuando cambia el tamaño del área de plot.
+        private double _niceMax;
+
         private void RenderMeses(double[] porMes, Dictionary<int, Dictionary<string, double>> porMesCat)
         {
             PanelMeses.Children.Clear();
+            PanelEjeY.Children.Clear();
+            PanelGrid.Children.Clear();
 
             // Escala = máximo valor (categoría, mes), ya que las barras son por categoría.
             double max = porMesCat.Values.SelectMany(d => d.Values).DefaultIfEmpty(0).Max();
@@ -250,11 +256,15 @@ namespace WpfAppVba
             if (max <= 0)
             {
                 LblMesesVacio.Visibility = Visibility.Visible;
-                PanelMeses.Visibility    = Visibility.Collapsed;
+                ZonaMeses.Visibility     = Visibility.Collapsed;
                 return;
             }
             LblMesesVacio.Visibility = Visibility.Collapsed;
-            PanelMeses.Visibility    = Visibility.Visible;
+            ZonaMeses.Visibility     = Visibility.Visible;
+
+            _niceMax = NiceCeil(max);
+            PanelEjeY.Height = AlturaGrafico;
+            RenderEjeY();
 
             // Orden estable de categorías (por total) para agrupar igual en cada mes.
             var ordenCats = _colorCat.Keys.ToList();
@@ -270,11 +280,13 @@ namespace WpfAppVba
                     VerticalAlignment = VerticalAlignment.Bottom
                 };
 
-                // Grupo de barras (una por categoría con valor > 0 en el mes)
+                // Zona de altura fija → barras alineadas al mismo eje base
+                var zona  = new Grid { Height = AlturaGrafico };
                 var grupo = new StackPanel
                 {
                     Orientation = Orientation.Horizontal,
-                    HorizontalAlignment = HorizontalAlignment.Center
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Bottom
                 };
 
                 if (catsMes != null)
@@ -284,12 +296,14 @@ namespace WpfAppVba
                         double val = catsMes.GetValueOrDefault(cat);
                         if (val <= 0) continue;
 
+                        // Columna [valor encima][barra], alineada al fondo: el valor
+                        // queda pegado justo arriba de la barra y sube/baja con ella.
                         var barCol = new StackPanel
                         {
                             Margin = new Thickness(2, 0, 2, 0),
-                            VerticalAlignment = VerticalAlignment.Bottom
+                            VerticalAlignment = VerticalAlignment.Bottom,
+                            HorizontalAlignment = HorizontalAlignment.Center
                         };
-                        // Valor (cantidad por categoría y mes) ARRIBA de la barra
                         barCol.Children.Add(new TextBlock
                         {
                             Text = Fmt(val),
@@ -298,21 +312,19 @@ namespace WpfAppVba
                             Foreground = Tema("ThemeTexto", Color.FromRgb(0x20, 0x20, 0x20)),
                             Margin = new Thickness(0, 0, 0, 2)
                         });
-                        // Zona de altura fija → barras alineadas al mismo eje base
-                        var zona = new Grid { Height = AlturaGrafico };
-                        zona.Children.Add(new Border
+                        barCol.Children.Add(new Border
                         {
-                            Width = 18,
-                            Height = Math.Max(2, val / max * AlturaGrafico),
+                            Width = 20,
+                            Height = Math.Max(2, val / _niceMax * AlturaGrafico),
                             Background = ColorDe(cat),
                             CornerRadius = new CornerRadius(3, 3, 0, 0),
-                            VerticalAlignment = VerticalAlignment.Bottom
+                            HorizontalAlignment = HorizontalAlignment.Center
                         });
-                        barCol.Children.Add(zona);
                         grupo.Children.Add(barCol);
                     }
                 }
-                columna.Children.Add(grupo);
+                zona.Children.Add(grupo);
+                columna.Children.Add(zona);
 
                 // Título del mes
                 columna.Children.Add(new TextBlock
@@ -335,6 +347,70 @@ namespace WpfAppVba
 
                 PanelMeses.Children.Add(columna);
             }
+
+            // Redibujar la cuadrícula con el ancho real una vez completado el layout.
+            Dispatcher.BeginInvoke(new Action(DibujarCuadricula),
+                                   System.Windows.Threading.DispatcherPriority.Loaded);
+        }
+
+        // Eje Y: 5 marcas (0, ¼, ½, ¾, máx) alineadas con la zona de barras.
+        private void RenderEjeY()
+        {
+            var brush = Tema("ThemeTextoSec", Color.FromRgb(0x7A, 0x7A, 0x7A));
+            for (int i = 0; i <= 4; i++)
+            {
+                double frac = i / 4.0;
+                double y    = AlturaGrafico - frac * AlturaGrafico;
+                var lbl = new TextBlock
+                {
+                    Text = Fmt(_niceMax * frac),
+                    FontSize = 10,
+                    Foreground = brush,
+                    Width = 42,
+                    TextAlignment = TextAlignment.Right
+                };
+                Canvas.SetLeft(lbl, 0);
+                Canvas.SetTop(lbl, y - 7);
+                PanelEjeY.Children.Add(lbl);
+            }
+        }
+
+        // Cuadrícula horizontal detrás de las barras (se redibuja al cambiar el ancho).
+        private void PanelPlot_SizeChanged(object sender, SizeChangedEventArgs e) => DibujarCuadricula();
+
+        private void DibujarCuadricula()
+        {
+            PanelGrid.Children.Clear();
+            if (_niceMax <= 0) return;
+            double w = PanelMeses.ActualWidth > 0 ? PanelMeses.ActualWidth : PanelPlot.ActualWidth;
+            if (w <= 0) return;
+
+            var brush = Tema("ThemeBorde", Color.FromRgb(0xDD, 0xDD, 0xDD));
+            for (int i = 0; i <= 4; i++)
+            {
+                double y = AlturaGrafico - (i / 4.0) * AlturaGrafico;
+                var linea = new System.Windows.Shapes.Rectangle
+                {
+                    Width = w,
+                    Height = 1,
+                    Fill = brush,
+                    Opacity = 0.6
+                };
+                Canvas.SetLeft(linea, 0);
+                Canvas.SetTop(linea, y);
+                PanelGrid.Children.Add(linea);
+            }
+        }
+
+        // Redondea hacia arriba a un número "lindo" (1/2/2.5/5 × 10^k) para el eje.
+        private static double NiceCeil(double v)
+        {
+            if (v <= 0) return 0;
+            double exp  = Math.Floor(Math.Log10(v));
+            double pot  = Math.Pow(10, exp);
+            double frac = v / pot;
+            double nice = frac <= 1 ? 1 : frac <= 2 ? 2 : frac <= 2.5 ? 2.5 : frac <= 5 ? 5 : 10;
+            return nice * pot;
         }
 
         // ─── Barras horizontales por categoría (color propio) ────────────────
@@ -358,7 +434,6 @@ namespace WpfAppVba
                 var fila = new Grid { Margin = new Thickness(0, 0, 0, 8) };
                 fila.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(130) });
                 fila.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                fila.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
                 var lbl = new TextBlock
                 {
@@ -371,19 +446,21 @@ namespace WpfAppVba
                 Grid.SetColumn(lbl, 0);
                 fila.Children.Add(lbl);
 
-                var barra = new Border
+                // Barra + valor en un StackPanel horizontal → el valor queda pegado
+                // al final de la barra (no al borde derecho de la fila).
+                var barYval = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                barYval.Children.Add(new Border
                 {
                     Height = 18,
                     Width = Math.Max(4, val / max * AnchoBarraMax),
                     Background = ColorDe(cat),
-                    CornerRadius = new CornerRadius(4),
-                    HorizontalAlignment = HorizontalAlignment.Left,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-                Grid.SetColumn(barra, 1);
-                fila.Children.Add(barra);
-
-                var valTxt = new TextBlock
+                    CornerRadius = new CornerRadius(4)
+                });
+                barYval.Children.Add(new TextBlock
                 {
                     Text = Fmt(val),
                     FontSize = 11,
@@ -391,9 +468,9 @@ namespace WpfAppVba
                     Margin = new Thickness(8, 0, 0, 0),
                     VerticalAlignment = VerticalAlignment.Center,
                     Foreground = Tema("ThemeTexto", Color.FromRgb(0x20, 0x20, 0x20))
-                };
-                Grid.SetColumn(valTxt, 2);
-                fila.Children.Add(valTxt);
+                });
+                Grid.SetColumn(barYval, 1);
+                fila.Children.Add(barYval);
 
                 PanelCategorias.Children.Add(fila);
             }
