@@ -10,7 +10,7 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 - **Reportes Excel**: `ClosedXML 0.102.2`
 - **IDE recomendado**: Visual Studio 2022 / VS Code + extensión C#
 - **Proyecto**: `WpfAppVba/WpfAppVba.csproj`
-- **Rama de desarrollo activa**: `claude/brave-albattani-03ox62`
+- **Rama de desarrollo activa**: `claude/cool-hopper-vo3mxo`
 
 ## Lo Que Está Implementado y Funciona
 
@@ -163,72 +163,47 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - **Sin herramientas de build en el entorno cloud**: todos los cambios se aplican siguiendo patrones existentes, pero no pueden compilarse ni ejecutarse remotamente. Siempre verificar localmente antes de merge a producción.
 - **`AppState.TipoPedido` y `AppState.TipoMovimiento` son globales**: en `PedidosGeneral.AbrirEditar` se leen del DB antes de abrir la pestaña para garantizar el valor correcto. Si se abrieran dos pestañas de edición simultáneas muy rápido, podría haber condición de carrera (actualmente no es un problema práctico).
 - **`CorreccionesDetalle` ya es pestaña**: usa `OpenAsTab` de ArticulosGeneral para buscar artículos, igual que Pedidos/Traspasos.
-- **Rama de trabajo**: todos los cambios van a `claude/brave-albattani-03ox62`. Es la rama activa de desarrollo.
+- **Rama de trabajo**: la sesión actual trabaja en `claude/cool-hopper-vo3mxo`. (La sesión previa de multi-empresa fue `claude/brave-albattani-03ox62`.)
 
 ## Historial de Cambios por Sesión
 
-### Sesión 2026-06-13 — Regla de índices aplicada a `articulos` (rama `claude/cool-hopper-vo3mxo`)
-- Se aplicó la misma regla de índices (no reutilizar índices de filas eliminadas) a la tabla `articulos`, cuyo `indice` es la **posición del artículo dentro de su familia**:
-  - **Eliminar** (`ArticulosGeneral`): ya NO corre (resta 1) los índices de los demás; solo oculta el artículo, cuyo índice queda **reservado** (puede quedar hueco).
-  - **Insertar** (`ArticulosDetalle.GuardarInsertar`): tras ubicar el nuevo en `indNuevo`, llama `ArticulosGeneral.RenumerarFamilia(fam)`, que renumera los artículos activos de la familia por su orden **saltando los índices reservados** por eliminados.
-  - **Nuevo/append** (`RecalcularIndicePorFamilia`): el índice sugerido ahora considera también los índices reservados (`IndicesNoNormales`), quedando más allá de todos (no reutiliza reservados).
-- Nuevo helper `ArticulosGeneral.RenumerarFamilia(famId)` (estático). Tablas con columna `indice` ya cubiertas por la regla: pedidos, transacciones, entregas, traspasos, correcciones, inventarios y articulos (stocks fue eliminada).
+### Sesión 2026-06-12/13 — Multi-empresa, borrado lógico, lógica de índices, períodos y limpieza (rama `claude/cool-hopper-vo3mxo`)
 
-### Sesión 2026-06-12 — Guardado diferencial de líneas de documentos (rama `claude/cool-hopper-vo3mxo`)
-- Los detalles de documentos ya NO borran todas las líneas y las recrean al guardar. Ahora hacen un **guardado diferencial**:
-  - Línea **nueva** (id de fila vacío) → `Nuevo()` + insertar.
-  - Línea **existente** (id sigue en la grilla) → `EstablecerItem` sobre su mismo id (UPDATE), conservando el id.
-  - Línea **quitada** (estaba al abrir y ya no está) → `Eliminar()` (estadof = `"eliminado"`).
-  - El **índice** de cada línea visible se asigna por su **posición en la grilla**, pero **saltando los índices ya ocupados por filas eliminadas** (que conservan su índice y NO se reutilizan). Reservados = filas con `estadof <> 'normal'` en SQL (`DataConsulta.IndicesNoNormales`) + las filas que se eliminan en este guardado. Ej.: si existe A(índice 1, eliminado) y B(índice 2, normal) y se inserta C sobre B → A=1 (eliminado), C=2, B=3.
-- Cada detalle captura los ids existentes al abrir para editar (`_xxxOrig`) y los limpia en modo nuevo.
-- Aplicado en: **PedidosDetalle** (pedidos/transacciones/entregas), **TraspasosDetalle**, **CorreccionesDetalle**, **InventariosDetalle**.
-- Se eliminaron los métodos/loops de "borrar todo": `EliminarLineas` (Pedidos) y los loops `idsEliminar`+`Eliminar` (Traspasos/Correcciones/Inventarios). Métodos de creación de líneas convertidos a diferenciales (Traspasos: `GuardarLineasTraspaso`; Inventarios: `GuardarLineasInventario`). `DataConsulta.SiguienteIndice` se reemplazó por `IndicesNoNormales(filtroColumna, filtroValor)` (índices de filas eliminadas/ocultas para no reutilizarlos).
-
-### Sesión 2026-06-12 — Índices sin duplicar, empresa en topbar, validación de sucursal (rama `claude/cool-hopper-vo3mxo`)
-- **Índices de líneas de documentos sin duplicar** (efecto del borrado lógico): nuevo `DataConsulta.SiguienteIndice(filtroColumna, filtroValor)` = `MAX(indice)+1` **sin filtrar estadof** (cuenta ocultas/eliminadas). Se usa como base en las re-creaciones de líneas de: Pedidos (`pedidos`/`transacciones`/`entregas`), Traspasos (nuevo/editar), Correcciones, Inventarios (nuevo/editar). Cada línea: `indice = base + i`. Antes se reusaba `i+1` y colisionaba con las filas ocultas del mismo documento.
-- **TOP BAR**: nuevo `LblEmpresa` ("Empresa: {desc}") a la derecha de `LblSucursal`; se setea en `ActualizarInfoUsuario()` desde `EmpresasObj`.
-- **Configuración**: no se puede guardar si `CmbSucursal` está vacío (empresa sin sucursales) → `MessageBox` de advertencia y `return`. Se quitó la rama que ponía `usuarios.sucursal` en NULL (ahora bloqueada).
-- **Períodos basados en la máxima fecha de inventario**: `Configuracion.ActualizarPeriodos` ahora calcula el año inicial del desplegable `CmbPeriodo` como el año de la MÁXIMA fecha de inventario de la sucursal (`DocumentosIObj.MaxFecha("sucursal", id)`, consulta directa a SQL); si la sucursal no tiene inventarios, usa el año de `sucursal.fecha`. Nuevo helper `DataConsulta.MaxFecha(filtroColumna, filtroValor)`. Esto evita que se pueda elegir un período anterior al inventario (que recargaba documentos anteriores a la fecha máxima de inventario vía `ActualizarBase`). Ej.: sucursal con `fecha`=01/01/2024 e inventario 19/02/2026 → el desplegable solo muestra 2026.
-
-### Sesión 2026-06-12 — Eliminación de la tabla `stocks` (rama `claude/cool-hopper-vo3mxo`)
-- El usuario eliminó la tabla `stocks` en SQL Server. Se quitó del proyecto todo lo que la usaba:
-  - `SqlData.StocksObj` (eliminado).
-  - `AppLoader.ConectarProductos`: se quitó el `Conectar("stocks", ...)`.
-  - `AppState.ActualizarStocks()` (eliminado por completo) y sus 3 llamadas (`ArticulosGeneral` al eliminar, `ArticulosDetalle` al guardar nuevo/editar).
-- **No** se tocó el cálculo de stock: `StockCalculator.ContarStock/ContarStock2`, `GridStock`, columnas "Stock", avisos de stock insuficiente — esos calculan con apertura + documentos y NO dependían de la tabla `stocks`.
-
-### Sesión 2026-06-12 — Borrado lógico y signo en Regiones/Sucursales (rama `claude/cool-hopper-vo3mxo`)
-- **Borrado lógico global**: `DataConsulta.ExportarItems` ya NO ejecuta `DELETE FROM` físico. Las filas con `estadof` = `"eliminado"` u `"ocultado"` se persisten con un `UPDATE` del `estadof` (se filtran al recargar, que solo trae `estadof='normal'`). Se eliminó el bloque DELETE y la lista `deleteIds`. Afecta a todos los callers de `.Eliminar(...)`/`.Ocultar(...)` (General de maestros, líneas de Pedidos/Traspasos/Correcciones/Inventarios, `ActualizarStocks`). Nota: las tablas pueden acumular filas con estadof≠normal (no se borran nunca).
-- **`RegionesDetalle`**: nuevo `Box_Signo` (SIGNO, MaxLength 4, mayúscula) a la derecha de DESCRIPCIÓN; se carga y guarda `regiones.signo`.
-- **`SucursalesDetalle`**: nuevo `Box_Signo` (SIGNO, MaxLength 4, mayúscula) a la derecha de DESCRIPCIÓN; se carga y guarda `sucursales.signo`.
-
-### Sesión 2026-06-12 — Formularios de Empresas (rama `claude/cool-hopper-vo3mxo`)
+#### Multi-empresa: formularios y empresa activa
 - Nueva sección **Empresas** en el sidebar, entre Precios y Configuración (botón `🏢 Empresas`).
-- `EmpresasGeneral` (UserControl): lista con columnas Línea/Código/Descripción/Signo; CRUD "Nueva/Editar/Eliminar Empresa" + Actualizar; patrón estándar (`_iniciado`, `Cerrando`/`IntentarCerrar`, actualización incremental, `OpenAsTab` selector con clave `seleccionar-empresa|{contexto}`). Usa `Sql.EmpresasObj`.
-- `EmpresasDetalle` (UserControl): campos Código (int, autoincremental con `SiguienteCodigoInt()`, read-only al editar), Descripción, Signo (NVARCHAR(4), forzado a mayúscula), Observación. Valida `CodigoExiste()` al crear. Persiste `codigo, descripcion, signo, observacion, fecha, emision, edicion, usuario, usuarioE`.
-- `ConsolaMovimientos`: panel `_panelEmpresas`, sección `"empresas"` en los diccionarios de pestañas, caso en `MostrarPanel`, handler `BtnNav_Empresas_Click`.
-- La columna `codigo` (INT) de `empresas` fue agregada por el usuario en SQL Server.
+- `EmpresasGeneral` (UserControl): lista Línea/Código/Descripción/Signo; CRUD "Nueva/Editar/Eliminar Empresa" + Actualizar; patrón estándar (`_iniciado`, `Cerrando`/`IntentarCerrar`, actualización incremental, `OpenAsTab` selector clave `seleccionar-empresa|{contexto}`). Usa `Sql.EmpresasObj`.
+- `EmpresasDetalle` (UserControl): Código (int, `SiguienteCodigoInt()`, read-only al editar), Descripción, Signo (NVARCHAR(4) mayúscula), Observación (TextBox plano en `Border`, texto al tope como `TercerosDetalle`). Valida `CodigoExiste()`. Persiste `codigo, descripcion, signo, observacion, fecha, emision, edicion, usuario, usuarioE`. La columna `codigo` (INT) de `empresas` la agregó el usuario en SQL.
+- `ConsolaMovimientos`: panel `_panelEmpresas` (+ sección `"empresas"` en los diccionarios, caso en `MostrarPanel`, `BtnNav_Empresas_Click`). Los paneles General pasaron de `readonly` a mutables.
+- **Configuración**: nuevo `CmbEmpresa` ("EMPRESA ACTIVA") a la izquierda de `CmbSucursal`. `CmbSucursal` es **dependiente** de la empresa (se repuebla por consulta directa `_sucursalesEmpresa`, ya que el caché está filtrado por la empresa activa). `ActualizarFechaInicio`/`ActualizarPeriodos` leen de `_sucursalesEmpresa`.
+- **Guardar en Configuración ya NO cierra sesión**: si cambia empresa/sucursal/periodo recarga cachés (`ConectarProductos` si cambió empresa, `ConectarBases`, `ActualizarBase`, `ConectarDocumentos`) y llama `ConsolaMovimientos.RecargarContexto()` (cierra las pestañas dinámicas y **recrea los paneles General**), manteniendo el foco en Configuración; luego `CargarDatos()` repuebla sus combos. La empresa se persiste en `usuarios.empresa`. Se eliminó `CerrarSesionYReabrirLogin`.
+- **No se puede guardar sin sucursal**: si `CmbSucursal` está vacío (empresa sin sucursales) → `MessageBox` de advertencia y `return` (reemplaza un comportamiento intermedio que dejaba `usuarios.sucursal` en NULL).
+- **TOP BAR**: nuevo `LblEmpresa` ("Empresa: {desc}") a la derecha de `LblSucursal`, seteado en `ActualizarInfoUsuario()`.
 
-#### Configuración — empresa activa + refresco sin logout
-- Nuevo `CmbEmpresa` ("EMPRESA ACTIVA") a la izquierda de `CmbSucursal`. `CmbSucursal` es **dependiente** de la empresa: al cambiar empresa se repueblan las sucursales mediante una consulta directa (`DataConsulta` temporal `_sucursalesEmpresa`), ya que el caché global está filtrado por la empresa activa.
-- `ActualizarFechaInicio`/`ActualizarPeriodos` leen la fecha desde `_sucursalesEmpresa` (no del caché global).
-- **Guardar ya NO cierra sesión.** Si cambia empresa/sucursal/periodo se recargan los cachés (`ConectarProductos` si cambió empresa, `ConectarBases`, `ActualizarBase`, `ConectarDocumentos`) y se llama `ConsolaMovimientos.RecargarContexto()`, que cierra las pestañas dinámicas y **recrea los paneles General** para que relean los cachés — manteniendo el enfoque en Configuración (como si recién se hubiera iniciado sesión). Tras recargar, `Configuracion.CargarDatos()` repuebla sus propios combos.
-- La empresa elegida se persiste en `usuarios.empresa` (queda como predeterminada en el próximo login), igual que la sucursal.
-- Se eliminó `CerrarSesionYReabrirLogin` (ya no se usa). Los paneles General de `ConsolaMovimientos` pasaron de `readonly` a mutables para poder recrearlos.
+#### Borrado lógico global (sin DELETE físico)
+- `DataConsulta.ExportarItems` ya NO ejecuta `DELETE FROM`. Las filas con `estadof` = `"eliminado"`/`"ocultado"` se persisten con `UPDATE` del `estadof` (se filtran al recargar, que solo trae `estadof='normal'`). Se quitó el bloque DELETE y `deleteIds`. Afecta a todos los `.Eliminar()`/`.Ocultar()`. Nota: las tablas acumulan filas con estadof≠normal (no se borran nunca).
 
-#### MovimientosGeneral — columna "Movimiento" muestra código
-- `CargarMovimientos` ahora guarda `DocumentoCodigo` (de `Documentos[P/T/C]Obj.ObtenerItem("codigo", id)`) y la columna "Movimiento" muestra `código-tipo` en vez de `id(UUID)-tipo`.
+#### Lógica de índices: no reutilizar índices de filas eliminadas
+- **Guardado diferencial de líneas** de documentos (antes borraban TODAS las líneas y las recreaban): nueva (id de fila vacío) → insertar; existente → `EstablecerItem` sobre su mismo id (UPDATE); quitada (estaba al abrir y ya no está) → `Eliminar()` (estadof "eliminado"). Cada detalle captura los ids originales (`_xxxOrig`) al abrir para editar y los limpia en modo nuevo. Aplicado en **PedidosDetalle** (pedidos/transacciones/entregas), **TraspasosDetalle**, **CorreccionesDetalle**, **InventariosDetalle**. Se quitaron `EliminarLineas`/loops `idsEliminar`.
+- **Índice por posición sin reutilizar eliminados**: cada línea visible se numera por su posición en la grilla, **saltando los índices reservados** por filas eliminadas (que conservan su índice). Reservados = filas `estadof <> 'normal'` en SQL (`DataConsulta.IndicesNoNormales(filtroColumna, filtroValor)`) + las que se eliminan en este guardado. Ej.: A(índice 1, eliminado) + B(índice 2, normal), insertar C sobre B → A=1 (eliminado), C=2, B=3. (Reemplaza un intento previo `SiguienteIndice` = MAX+1, ya retirado.)
+- **`articulos`** (su `indice` es la posición dentro de la familia): Eliminar (`ArticulosGeneral`) ya NO corre los índices, solo oculta (índice reservado, puede quedar hueco). Insertar (`ArticulosDetalle.GuardarInsertar`) usa el nuevo helper estático `ArticulosGeneral.RenumerarFamilia(famId)` (renumera activos por orden saltando reservados). El índice sugerido (`RecalcularIndicePorFamilia`) considera también los reservados.
+- Tablas con columna `indice` cubiertas por la regla: pedidos, transacciones, entregas, traspasos, correcciones, inventarios y articulos. (Modo editar de un artículo: mantiene su índice; reposicionar manualmente ahí aún no aplica el salto-de-reservados — pendiente menor.)
 
-#### Diseño esquinas redondeadas
-- `EmpresasGeneral` y `RegionesGeneral` actualizados al estilo redondeado unificado: botones con `ControlTemplate CornerRadius=6`, `SearchInput` (TextBox) redondeado y `DataGrid` envuelto en `<Border CornerRadius="6">`.
+#### Apertura / períodos
+- **Períodos desde la máxima fecha de inventario**: `Configuracion.ActualizarPeriodos` calcula el año inicial de `CmbPeriodo` como el año de la MÁXIMA fecha de inventario de la sucursal (`DocumentosIObj.MaxFecha("sucursal", id)`, consulta directa a SQL); si la sucursal no tiene inventarios usa el año de `sucursal.fecha`. Nuevo helper `DataConsulta.MaxFecha`. Evita elegir un período anterior al inventario (que recargaba documentos previos a esa fecha vía `ActualizarBase`). Ej.: sucursal con `fecha`=01/01/2024 e inventario 19/02/2026 → el desplegable solo muestra 2026.
+- **Fix `uniqueidentifier`**: `AppLoader.ConectarBases`/`ConectarDocumentos` usan el GUID nulo `00000000-0000-0000-0000-000000000000` cuando `SucursalActiva` está vacía (antes `sucursal = ''` contra una columna `uniqueidentifier` lanzaba *"Conversion failed when converting from a character string to uniqueidentifier"* al guardar sin sucursal y también en el login siguiente).
 
-#### Limpieza
-- Eliminado `MovimientosWindow.xaml`/`.cs` (versión Window legacy del visor de movimientos, sin referencias; reemplazada por `MovimientosGeneral`). Las clases `MovimientoDato`/`MovimientoFila` se movieron a `MovimientosGeneral.xaml.cs`.
+#### Eliminación de la tabla `stocks`
+- El usuario eliminó la tabla `stocks` en SQL Server. Se quitó `SqlData.StocksObj`, su `Conectar("stocks", ...)` en `AppLoader.ConectarProductos`, y `AppState.ActualizarStocks()` + sus 3 llamadas. **No** se tocó el cálculo de stock (`StockCalculator.ContarStock/ContarStock2`, `GridStock`, columnas "Stock", avisos de stock insuficiente), que usa apertura + documentos y no dependía de la tabla.
 
-#### Ajustes
-- Configuración: al cambiar a una empresa sin sucursales y guardar, `usuarios.sucursal` se deja en **NULL** (rama `else` que llama `EstablecerItem(...,"")`, que persiste como NULL). Antes no se actualizaba si no había sucursal seleccionada.
-- `EmpresasDetalle`: `Box_Observacion` ahora alinea el texto arriba (TextBox plano dentro de `Border`, igual que `TercerosDetalle`) en vez de centrado.
-- **`AppLoader.ConectarBases`/`ConectarDocumentos`**: si `AppState.SucursalActiva` está vacía, se usa el GUID nulo `00000000-0000-0000-0000-000000000000` en vez de `''`. Antes, `sucursal = ''` contra una columna `uniqueidentifier` lanzaba *"Conversion failed when converting from a character string to uniqueidentifier"* (al guardar sin sucursal en Configuración y también en el login siguiente). Esa excepción abortaba el guardado antes de `RecargarContexto`, por lo que la consola tampoco se refrescaba (pestañas/grids quedaban cargados). Con el fix, el guardado completa y `RecargarContexto` limpia pestañas y recrea los paneles.
+#### Otros (UI y limpieza)
+- **MovimientosGeneral**: la columna "Movimiento" muestra `código-tipo` del documento (de `Documentos[P/T/C]Obj.ObtenerItem("codigo", id)`) en vez del `id(UUID)`. Se **eliminó** `MovimientosWindow.xaml/.cs` (Window legacy sin referencias); las clases `MovimientoDato`/`MovimientoFila` se movieron a `MovimientosGeneral.xaml.cs`.
+- **Diseño esquinas redondeadas**: `EmpresasGeneral` y `RegionesGeneral` al estilo unificado (botones `ControlTemplate CornerRadius=6`, `SearchInput` redondeado, `DataGrid` en `<Border CornerRadius="6">`).
+- **Signo en maestros**: `RegionesDetalle` y `SucursalesDetalle` tienen `Box_Signo` (SIGNO, MaxLength 4, mayúscula) a la derecha de DESCRIPCIÓN; cargan/guardan `regiones.signo`/`sucursales.signo`.
+
+#### Helpers nuevos en `DataConsulta`
+- `IndicesNoNormales(filtroColumna, filtroValor)` → índices de filas `estadof <> 'normal'` del documento (para no reutilizarlos).
+- `MaxFecha(filtroColumna, filtroValor)` → máxima fecha de filas en estado normal (consulta directa).
+- (`SiguienteIndice` se introdujo y luego se retiró; reemplazado por la regla de posición + `IndicesNoNormales`.)
 
 ### Sesión 2026-06-12 — Empresas, regeneración de códigos y UI de conexión (rama `claude/brave-albattani-03ox62`)
 
