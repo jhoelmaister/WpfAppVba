@@ -34,38 +34,38 @@ namespace WpfAppVba.Data
 
             // Tabla de empresas (sin filtro de empresa).
             Sql.EmpresasObj.Conectar("empresas",
-                "SELECT * FROM empresas WHERE estadof = 'normal' ORDER BY id ASC");
+                "SELECT * FROM empresas WHERE estadof = 'normal' ORDER BY secuencia ASC");
 
             // usuarios: NO se filtra por empresa (necesario para el login).
             Sql.UsuariosObj.Conectar("usuarios",
-                "SELECT * FROM usuarios WHERE estadof = 'normal' ORDER BY id ASC");
+                "SELECT * FROM usuarios WHERE estadof = 'normal' ORDER BY secuencia ASC");
 
             Sql.ArticulosObj.Conectar("articulos",
                 $"SELECT * FROM articulos WHERE estadof = 'normal'{fEmp} ORDER BY familia ASC, indice ASC");
 
             Sql.FamiliasObj.Conectar("familias",
-                $"SELECT * FROM familias WHERE estadof = 'normal'{fEmp} ORDER BY id ASC");
+                $"SELECT * FROM familias WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             Sql.ProductosObj.Conectar("productos",
-                $"SELECT * FROM productos WHERE estadof = 'normal'{fEmp} ORDER BY id ASC");
+                $"SELECT * FROM productos WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             Sql.CategoriasObj.Conectar("Categorias",
-                $"SELECT * FROM Categorias WHERE estadof = 'normal'{fEmp} ORDER BY id ASC");
+                $"SELECT * FROM Categorias WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             Sql.IndustriasObj.Conectar("industrias",
-                $"SELECT * FROM industrias WHERE estadof = 'normal'{fEmp} ORDER BY id ASC");
+                $"SELECT * FROM industrias WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             Sql.TercerosObj.Conectar("terceros",
-                $"SELECT * FROM terceros WHERE estadof = 'normal'{fEmp} ORDER BY id ASC");
+                $"SELECT * FROM terceros WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             Sql.SucursalesObj.Conectar("sucursales",
-                $"SELECT * FROM sucursales WHERE estadof = 'normal'{fEmp} ORDER BY id ASC");
+                $"SELECT * FROM sucursales WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             Sql.PreciosObj.Conectar("precios",
                 $"SELECT * FROM precios WHERE estadof = 'normal'{fPrecios} ORDER BY fecha ASC");
 
             Sql.RegionesObj.Conectar("regiones",
-                $"SELECT * FROM regiones WHERE estadof = 'normal'{fEmp} ORDER BY id ASC");
+                $"SELECT * FROM regiones WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             var tiempo = DateTime.Now - inicio;
             System.Diagnostics.Debug.WriteLine($"ConectarProductos: {tiempo.TotalSeconds:F2}s");
