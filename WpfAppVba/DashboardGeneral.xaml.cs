@@ -84,7 +84,7 @@ namespace WpfAppVba
             var porMes       = new double[13];                          // total del mes (1..12)
             var porMesCat    = new Dictionary<int, Dictionary<string, double>>();
             var porCategoria = new Dictionary<string, double>();
-            var porFamilia   = new Dictionary<string, double>();
+            var porFamiliaCat= new Dictionary<string, Dictionary<string, double>>();
             var porArticulo  = new Dictionary<string, double>();
             var articulosSet = new HashSet<string>();
             var documentos   = new HashSet<string>();
@@ -106,7 +106,9 @@ namespace WpfAppVba
                 }
 
                 porCategoria[cat] = porCategoria.GetValueOrDefault(cat) + cant;
-                porFamilia[fam]   = porFamilia.GetValueOrDefault(fam) + cant;
+
+                if (!porFamiliaCat.TryGetValue(fam, out var fc)) { fc = new(); porFamiliaCat[fam] = fc; }
+                fc[cat] = fc.GetValueOrDefault(cat) + cant;
 
                 if (!string.IsNullOrEmpty(artId))
                 {
@@ -189,7 +191,7 @@ namespace WpfAppVba
             RenderLeyenda(porCategoria);
             RenderMeses(porMes, porMesCat);
             RenderCategorias(porCategoria);
-            RenderFamilias(porFamilia);
+            RenderFamilias(porFamiliaCat);
             RenderArticulos(porArticulo, totalActivos);
         }
 
@@ -430,23 +432,113 @@ namespace WpfAppVba
             RenderBarrasH(PanelCategorias, datos);
         }
 
-        // ─── Barras horizontales por familia (color único) ───────────────────
-        private void RenderFamilias(Dictionary<string, double> porFamilia)
+        // ─── Una barra apilada por familia, segmentada por categoría ─────────
+        // Por cada familia: título, totales por categoría y una sola barra
+        // apilada (cada segmento = categoría, con su color). La longitud total de
+        // la barra es proporcional al total de la familia (máxima familia = 100%).
+        private void RenderFamilias(Dictionary<string, Dictionary<string, double>> porFamiliaCat)
         {
-            var orden = porFamilia.Where(kv => kv.Value > 0)
-                                  .OrderByDescending(kv => kv.Value)
-                                  .ToList();
-            if (orden.Count == 0)
+            PanelFamilias.Children.Clear();
+
+            var familias = porFamiliaCat
+                .Select(kv => (fam: kv.Key, cats: kv.Value, total: kv.Value.Values.Sum()))
+                .Where(x => x.total > 0)
+                .OrderByDescending(x => x.total)
+                .ToList();
+
+            if (familias.Count == 0)
             {
                 LblFamiliasVacio.Visibility = Visibility.Visible;
-                PanelFamilias.Children.Clear();
                 return;
             }
             LblFamiliasVacio.Visibility = Visibility.Collapsed;
 
-            Brush color = new SolidColorBrush(Color.FromRgb(0x4A, 0x6F, 0xE3));
-            var datos = orden.Select(kv => (kv.Key, kv.Value, color)).ToList();
-            RenderBarrasH(PanelFamilias, datos);
+            double maxTotal = familias[0].total;
+            var ordenCats   = _colorCat.Keys.ToList();   // orden estable de categorías
+            var textBrush   = Tema("ThemeTexto", Color.FromRgb(0x20, 0x20, 0x20));
+            var trackBrush  = Tema("ThemeBgReadOnly", Color.FromRgb(0xEE, 0xEE, 0xEE));
+
+            foreach (var (fam, cats, total) in familias)
+            {
+                var card = new StackPanel { Margin = new Thickness(0, 0, 0, 14) };
+
+                // Título de la familia + total a la derecha
+                var titulo = new Grid();
+                titulo.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                titulo.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                var tFam = new TextBlock
+                {
+                    Text = fam, FontSize = 12, FontWeight = FontWeights.SemiBold,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                    Foreground = textBrush, Margin = new Thickness(0, 0, 8, 0)
+                };
+                Grid.SetColumn(tFam, 0);
+                titulo.Children.Add(tFam);
+                var tTot = new TextBlock
+                {
+                    Text = Fmt(total), FontSize = 12, FontWeight = FontWeights.Bold,
+                    Foreground = textBrush
+                };
+                Grid.SetColumn(tTot, 1);
+                titulo.Children.Add(tTot);
+                card.Children.Add(titulo);
+
+                // Totales por categoría (entre el título y la barra)
+                var chips = new WrapPanel { Margin = new Thickness(0, 4, 0, 4) };
+                foreach (var cat in ordenCats)
+                {
+                    double val = cats.GetValueOrDefault(cat);
+                    if (val <= 0) continue;
+                    var chip = new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        Margin = new Thickness(0, 0, 12, 2),
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+                    chip.Children.Add(new Border
+                    {
+                        Width = 10, Height = 10, CornerRadius = new CornerRadius(2),
+                        Background = ColorDe(cat),
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Margin = new Thickness(0, 0, 5, 0)
+                    });
+                    chip.Children.Add(new TextBlock
+                    {
+                        Text = $"{cat}: {Fmt(val)}", FontSize = 11,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Foreground = textBrush
+                    });
+                    chips.Children.Add(chip);
+                }
+                card.Children.Add(chips);
+
+                // Barra apilada (track de fondo + segmentos por categoría)
+                var seg = new Grid();
+                foreach (var cat in ordenCats)
+                {
+                    double val = cats.GetValueOrDefault(cat);
+                    if (val <= 0) continue;
+                    int col = seg.ColumnDefinitions.Count;
+                    seg.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(val, GridUnitType.Star) });
+                    var b = new Border { Background = ColorDe(cat) };
+                    Grid.SetColumn(b, col);
+                    seg.Children.Add(b);
+                }
+                // Resto hasta el total de la familia más grande (barra proporcional)
+                double resto = maxTotal - total;
+                if (resto > 0)
+                    seg.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(resto, GridUnitType.Star) });
+
+                var track = new Border
+                {
+                    Height = 20, CornerRadius = new CornerRadius(4),
+                    Background = trackBrush, ClipToBounds = true,
+                    Child = seg
+                };
+                card.Children.Add(track);
+
+                PanelFamilias.Children.Add(card);
+            }
         }
 
         // ─── Helper: gráfico de barras horizontales con eje X y cuadrícula ───
