@@ -133,6 +133,9 @@ namespace WpfAppVba
                 AppState.SesionActiva   = true;
                 AppState.PeriodoActivo  = DateTime.Now.Year.ToString();
 
+                Sql.UsuariosObj.EstablecerItem("estadoU", idEncontrado, "activo");
+                Sql.UsuariosObj.ExportarItems();
+
                 string temaUsuario = Sql.UsuariosObj.ObtenerItem("temaC", idEncontrado)?.ToString() ?? "";
                 AppState.TemaActivo = temaUsuario.Trim().ToLowerInvariant() == ThemeManager.TemaOscuro
                     ? ThemeManager.TemaOscuro

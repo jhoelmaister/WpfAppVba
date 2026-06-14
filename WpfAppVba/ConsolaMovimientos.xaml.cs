@@ -459,8 +459,26 @@ namespace WpfAppVba
             else _panelTraspasos.AbrirNuevoTraspaso("entrada");
         }
 
+        private void MarcarInactivo()
+        {
+            if (string.IsNullOrEmpty(AppState.UsuarioActivo)) return;
+            try
+            {
+                var sql = SqlData.Instance;
+                sql.UsuariosObj.EstablecerItem("estadoU", AppState.UsuarioActivo, "inactivo");
+                sql.UsuariosObj.ExportarItems();
+            }
+            catch { }
+        }
+
+        private void ConsolaMovimientos_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            MarcarInactivo();
+        }
+
         private void BtnCerrarSesion_Click(object sender, RoutedEventArgs e)
         {
+            MarcarInactivo();
             AppState.SesionActiva  = false;
             AppState.UsuarioActivo = "";
             AppState.EmpresaActiva = "";

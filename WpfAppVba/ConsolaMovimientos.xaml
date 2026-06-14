@@ -5,7 +5,8 @@
         Title="Sistema de Gestión"
         WindowState="Maximized"
         WindowStartupLocation="CenterScreen"
-        Background="#1E2235">
+        Background="#1E2235"
+        Closing="ConsolaMovimientos_Closing">
 
     <Window.Resources>
 

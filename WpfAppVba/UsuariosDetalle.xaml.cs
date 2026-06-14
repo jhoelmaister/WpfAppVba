@@ -110,8 +110,7 @@ namespace WpfAppVba
 
             SeleccionarComboBoxItem(CmbTipo,
                 Sql.UsuariosObj.ObtenerItem("tipo",    id)?.ToString() ?? "user");
-            SeleccionarComboBoxItem(CmbEstadoU,
-                Sql.UsuariosObj.ObtenerItem("estadoU", id)?.ToString() ?? "activo");
+            TxtEstadoU.Text = Sql.UsuariosObj.ObtenerItem("estadoU", id)?.ToString() ?? "";
 
             // Empresa → dispara PoblarSucursales
             string empId = Sql.UsuariosObj.ObtenerItem("empresa", id)?.ToString() ?? "";
@@ -132,8 +131,8 @@ namespace WpfAppVba
         {
             Box_Codigo.Text = Sql.UsuariosObj.SiguienteCodigoInt().ToString();
 
-            if (CmbTipo.Items.Count > 1)    CmbTipo.SelectedIndex    = 1; // "user"
-            if (CmbEstadoU.Items.Count > 0) CmbEstadoU.SelectedIndex = 0; // "activo"
+            if (CmbTipo.Items.Count > 1) CmbTipo.SelectedIndex = 1; // "user"
+            TxtEstadoU.Text = "inactivo";
 
             var activeEmp = CmbEmpresa.Items.OfType<EmpresaItem>()
                             .FirstOrDefault(x => x.Id == AppState.EmpresaActiva);
@@ -195,12 +194,11 @@ namespace WpfAppVba
                 Sql.UsuariosObj.EstablecerItem("cuenta",    id, cuenta);
                 Sql.UsuariosObj.EstablecerItem("nombres",   id, Box_Nombres.Text.Trim());
                 Sql.UsuariosObj.EstablecerItem("apellidos", id, Box_Apellidos.Text.Trim());
-                Sql.UsuariosObj.EstablecerItem("tipo",      id, ObtenerComboValor(CmbTipo));
-                Sql.UsuariosObj.EstablecerItem("estadoU",   id, ObtenerComboValor(CmbEstadoU));
-                Sql.UsuariosObj.EstablecerItem("empresa",   id, (CmbEmpresa.SelectedItem  as EmpresaItem)?.Id  ?? "");
-                Sql.UsuariosObj.EstablecerItem("sucursal",  id, (CmbSucursal.SelectedItem as SucursalItem)?.Id ?? "");
-                Sql.UsuariosObj.EstablecerItem("edicion",   id, DateTime.Now);
-                Sql.UsuariosObj.EstablecerItem("usuarioE",  id, AppState.UsuarioActivo);
+                Sql.UsuariosObj.EstablecerItem("tipo",     id, ObtenerComboValor(CmbTipo));
+                Sql.UsuariosObj.EstablecerItem("empresa",  id, (CmbEmpresa.SelectedItem  as EmpresaItem)?.Id  ?? "");
+                Sql.UsuariosObj.EstablecerItem("sucursal", id, (CmbSucursal.SelectedItem as SucursalItem)?.Id ?? "");
+                Sql.UsuariosObj.EstablecerItem("edicion",  id, DateTime.Now);
+                Sql.UsuariosObj.EstablecerItem("usuarioE", id, AppState.UsuarioActivo);
 
                 Sql.UsuariosObj.OrdenarData(("codigo", false));
                 Sql.UsuariosObj.ExportarItems();
@@ -232,11 +230,11 @@ namespace WpfAppVba
                 Sql.UsuariosObj.EstablecerItem("cuenta",    id, cuenta);
                 Sql.UsuariosObj.EstablecerItem("nombres",   id, Box_Nombres.Text.Trim());
                 Sql.UsuariosObj.EstablecerItem("apellidos", id, Box_Apellidos.Text.Trim());
-                Sql.UsuariosObj.EstablecerItem("tipo",      id, ObtenerComboValor(CmbTipo));
-                Sql.UsuariosObj.EstablecerItem("estadoU",   id, ObtenerComboValor(CmbEstadoU));
-                Sql.UsuariosObj.EstablecerItem("empresa",   id, (CmbEmpresa.SelectedItem  as EmpresaItem)?.Id  ?? "");
-                Sql.UsuariosObj.EstablecerItem("sucursal",  id, (CmbSucursal.SelectedItem as SucursalItem)?.Id ?? "");
-                Sql.UsuariosObj.EstablecerItem("estadof",   id, "normal");
+                Sql.UsuariosObj.EstablecerItem("tipo",     id, ObtenerComboValor(CmbTipo));
+                Sql.UsuariosObj.EstablecerItem("estadoU",  id, "inactivo");
+                Sql.UsuariosObj.EstablecerItem("empresa",  id, (CmbEmpresa.SelectedItem  as EmpresaItem)?.Id  ?? "");
+                Sql.UsuariosObj.EstablecerItem("sucursal", id, (CmbSucursal.SelectedItem as SucursalItem)?.Id ?? "");
+                Sql.UsuariosObj.EstablecerItem("estadof",  id, "normal");
                 Sql.UsuariosObj.EstablecerItem("emision",   id, DateTime.Now);
                 Sql.UsuariosObj.EstablecerItem("edicion",   id, DateTime.Now);
                 Sql.UsuariosObj.EstablecerItem("usuario",   id, AppState.UsuarioActivo);

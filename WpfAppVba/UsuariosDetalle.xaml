@@ -190,12 +190,11 @@
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Style="{StaticResource SectionLabel}" Text="ESTADO"/>
-                                <ComboBox x:Name="CmbEstadoU" Height="36" FontSize="13"
-                                          VerticalContentAlignment="Center"
-                                          SelectionChanged="Campo_SelectionChanged">
-                                    <ComboBoxItem Content="activo"/>
-                                    <ComboBoxItem Content="inactivo"/>
-                                </ComboBox>
+                                <Border Height="36" CornerRadius="6"
+                                        Background="{DynamicResource ThemeBgReadOnly}" Padding="10,0">
+                                    <TextBlock x:Name="TxtEstadoU" VerticalAlignment="Center" FontSize="13"
+                                               Foreground="{DynamicResource ThemeTextoMuted}"/>
+                                </Border>
                             </StackPanel>
                         </Grid>
                     </StackPanel>
