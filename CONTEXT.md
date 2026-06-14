@@ -10,7 +10,7 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 - **Reportes Excel**: `ClosedXML 0.102.2`
 - **IDE recomendado**: Visual Studio 2022 / VS Code + extensión C#
 - **Proyecto**: `WpfAppVba/WpfAppVba.csproj`
-- **Rama de desarrollo activa**: `claude/cool-hopper-vo3mxo`
+- **Rama de desarrollo activa**: `claude/affectionate-albattani-r2uilg`
 
 ## Lo Que Está Implementado y Funciona
 
@@ -24,6 +24,7 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 ### Secciones del sidebar (orden visual)
 | Botón | Panel fijo | Detalle en pestaña | Selector en pestaña |
 |-------|-----------|-------------------|---------------------|
+| 📊 Dashboard | `DashboardGeneral` | — | — |
 | 📋 Artículos | `ArticulosGeneral` | `ArticulosDetalle` (pestaña) | — |
 | 📑 Pedidos | `PedidosGeneral` | `PedidosDetalle` (pestaña) | TercerosGeneral, ArticulosGeneral |
 | 🔄 Traspasos | `TraspasosGeneral` | `TraspasosDetalle` (pestaña) | SucursalesGeneral, ArticulosGeneral |
@@ -58,6 +59,7 @@ private readonly PreciosGeneral      _panelPrecios       = new();
 private readonly RegionesGeneral     _panelRegiones      = new();
 private readonly EmpresasGeneral     _panelEmpresas      = new();
 private readonly Configuracion       _panelConfiguracion = new();
+private          DashboardGeneral    _panelDashboard     = new(); // sección "dashboard"
 ```
 
 ### Patrones de comportamiento implementados
@@ -166,6 +168,32 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - **Rama de trabajo**: la sesión actual trabaja en `claude/cool-hopper-vo3mxo`. (La sesión previa de multi-empresa fue `claude/brave-albattani-03ox62`.)
 
 ## Historial de Cambios por Sesión
+
+### Sesión 2026-06-14 — AppSheets (sincronización), orden por `secuencia` y panel Dashboard (rama `claude/affectionate-albattani-r2uilg`)
+
+#### Tabla `appsheets` + sincronización desde Configuración
+- La tabla `appsheets` la creó el usuario en SQL Server. Estructura final: `secuencia` INT IDENTITY, `estadof` NVARCHAR(255), `emision` DATETIME, `id` UNIQUEIDENTIFIER DEFAULT NEWID(), `sucursal`, `articulo`, `usuario`, `empresa` (todas UNIQUEIDENTIFIER). **La columna `indice` se eliminó** (no tenía función).
+- Nueva clase **`AppsheetsSync`** (estilo `CodigoRegenerator`, SQL directo en transacción). Métodos:
+  - `SincronizarSucursalActiva()` — solo la sucursal activa.
+  - `SincronizarTodasLasSucursales()` — todas las sucursales `estadof='normal'` de la empresa activa (INSERT vía `CROSS JOIN sucursales`).
+  - Reglas por sucursal: **INSERT** una fila por cada artículo activo (`estadof='normal'`, empresa activa) que aún no tenga fila `'normal'` en `appsheets` (rellena `articulo`, `sucursal`, `empresa`, `usuario`, `emision=GETDATE()`, `estadof='normal'`); **UPDATE `estadof='eliminado'`** las filas `'normal'` cuyo artículo ya no esté activo.
+- **Configuración**: botón **`🧾 Sincronizar AppSheets`** a la izquierda de "Cambiar Contraseña". Abre `SincronizarAppsheetsDialog` (Window) con 3 opciones: *Sincronizar todo* (todas las sucursales) / *Sincronizar sucursal activa* / *Cancelar*.
+- **Disparo automático**: al **agregar** (`ArticulosDetalle.GuardarNuevo`/`GuardarInsertar`) o **eliminar** (`ArticulosGeneral.BtnEliminar_Click`) un artículo se ejecuta `SincronizarTodasLasSucursales()` vía el helper estático `ArticulosGeneral.SincronizarAppsheetsTrasCambio()` (si falla solo avisa, no revierte el cambio del artículo). Editar un artículo NO dispara sync.
+
+#### Orden de recarga de caché por `secuencia`
+- `AppLoader.ConectarProductos`: las consultas que ordenaban `ORDER BY id ASC` ahora usan `ORDER BY secuencia ASC` (empresas, usuarios, familias, productos, Categorias, industrias, terceros, sucursales, regiones). `articulos` sigue por `familia, indice`; `precios` por `fecha`.
+
+#### Nuevo panel **Dashboard** (sidebar)
+- Nuevo `DashboardGeneral` (UserControl), sección `"dashboard"`, botón `📊 Dashboard` al tope del sidebar de `ConsolaMovimientos` (registrado en diccionarios, `MostrarPanel`, `RecargarContexto`, `BtnNav_Dashboard_Click`, `_panelDashboard`).
+- Lee del caché ya filtrado (`PedidosObj`/`TraspasosObj`) por sucursal + período activos. Venta/compra por `documentosP.movimiento`; entrada/salida por `origen`/`destino` vs sucursal activa en `documentosT`; categoría/familia/descripción/código vía `articulos` → `CategoriasObj`/`FamiliasObj`. Todo en **cantidad** (unidades). Botón **Actualizar**.
+- **Segmentador de selección única** (RadioButton, GroupName): Ventas/Compras/Entradas/Salidas; cada chip muestra su cantidad y filtra el resto; por defecto Ventas.
+- **KPIs** (a la derecha de los segmentadores, misma fila): Total unidades (tipo activo), Movimientos, Artículos distintos.
+- **Gráfico por mes**: barras **agrupadas por categoría** (una barra por categoría con valor encima), solo meses con datos, eje Y con escala (redondeo "lindo" `NiceCeil`) + cuadrícula horizontal; el total del mes va debajo del nombre del mes. Leyenda de colores por categoría. **Altura dinámica** según el alto disponible (`PanelPlot_SizeChanged`, cache `_porMesCache`).
+- **Por categoría**: barras horizontales que llenan el ancho (proporción star), eje X + cuadrícula, color propio por categoría (paleta estable `_colorCat`).
+- **Por familia**: una barra **apilada por categoría** por familia, con los totales por categoría entre el título y la barra; longitud proporcional al total de la familia (ancho fijo `AnchoBarra`).
+- **Lista de artículos**: DataGrid Código · Familia · Descripción · Cantidad · % + fila Total.
+- **Layout sin scroll general**: el contenido es un `Grid` con filas proporcionales (`Auto` / `1*` / `1.4*`); el gráfico y las tablas se estiran por resolución y solo las listas internas tienen scroll. Disposición inferior: col 1 = categoría (arriba) + artículos (abajo); col 2 = familia (ambas filas).
+- Gráficos dibujados con primitivas WPF (sin dependencias NuGet nuevas).
 
 ### Sesión 2026-06-12/13 — Multi-empresa, borrado lógico, lógica de índices, períodos y limpieza (rama `claude/cool-hopper-vo3mxo`)
 
