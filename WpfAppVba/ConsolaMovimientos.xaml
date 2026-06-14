@@ -285,6 +285,11 @@
                                     Content="🏢  Empresas"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Empresas_Click"/>
+                            <Button x:Name="BtnNav_Usuarios"
+                                    Content="👤  Usuarios"
+                                    Style="{StaticResource NavBtn}"
+                                    Visibility="Collapsed"
+                                    Click="BtnNav_Usuarios_Click"/>
                             <Button x:Name="BtnNav_Configuracion"
                                     Content="⚙  Configuración"
                                     Style="{StaticResource NavBtn}"

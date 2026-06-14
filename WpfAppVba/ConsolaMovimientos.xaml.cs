@@ -30,6 +30,7 @@ namespace WpfAppVba
         private RegionesGeneral     _panelRegiones     = new();
         private EmpresasGeneral     _panelEmpresas     = new();
         private readonly Configuracion       _panelConfiguracion= new();
+        private UsuariosGeneral     _panelUsuarios     = new();
         private MovimientosGeneral  _panelMovimientos  = new();
         private DashboardGeneral    _panelDashboard    = new();
 
@@ -52,6 +53,7 @@ namespace WpfAppVba
             ["regiones"]     = new List<TabItem>(),
             ["empresas"]     = new List<TabItem>(),
             ["configuracion"]= new List<TabItem>(),
+            ["usuarios"]     = new List<TabItem>(),
             ["movimientos"]  = new List<TabItem>(),
             ["dashboard"]    = new List<TabItem>(),
         };
@@ -72,6 +74,7 @@ namespace WpfAppVba
             ["regiones"]     = null,
             ["empresas"]     = null,
             ["configuracion"]= null,
+            ["usuarios"]     = null,
             ["movimientos"]  = null,
             ["dashboard"]    = null,
         };
@@ -82,6 +85,7 @@ namespace WpfAppVba
             TabFijoContenido.Content = _panelArticulos;
             ActualizarInfoUsuario();
             MarcarActivo(BtnNav_Articulos);
+            if (AppState.EsAdmin) BtnNav_Usuarios.Visibility = Visibility.Visible;
         }
 
         // ─── Info usuario ─────────────────────────────────────────────────────
@@ -132,6 +136,7 @@ namespace WpfAppVba
             _panelEmpresas     = new();
             _panelMovimientos  = new();
             _panelDashboard    = new();
+            _panelUsuarios     = new();
 
             // 3. Mantener Configuración como panel fijo enfocado
             _seccionActiva = "configuracion";
@@ -184,6 +189,7 @@ namespace WpfAppVba
                 case "regiones":     TabFijoContenido.Content = _panelRegiones;     TabFijoTitulo.Text = "Regiones";     break;
                 case "empresas":     TabFijoContenido.Content = _panelEmpresas;     TabFijoTitulo.Text = "Empresas";     break;
                 case "configuracion":TabFijoContenido.Content = _panelConfiguracion;TabFijoTitulo.Text = "Configuración";break;
+                case "usuarios":     TabFijoContenido.Content = _panelUsuarios;     TabFijoTitulo.Text = "Usuarios";     break;
                 case "movimientos":  TabFijoContenido.Content = _panelMovimientos;  TabFijoTitulo.Text = "Movimientos";  break;
                 case "dashboard":    TabFijoContenido.Content = _panelDashboard;    TabFijoTitulo.Text = "Dashboard";    break;
             }
@@ -380,6 +386,12 @@ namespace WpfAppVba
         {
             MostrarPanel("configuracion");
             MarcarActivo(BtnNav_Configuracion);
+        }
+
+        private void BtnNav_Usuarios_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("usuarios");
+            MarcarActivo(BtnNav_Usuarios);
         }
 
         // ─── Cerrar sesión ────────────────────────────────────────────────────
