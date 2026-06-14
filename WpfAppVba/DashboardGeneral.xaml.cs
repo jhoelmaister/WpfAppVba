@@ -522,44 +522,44 @@ namespace WpfAppVba
                 }
                 card.Children.Add(chips);
 
-                // Barra apilada de ancho FIJO (track de fondo + segmentos por categoría).
-                // El largo coloreado es proporcional al total de la familia (máxima = 100%).
-                var segs = new StackPanel
-                {
-                    Orientation = Orientation.Horizontal,
-                    HorizontalAlignment = HorizontalAlignment.Left
-                };
+                // Barra apilada que ocupa todo el ancho disponible.
+                // Segmentos proporcionales con columnas star; track con HorizontalAlignment=Stretch.
+                var segsGrid = new Grid();
+                int colIdx = 0;
                 foreach (var cat in ordenCats)
                 {
                     double val = cats.GetValueOrDefault(cat);
                     if (val <= 0) continue;
-                    segs.Children.Add(new Border
-                    {
-                        Width = Math.Max(1, val / maxTotal * AnchoBarra),
-                        Background = ColorDe(cat)
-                    });
+                    segsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(val, GridUnitType.Star) });
+                    var seg = new Border { Background = ColorDe(cat) };
+                    Grid.SetColumn(seg, colIdx++);
+                    segsGrid.Children.Add(seg);
                 }
 
                 var track = new Border
                 {
-                    Width = AnchoBarra, Height = 20, CornerRadius = new CornerRadius(4),
+                    Height = 20, CornerRadius = new CornerRadius(4),
                     Background = trackBrush, ClipToBounds = true,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
                     VerticalAlignment = VerticalAlignment.Center,
-                    Child = segs
+                    Child = segsGrid
                 };
-                var barRow = new StackPanel
-                {
-                    Orientation = Orientation.Horizontal,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
+
+                // Grid: col0 star = barra que estira, col1 auto = etiqueta del total
+                var barRow = new Grid { VerticalAlignment = VerticalAlignment.Center };
+                barRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                barRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                Grid.SetColumn(track, 0);
                 barRow.Children.Add(track);
-                barRow.Children.Add(new TextBlock
+                var tTotBar = new TextBlock
                 {
                     Text = Fmt(total), FontSize = 12, FontWeight = FontWeights.Bold,
                     VerticalAlignment = VerticalAlignment.Center,
                     Margin = new Thickness(8, 0, 0, 0),
                     Foreground = textBrush
-                });
+                };
+                Grid.SetColumn(tTotBar, 1);
+                barRow.Children.Add(tTotBar);
                 card.Children.Add(barRow);
 
                 PanelFamilias.Children.Add(card);
