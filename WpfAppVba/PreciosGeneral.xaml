@@ -174,9 +174,9 @@
 
             <!-- Botones -->
             <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-                <Button Content="Nuevo Precio"    Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"   Click="BtnNuevoPrecio_Click"/>
-                <Button Content="Editar Precio"   Margin="0,0,6,0" Style="{StaticResource BtnSecundario}" Click="BtnEditarPrecio_Click"/>
-                <Button Content="Eliminar Precio" Margin="0,0,6,0" Style="{StaticResource BtnPeligro}"    Click="BtnEliminarPrecio_Click"/>
+                <Button x:Name="BtnNuevoPrecio"    Content="Nuevo Precio"    Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"   Click="BtnNuevoPrecio_Click"/>
+                <Button x:Name="BtnEditarPrecio"   Content="Editar Precio"   Margin="0,0,6,0" Style="{StaticResource BtnSecundario}" Click="BtnEditarPrecio_Click"/>
+                <Button x:Name="BtnEliminarPrecio" Content="Eliminar Precio" Margin="0,0,6,0" Style="{StaticResource BtnPeligro}"    Click="BtnEliminarPrecio_Click"/>
                 <Button Content="Cambiar Estado"  Margin="0,0,6,0" Style="{StaticResource BtnSuccess}"    Click="BtnCambiarEstado_Click"/>
                 <Button Content="Actualizar"      Margin="0,0,0,0" Style="{StaticResource BtnSecundario}" Click="BtnActualizar_Click"/>
             </StackPanel>

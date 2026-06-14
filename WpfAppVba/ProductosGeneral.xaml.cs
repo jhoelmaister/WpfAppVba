@@ -50,10 +50,11 @@ namespace WpfAppVba
         // ─── Configurar modo (selector vs normal) ─────────────────────────────
         private void ConfigurarModo()
         {
-            BtnSeleccionar.Visibility = ModoSelector ? Visibility.Visible   : Visibility.Collapsed;
-            BtnNuevo.Visibility       = ModoSelector ? Visibility.Collapsed : Visibility.Visible;
-            BtnEditar.Visibility      = ModoSelector ? Visibility.Collapsed : Visibility.Visible;
-            BtnEliminar.Visibility    = ModoSelector ? Visibility.Collapsed : Visibility.Visible;
+            bool ocultarCrud = ModoSelector || !AppState.EsAdmin;
+            BtnSeleccionar.Visibility = ModoSelector   ? Visibility.Visible   : Visibility.Collapsed;
+            BtnNuevo.Visibility       = ocultarCrud    ? Visibility.Collapsed : Visibility.Visible;
+            BtnEditar.Visibility      = ocultarCrud    ? Visibility.Collapsed : Visibility.Visible;
+            BtnEliminar.Visibility    = ocultarCrud    ? Visibility.Collapsed : Visibility.Visible;
         }
 
         // ─── Carga la lista ────────────────────────────────────────────────────
@@ -208,6 +209,7 @@ namespace WpfAppVba
 
         private void AbrirEditar()
         {
+            if (!AppState.EsAdmin) return;
             if (Grid1.SelectedItem is not ProductoFila fila) return;
             string idSel = fila.Id;
             int    linea = fila.Linea;

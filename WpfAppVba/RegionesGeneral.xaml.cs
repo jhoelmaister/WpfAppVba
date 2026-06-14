@@ -54,11 +54,19 @@ namespace WpfAppVba
 
         private void ConfigurarModo()
         {
-            if (!ModoSelector) return;
-            BtnNuevo.Visibility       = Visibility.Collapsed;
-            BtnEditar.Visibility      = Visibility.Collapsed;
-            BtnEliminar.Visibility    = Visibility.Collapsed;
-            BtnSeleccionar.Visibility = Visibility.Visible;
+            if (ModoSelector)
+            {
+                BtnNuevo.Visibility       = Visibility.Collapsed;
+                BtnEditar.Visibility      = Visibility.Collapsed;
+                BtnEliminar.Visibility    = Visibility.Collapsed;
+                BtnSeleccionar.Visibility = Visibility.Visible;
+            }
+            else if (!AppState.EsAdmin)
+            {
+                BtnNuevo.Visibility    = Visibility.Collapsed;
+                BtnEditar.Visibility   = Visibility.Collapsed;
+                BtnEliminar.Visibility = Visibility.Collapsed;
+            }
         }
 
         // ─── Carga la lista ────────────────────────────────────────────────────
@@ -210,6 +218,7 @@ namespace WpfAppVba
 
         private void AbrirEditar()
         {
+            if (!AppState.EsAdmin) return;
             if (Grid1.SelectedItem is not RegionFila fila) return;
             string idSel = fila.Id;
             int    linea = fila.Linea;

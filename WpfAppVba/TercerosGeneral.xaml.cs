@@ -29,11 +29,17 @@ namespace WpfAppVba
 
         private void ConfigurarModo()
         {
-            if (!_modoSelector) return;
-            BtnNuevo.Visibility       = Visibility.Collapsed;
-            BtnEditar.Visibility      = Visibility.Collapsed;
-            BtnEliminar.Visibility    = Visibility.Collapsed;
-            BtnSeleccionar.Visibility = Visibility.Visible;
+            if (_modoSelector)
+            {
+                BtnNuevo.Visibility       = Visibility.Collapsed;
+                BtnEditar.Visibility      = Visibility.Collapsed;
+                BtnEliminar.Visibility    = Visibility.Collapsed;
+                BtnSeleccionar.Visibility = Visibility.Visible;
+            }
+            else if (!AppState.EsAdmin)
+            {
+                BtnEliminar.Visibility = Visibility.Collapsed;
+            }
         }
 
         public static void OpenAsDialog(Window owner, bool modoSelector = false, string contexto = "", Action? onCerrado = null, UIElement? llamador = null)

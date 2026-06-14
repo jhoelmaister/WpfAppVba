@@ -26,7 +26,12 @@ namespace WpfAppVba
         public TraspasosGeneral()
         {
             InitializeComponent();
-            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarMeses(); CargarTraspasos(); };
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarMeses(); CargarTraspasos(); };
+        }
+
+        private void ConfigurarModo()
+        {
+            if (!AppState.EsAdmin) BtnEliminar.Visibility = Visibility.Collapsed;
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────

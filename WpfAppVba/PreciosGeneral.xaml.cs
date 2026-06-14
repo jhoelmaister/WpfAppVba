@@ -21,7 +21,17 @@ namespace WpfAppVba
         public PreciosGeneral()
         {
             InitializeComponent();
-            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarRegiones(); CargarArbol(); CargarArticulos(); };
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarRegiones(); CargarArbol(); CargarArticulos(); };
+        }
+
+        private void ConfigurarModo()
+        {
+            if (!AppState.EsAdmin)
+            {
+                BtnNuevoPrecio.Visibility    = Visibility.Collapsed;
+                BtnEditarPrecio.Visibility   = Visibility.Collapsed;
+                BtnEliminarPrecio.Visibility = Visibility.Collapsed;
+            }
         }
 
         public void IntentarCerrar() => Cerrando?.Invoke();
@@ -314,6 +324,7 @@ namespace WpfAppVba
         // ─── Botones de precio ────────────────────────────────────────────────
         private void BtnNuevoPrecio_Click(object sender, RoutedEventArgs e)
         {
+            if (!AppState.EsAdmin) return;
             if (ArticuloSeleccionado is not PrecioArticuloFila fila)
             {
                 MessageBox.Show("Seleccione un artículo primero.", "Consola",
@@ -348,6 +359,7 @@ namespace WpfAppVba
 
         private void BtnEditarPrecio_Click(object sender, RoutedEventArgs e)
         {
+            if (!AppState.EsAdmin) return;
             if (ArticuloSeleccionado is not PrecioArticuloFila art) return;
             if (GridPrecios.SelectedItem is not PrecioHistFila fila) return;
 
@@ -374,6 +386,7 @@ namespace WpfAppVba
 
         private void BtnEliminarPrecio_Click(object sender, RoutedEventArgs e)
         {
+            if (!AppState.EsAdmin) return;
             if (GridPrecios.SelectedItem is not PrecioHistFila fila) return;
 
             var res = MessageBox.Show("¿Eliminar este registro de precio?", "Consola",

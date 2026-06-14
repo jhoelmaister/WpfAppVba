@@ -26,7 +26,12 @@ namespace WpfAppVba
         public CorreccionesGeneral()
         {
             InitializeComponent();
-            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarMeses(); CargarCorrecciones(); };
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarMeses(); CargarCorrecciones(); };
+        }
+
+        private void ConfigurarModo()
+        {
+            if (!AppState.EsAdmin) BtnEliminar.Visibility = Visibility.Collapsed;
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────

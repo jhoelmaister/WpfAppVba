@@ -26,7 +26,12 @@ namespace WpfAppVba
         public PedidosGeneral()
         {
             InitializeComponent();
-            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarMeses(); CargarPedidos(); };
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarMeses(); CargarPedidos(); };
+        }
+
+        private void ConfigurarModo()
+        {
+            if (!AppState.EsAdmin) BtnEliminar.Visibility = Visibility.Collapsed;
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────

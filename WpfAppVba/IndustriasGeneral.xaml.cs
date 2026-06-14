@@ -50,10 +50,10 @@ namespace WpfAppVba
         // ─── Configurar modo (selector vs normal) ─────────────────────────────
         private void ConfigurarModo()
         {
-            BtnSeleccionar.Visibility = ModoSelector ? Visibility.Visible   : Visibility.Collapsed;
-            BtnNuevo.Visibility       = ModoSelector ? Visibility.Collapsed : Visibility.Visible;
-            BtnEditar.Visibility      = ModoSelector ? Visibility.Collapsed : Visibility.Visible;
-            BtnEliminar.Visibility    = ModoSelector ? Visibility.Collapsed : Visibility.Visible;
+            BtnSeleccionar.Visibility = ModoSelector             ? Visibility.Visible   : Visibility.Collapsed;
+            BtnNuevo.Visibility       = ModoSelector             ? Visibility.Collapsed : Visibility.Visible;
+            BtnEditar.Visibility      = ModoSelector             ? Visibility.Collapsed : Visibility.Visible;
+            BtnEliminar.Visibility    = (ModoSelector || !AppState.EsAdmin) ? Visibility.Collapsed : Visibility.Visible;
         }
 
         // ─── Carga la lista ────────────────────────────────────────────────────

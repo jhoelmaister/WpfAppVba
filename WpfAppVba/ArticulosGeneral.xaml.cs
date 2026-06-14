@@ -100,7 +100,7 @@ namespace WpfAppVba
             BtnNuevo.Visibility        = esDialog     ? Visibility.Collapsed : Visibility.Visible;
             BtnInsertar.Visibility     = esDialog     ? Visibility.Collapsed : Visibility.Visible;
             BtnEditar.Visibility       = esDialog     ? Visibility.Collapsed : Visibility.Visible;
-            BtnEliminar.Visibility     = esDialog     ? Visibility.Collapsed : Visibility.Visible;
+            BtnEliminar.Visibility     = (esDialog || !AppState.EsAdmin) ? Visibility.Collapsed : Visibility.Visible;
 
             // Columna checkbox (✓) y columna "#" solo visibles en modo importar
             var visibilidad = ModoExportar ? Visibility.Visible : Visibility.Collapsed;

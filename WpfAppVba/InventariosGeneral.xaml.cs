@@ -16,7 +16,12 @@ namespace WpfAppVba
         public InventariosGeneral()
         {
             InitializeComponent();
-            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarInventarios(); };
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarInventarios(); };
+        }
+
+        private void ConfigurarModo()
+        {
+            if (!AppState.EsAdmin) BtnEliminar.Visibility = Visibility.Collapsed;
         }
 
         // ─── Carga la lista ────────────────────────────────────────────────────

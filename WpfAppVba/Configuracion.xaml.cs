@@ -55,6 +55,10 @@ namespace WpfAppVba
                 TxtApellidos.Text = apellidos;
                 TxtTipo.Text      = tipo;
 
+                bool esAdmin = AppState.EsAdmin;
+                CmbEmpresa.IsEnabled   = esAdmin;
+                CmbSucursal.IsEnabled  = esAdmin;
+
                 // Tema: si el valor de BD no es válido, usar el tema activo o "claro"
                 string temaInicial = temaDb.Trim().ToLowerInvariant() == ThemeManager.TemaOscuro
                     ? ThemeManager.TemaOscuro

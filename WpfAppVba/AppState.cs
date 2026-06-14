@@ -18,6 +18,8 @@ namespace WpfAppVba.Data
         public static string UsuarioActivo     { get; set; } = "";
         public static string AperturaIdActiva  { get; set; } = "";
         public static string TemaActivo        { get; set; } = "claro";
+        public static string TipoUsuario       { get; set; } = "";
+        public static bool   EsAdmin           => TipoUsuario == "admin";
 
         // ─── Rango de fechas activo ───────────────────────────────────────────
         public static DateTime DataFechaInicio { get; set; }

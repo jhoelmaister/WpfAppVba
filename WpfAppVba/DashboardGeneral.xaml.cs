@@ -484,26 +484,14 @@ namespace WpfAppVba
             {
                 var card = new StackPanel { Margin = new Thickness(0, 0, 0, 14) };
 
-                // Título de la familia + total a la derecha
-                var titulo = new Grid();
-                titulo.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                titulo.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                // Título de la familia
                 var tFam = new TextBlock
                 {
                     Text = fam, FontSize = 12, FontWeight = FontWeights.SemiBold,
                     TextTrimming = TextTrimming.CharacterEllipsis,
-                    Foreground = textBrush, Margin = new Thickness(0, 0, 8, 0)
+                    Foreground = textBrush, Margin = new Thickness(0, 0, 0, 0)
                 };
-                Grid.SetColumn(tFam, 0);
-                titulo.Children.Add(tFam);
-                var tTot = new TextBlock
-                {
-                    Text = Fmt(total), FontSize = 12, FontWeight = FontWeights.Bold,
-                    Foreground = textBrush
-                };
-                Grid.SetColumn(tTot, 1);
-                titulo.Children.Add(tTot);
-                card.Children.Add(titulo);
+                card.Children.Add(tFam);
 
                 // Totales por categoría (entre el título y la barra)
                 var chips = new WrapPanel { Margin = new Thickness(0, 4, 0, 4) };
@@ -556,10 +544,23 @@ namespace WpfAppVba
                 {
                     Width = AnchoBarra, Height = 20, CornerRadius = new CornerRadius(4),
                     Background = trackBrush, ClipToBounds = true,
-                    HorizontalAlignment = HorizontalAlignment.Left,
+                    VerticalAlignment = VerticalAlignment.Center,
                     Child = segs
                 };
-                card.Children.Add(track);
+                var barRow = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                barRow.Children.Add(track);
+                barRow.Children.Add(new TextBlock
+                {
+                    Text = Fmt(total), FontSize = 12, FontWeight = FontWeights.Bold,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(8, 0, 0, 0),
+                    Foreground = textBrush
+                });
+                card.Children.Add(barRow);
 
                 PanelFamilias.Children.Add(card);
             }

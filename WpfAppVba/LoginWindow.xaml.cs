@@ -126,6 +126,7 @@ namespace WpfAppVba
             if (encontrado)
             {
                 AppState.UsuarioActivo  = idEncontrado;
+                AppState.TipoUsuario    = Sql.UsuariosObj.ObtenerItem("tipo",     idEncontrado)?.ToString() ?? "";
                 AppState.EmpresaActiva  = Sql.UsuariosObj.ObtenerItem("empresa",  idEncontrado)?.ToString() ?? "";
                 AppState.SucursalActiva = Sql.UsuariosObj.ObtenerItem("sucursal", idEncontrado)?.ToString() ?? "";
                 AppState.RegionActiva   = Sql.SucursalesObj.ObtenerItem("region", AppState.SucursalActiva)?.ToString() ?? "";
