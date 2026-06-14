@@ -124,7 +124,6 @@ namespace WpfAppVba
             if (sucItem != null) CmbSucursal.SelectedItem = sucItem;
             else if (CmbSucursal.Items.Count > 0) CmbSucursal.SelectedIndex = 0;
 
-            Box_Llave.Password = "";
         }
 
         private void CargarParaNuevo()
