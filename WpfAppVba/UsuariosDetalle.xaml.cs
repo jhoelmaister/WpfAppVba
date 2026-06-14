@@ -12,10 +12,9 @@ namespace WpfAppVba
 
         private readonly UsuariosGeneral? _padre;
         private readonly string _idEditar;
-        private bool _hayCambios     = false;
-        private bool _cargando       = true;
-        private bool _iniciado       = false;
-        private bool _llaveModificada = false;
+        private bool _hayCambios = false;
+        private bool _cargando   = true;
+        private bool _iniciado   = false;
 
         public event Action? Cerrando;
 
@@ -52,20 +51,17 @@ namespace WpfAppVba
 
             if (AppState.EventoFormularioI == "modificar")
             {
-                LblTitulo.Text          = "Editar Usuario";
-                LblLlaveNota.Visibility = Visibility.Visible;
+                LblTitulo.Text = "Editar Usuario";
                 CargarParaEditar();
             }
             else
             {
-                LblTitulo.Text          = "Nuevo Usuario";
-                LblLlaveNota.Visibility = Visibility.Collapsed;
+                LblTitulo.Text = "Nuevo Usuario";
                 CargarParaNuevo();
             }
 
-            _cargando        = false;
-            _hayCambios      = false;
-            _llaveModificada = false;
+            _cargando   = false;
+            _hayCambios = false;
         }
 
         private void CargarCombosEmpresa()
@@ -117,10 +113,6 @@ namespace WpfAppVba
             SeleccionarComboBoxItem(CmbEstadoU,
                 Sql.UsuariosObj.ObtenerItem("estadoU", id)?.ToString() ?? "activo");
 
-            string temaDb = (Sql.UsuariosObj.ObtenerItem("temaC", id)?.ToString() ?? "").Trim().ToLowerInvariant();
-            SeleccionarComboBoxItem(CmbTema,
-                temaDb == ThemeManager.TemaOscuro ? ThemeManager.TemaOscuro : ThemeManager.TemaClaro);
-
             // Empresa → dispara PoblarSucursales
             string empId = Sql.UsuariosObj.ObtenerItem("empresa", id)?.ToString() ?? "";
             var empItem  = CmbEmpresa.Items.OfType<EmpresaItem>().FirstOrDefault(x => x.Id == empId);
@@ -142,7 +134,6 @@ namespace WpfAppVba
 
             if (CmbTipo.Items.Count > 1)    CmbTipo.SelectedIndex    = 1; // "user"
             if (CmbEstadoU.Items.Count > 0) CmbEstadoU.SelectedIndex = 0; // "activo"
-            SeleccionarComboBoxItem(CmbTema, ThemeManager.TemaClaro);
 
             var activeEmp = CmbEmpresa.Items.OfType<EmpresaItem>()
                             .FirstOrDefault(x => x.Id == AppState.EmpresaActiva);
@@ -184,13 +175,6 @@ namespace WpfAppVba
             if (!_cargando) _hayCambios = true;
         }
 
-        private void Box_Llave_PasswordChanged(object sender, RoutedEventArgs e)
-        {
-            if (_cargando) return;
-            _hayCambios      = true;
-            _llaveModificada = Box_Llave.Password.Length > 0;
-        }
-
         // ─── Guardar ──────────────────────────────────────────────────────────
         private bool Guardar()
             => AppState.EventoFormularioI == "modificar" ? GuardarEditar() : GuardarNuevo();
@@ -213,14 +197,10 @@ namespace WpfAppVba
                 Sql.UsuariosObj.EstablecerItem("apellidos", id, Box_Apellidos.Text.Trim());
                 Sql.UsuariosObj.EstablecerItem("tipo",      id, ObtenerComboValor(CmbTipo));
                 Sql.UsuariosObj.EstablecerItem("estadoU",   id, ObtenerComboValor(CmbEstadoU));
-                Sql.UsuariosObj.EstablecerItem("temaC",     id, ObtenerComboValor(CmbTema));
                 Sql.UsuariosObj.EstablecerItem("empresa",   id, (CmbEmpresa.SelectedItem  as EmpresaItem)?.Id  ?? "");
                 Sql.UsuariosObj.EstablecerItem("sucursal",  id, (CmbSucursal.SelectedItem as SucursalItem)?.Id ?? "");
                 Sql.UsuariosObj.EstablecerItem("edicion",   id, DateTime.Now);
                 Sql.UsuariosObj.EstablecerItem("usuarioE",  id, AppState.UsuarioActivo);
-
-                if (_llaveModificada)
-                    Sql.UsuariosObj.EstablecerItem("llave", id, Box_Llave.Password);
 
                 Sql.UsuariosObj.OrdenarData(("codigo", false));
                 Sql.UsuariosObj.ExportarItems();
@@ -244,25 +224,16 @@ namespace WpfAppVba
                 return false;
             }
 
-            if (string.IsNullOrEmpty(Box_Llave.Password))
-            {
-                MessageBox.Show("La contraseña no puede estar vacía.", "Usuarios",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return false;
-            }
-
             try
             {
                 string id = Guid.NewGuid().ToString();
                 Sql.UsuariosObj.Nuevo(id);
                 Sql.UsuariosObj.EstablecerItem("codigo",    id, Box_Codigo.Text);
                 Sql.UsuariosObj.EstablecerItem("cuenta",    id, cuenta);
-                Sql.UsuariosObj.EstablecerItem("llave",     id, Box_Llave.Password);
                 Sql.UsuariosObj.EstablecerItem("nombres",   id, Box_Nombres.Text.Trim());
                 Sql.UsuariosObj.EstablecerItem("apellidos", id, Box_Apellidos.Text.Trim());
                 Sql.UsuariosObj.EstablecerItem("tipo",      id, ObtenerComboValor(CmbTipo));
                 Sql.UsuariosObj.EstablecerItem("estadoU",   id, ObtenerComboValor(CmbEstadoU));
-                Sql.UsuariosObj.EstablecerItem("temaC",     id, ObtenerComboValor(CmbTema));
                 Sql.UsuariosObj.EstablecerItem("empresa",   id, (CmbEmpresa.SelectedItem  as EmpresaItem)?.Id  ?? "");
                 Sql.UsuariosObj.EstablecerItem("sucursal",  id, (CmbSucursal.SelectedItem as SucursalItem)?.Id ?? "");
                 Sql.UsuariosObj.EstablecerItem("estadof",   id, "normal");

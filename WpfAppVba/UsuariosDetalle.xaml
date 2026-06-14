@@ -173,7 +173,7 @@
                     <StackPanel>
                         <TextBlock Style="{StaticResource CardHeader}" Text="● ACCESO"/>
 
-                        <Grid Margin="0,0,0,12">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="16"/>
@@ -198,22 +198,6 @@
                                 </ComboBox>
                             </StackPanel>
                         </Grid>
-
-                        <StackPanel>
-                            <TextBlock Style="{StaticResource SectionLabel}" Text="CONTRASEÑA"/>
-                            <Border BorderBrush="{DynamicResource ThemeBordeInput}" BorderThickness="1"
-                                    CornerRadius="6" Background="{DynamicResource ThemeInputBg}" Height="36">
-                                <PasswordBox x:Name="Box_Llave" BorderThickness="0"
-                                             Background="Transparent" FontSize="13"
-                                             Padding="10,0" VerticalContentAlignment="Center"
-                                             Foreground="{DynamicResource ThemeTexto}"
-                                             PasswordChanged="Box_Llave_PasswordChanged"/>
-                            </Border>
-                            <TextBlock x:Name="LblLlaveNota" FontSize="10"
-                                       Foreground="{DynamicResource ThemeTextoSec}"
-                                       Margin="0,4,0,0" Visibility="Collapsed"
-                                       Text="Dejá vacío para no cambiar la contraseña actual."/>
-                        </StackPanel>
                     </StackPanel>
                 </Border>
 
@@ -242,22 +226,6 @@
                                           SelectionChanged="Campo_SelectionChanged"/>
                             </StackPanel>
                         </Grid>
-                    </StackPanel>
-                </Border>
-
-                <!-- ▸ CARD: TEMA -->
-                <Border Style="{StaticResource CardBorder}" Margin="0,0,0,0">
-                    <StackPanel>
-                        <TextBlock Style="{StaticResource CardHeader}" Text="● TEMA"/>
-                        <StackPanel>
-                            <TextBlock Style="{StaticResource SectionLabel}" Text="TEMA DE INTERFAZ"/>
-                            <ComboBox x:Name="CmbTema" Height="36" FontSize="13"
-                                      VerticalContentAlignment="Center"
-                                      SelectionChanged="Campo_SelectionChanged">
-                                <ComboBoxItem Content="claro"/>
-                                <ComboBoxItem Content="oscuro"/>
-                            </ComboBox>
-                        </StackPanel>
                     </StackPanel>
                 </Border>
 
