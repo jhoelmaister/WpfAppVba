@@ -522,8 +522,12 @@ namespace WpfAppVba
                 }
                 card.Children.Add(chips);
 
-                // Barra apilada que ocupa todo el ancho disponible.
-                // Segmentos proporcionales con columnas star; track con HorizontalAlignment=Stretch.
+                // Track que llena todo el ancho. Dentro: col0 coloreada (proporcional
+                // al total de esta familia vs la máxima), col1 vacía (fondo del track).
+                var innerGrid = new Grid();
+                innerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(total, GridUnitType.Star) });
+                innerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(0, maxTotal - total), GridUnitType.Star) });
+
                 var segsGrid = new Grid();
                 int colIdx = 0;
                 foreach (var cat in ordenCats)
@@ -535,6 +539,8 @@ namespace WpfAppVba
                     Grid.SetColumn(seg, colIdx++);
                     segsGrid.Children.Add(seg);
                 }
+                Grid.SetColumn(segsGrid, 0);
+                innerGrid.Children.Add(segsGrid);
 
                 var track = new Border
                 {
@@ -542,10 +548,10 @@ namespace WpfAppVba
                     Background = trackBrush, ClipToBounds = true,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     VerticalAlignment = VerticalAlignment.Center,
-                    Child = segsGrid
+                    Child = innerGrid
                 };
 
-                // Grid: col0 star = barra que estira, col1 auto = etiqueta del total
+                // Grid: col0 star = track ancho completo, col1 auto = etiqueta del total
                 var barRow = new Grid { VerticalAlignment = VerticalAlignment.Center };
                 barRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 barRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
