@@ -4,8 +4,10 @@
         xmlns:local="clr-namespace:WpfAppVba"
         Title="Sistema de Gestión"
         WindowState="Maximized"
+        MinWidth="960" MinHeight="620"
         WindowStartupLocation="CenterScreen"
         Background="#1E2235"
+        Icon="icono.ico"
         Closing="ConsolaMovimientos_Closing">
 
     <Window.Resources>
