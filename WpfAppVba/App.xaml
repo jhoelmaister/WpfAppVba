@@ -881,11 +881,6 @@
                 <Setter Property="TextAlignment"              Value="Right"/>
             </Style>
 
-            <!-- Icono global para todas las ventanas -->
-            <Style TargetType="Window">
-                <Setter Property="Icon" Value="icono.ico"/>
-            </Style>
-
         </ResourceDictionary>
     </Application.Resources>
 </Application>
