@@ -31,8 +31,12 @@ namespace WpfAppVba
         // Color asignado a cada categoría en el render actual.
         private readonly Dictionary<string, Brush> _colorCat = new();
 
-        private const double AlturaGrafico = 280;   // px de la zona de barras (meses)
+        private double _alturaGrafico = 280;        // px de la zona de barras (meses); dinámico por resolución
         private const double AnchoBarra    = 300;   // px de la barra apilada de familia (fijo)
+
+        // Cache del último cálculo del gráfico por mes (para re-render al cambiar el alto disponible).
+        private double[]? _porMesCache;
+        private Dictionary<int, Dictionary<string, double>>? _porMesCatCache;
 
         // Paleta de colores para categorías (se cicla si hay más categorías que colores).
         private static readonly Color[] Paleta =
@@ -189,6 +193,9 @@ namespace WpfAppVba
             LblMovimientos.Text  = Fmt(documentos.Count);
             LblArticulos.Text    = Fmt(articulosSet.Count);
 
+            _porMesCache    = porMes;
+            _porMesCatCache = porMesCat;
+
             RenderLeyenda(porCategoria);
             RenderMeses(porMes, porMesCat);
             RenderCategorias(porCategoria);
@@ -263,7 +270,7 @@ namespace WpfAppVba
             ZonaMeses.Visibility     = Visibility.Visible;
 
             _niceMax = NiceCeil(max);
-            PanelEjeY.Height = AlturaGrafico;
+            PanelEjeY.Height = _alturaGrafico;
             RenderEjeY();
 
             // Orden estable de categorías (por total) para agrupar igual en cada mes.
@@ -283,7 +290,7 @@ namespace WpfAppVba
                 };
 
                 // Zona de altura fija → barras alineadas al mismo eje base
-                var zona  = new Grid { Height = AlturaGrafico };
+                var zona  = new Grid { Height = _alturaGrafico };
                 var grupo = new StackPanel
                 {
                     Orientation = Orientation.Horizontal,
@@ -317,7 +324,7 @@ namespace WpfAppVba
                         barCol.Children.Add(new Border
                         {
                             Width = 20,
-                            Height = Math.Max(2, val / _niceMax * AlturaGrafico),
+                            Height = Math.Max(2, val / _niceMax * _alturaGrafico),
                             Background = ColorDe(cat),
                             CornerRadius = new CornerRadius(3, 3, 0, 0),
                             HorizontalAlignment = HorizontalAlignment.Center
@@ -362,7 +369,7 @@ namespace WpfAppVba
             for (int i = 0; i <= 4; i++)
             {
                 double frac = i / 4.0;
-                double y    = AlturaGrafico - frac * AlturaGrafico;
+                double y    = _alturaGrafico - frac * _alturaGrafico;
                 var lbl = new TextBlock
                 {
                     Text = Fmt(_niceMax * frac),
@@ -378,7 +385,21 @@ namespace WpfAppVba
         }
 
         // Cuadrícula horizontal detrás de las barras (se redibuja al cambiar el ancho).
-        private void PanelPlot_SizeChanged(object sender, SizeChangedEventArgs e) => DibujarCuadricula();
+        private void PanelPlot_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // Alto disponible para las barras (reservando ~46 px para el nombre del
+            // mes y su total debajo). Re-renderiza el gráfico por mes si cambió.
+            double nueva = Math.Max(120, e.NewSize.Height - 46);
+            if (_porMesCache != null && Math.Abs(nueva - _alturaGrafico) > 1)
+            {
+                _alturaGrafico = nueva;
+                RenderMeses(_porMesCache, _porMesCatCache!);
+            }
+            else
+            {
+                DibujarCuadricula();
+            }
+        }
 
         private void DibujarCuadricula()
         {
@@ -390,7 +411,7 @@ namespace WpfAppVba
             var brush = Tema("ThemeBorde", Color.FromRgb(0xDD, 0xDD, 0xDD));
             for (int i = 0; i <= 4; i++)
             {
-                double y = AlturaGrafico - (i / 4.0) * AlturaGrafico;
+                double y = _alturaGrafico - (i / 4.0) * _alturaGrafico;
                 var linea = new System.Windows.Shapes.Rectangle
                 {
                     Width = w,
