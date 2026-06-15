@@ -10,7 +10,7 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 - **Reportes Excel**: `ClosedXML 0.102.2`
 - **IDE recomendado**: Visual Studio 2022 / VS Code + extensión C#
 - **Proyecto**: `WpfAppVba/WpfAppVba.csproj`
-- **Rama de desarrollo activa**: `claude/affectionate-albattani-r2uilg`
+- **Rama de desarrollo activa**: `claude/confident-curie-t2etpj`
 
 ## Lo Que Está Implementado y Funciona
 
@@ -40,6 +40,7 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 | 🌐 Regiones | `RegionesGeneral` | `RegionesDetalle` (pestaña) | — |
 | 💲 Precios | `PreciosGeneral` | `PreciosDetalle` (pestaña) | RegionesGeneral (pestaña-selector) |
 | 🏢 Empresas | `EmpresasGeneral` | `EmpresasDetalle` (pestaña) | — |
+| 👤 Usuarios | `UsuariosGeneral` | `UsuariosDetalle` (pestaña) | — |
 | ⚙ Configuración | `Configuracion` (embedded) | — | — |
 
 ### Paneles declarados en ConsolaMovimientos
@@ -60,6 +61,7 @@ private readonly RegionesGeneral     _panelRegiones      = new();
 private readonly EmpresasGeneral     _panelEmpresas      = new();
 private readonly Configuracion       _panelConfiguracion = new();
 private          DashboardGeneral    _panelDashboard     = new(); // sección "dashboard"
+private          UsuariosGeneral     _panelUsuarios      = new(); // solo admin; recreado en RecargarContexto
 ```
 
 ### Patrones de comportamiento implementados
@@ -168,6 +170,51 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - **Rama de trabajo**: la sesión actual trabaja en `claude/cool-hopper-vo3mxo`. (La sesión previa de multi-empresa fue `claude/brave-albattani-03ox62`.)
 
 ## Historial de Cambios por Sesión
+
+### Sesión 2026-06-15 — Dashboard bars, sección Usuarios y ícono global (rama `claude/confident-curie-t2etpj`)
+
+#### Dashboard — barras de familia proporcionales al ancho
+- **`DashboardGeneral.xaml`**: `PanelFamilias` ScrollViewer cambiado a `HorizontalScrollBarVisibility="Disabled"` para que las columnas star tengan ancho finito.
+- **`DashboardGeneral.xaml.cs`** `RenderFamilias()`: las barras ahora usan un `innerGrid` con 2 columnas star (`total` | `maxTotal - total`); la primera columna contiene un `segsGrid` con los segmentos por categoría (star proporcional a su valor). El `track` Border usa `HorizontalAlignment=Stretch` para ocupar todo el ancho del card. El total numérico queda a la derecha pegado a la barra (`barRow` con col 1 = Auto).
+
+#### Nueva sección Usuarios (solo admin)
+- **`UsuariosGeneral.xaml/.cs`** (nuevo UserControl):
+  - Lista con DataGrid: Línea / Código / Cuenta / Nombres / Apellidos / Tipo / Estado.
+  - Buscador por cuenta/nombres/apellidos; botones Nuevo/Editar/Eliminar/Actualizar.
+  - Guarda contra eliminar al usuario activo (`fila.Id == AppState.UsuarioActivo`).
+  - `UsuarioFila`: Linea, Id, Codigo, Cuenta, Nombres, Apellidos, Tipo, EstadoU.
+- **`UsuariosDetalle.xaml/.cs`** (nuevo UserControl):
+  - Cards: IDENTIFICACIÓN (Código read-only + Cuenta), DATOS PERSONALES (Nombres + Apellidos), ACCESO (CmbTipo [admin/user] + TxtEstadoU read-only TextBlock), EMPRESA Y SUCURSAL (CmbEmpresa + CmbSucursal dependiente).
+  - Sin campo contraseña ni tema (eliminados del formulario).
+  - `TxtEstadoU` es un `TextBlock` dentro de `Border` con `ThemeBgReadOnly` — no editable.
+  - `EmpresaItem` / `SucursalItem` como clases internas privadas.
+  - `PoblarSucursales(empresaId)` hace consulta directa filtrada por empresa.
+  - `GuardarNuevo`: setea `estadoU = "inactivo"`, `estadof = "normal"`.
+  - `GuardarEditar`: NO modifica `estadoU` (gestionado automáticamente).
+- **`ConsolaMovimientos.xaml`**: botón `👤 Usuarios` (`BtnNav_Usuarios`) con `Visibility="Collapsed"` antes de Configuración; `MinWidth="960"` `MinHeight="620"`; `Closing="ConsolaMovimientos_Closing"`.
+- **`ConsolaMovimientos.xaml.cs`**:
+  - En constructor: `if (AppState.EsAdmin) BtnNav_Usuarios.Visibility = Visibility.Visible;`
+  - `_panelUsuarios` (mutable, recreado en `RecargarContexto()`); sección `"usuarios"` en ambos diccionarios.
+  - `MarcarInactivo()`: guarda `estadoU = "inactivo"` para `AppState.UsuarioActivo`; con guard `if (string.IsNullOrEmpty(...)) return;` para evitar doble ejecución.
+  - `ConsolaMovimientos_Closing`: llama `MarcarInactivo()`.
+  - `BtnCerrarSesion_Click`: llama `MarcarInactivo()` antes de limpiar `AppState.UsuarioActivo` (doble llamada en Closing es segura por el guard).
+- **`LoginWindow.xaml.cs`**: al autenticar, setea `estadoU = "activo"` y llama `ExportarItems()` antes de abrir `ConsolaMovimientos`.
+
+#### Ícono de aplicación en todas las ventanas
+- **`WpfAppVba.csproj`**: `<ApplicationIcon>icono.ico</ApplicationIcon>` + `<Resource Include="icono.ico"/>`.
+- **`ConsolaMovimientos.xaml`**: `Icon="icono.ico"` en el elemento `Window`.
+- **`App.xaml.cs`**: en el constructor, se crea `BitmapFrame.Create(new Uri("pack://application:,,,/icono.ico", UriKind.Absolute))` y se asigna a cada ventana vía el `EventManager.RegisterClassHandler` existente de `Window.Loaded` (mismo handler que aplica el modo oscuro). Esto garantiza que el ícono aparece en la barra de tareas y título de TODAS las ventanas (LoginWindow, ConsolaMovimientos, diálogos).
+  - Nota: la aproximación anterior con `<Style TargetType="Window">` en `App.xaml` no funciona porque WPF no aplica estilos implícitos de Application.Resources a subclases de Window.
+
+#### Distribución / Instalador
+- Publicación self-contained con archivo único:
+  ```
+  dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=none
+  ```
+  Resultado: 7 archivos en `bin\Release\net8.0-windows\win-x64\publish\` (1 exe ~162 MB + 6 DLLs nativas de WPF inevitables).
+- Instalador creado con **Inno Setup 6.7.3** (asistente Script Wizard): idiomas Inglés + Español; modo administrativo; acceso directo en escritorio y menú Inicio; output `Setup_SistemaGestion.exe`. Script `.iss` guardado para futuras actualizaciones (recompilar con F9 tras nuevo publish).
+
+---
 
 ### Sesión 2026-06-14 — AppSheets (sincronización), orden por `secuencia` y panel Dashboard (rama `claude/affectionate-albattani-r2uilg`)
 
@@ -528,9 +575,9 @@ dotnet run --project WpfAppVba.csproj
 
 ### Git (rama activa)
 ```bash
-git checkout claude/brave-albattani-03ox62
-git pull origin claude/brave-albattani-03ox62
-git push -u origin claude/brave-albattani-03ox62
+git checkout claude/confident-curie-t2etpj
+git pull origin claude/confident-curie-t2etpj
+git push -u origin claude/confident-curie-t2etpj
 ```
 
 ### Restaurar paquetes NuGet (si es necesario)
