@@ -330,51 +330,81 @@ namespace WpfAppVba.Data
                 }
             }
 
-            // ── INSERCIONES ──────────────────────────────────────────────────
-            if (insertRows.Count > 0)
-            {
-                string colsStr = string.Join(",",
-                    ColumnasPersistibles.Select(c => c.ColumnName));
+            // Nada que persistir: no se abre transacción ni conexión adicional.
+            if (insertRows.Count == 0 && updateRows.Count == 0) return;
 
-                foreach (var bloque in Chunks(insertRows, 1000))
+            // Estado original de cada fila a persistir. Si la transacción falla (p. ej.
+            // un corte de red a mitad del guardado), se restauran estos valores para NO
+            // perder los cambios pendientes en memoria y poder reintentar el guardado.
+            var estadosOriginales = insertRows.Concat(updateRows)
+                .Select(r => (row: r, estado: r["estadof"]))
+                .ToList();
+
+            // TRANSACCIÓN: el guardado es TODO-O-NADA. En red inestable evita documentos
+            // guardados a medias (cabecera sí, líneas no) si la conexión se cae a mitad.
+            using var tx = conn.BeginTransaction();
+            try
+            {
+                // ── INSERCIONES ──────────────────────────────────────────────
+                if (insertRows.Count > 0)
                 {
-                    var values = new List<string>();
-                    foreach (var row in bloque)
+                    string colsStr = string.Join(",",
+                        ColumnasPersistibles.Select(c => c.ColumnName));
+
+                    foreach (var bloque in Chunks(insertRows, 1000))
                     {
-                        row["estadof"] = "normal";
-                        values.Add("(" + FormatearFila(row) + ")");
+                        var values = new List<string>();
+                        foreach (var row in bloque)
+                        {
+                            row["estadof"] = "normal";
+                            values.Add("(" + FormatearFila(row) + ")");
+                        }
+                        string sql = $"INSERT INTO {_nombreTabla} ({colsStr}) VALUES {string.Join(",", values)}";
+                        using var cmd = new SqlCommand(sql, conn, tx);
+                        cmd.ExecuteNonQuery();
                     }
-                    string sql = $"INSERT INTO {_nombreTabla} ({colsStr}) VALUES {string.Join(",", values)}";
-                    using var cmd = new SqlCommand(sql, conn);
-                    cmd.ExecuteNonQuery();
                 }
+
+                // ── ACTUALIZACIONES ──────────────────────────────────────────
+                if (updateRows.Count > 0)
+                {
+                    var cols = ColumnasPersistibles
+                        .Where(c => !string.Equals(c.ColumnName, "id", StringComparison.OrdinalIgnoreCase))
+                        .ToList(); // sin id ni columnas autogeneradas (secuencia)
+                    string setParts  = string.Join(", ", cols.Select((c, i) => $"{c.ColumnName} = @p{i}"));
+                    string sqlUpdate = $"UPDATE {_nombreTabla} SET {setParts} WHERE id = @id";
+
+                    foreach (var row in updateRows)
+                    {
+                        if (row["estadof"]?.ToString() == "editado")
+                            row["estadof"] = "normal";
+
+                        using var cmd = new SqlCommand(sqlUpdate, conn, tx);
+                        cmd.Parameters.AddWithValue("@id", row["id"] ?? DBNull.Value);
+                        for (int i = 0; i < cols.Count; i++)
+                        {
+                            var v = row[cols[i]];
+                            // strings vacíos → NULL en SQL Server
+                            if (v is string s && s.Length == 0) v = DBNull.Value;
+                            cmd.Parameters.AddWithValue($"@p{i}", v ?? DBNull.Value);
+                        }
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                tx.Commit();
             }
-
-            // ── ACTUALIZACIONES ──────────────────────────────────────────────
-            if (updateRows.Count > 0)
+            catch
             {
-                var cols = ColumnasPersistibles
-                    .Where(c => !string.Equals(c.ColumnName, "id", StringComparison.OrdinalIgnoreCase))
-                    .ToList(); // sin id ni columnas autogeneradas (secuencia)
-                string setParts  = string.Join(", ", cols.Select((c, i) => $"{c.ColumnName} = @p{i}"));
-                string sqlUpdate = $"UPDATE {_nombreTabla} SET {setParts} WHERE id = @id";
+                // El servidor aborta la transacción ante un corte; el Rollback puede
+                // fallar si la conexión ya cayó, por eso va protegido.
+                try { tx.Rollback(); } catch { /* conexión perdida: la tx queda abortada igual */ }
 
-                foreach (var row in updateRows)
-                {
-                    if (row["estadof"]?.ToString() == "editado")
-                        row["estadof"] = "normal";
+                // Restaurar los estadof en memoria para conservar los cambios pendientes.
+                foreach (var (row, estado) in estadosOriginales)
+                    row["estadof"] = estado;
 
-                    using var cmd = new SqlCommand(sqlUpdate, conn);
-                    cmd.Parameters.AddWithValue("@id", row["id"] ?? DBNull.Value);
-                    for (int i = 0; i < cols.Count; i++)
-                    {
-                        var v = row[cols[i]];
-                        // strings vacíos → NULL en SQL Server
-                        if (v is string s && s.Length == 0) v = DBNull.Value;
-                        cmd.Parameters.AddWithValue($"@p{i}", v ?? DBNull.Value);
-                    }
-                    cmd.ExecuteNonQuery();
-                }
+                throw;
             }
         }
 

@@ -15,7 +15,10 @@ namespace WpfAppVba.Data
 
         private static string ConnectionString =>
             $"Server={_server};Database={_database};User Id={_user};Password={_password};" +
-            $"Application Name=edber;Connect Timeout=10;Command Timeout=10;TrustServerCertificate=True;";
+            $"Application Name=edber;Connect Timeout=10;Command Timeout=10;TrustServerCertificate=True;" +
+            // Resiliencia ante red inestable: reconecta de forma transparente una
+            // conexión idle que se rompió por un microcorte (idle connection resiliency).
+            $"Connect Retry Count=3;Connect Retry Interval=10;Pooling=true;";
 
         // ─── Configurar credenciales ──────────────────────────────────────────
         public static void Configurar(string server, string database, string user, string password)
