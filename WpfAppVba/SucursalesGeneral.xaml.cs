@@ -213,6 +213,9 @@ namespace WpfAppVba
 
         private void BtnEliminar_Click(object sender, RoutedEventArgs e)
         {
+            // Verificación de conexión en 2 capas antes de persistir el borrado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             if (!EsAdmin())
             {
                 MessageBox.Show("Se requieren permisos de administrador.", "Consola",

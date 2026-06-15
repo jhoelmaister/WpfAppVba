@@ -184,6 +184,9 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not FamiliaFila fila) return;
 
+            // Verificación de conexión en 2 capas antes de persistir el borrado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             var res = MessageBox.Show("¿Eliminar esta familia?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
 

@@ -389,6 +389,9 @@ namespace WpfAppVba
             if (!AppState.EsAdmin) return;
             if (GridPrecios.SelectedItem is not PrecioHistFila fila) return;
 
+            // Verificación de conexión en 2 capas antes de persistir el borrado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             var res = MessageBox.Show("¿Eliminar este registro de precio?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (res != MessageBoxResult.Yes) return;
@@ -414,6 +417,9 @@ namespace WpfAppVba
         // ─── Cambiar estado del artículo (mostrar/ocultar) ────────────────────
         private void BtnCambiarEstado_Click(object sender, RoutedEventArgs e)
         {
+            // Verificación de conexión en 2 capas antes de persistir el cambio de estado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             if (ArticuloSeleccionado is not PrecioArticuloFila fila)
             {
                 MessageBox.Show("Seleccione un artículo primero.", "Consola",

@@ -428,6 +428,9 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not TraspasoFila fila) return;
 
+            // Verificación de conexión en 2 capas antes de persistir el borrado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             var res = MessageBox.Show("¿Eliminar este traspaso y todos sus artículos?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (res != MessageBoxResult.Yes) return;

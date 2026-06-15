@@ -177,6 +177,9 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not CategoriaFila fila) return;
 
+            // Verificación de conexión en 2 capas antes de persistir el borrado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             var res = MessageBox.Show("¿Eliminar esta categoría?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
 

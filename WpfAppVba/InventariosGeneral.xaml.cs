@@ -147,6 +147,9 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not InventarioFila fila) return;
 
+            // Verificación de conexión en 2 capas antes de persistir el borrado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             // Solo se puede eliminar la apertura más reciente
             if (fila.Id != AppState.AperturaIdActiva)
             {

@@ -450,6 +450,9 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not PedidoFila fila) return;
 
+            // Verificación de conexión en 2 capas antes de persistir el borrado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             var res = MessageBox.Show("¿Eliminar este pedido y todos sus artículos?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
 
