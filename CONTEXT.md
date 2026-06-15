@@ -10,7 +10,7 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 - **Reportes Excel**: `ClosedXML 0.102.2`
 - **IDE recomendado**: Visual Studio 2022 / VS Code + extensión C#
 - **Proyecto**: `WpfAppVba/WpfAppVba.csproj`
-- **Rama de desarrollo activa**: `claude/confident-curie-t2etpj`
+- **Rama de desarrollo activa**: `claude/eloquent-hopper-gi9nlv`
 
 ## Lo Que Está Implementado y Funciona
 
@@ -170,6 +170,43 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - **Rama de trabajo**: la sesión actual trabaja en `claude/cool-hopper-vo3mxo`. (La sesión previa de multi-empresa fue `claude/brave-albattani-03ox62`.)
 
 ## Historial de Cambios por Sesión
+
+### Sesión 2026-06-15 — Resiliencia ante red inestable (Bolivia), guards de conexión y rediseño/escalado del Dashboard (rama `claude/eloquent-hopper-gi9nlv`)
+
+> Contexto: la conexión a SQL Server en Bolivia es inestable. El objetivo de la sesión fue evitar congelamientos, guardados corruptos y registros "fantasma" cuando la red se cae, más mejoras de UI en el Dashboard. **No se introdujo SQLite ni caché en disco** (se evaluó y descartó por riesgo de duplicar correlativos entre usuarios y romper la generación de códigos, que debe seguir siendo en vivo contra SQL Server).
+
+#### Resiliencia de escritura (`DataConsulta.ExportarItems` + `DatabaseConnection`)
+- **Transacción atómica por tabla**: `ExportarItems` envuelve sus INSERT + UPDATE en una sola `SqlTransaction` (todo-o-nada). En rollback restaura el `estadof` original en memoria para conservar los cambios pendientes y poder reintentar. ⚠️ La atomicidad es **por tabla**, NO por documento completo (un pedido se guarda en 4 tablas vía `OrdenarTablas` → `DocumentosPObj`, `PedidosObj`, `TrasaccionesObj`, `EntregasObj`, cada una con su propia transacción). La atomicidad multi-tabla quedó **pendiente** (limitación conocida).
+- **Inserts idempotentes**: el INSERT pasó de `VALUES (...)` a `INSERT ... SELECT ... FROM (VALUES …) AS v(cols) WHERE NOT EXISTS (SELECT 1 FROM tabla WHERE id = v.id)`, para que un reintento tras un ACK perdido no duplique filas por `id`. Los UPDATE ya son idempotentes.
+- **Descarte de inserts no persistidos (anti-fantasma)**: si `ExportarItems` falla definitivamente (tras reintentos), `DescartarInsertsNoPersistidos()` quita de la caché en memoria las filas en estado `"nuevo"` que no llegaron a SQL, para no dejar registros que se ven en la app pero no existen en la base. (Las ediciones que fallan quedan pendientes, no se revierten — limitación conocida.)
+- **`SqlRetry`** (nueva clase, `WpfAppVba.Data`): `SqlRetry.Ejecutar(Func/Action, intentos=3, baseMs=400)` reintenta con backoff exponencial **solo** ante errores SQL transitorios (números `-2, 53, 64, 121, 233, 1205, 10053/4/60/1, 11001, 40197, 40501, 40613`). Es **síncrono** (`Thread.Sleep`), así que un reintento añade una pausa breve en el hilo de UI. Envuelve: `ObtenerDatos` (lecturas), `ExportarItems` (la transacción completa) y los helpers en vivo (`CodigoExiste`, `SiguienteCodigoInt`, `SiguienteNumeroDoc`, `SiguienteNumeroDocPorEmpresa`, `MaxFecha`, `Maximo`, `VerificarId`, `IndicesNoNormales`).
+- **`DatabaseConnection.ConnectionString`**: se agregó `Connect Retry Count=3;Connect Retry Interval=10;Pooling=true;` (resiliencia de conexiones idle ante microcortes).
+- **`DatabaseConnection.Sondear(int timeoutSeg=2)`** (nuevo): sonda rápida con una conexión **propia y desechable** (timeout corto), que NO toca la conexión compartida; la usa el timer de estado de conexión.
+
+#### Estado de conexión (label en top bar) + guards de guardado/actualización
+- **`ConexionEstado`** (nueva clase estática, `WpfAppVba`): solo mantiene estado, sin UI. `EnLinea` (bool, optimista en `true`), evento `Cambio`, `Intervalo` (15 s). `Iniciar(Dispatcher)` arranca un `DispatcherTimer` que sondea en segundo plano (`DatabaseConnection.Sondear(2)` vía `Task.Run`) y marshaliza el cambio al hilo de UI. `Revisar()` fuerza una sonda inmediata.
+- **Label en la top bar** de `ConsolaMovimientos`: pill `PillConexion` + `LblConexion` ("●  En línea" verde `#2E7D32` / "●  Sin conexión" rojo `#C62828`), en la columna central. Se suscribe a `ConexionEstado.Cambio` en el ctor (`ConexionEstado.Iniciar(Dispatcher)`) y se da de baja en `ConsolaMovimientos_Closing`.
+- **`FuncionesComunes`**: `HayConexionOAvisa(owner, mensaje)` (capa 1: lee `ConexionEstado.EnLinea` instantáneo; capa 2 con cortocircuito `&&`: `TieneConexion()` real / `SELECT 1`); `VerificarConexionParaGuardar(owner)` ("Sin conexión. No se pueden guardar los cambios.") y `VerificarConexionParaActualizar(owner)` ("…no se pueden actualizar los datos.").
+- **Guard al GUARDAR** (`if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return [false];`) al inicio de `Guardar()` de los 14 `*Detalle` (Articulos, Categorias, Correcciones, Empresas, Familias, Industrias, Inventarios, Pedidos, Precios, Productos, Regiones, Sucursales, Terceros, Usuarios), `Configuracion.BtnGuardar_Click`/`BtnGuardarTema_Click` y `CambiarContrasena.BtnGuardar_Click`. (Se convirtieron a cuerpo de bloque los `Guardar()` que eran expresión.)
+- **Guard al ELIMINAR/cambiar estado**: en los `BtnEliminar_Click` de los 15 paneles `*General` y en `PreciosGeneral.BtnCambiarEstado_Click`. **NO** se guarda `ConsolaMovimientos.MarcarInactivo()` (presencia best-effort en logout, con su propio try/catch).
+- **Guard al ACTUALIZAR**: en los 16 `BtnActualizar_Click` (paneles General + Dashboard), con el mensaje de actualizar.
+
+#### Offline: arreglo del congelamiento de Configuración
+- `Configuracion.PoblarSucursales` / `ActualizarPeriodos` / `ActualizarFechaInicio`: si `ConexionEstado.EnLinea == false` usan el **caché en memoria** (`Sql.SucursalesObj` filtrado por empresa; `MaxFecha` solo se intenta online) en vez de consultar SQL Server. Antes, abrir la pestaña Configuración sin conexión consultaba SQL en el hilo de UI → con `SqlRetry` reintentaba y reventaba con `SqlException` (congelamiento ~10 s). Ahora abre al instante offline.
+
+#### AppSheets — solo "sincronizar todo"
+- Se **eliminó** `SincronizarAppsheetsDialog.xaml/.cs` y el método `AppsheetsSync.SincronizarSucursalActiva()` (y la lógica `suc != null` de los helpers `InsertarFaltantes`/`MarcarEliminados`, que ahora siempre cubren todas las sucursales de la empresa vía `CROSS JOIN`).
+- `Configuracion.BtnSincronizarAppsheets_Click` ahora llama **directamente** a `AppsheetsSync.SincronizarTodasLasSucursales()` (sin diálogo). `ArticulosGeneral` ya usaba esa función.
+
+#### Dashboard — rediseño de gráficos + escalado tipo zoom
+- **Reorganización a grilla 2 columnas × 3 filas** (`DashboardGeneral.xaml`): Col 1 = "Cantidad por mes y categoría" (filas 1-2, `RowSpan`) + "Suma por artículo" (fila 3); Col 2 = "Total por categoría" (fila 1) + "Total por familia" (filas 2-3, `RowSpan`).
+- **Escalado global tipo zoom**: TODO el contenido (segmentadores + KPIs + 3 gráficos) está envuelto en un **`Viewbox` (`Stretch="Uniform"`)** sobre un tamaño de diseño fijo `<Grid Width="1600" Height="860">`. Al minimizar/maximizar el conjunto se escala proporcionalmente; nada se recorta. (`Uniform` = sin deformar, puede dejar franja; alternativa `Fill` = llena sin franja pero deforma. Se evaluó un slider de zoom manual con `ScaleTransform`+`ScrollViewer` pero el usuario lo **revirtió**; quedó solo el escalado automático del Viewbox.)
+- **Scrolls internos selectivos** (respaldo si los datos exceden el diseño): "por mes" tiene **scroll horizontal** (su `PanelMeses` pasó de `UniformGrid` a `StackPanel Orientation="Horizontal"` para poder desbordar; el eje Y queda fijo fuera del scroll); "por categoría" y "por familia" tienen **scroll vertical**; la tabla "por artículo" conserva el scroll interno del `DataGrid`.
+
+#### Limitaciones conocidas (pendientes, NO implementadas)
+- **Atomicidad de documentos multi-tabla**: cabecera + líneas de un pedido/traspaso se guardan en transacciones separadas; un corte entre tablas puede dejar un documento incompleto en SQL. Requiere una transacción ambiental compartida en `DatabaseConnection` (cambio mayor en el acceso a datos).
+- **Revertir ediciones al fallar**: el anti-fantasma solo descarta INSERTs nuevos; una edición que falla deja la caché mostrando el valor nuevo aunque SQL tenga el viejo (hasta el próximo guardado/Actualizar). Requiere snapshot del valor previo.
+- **`SqlRetry` es síncrono**: los reintentos pausan brevemente el hilo de UI. Eliminarlo requeriría pasar el acceso a datos a async.
 
 ### Sesión 2026-06-15 — Dashboard bars, sección Usuarios y ícono global (rama `claude/confident-curie-t2etpj`)
 
