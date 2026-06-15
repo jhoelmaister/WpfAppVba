@@ -107,7 +107,7 @@
         </Border>
 
         <!-- ══ CONTENIDO: escala como zoom (Viewbox) según el tamaño de la ventana ══ -->
-        <Viewbox Grid.Row="1" Margin="20,16,20,16" Stretch="Uniform">
+        <Viewbox Grid.Row="1" Margin="20,16,20,16" Stretch="UniformToFill">
             <!-- Tamaño de diseño fijo: el Viewbox escala TODO el conjunto (filtros,
                  totales y gráficos) de forma proporcional; nada se recorta al minimizar. -->
             <Grid Width="1600" Height="860">
