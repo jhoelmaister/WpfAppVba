@@ -86,6 +86,28 @@ namespace WpfAppVba
             ActualizarInfoUsuario();
             MarcarActivo(BtnNav_Articulos);
             if (AppState.EsAdmin) BtnNav_Usuarios.Visibility = Visibility.Visible;
+
+            // Estado de conexión: pintar el estado actual y escuchar cambios.
+            ActualizarLabelConexion(ConexionEstado.EnLinea);
+            ConexionEstado.Cambio += OnConexionCambio;
+            ConexionEstado.Iniciar(Dispatcher);
+        }
+
+        // ─── Estado de conexión (top bar) ─────────────────────────────────────
+        private void OnConexionCambio(bool enLinea) => ActualizarLabelConexion(enLinea);
+
+        private void ActualizarLabelConexion(bool enLinea)
+        {
+            if (enLinea)
+            {
+                LblConexion.Text = "●  En línea";
+                PillConexion.Background = new SolidColorBrush(Color.FromRgb(0x2E, 0x7D, 0x32)); // verde
+            }
+            else
+            {
+                LblConexion.Text = "●  Sin conexión";
+                PillConexion.Background = new SolidColorBrush(Color.FromRgb(0xC6, 0x28, 0x28)); // rojo
+            }
         }
 
         // ─── Info usuario ─────────────────────────────────────────────────────
@@ -473,6 +495,7 @@ namespace WpfAppVba
 
         private void ConsolaMovimientos_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            ConexionEstado.Cambio -= OnConexionCambio;
             MarcarInactivo();
         }
 

@@ -25,6 +25,29 @@ namespace WpfAppVba
         public static bool TieneConexion()
             => DatabaseConnection.ConexionEstaActiva();
 
+        // ─── Guard de conexión antes de guardar ───────────────────────────────
+        /// <summary>
+        /// Verifica la conexión ANTES de guardar, en dos capas:
+        ///   1) Estado del label (ConexionEstado.EnLinea): lectura instantánea, no congela.
+        ///      Si está offline, corta de inmediato.
+        ///   2) Si el label dice "en línea": verificación REAL (TieneConexion / SELECT 1)
+        ///      para mayor seguridad antes de escribir.
+        /// Si cualquiera falla, muestra una advertencia simple y devuelve false.
+        /// </summary>
+        public static bool VerificarConexionParaGuardar(Window? owner = null)
+        {
+            // Capa 1: estado del label (instantáneo).
+            // Capa 2: verificación real (solo si la capa 1 pasó, por el cortocircuito &&).
+            bool hay = ConexionEstado.EnLinea && TieneConexion();
+            if (!hay)
+            {
+                MessageBox.Show(owner,
+                    "Sin conexión. No se pueden guardar los cambios.",
+                    "Conexión", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            return hay;
+        }
+
         // ─── Equivalente a ValidarSoloNumeros ────────────────────────────────
         /// <summary>
         /// Usar en PreviewTextInput de un TextBox para aceptar solo dígitos.

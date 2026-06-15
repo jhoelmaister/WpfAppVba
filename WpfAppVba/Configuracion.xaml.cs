@@ -249,6 +249,10 @@ namespace WpfAppVba
         // ─── Guardar solo el tema ────────────────────────────────────────────
         private void BtnGuardarTema_Click(object sender, RoutedEventArgs e)
         {
+            // Verificación de conexión en 2 capas (label + chequeo real) antes de guardar.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this)))
+                return;
+
             try
             {
                 string usuId = AppState.UsuarioActivo.ToString();
@@ -274,6 +278,10 @@ namespace WpfAppVba
         // ─── Guardar ─────────────────────────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
+            // Verificación de conexión en 2 capas (label + chequeo real) antes de guardar.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this)))
+                return;
+
             // No se puede guardar sin una sucursal activa (empresa sin sucursales
             // o combo vacío): se requiere una sucursal para el contexto de trabajo.
             if (CmbSucursal.SelectedItem is not SucursalItem)
