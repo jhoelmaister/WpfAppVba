@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
@@ -10,6 +11,9 @@ namespace WpfAppVba
     public partial class LoginWindow : Window
     {
         private static SqlData Sql => SqlData.Instance;
+
+        // Reintenta la conexión automáticamente mientras no haya internet.
+        private DispatcherTimer? _reintentoTimer;
 
         public LoginWindow()
         {
@@ -46,18 +50,51 @@ namespace WpfAppVba
         {
             BtnIngresar.IsEnabled = false;
             MostrarEstado("Conectando a base de datos...", Colors.Gray);
+
+            bool conectado;
             try
             {
                 await Task.Run(() => AppLoader.ConectarProductos());
+                conectado = true;
+            }
+            catch
+            {
+                conectado = false;
+            }
+
+            if (conectado)
+            {
+                // Conexión recuperada: limpiar aviso y habilitar el login.
+                DetenerReintentos();
                 MostrarEstado("", Colors.Gray);
                 BtnIngresar.IsEnabled = true;
                 TxtCuenta.Focus();
             }
-            catch (Exception ex)
+            else
             {
-                MostrarEstado("Sin conexión: " + ex.Message, Colors.Red);
+                // Mensaje simple (sin volcar el error técnico de SQL Server).
+                MostrarEstado("⚠ Sin conexión. Reintentando…", Colors.Orange);
+                BtnIngresar.IsEnabled = false;
+                ProgramarReintento();
             }
         }
+
+        // ─── Auto-reconexión: reintenta cada 4 s hasta que vuelva el internet ─────
+        private void ProgramarReintento()
+        {
+            if (_reintentoTimer == null)
+            {
+                _reintentoTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
+                _reintentoTimer.Tick += async (_, _) =>
+                {
+                    _reintentoTimer!.Stop();                 // evita solapar intentos
+                    await ConectarBaseDatosAsync();          // reprograma solo si sigue offline
+                };
+            }
+            _reintentoTimer.Start();
+        }
+
+        private void DetenerReintentos() => _reintentoTimer?.Stop();
 
         // ─── Enter en contraseña dispara el login ──────────────────────────────
         private void TxtContrasena_KeyDown(object sender, KeyEventArgs e)

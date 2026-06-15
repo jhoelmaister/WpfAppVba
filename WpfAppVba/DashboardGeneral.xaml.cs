@@ -387,6 +387,10 @@ namespace WpfAppVba
         // Cuadrícula horizontal detrás de las barras (se redibuja al cambiar el ancho).
         private void PanelPlot_SizeChanged(object sender, SizeChangedEventArgs e)
         {
+            // Al minimizar la ventana el alto llega a ~0; ignorarlo para no borrar el
+            // gráfico (se re-renderiza al restaurar con un alto válido).
+            if (e.NewSize.Height <= 0) return;
+
             // Alto disponible para las barras (reservando ~46 px para el nombre del
             // mes y su total debajo). Re-renderiza el gráfico por mes si cambió.
             double nueva = Math.Max(120, e.NewSize.Height - 46);
