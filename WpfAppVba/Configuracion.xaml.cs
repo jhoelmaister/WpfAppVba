@@ -110,20 +110,46 @@ namespace WpfAppVba
             _sucursalesEmpresa = null;
             if (string.IsNullOrEmpty(empresaId)) return;
 
-            // Consulta directa: las sucursales de la empresa elegida pueden no estar
-            // en el caché global (que está filtrado por la empresa activa).
-            var sucursales = new DataConsulta();
-            sucursales.Conectar("sucursales",
-                $"SELECT * FROM sucursales WHERE estadof = 'normal' AND empresa = '{empresaId}' ORDER BY id ASC");
-            _sucursalesEmpresa = sucursales;
-
-            int total = sucursales.ContarFilas;
-            for (int i = 1; i <= total; i++)
+            // Online: consulta directa, ya que las sucursales de la empresa elegida pueden
+            // no estar en el caché global (que está filtrado por la empresa activa).
+            if (ConexionEstado.EnLinea)
             {
-                var idObj = sucursales.Mover(i);
+                try
+                {
+                    var sucursales = new DataConsulta();
+                    sucursales.Conectar("sucursales",
+                        $"SELECT * FROM sucursales WHERE estadof = 'normal' AND empresa = '{empresaId}' ORDER BY id ASC");
+                    _sucursalesEmpresa = sucursales;
+
+                    int total = sucursales.ContarFilas;
+                    for (int i = 1; i <= total; i++)
+                    {
+                        var idObj = sucursales.Mover(i);
+                        if (idObj == null) continue;
+                        string id = idObj.ToString()!;
+                        string desc = sucursales.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                        CmbSucursal.Items.Add(new SucursalItem { Id = id, Descripcion = desc });
+                    }
+                    return;
+                }
+                catch
+                {
+                    _sucursalesEmpresa = null;
+                    CmbSucursal.Items.Clear();
+                }
+            }
+
+            // Sin conexión (o falló la consulta): usar el caché global de sucursales
+            // filtrando por la empresa pedida. Evita el congelamiento por consultar SQL.
+            int totalCache = Sql.SucursalesObj.ContarFilas;
+            for (int i = 1; i <= totalCache; i++)
+            {
+                var idObj = Sql.SucursalesObj.Mover(i);
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
-                string desc = sucursales.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                string emp = Sql.SucursalesObj.ObtenerItem("empresa", id)?.ToString() ?? "";
+                if (emp != empresaId) continue;
+                string desc = Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
                 CmbSucursal.Items.Add(new SucursalItem { Id = id, Descripcion = desc });
             }
         }
@@ -148,8 +174,13 @@ namespace WpfAppVba
 
         private void ActualizarFechaInicio()
         {
-            if (CmbSucursal.SelectedItem is SucursalItem item && _sucursalesEmpresa != null)
-                TxtFechaInicio.Text = _sucursalesEmpresa.ObtenerItem("fecha", item.Id)?.ToString() ?? "";
+            if (CmbSucursal.SelectedItem is SucursalItem item)
+            {
+                // Offline _sucursalesEmpresa es null: caer al caché global de sucursales.
+                var fechaObj = _sucursalesEmpresa?.ObtenerItem("fecha", item.Id)
+                               ?? Sql.SucursalesObj.ObtenerItem("fecha", item.Id);
+                TxtFechaInicio.Text = fechaObj?.ToString() ?? "";
+            }
             else
                 TxtFechaInicio.Text = "";
         }
@@ -161,14 +192,23 @@ namespace WpfAppVba
             {
                 // Base = año de la MÁXIMA fecha de inventario de la sucursal. Si la
                 // sucursal no tiene inventarios, se usa el año de sucursal.fecha.
-                DateTime? maxInv = Sql.DocumentosIObj.MaxFecha("sucursal", item.Id);
+                // MaxFecha consulta SQL en vivo: solo se intenta si hay conexión (offline
+                // se cae al año de sucursal.fecha del caché, sin congelar).
+                DateTime? maxInv = null;
+                if (ConexionEstado.EnLinea)
+                {
+                    try { maxInv = Sql.DocumentosIObj.MaxFecha("sucursal", item.Id); }
+                    catch { maxInv = null; }
+                }
+
                 if (maxInv.HasValue)
                 {
                     inicioAno = maxInv.Value.Year;
                 }
-                else if (_sucursalesEmpresa != null)
+                else
                 {
-                    var fechaObj = _sucursalesEmpresa.ObtenerItem("fecha", item.Id);
+                    var fechaObj = _sucursalesEmpresa?.ObtenerItem("fecha", item.Id)
+                                   ?? Sql.SucursalesObj.ObtenerItem("fecha", item.Id);
                     if (fechaObj != null && DateTime.TryParse(fechaObj.ToString(), out DateTime fecha))
                         inicioAno = fecha.Year;
                 }
