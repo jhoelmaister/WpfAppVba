@@ -317,7 +317,34 @@ namespace WpfAppVba.Data
             if (!_tabla.Columns.Contains("estadof")) return;
             // Reintenta TODO el guardado (la transacción completa) ante fallos transitorios.
             // El insert idempotente evita duplicar si un reintento ocurre tras un ACK perdido.
-            SqlRetry.Ejecutar(() => ExportarItemsInterno());
+            try
+            {
+                SqlRetry.Ejecutar(() => ExportarItemsInterno());
+            }
+            catch
+            {
+                // Falló definitivamente tras los reintentos: quitar de la caché en memoria
+                // los INSERT que NO llegaron a SQL Server, para que no queden registros
+                // "fantasma" (visibles en la app pero inexistentes en la base de datos).
+                DescartarInsertsNoPersistidos();
+                throw;
+            }
+        }
+
+        // Quita de la caché las filas en estado "nuevo" (inserts que no se persistieron).
+        // Los UPDATE/borrados quedan pendientes (la fila ya existe en SQL) para reintentar.
+        private void DescartarInsertsNoPersistidos()
+        {
+            if (!_tabla.Columns.Contains("estadof")) return;
+            var fantasma = _tabla.Rows.Cast<DataRow>()
+                .Where(r => (r["estadof"]?.ToString() ?? "") == "nuevo")
+                .ToList();
+            foreach (var row in fantasma)
+            {
+                var key = row["id"]?.ToString()?.ToLower() ?? "";
+                if (key.Length > 0) _indiceId.Remove(key);
+                _tabla.Rows.Remove(row);
+            }
         }
 
         private void ExportarItemsInterno()
