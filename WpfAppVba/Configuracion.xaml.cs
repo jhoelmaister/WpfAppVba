@@ -246,20 +246,13 @@ namespace WpfAppVba
         // ─── Sincronizar AppSheets ────────────────────────────────────────────
         private void BtnSincronizarAppsheets_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new SincronizarAppsheetsDialog { Owner = Window.GetWindow(this) };
-            if (dlg.ShowDialog() != true ||
-                dlg.Opcion == SincronizarAppsheetsDialog.OpcionSync.Cancelar)
-                return;
-
             var btn = sender as Button;
             try
             {
                 if (btn != null) btn.IsEnabled = false;
                 Mouse.OverrideCursor = Cursors.Wait;
 
-                string resumen = dlg.Opcion == SincronizarAppsheetsDialog.OpcionSync.Todo
-                    ? AppsheetsSync.SincronizarTodasLasSucursales()
-                    : AppsheetsSync.SincronizarSucursalActiva();
+                string resumen = AppsheetsSync.SincronizarTodasLasSucursales();
 
                 MessageBox.Show(resumen, "Sincronizar AppSheets",
                                 MessageBoxButton.OK, MessageBoxImage.Information);
