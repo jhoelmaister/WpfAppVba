@@ -87,7 +87,10 @@ namespace WpfAppVba
 
         // ─── Guardar ─────────────────────────────────────────────────────────
         private bool Guardar()
-            => _modoEditar ? GuardarEditar() : GuardarNuevo();
+        {
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+            return _modoEditar ? GuardarEditar() : GuardarNuevo();
+        }
 
         private bool GuardarEditar()
         {

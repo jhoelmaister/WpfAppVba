@@ -699,7 +699,10 @@ namespace WpfAppVba
 
         // ─── Guardar ──────────────────────────────────────────────────────────
         private bool Guardar()
-            => AppState.EventoFormularioM == "editar" ? GuardarEditar() : GuardarNuevo();
+        {
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+            return AppState.EventoFormularioM == "editar" ? GuardarEditar() : GuardarNuevo();
+        }
 
         private bool GuardarNuevo()
         {

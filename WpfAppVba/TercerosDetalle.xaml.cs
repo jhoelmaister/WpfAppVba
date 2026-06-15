@@ -76,6 +76,8 @@ namespace WpfAppVba
         // ─── Guardar (equivalente a guardarCambios) ───────────────────────────
         private bool Guardar()
         {
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+
             return AppState.EventoFormularioL == "modificar"
                 ? GuardarEditar()
                 : GuardarNuevo();

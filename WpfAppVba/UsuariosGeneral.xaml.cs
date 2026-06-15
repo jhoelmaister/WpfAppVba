@@ -149,6 +149,9 @@ namespace WpfAppVba
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (res != MessageBoxResult.Yes) return;
 
+            // Verificación de conexión en 2 capas (label + chequeo real) antes de persistir.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             try
             {
                 Sql.UsuariosObj.EstablecerItem("edicion",  fila.Id, DateTime.Now);
