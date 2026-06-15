@@ -94,15 +94,15 @@ namespace WpfAppVba.Data
 
         // ─── MÁXIMO / VERIFICAR ───────────────────────────────────────────────
 
-        public object? Maximo(string columna)
+        public object? Maximo(string columna) => SqlRetry.Ejecutar(() =>
         {
             var conn = DatabaseConnection.ObtenerConexion();
             using var cmd = new SqlCommand($"SELECT MAX({columna}) AS maximo FROM {_nombreTabla}", conn);
             var result = cmd.ExecuteScalar();
             return result is DBNull ? null : result;
-        }
+        });
 
-        public bool VerificarId(string valor, string columna)
+        public bool VerificarId(string valor, string columna) => SqlRetry.Ejecutar(() =>
         {
             var conn = DatabaseConnection.ObtenerConexion();
             using var cmd = new SqlCommand(
@@ -110,7 +110,7 @@ namespace WpfAppVba.Data
             cmd.Parameters.AddWithValue("@val", valor);
             int total = (int)cmd.ExecuteScalar()!;
             return total == 0;
-        }
+        });
 
         // ─── GENERACIÓN DE CÓDIGO ─────────────────────────────────────────────
 
@@ -118,7 +118,7 @@ namespace WpfAppVba.Data
         /// Siguiente código entero para tablas maestras (familias, productos, etc.):
         /// MAX(codigo) + 1 considerando solo filas en estado normal.
         /// </summary>
-        public int SiguienteCodigoInt()
+        public int SiguienteCodigoInt() => SqlRetry.Ejecutar(() =>
         {
             var conn = DatabaseConnection.ObtenerConexion();
             using var cmd = new SqlCommand(
@@ -126,7 +126,7 @@ namespace WpfAppVba.Data
                 $"WHERE estadof = 'normal' AND ISNUMERIC(codigo) = 1", conn);
             var r = cmd.ExecuteScalar();
             return (r is null or DBNull) ? 1 : Convert.ToInt32(r);
-        }
+        });
 
         /// <summary>
         /// Siguiente número correlativo para documentos cuyo codigo = signo + número
@@ -134,7 +134,7 @@ namespace WpfAppVba.Data
         /// <paramref name="filtroColumna"/> = <paramref name="filtroValor"/>
         /// (ej. sucursal/region/origen activa) y devuelve número + 1.
         /// </summary>
-        public int SiguienteNumeroDoc(string signo, string filtroColumna, string filtroValor)
+        public int SiguienteNumeroDoc(string signo, string filtroColumna, string filtroValor) => SqlRetry.Ejecutar(() =>
         {
             var conn = DatabaseConnection.ObtenerConexion();
             using var cmd = new SqlCommand(
@@ -152,7 +152,7 @@ namespace WpfAppVba.Data
                 if (int.TryParse(c, out int n) && n > max) max = n;
             }
             return max + 1;
-        }
+        });
 
         /// <summary>
         /// Siguiente número correlativo para documentos cuyo codigo = signo + número,
@@ -163,23 +163,26 @@ namespace WpfAppVba.Data
         {
             if (string.IsNullOrEmpty(empresaId)) return 1;
 
-            var conn = DatabaseConnection.ObtenerConexion();
-            using var cmd = new SqlCommand(
-                $"SELECT d.codigo FROM {_nombreTabla} AS d " +
-                $"INNER JOIN sucursales AS s ON s.id = d.emitido " +
-                $"WHERE d.estadof = 'normal' AND s.empresa = @emp", conn);
-            cmd.Parameters.AddWithValue("@emp", empresaId);
-
-            int max = 0;
-            using var rd = cmd.ExecuteReader();
-            while (rd.Read())
+            return SqlRetry.Ejecutar(() =>
             {
-                string c = rd[0]?.ToString() ?? "";
-                if (!string.IsNullOrEmpty(signo) && c.StartsWith(signo, StringComparison.OrdinalIgnoreCase))
-                    c = c.Substring(signo.Length);
-                if (int.TryParse(c, out int n) && n > max) max = n;
-            }
-            return max + 1;
+                var conn = DatabaseConnection.ObtenerConexion();
+                using var cmd = new SqlCommand(
+                    $"SELECT d.codigo FROM {_nombreTabla} AS d " +
+                    $"INNER JOIN sucursales AS s ON s.id = d.emitido " +
+                    $"WHERE d.estadof = 'normal' AND s.empresa = @emp", conn);
+                cmd.Parameters.AddWithValue("@emp", empresaId);
+
+                int max = 0;
+                using var rd = cmd.ExecuteReader();
+                while (rd.Read())
+                {
+                    string c = rd[0]?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(signo) && c.StartsWith(signo, StringComparison.OrdinalIgnoreCase))
+                        c = c.Substring(signo.Length);
+                    if (int.TryParse(c, out int n) && n > max) max = n;
+                }
+                return max + 1;
+            });
         }
 
         /// <summary>
@@ -188,7 +191,7 @@ namespace WpfAppVba.Data
         /// Consulta directa a SQL Server (esas filas no están en el caché). Sirve para
         /// no reutilizar esos índices al renumerar las líneas visibles.
         /// </summary>
-        public HashSet<int> IndicesNoNormales(string filtroColumna, string filtroValor)
+        public HashSet<int> IndicesNoNormales(string filtroColumna, string filtroValor) => SqlRetry.Ejecutar(() =>
         {
             var res  = new HashSet<int>();
             var conn = DatabaseConnection.ObtenerConexion();
@@ -199,7 +202,7 @@ namespace WpfAppVba.Data
             while (rd.Read())
                 if (rd[0] != DBNull.Value && int.TryParse(rd[0].ToString(), out int n)) res.Add(n);
             return res;
-        }
+        });
 
         /// <summary>
         /// Máxima fecha (de filas en estado normal) cuyo <paramref name="filtroColumna"/> =
@@ -207,7 +210,7 @@ namespace WpfAppVba.Data
         /// por lo que sirve para cualquier sucursal aunque el caché esté filtrado por otra).
         /// Devuelve null si no hay filas.
         /// </summary>
-        public DateTime? MaxFecha(string filtroColumna, string filtroValor)
+        public DateTime? MaxFecha(string filtroColumna, string filtroValor) => SqlRetry.Ejecutar(() =>
         {
             var conn = DatabaseConnection.ObtenerConexion();
             using var cmd = new SqlCommand(
@@ -215,13 +218,13 @@ namespace WpfAppVba.Data
             cmd.Parameters.AddWithValue("@f", filtroValor);
             var r = cmd.ExecuteScalar();
             return (r is null or DBNull) ? (DateTime?)null : Convert.ToDateTime(r);
-        }
+        });
 
         /// <summary>
         /// Indica si ya existe otra fila (en estado normal) con el mismo codigo.
         /// Si se indica <paramref name="idActual"/>, esa fila se excluye (modo editar).
         /// </summary>
-        public bool CodigoExiste(string codigo, string idActual = "")
+        public bool CodigoExiste(string codigo, string idActual = "") => SqlRetry.Ejecutar(() =>
         {
             var conn = DatabaseConnection.ObtenerConexion();
             string sql = $"SELECT COUNT(*) FROM {_nombreTabla} WHERE estadof = 'normal' AND codigo = @c";
@@ -233,7 +236,7 @@ namespace WpfAppVba.Data
 
             int total = (int)cmd.ExecuteScalar()!;
             return total > 0;
-        }
+        });
 
         // ─── CRUD EN MEMORIA ──────────────────────────────────────────────────
 
@@ -312,7 +315,13 @@ namespace WpfAppVba.Data
         public void ExportarItems()
         {
             if (!_tabla.Columns.Contains("estadof")) return;
+            // Reintenta TODO el guardado (la transacción completa) ante fallos transitorios.
+            // El insert idempotente evita duplicar si un reintento ocurre tras un ACK perdido.
+            SqlRetry.Ejecutar(() => ExportarItemsInterno());
+        }
 
+        private void ExportarItemsInterno()
+        {
             var conn       = DatabaseConnection.ObtenerConexion();
             var insertRows = new List<DataRow>();
             var updateRows = new List<DataRow>();
@@ -345,11 +354,13 @@ namespace WpfAppVba.Data
             using var tx = conn.BeginTransaction();
             try
             {
-                // ── INSERCIONES ──────────────────────────────────────────────
+                // ── INSERCIONES (idempotentes por id) ────────────────────────
                 if (insertRows.Count > 0)
                 {
                     string colsStr = string.Join(",",
                         ColumnasPersistibles.Select(c => c.ColumnName));
+                    string selCols = string.Join(",",
+                        ColumnasPersistibles.Select(c => "v." + c.ColumnName));
 
                     foreach (var bloque in Chunks(insertRows, 1000))
                     {
@@ -359,7 +370,12 @@ namespace WpfAppVba.Data
                             row["estadof"] = "normal";
                             values.Add("(" + FormatearFila(row) + ")");
                         }
-                        string sql = $"INSERT INTO {_nombreTabla} ({colsStr}) VALUES {string.Join(",", values)}";
+                        // INSERT ... WHERE NOT EXISTS: si un reintento ocurre tras un ACK
+                        // perdido (la fila ya se insertó), no se duplica por id.
+                        string sql =
+                            $"INSERT INTO {_nombreTabla} ({colsStr}) " +
+                            $"SELECT {selCols} FROM (VALUES {string.Join(",", values)}) AS v ({colsStr}) " +
+                            $"WHERE NOT EXISTS (SELECT 1 FROM {_nombreTabla} AS t WHERE t.id = v.id)";
                         using var cmd = new SqlCommand(sql, conn, tx);
                         cmd.ExecuteNonQuery();
                     }
@@ -424,7 +440,7 @@ namespace WpfAppVba.Data
 
         // ─── CARGA DESDE SQL SERVER ───────────────────────────────────────────
 
-        private void ObtenerDatos(string consulta)
+        private void ObtenerDatos(string consulta) => SqlRetry.Ejecutar(() =>
         {
             _tabla.Clear();
             _indiceId.Clear();
@@ -447,7 +463,7 @@ namespace WpfAppVba.Data
 
                 _indiceId[key] = row;
             }
-        }
+        });
 
         private string FormatearFila(DataRow row)
         {
