@@ -216,31 +216,24 @@
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Row="0" Style="{StaticResource SectionHeader}" Text="● CANTIDAD POR MES Y CATEGORÍA"/>
                         <WrapPanel Grid.Row="1" x:Name="PanelLeyenda" Margin="0,0,0,10"/>
-                        <!-- ScrollViewer: llena el alto disponible (Height = viewport); si el
-                             espacio es menor a MinHeight (p. ej. al minimizar/restaurar) muestra
-                             scroll vertical en vez de recortar/desaparecer el gráfico. -->
-                        <ScrollViewer Grid.Row="2" x:Name="ScrollMeses"
-                                      VerticalScrollBarVisibility="Auto"
-                                      HorizontalScrollBarVisibility="Disabled">
-                            <Grid MinHeight="220"
-                                  Height="{Binding ViewportHeight, ElementName=ScrollMeses}">
-                                <TextBlock x:Name="LblMesesVacio" Text="Sin datos para el segmentador activo."
-                                           FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
-                                           Visibility="Collapsed"/>
-                                <Grid x:Name="ZonaMeses">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Canvas x:Name="PanelEjeY" Grid.Column="0" Width="48"
-                                            VerticalAlignment="Top"/>
-                                    <Grid x:Name="PanelPlot" Grid.Column="1" SizeChanged="PanelPlot_SizeChanged">
-                                        <Canvas x:Name="PanelGrid"/>
-                                        <UniformGrid x:Name="PanelMeses" Rows="1"/>
-                                    </Grid>
+                        <!-- Sin scroll: el gráfico llena la fila y se adapta al alto disponible. -->
+                        <Grid Grid.Row="2">
+                            <TextBlock x:Name="LblMesesVacio" Text="Sin datos para el segmentador activo."
+                                       FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
+                                       Visibility="Collapsed"/>
+                            <Grid x:Name="ZonaMeses">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Canvas x:Name="PanelEjeY" Grid.Column="0" Width="48"
+                                        VerticalAlignment="Top"/>
+                                <Grid x:Name="PanelPlot" Grid.Column="1" SizeChanged="PanelPlot_SizeChanged">
+                                    <Canvas x:Name="PanelGrid"/>
+                                    <UniformGrid x:Name="PanelMeses" Rows="1"/>
                                 </Grid>
                             </Grid>
-                        </ScrollViewer>
+                        </Grid>
                     </Grid>
                 </Border>
 
@@ -304,10 +297,11 @@
                                        FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
                                        Visibility="Collapsed"/>
                         </StackPanel>
-                        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled"
-                                      VerticalScrollBarVisibility="Auto">
-                            <StackPanel x:Name="PanelCategorias"/>
-                        </ScrollViewer>
+                        <!-- Sin scroll: escala para caber siempre (Viewbox uniforme). -->
+                        <Viewbox Grid.Row="1" Stretch="Uniform"
+                                 HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                            <StackPanel x:Name="PanelCategorias" Width="560"/>
+                        </Viewbox>
                     </Grid>
                 </Border>
 
@@ -325,10 +319,11 @@
                                        FontSize="12" Foreground="{DynamicResource ThemeTextoSec}"
                                        Visibility="Collapsed"/>
                         </StackPanel>
-                        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled"
-                                      VerticalScrollBarVisibility="Auto">
-                            <StackPanel x:Name="PanelFamilias"/>
-                        </ScrollViewer>
+                        <!-- Sin scroll: escala para caber siempre (Viewbox uniforme). -->
+                        <Viewbox Grid.Row="1" Stretch="Uniform"
+                                 HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                            <StackPanel x:Name="PanelFamilias" Width="560"/>
+                        </Viewbox>
                     </Grid>
                 </Border>
             </Grid>
