@@ -25,7 +25,9 @@ namespace WpfAppVba
         // ─── Al abrir: verificar config y cargar catálogos base ──────────────
         private async void LoginWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            BtnIngresar.IsEnabled = false;
+            BtnIngresar.IsEnabled   = false;
+            TxtCuenta.IsEnabled     = false;
+            TxtContrasena.IsEnabled = false;
 
             if (!ConexionConfig.HayConfiguracion())
             {
@@ -48,7 +50,9 @@ namespace WpfAppVba
 
         private async Task ConectarBaseDatosAsync()
         {
-            BtnIngresar.IsEnabled = false;
+            BtnIngresar.IsEnabled   = false;
+            TxtCuenta.IsEnabled     = false;
+            TxtContrasena.IsEnabled = false;
             MostrarEstado("Conectando a base de datos...", Colors.Gray);
 
             bool conectado;
@@ -67,14 +71,18 @@ namespace WpfAppVba
                 // Conexión recuperada: limpiar aviso y habilitar el login.
                 DetenerReintentos();
                 MostrarEstado("", Colors.Gray);
-                BtnIngresar.IsEnabled = true;
+                BtnIngresar.IsEnabled   = true;
+                TxtCuenta.IsEnabled     = true;
+                TxtContrasena.IsEnabled = true;
                 TxtCuenta.Focus();
             }
             else
             {
                 // Mensaje simple (sin volcar el error técnico de SQL Server).
                 MostrarEstado("⚠ Sin conexión. Reintentando…", Colors.Orange);
-                BtnIngresar.IsEnabled = false;
+                BtnIngresar.IsEnabled   = false;
+                TxtCuenta.IsEnabled     = false;
+                TxtContrasena.IsEnabled = false;
                 ProgramarReintento();
             }
         }
