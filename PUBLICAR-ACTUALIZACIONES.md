@@ -18,7 +18,24 @@ de GitHub con permiso sobre ese repo, expuesto como variable de entorno:
 $env:GITHUB_TOKEN = "ghp_xxxxxxxxxxxxxxxx"
 ```
 
-## Publicar una versión nueva (cada release)
+## Publicar una versión nueva — forma rápida (un solo comando)
+
+Usa el script `publicar.ps1` (raíz del repo). Lee la versión sola del csproj y hace
+los 3 pasos (publish → pack → upload):
+
+```powershell
+$env:GITHUB_TOKEN = "ghp_xxxxxxxxxxxxxxxx"
+# 1) Sube <Version> en WpfAppVba\WpfAppVba.csproj (ej. 1.0.0 -> 1.0.1)
+# 2) Ejecuta:
+.\publicar.ps1
+```
+
+Si quieres forzar una versión sin tocar el csproj: `.\publicar.ps1 -Version 1.2.0`.
+
+El resto de esta guía explica los mismos 3 pasos a mano (por si quieres entenderlos
+o ajustarlos).
+
+## Publicar una versión nueva — paso a paso (manual)
 
 1. **Sube el número de versión** en `WpfAppVba/WpfAppVba.csproj` (`<Version>`).
    Ej.: `1.0.0` → `1.0.1`. Velopack solo ofrece la actualización si la release es mayor
