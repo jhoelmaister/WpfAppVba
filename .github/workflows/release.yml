@@ -1,0 +1,79 @@
+name: Publicar release (Velopack)
+
+# Cómo se dispara:
+#   A) Empujando un tag vX.Y.Z   -> git tag v1.0.1 && git push origin v1.0.1
+#   B) A mano desde GitHub        -> pestaña "Actions" > este workflow > "Run workflow"
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versión a publicar (ej. 1.0.1). Vacío = usar la del csproj.'
+        required: false
+
+permissions:
+  contents: write   # necesario para crear la Release y subir los archivos
+
+jobs:
+  release:
+    runs-on: windows-latest   # compila la app WPF en un Windows de la nube
+
+    steps:
+      - name: Clonar repo
+        uses: actions/checkout@v4
+
+      - name: Instalar .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Instalar vpk (CLI de Velopack)
+        run: dotnet tool install -g vpk
+
+      - name: Determinar versión
+        id: ver
+        shell: pwsh
+        run: |
+          $v = "${{ github.event.inputs.version }}"
+          if ([string]::IsNullOrWhiteSpace($v)) {
+            if ("${{ github.ref_type }}" -eq "tag") {
+              # Tag vX.Y.Z -> quitar la 'v' inicial
+              $v = "${{ github.ref_name }}".TrimStart("v")
+            } else {
+              # Leer <Version> del csproj
+              $m = Select-String -Path WpfAppVba/WpfAppVba.csproj `
+                                  -Pattern '<Version>\s*([^<]+?)\s*</Version>' | Select-Object -First 1
+              $v = $m.Matches[0].Groups[1].Value.Trim()
+            }
+          }
+          if ([string]::IsNullOrWhiteSpace($v)) { throw "No se pudo determinar la versión." }
+          Write-Host "Versión a publicar: $v"
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Publish (self-contained single-file)
+        run: >
+          dotnet publish WpfAppVba/WpfAppVba.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:DebugType=none
+          -o ./publish
+
+      - name: Pack (Setup.exe + nupkg full/delta + RELEASES)
+        run: >
+          vpk pack
+          --packId SistemaGestion
+          --packVersion ${{ steps.ver.outputs.version }}
+          --packDir ./publish
+          --mainExe WpfAppVba.exe
+          --packTitle "Sistema de Gestión"
+          --icon WpfAppVba/icono.ico
+
+      - name: Upload (publica la Release en este repo)
+        run: >
+          vpk upload github
+          --repoUrl https://github.com/jhoelmaister/wpfappvba
+          --publish
+          --releaseName "v${{ steps.ver.outputs.version }}"
+          --tag "v${{ steps.ver.outputs.version }}"
+          --token ${{ secrets.GITHUB_TOKEN }}

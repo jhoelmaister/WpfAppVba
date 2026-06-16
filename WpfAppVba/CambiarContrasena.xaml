@@ -9,6 +9,32 @@
 
     <Window.Resources>
 
+        <!-- Igual que ModernPassword pero para el TextBox que muestra la clave. -->
+        <Style x:Key="ModernInput" TargetType="TextBox">
+            <Setter Property="Height"                   Value="32"/>
+            <Setter Property="FontSize"                 Value="12"/>
+            <Setter Property="Padding"                  Value="8,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush"              Value="{DynamicResource ThemeBordeInput}"/>
+            <Setter Property="BorderThickness"          Value="1"/>
+            <Setter Property="Background"               Value="{DynamicResource ThemeInputBg}"/>
+            <Setter Property="Foreground"               Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="ModernPassword" TargetType="PasswordBox">
             <Setter Property="Height"                   Value="32"/>
             <Setter Property="FontSize"                 Value="12"/>
@@ -82,17 +108,57 @@
             <StackPanel>
                 <TextBlock Text="Contraseña Actual:" FontSize="11"
                            Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,4"/>
-                <PasswordBox x:Name="PwdActual" Style="{StaticResource ModernPassword}"
-                             Margin="0,0,0,14"/>
+                <Grid Margin="0,0,0,14">
+                    <PasswordBox x:Name="PwdActual" Style="{StaticResource ModernPassword}"
+                                 Padding="8,0,34,0"/>
+                    <TextBox x:Name="TxtActualVisible" Style="{StaticResource ModernInput}"
+                             Padding="8,0,34,0" Visibility="Collapsed"/>
+                    <Button x:Name="BtnVerActual" Width="28" Height="28"
+                            HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,3,0"
+                            Background="Transparent" BorderThickness="0" Cursor="Hand"
+                            ToolTip="Mostrar contraseña" Click="BtnVerActual_Click">
+                        <TextBlock x:Name="IcoActual" Text="&#xE7B3;"
+                                   FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                   Foreground="{DynamicResource ThemeTexto}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
 
                 <TextBlock Text="Nueva Contraseña:" FontSize="11"
                            Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,4"/>
-                <PasswordBox x:Name="PwdNueva" Style="{StaticResource ModernPassword}"
-                             Margin="0,0,0,14"/>
+                <Grid Margin="0,0,0,14">
+                    <PasswordBox x:Name="PwdNueva" Style="{StaticResource ModernPassword}"
+                                 Padding="8,0,34,0"/>
+                    <TextBox x:Name="TxtNuevaVisible" Style="{StaticResource ModernInput}"
+                             Padding="8,0,34,0" Visibility="Collapsed"/>
+                    <Button x:Name="BtnVerNueva" Width="28" Height="28"
+                            HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,3,0"
+                            Background="Transparent" BorderThickness="0" Cursor="Hand"
+                            ToolTip="Mostrar contraseña" Click="BtnVerNueva_Click">
+                        <TextBlock x:Name="IcoNueva" Text="&#xE7B3;"
+                                   FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                   Foreground="{DynamicResource ThemeTexto}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
 
                 <TextBlock Text="Confirmar Nueva Contraseña:" FontSize="11"
                            Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,4"/>
-                <PasswordBox x:Name="PwdConfirmar" Style="{StaticResource ModernPassword}"/>
+                <Grid>
+                    <PasswordBox x:Name="PwdConfirmar" Style="{StaticResource ModernPassword}"
+                                 Padding="8,0,34,0"/>
+                    <TextBox x:Name="TxtConfirmarVisible" Style="{StaticResource ModernInput}"
+                             Padding="8,0,34,0" Visibility="Collapsed"/>
+                    <Button x:Name="BtnVerConfirmar" Width="28" Height="28"
+                            HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,3,0"
+                            Background="Transparent" BorderThickness="0" Cursor="Hand"
+                            ToolTip="Mostrar contraseña" Click="BtnVerConfirmar_Click">
+                        <TextBlock x:Name="IcoConfirmar" Text="&#xE7B3;"
+                                   FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                   Foreground="{DynamicResource ThemeTexto}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
             </StackPanel>
         </ScrollViewer>
 
