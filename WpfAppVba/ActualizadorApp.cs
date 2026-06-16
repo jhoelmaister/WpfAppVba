@@ -31,6 +31,9 @@ namespace WpfAppVba
         /// <summary>Versión nueva detectada (null si no hay ninguna pendiente).</summary>
         public string? VersionNueva => _update?.TargetFullRelease.Version.ToString();
 
+        /// <summary>Tamaño del paquete de la versión nueva, en MB (0 si no hay update).</summary>
+        public double TamañoDescargaMB => (_update?.TargetFullRelease.Size ?? 0) / 1024.0 / 1024.0;
+
         /// <summary>
         /// Consulta el feed. Devuelve true si hay una versión más nueva que la instalada.
         /// En desarrollo (app no instalada vía Velopack) devuelve false sin tocar la red.
