@@ -26,6 +26,16 @@ La app instalada detecta versiones nuevas y muestra un botón **🔄 Actualizar*
 
 **Cuando el usuario pida "sube/saca/publica la versión X.Y.Z" (o similar):**
 
+0. **Valida el número ANTES de aplicarlo** (lee la versión actual del csproj y compara):
+   - **Formato**: debe ser `X.Y.Z` (tres números). Si el usuario da algo incompleto como
+     `1.1`, NO asumas: pregúntale si quiere `1.1.0` o `1.0.2`.
+   - **Debe ser MAYOR** que la actual (semver). Si es igual o menor, NO la apliques: avísale
+     (ej. "ya estás en 1.0.1, no puedo bajar/repetir").
+   - **El salto debe ser razonable**: lo normal es el siguiente parche (1.0.1 → 1.0.2),
+     el siguiente minor (1.0.1 → 1.1.0) o el siguiente major (1.0.1 → 2.0.0). Si el número
+     pedido salta de más (ej. 1.0.1 → 1.5.0, o 1.0.1 → 3.0.0), CONFIRMA con el usuario antes
+     de aplicarlo, por si fue un error de tecleo.
+   - Ante cualquier duda con el número, pregunta; nunca apliques un número raro en silencio.
 1. Edita `<Version>` en `WpfAppVba/WpfAppVba.csproj` con el número indicado.
 2. Lleva ese cambio a la rama `master` (commit + PR + merge; el bump DEBE quedar en `master`,
    no solo en la rama de trabajo).
