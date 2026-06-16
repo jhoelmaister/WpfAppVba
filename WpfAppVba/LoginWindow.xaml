@@ -134,9 +134,24 @@
                 <!-- Contraseña -->
                 <TextBlock Text="Contraseña" FontSize="12"
                            Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,5"/>
-                <PasswordBox x:Name="TxtContrasena" Style="{StaticResource ModernPassword}"
-                             Margin="0,0,0,18"
+                <Grid Margin="0,0,0,18">
+                    <!-- Oculta (por defecto) -->
+                    <PasswordBox x:Name="TxtContrasena" Style="{StaticResource ModernPassword}"
+                                 Padding="10,0,40,0"
+                                 KeyDown="TxtContrasena_KeyDown"/>
+                    <!-- Visible (al pulsar el ojo) -->
+                    <TextBox x:Name="TxtContrasenaVisible" Style="{StaticResource ModernInput}"
+                             Padding="10,0,40,0" Visibility="Collapsed"
                              KeyDown="TxtContrasena_KeyDown"/>
+                    <!-- Botón mostrar / ocultar -->
+                    <Button x:Name="BtnVerContrasena" Content="👁"
+                            Width="32" Height="32"
+                            HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Margin="0,0,3,0"
+                            Background="Transparent" BorderThickness="0" Cursor="Hand"
+                            ToolTip="Mostrar contraseña"
+                            Click="BtnVerContrasena_Click"/>
+                </Grid>
 
                 <!-- Botón Ingresar -->
                 <Button x:Name="BtnIngresar" Content="Ingresar"

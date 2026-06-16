@@ -111,6 +111,32 @@ namespace WpfAppVba
                 BtnIngresar_Click(sender, e);
         }
 
+        // ─── Mostrar / ocultar contraseña ──────────────────────────────────────
+        private void BtnVerContrasena_Click(object sender, RoutedEventArgs e)
+        {
+            if (TxtContrasena.Visibility == Visibility.Visible)
+            {
+                // Ocultar -> Mostrar: pasar el valor al TextBox visible.
+                TxtContrasenaVisible.Text       = TxtContrasena.Password;
+                TxtContrasena.Visibility        = Visibility.Collapsed;
+                TxtContrasenaVisible.Visibility = Visibility.Visible;
+                BtnVerContrasena.Content        = "🙈";
+                BtnVerContrasena.ToolTip        = "Ocultar contraseña";
+                TxtContrasenaVisible.Focus();
+                TxtContrasenaVisible.CaretIndex = TxtContrasenaVisible.Text.Length;
+            }
+            else
+            {
+                // Mostrar -> Ocultar: devolver el valor al PasswordBox.
+                TxtContrasena.Password          = TxtContrasenaVisible.Text;
+                TxtContrasenaVisible.Visibility = Visibility.Collapsed;
+                TxtContrasena.Visibility        = Visibility.Visible;
+                BtnVerContrasena.Content        = "👁";
+                BtnVerContrasena.ToolTip        = "Mostrar contraseña";
+                TxtContrasena.Focus();
+            }
+        }
+
         // ─── Configurar conexión desde el login ───────────────────────────────
         private async void BtnConfigurarConexion_Click(object sender, RoutedEventArgs e)
         {
@@ -130,7 +156,9 @@ namespace WpfAppVba
         private async void BtnIngresar_Click(object sender, RoutedEventArgs e)
         {
             string cuenta     = TxtCuenta.Text.Trim();
-            string contrasena = TxtContrasena.Password;
+            string contrasena = TxtContrasena.Visibility == Visibility.Visible
+                ? TxtContrasena.Password
+                : TxtContrasenaVisible.Text;
 
             if (string.IsNullOrEmpty(cuenta) || string.IsNullOrEmpty(contrasena))
             {
