@@ -16,7 +16,12 @@ namespace WpfAppVba
         public InventariosGeneral()
         {
             InitializeComponent();
-            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarInventarios(); };
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarInventarios(); };
+        }
+
+        private void ConfigurarModo()
+        {
+            if (!AppState.EsAdmin) BtnEliminar.Visibility = Visibility.Collapsed;
         }
 
         // ─── Carga la lista ────────────────────────────────────────────────────
@@ -40,6 +45,7 @@ namespace WpfAppVba
                 {
                     Linea         = linea++,
                     Id            = id,
+                    Codigo        = Sql.DocumentosIObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                     Fecha         = fecha,
                     FechaStr      = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                     CantidadTotal = cantidad
@@ -61,6 +67,7 @@ namespace WpfAppVba
             {
                 Linea         = linea,
                 Id            = id,
+                Codigo        = Sql.DocumentosIObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 Fecha         = fecha,
                 FechaStr      = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                 CantidadTotal = CalcularCantidad(id)
@@ -133,6 +140,9 @@ namespace WpfAppVba
 
         private void BtnActualizar_Click(object sender, RoutedEventArgs e)
         {
+            // Sin conexión no se puede refrescar desde SQL: avisar y no congelar.
+            if (!FuncionesComunes.VerificarConexionParaActualizar(Window.GetWindow(this))) return;
+
             CargarInventarios();
         }
 
@@ -140,8 +150,11 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not InventarioFila fila) return;
 
+            // Verificación de conexión en 2 capas antes de persistir el borrado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             // Solo se puede eliminar la apertura más reciente
-            if (fila.Id != AppState.AperturaIdActiva.ToString())
+            if (fila.Id != AppState.AperturaIdActiva)
             {
                 MessageBox.Show("Solo se puede eliminar la última apertura.", "Consola",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -207,7 +220,7 @@ namespace WpfAppVba
             if (Grid1.SelectedItem is not InventarioFila fila) return;
 
             // Solo se puede editar la apertura más reciente
-            if (fila.Id != AppState.AperturaIdActiva.ToString())
+            if (fila.Id != AppState.AperturaIdActiva)
             {
                 MessageBox.Show("Solo se puede editar la última apertura.", "Consola",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -234,7 +247,7 @@ namespace WpfAppVba
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña($"Inventario {idSel}", detalle, $"inventario-{idSel}");
+            consola.AbrirPestaña($"Inventario {fila.Codigo}", detalle, $"inventario-{idSel}");
         }
     }
 
@@ -243,6 +256,7 @@ namespace WpfAppVba
     {
         public int      Linea         { get; set; }
         public string   Id            { get; set; } = "";
+        public string   Codigo        { get; set; } = "";
         public DateTime Fecha         { get; set; }
         public string   FechaStr      { get; set; } = "";
         public double   CantidadTotal { get; set; }

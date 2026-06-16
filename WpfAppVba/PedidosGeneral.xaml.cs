@@ -26,7 +26,12 @@ namespace WpfAppVba
         public PedidosGeneral()
         {
             InitializeComponent();
-            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarMeses(); CargarPedidos(); };
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarMeses(); CargarPedidos(); };
+        }
+
+        private void ConfigurarModo()
+        {
+            if (!AppState.EsAdmin) BtnEliminar.Visibility = Visibility.Collapsed;
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
@@ -87,7 +92,7 @@ namespace WpfAppVba
                     !string.Equals(movDoc, tipoMov, StringComparison.OrdinalIgnoreCase)) continue;
 
                 string sucursal = Sql.DocumentosPObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
-                if (sucursal != AppState.SucursalActiva.ToString()) continue;
+                if (sucursal != AppState.SucursalActiva) continue;
 
                 // Filtro por mes (solo en modo "filtros", independiente de TxtBuscar)
                 if (!string.IsNullOrEmpty(mesFiltro))
@@ -132,6 +137,7 @@ namespace WpfAppVba
                 {
                     Linea       = linea++,
                     DocumentoP  = id,
+                    Codigo      = Sql.DocumentosPObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                     FechaStr    = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                     Movimiento  = movDoc,
                     TerceroDesc = terceroDesc,
@@ -225,6 +231,7 @@ namespace WpfAppVba
             {
                 Linea       = linea,
                 DocumentoP  = id,
+                Codigo      = Sql.DocumentosPObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 FechaStr    = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                 Movimiento  = movDoc,
                 TerceroDesc = terceroDesc,
@@ -292,7 +299,8 @@ namespace WpfAppVba
 
         private void MostrarDetalle(string documentoP)
         {
-            LblDetalleHeader.Text = $"Artículos del documento {documentoP}";
+            string codigoDoc = Sql.DocumentosPObj.ObtenerItem("codigo", documentoP)?.ToString() ?? documentoP;
+            LblDetalleHeader.Text = $"Artículos del documento {codigoDoc}";
             var detalles = new List<PedidoDetalleFila>();
             int linea = 1;
 
@@ -442,6 +450,9 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not PedidoFila fila) return;
 
+            // Verificación de conexión en 2 capas antes de persistir el borrado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             var res = MessageBox.Show("¿Eliminar este pedido y todos sus artículos?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
 
@@ -491,6 +502,9 @@ namespace WpfAppVba
 
         private void BtnActualizar_Click(object sender, RoutedEventArgs e)
         {
+            // Sin conexión no se puede refrescar desde SQL: avisar y no congelar.
+            if (!FuncionesComunes.VerificarConexionParaActualizar(Window.GetWindow(this))) return;
+
             Sql.DocumentosPObj.Actualizar();
             Sql.PedidosObj.Actualizar();
             CargarPedidos();
@@ -506,7 +520,7 @@ namespace WpfAppVba
             AppState.TipoPedido     = Sql.DocumentosPObj.ObtenerItem("tipo",       docSel)?.ToString() ?? "rapido";
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            var dlg = new PedidosDetalle(this, docSel, tituloTab: $"Pedido {docSel}");
+            var dlg = new PedidosDetalle(this, docSel, tituloTab: $"Pedido {fila.Codigo}");
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);
@@ -521,7 +535,7 @@ namespace WpfAppVba
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña($"Pedido {docSel}", dlg, $"pedido-{docSel}");
+            consola.AbrirPestaña($"Pedido {fila.Codigo}", dlg, $"pedido-{docSel}");
         }
     }
 
@@ -530,6 +544,7 @@ namespace WpfAppVba
     {
         public int    Linea       { get; set; }
         public string DocumentoP  { get; set; } = "";
+        public string Codigo      { get; set; } = "";
         public string FechaStr    { get; set; } = "";
         public string Movimiento  { get; set; } = "";
         public string TerceroDesc { get; set; } = "";

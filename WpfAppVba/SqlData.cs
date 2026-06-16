@@ -12,8 +12,8 @@ namespace WpfAppVba.Data
         public static SqlData Instance => _instance ??= new SqlData();
 
         // ─── Tablas de catálogo / maestros ───────────────────────────────────
+        public DataConsulta EmpresasObj     { get; } = new();
         public DataConsulta UsuariosObj     { get; } = new();
-        public DataConsulta StocksObj       { get; } = new();
         public DataConsulta ArticulosObj    { get; } = new();
         public DataConsulta FamiliasObj     { get; } = new();
         public DataConsulta ProductosObj    { get; } = new();

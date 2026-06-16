@@ -27,8 +27,15 @@ namespace WpfAppVba
         private List<TrasaccionItemFila> _trasacciones  = new();
         private List<EntregaItemFila>    _entregas      = new();
 
+        // IDs de las líneas existentes al abrir para editar; sirven para detectar
+        // bajas (lo que estaba y ya no está) y aplicar un guardado diferencial.
+        private HashSet<string> _pedidosOrig      = new();
+        private HashSet<string> _trasaccionesOrig = new();
+        private HashSet<string> _entregasOrig     = new();
+
         private readonly HashSet<string> _articulosAlertados = new();
         private string                   _observaciones = "";
+        private string                   _codigoDocP    = "";
 
         public string? DocumentoCreadoId { get; private set; }
 
@@ -96,9 +103,11 @@ namespace WpfAppVba
         // ─── Modo nuevo ───────────────────────────────────────────────────────
         private void CargarParaNuevo()
         {
-            Box_DocumentoP.IsEnabled = true;
-            long siguiente = Convert.ToInt64(Sql.DocumentosPObj.Maximo("id") ?? 0) + 1;
-            Box_DocumentoP.Text = siguiente.ToString();
+            string signoN = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
+            int    numN   = Sql.DocumentosPObj.SiguienteNumeroDoc(signoN, "sucursal", AppState.SucursalActiva);
+            _codigoDocP          = $"{signoN.ToUpper()}{numN}";
+            Box_DocumentoP.Text      = _codigoDocP;
+            Box_DocumentoP.IsEnabled = false;
 
             string tipoPedido = AppState.TipoPedido.ToLower();
             DateTime ahora = DateTime.Now;
@@ -120,6 +129,9 @@ namespace WpfAppVba
             _pedidos.Clear();
             _trasacciones.Clear();
             _entregas.Clear();
+            _pedidosOrig.Clear();
+            _trasaccionesOrig.Clear();
+            _entregasOrig.Clear();
             RefrescarGridPedidos();
             RefrescarGridTrasacciones();
             RefrescarGridEntregas();
@@ -131,15 +143,16 @@ namespace WpfAppVba
         private void CargarParaEditar()
         {
             Box_DocumentoP.IsEnabled = false;
-            Box_DocumentoP.Text = _idEditar;
+            string codigoDocEdit = Sql.DocumentosPObj.ObtenerItem("codigo", _idEditar)?.ToString() ?? "";
+            Box_DocumentoP.Text = codigoDocEdit;
 
             var fechaObj = Sql.DocumentosPObj.ObtenerItem("fecha", _idEditar);
             DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : DateTime.Now;
             Box_Fecha.SelectedDate = fecha.Date;
             Box_Hora.Text = fecha.ToString("HH:mm:ss");
 
-            string terceroId = Sql.DocumentosPObj.ObtenerItem("tercero", _idEditar)?.ToString() ?? "";
-            Box_Tercero_Identificador.Text = terceroId;
+            string terceroUuid = Sql.DocumentosPObj.ObtenerItem("tercero", _idEditar)?.ToString() ?? "";
+            Box_Tercero_Identificador.Text = Sql.TercerosObj.ObtenerItem("codigo", terceroUuid)?.ToString() ?? "";
             ActualizarDescripcionTercero();
 
             string estadoVal = Sql.DocumentosPObj.ObtenerItem("estado", _idEditar)?.ToString() ?? "pendiente";
@@ -248,6 +261,11 @@ namespace WpfAppVba
                 });
             }
 
+            // Snapshot de los ids existentes para el guardado diferencial
+            _pedidosOrig      = new HashSet<string>(_pedidos.Select(p => p.PedidoId));
+            _trasaccionesOrig = new HashSet<string>(_trasacciones.Select(t => t.TrasaccionId));
+            _entregasOrig     = new HashSet<string>(_entregas.Select(e => e.EntregaId));
+
             RefrescarGridPedidos();
             RefrescarGridTrasacciones();
             RefrescarGridEntregas();
@@ -258,10 +276,16 @@ namespace WpfAppVba
         // ─── Helpers ──────────────────────────────────────────────────────────
         private void SeleccionarEstado(string valor) => Box_Estado.Text = valor;
 
+        private string ResolverTerceroId()
+        {
+            string cod = Box_Tercero_Identificador.Text.Trim();
+            return cod == "" ? "" : Sql.TercerosObj.BuscarIdentificador("codigo", cod);
+        }
+
         private void ActualizarDescripcionTercero()
         {
-            string id = Box_Tercero_Identificador.Text.Trim();
-            Box_Tercero_Descripcion.Text = Sql.TercerosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+            string id = ResolverTerceroId();
+            Box_Tercero_Descripcion.Text = id == "" ? "" : Sql.TercerosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
         }
 
         private static string ObtenerDescripcionArticulo(string artId)
@@ -685,10 +709,9 @@ namespace WpfAppVba
             if (col == "Código" && e.EditingElement is TextBox tbCod)
             {
                 string codigo = tbCod.Text.Trim();
-                long artIdNum = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
-                if (artIdNum > 0)
+                string artId = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
+                if (!string.IsNullOrEmpty(artId))
                 {
-                    string artId = artIdNum.ToString();
                     fila.ArticuloId  = artId;
                     fila.Codigo      = codigo;
                     fila.Descripcion = ObtenerDescripcionArticulo(artId);
@@ -1054,10 +1077,10 @@ namespace WpfAppVba
             if (e.Column.Header?.ToString() == "Código" && e.EditingElement is TextBox tbCod)
             {
                 string codigo = tbCod.Text.Trim();
-                long artIdNum = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
-                if (artIdNum > 0)
+                string artId = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
+                if (!string.IsNullOrEmpty(artId))
                 {
-                    fila.ArticuloId  = artIdNum.ToString();
+                    fila.ArticuloId  = artId;
                     fila.Codigo      = codigo;
                     fila.Descripcion = ObtenerDescripcionArticulo(fila.ArticuloId);
                 }
@@ -1262,6 +1285,8 @@ namespace WpfAppVba
         // ─── Guardar ──────────────────────────────────────────────────────────
         private bool Guardar()
         {
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+
             return AppState.EventoFormularioM == "editar"
                 ? GuardarEditar()
                 : GuardarNuevo();
@@ -1269,44 +1294,41 @@ namespace WpfAppVba
 
         private bool GuardarNuevo()
         {
-            string docP = Box_DocumentoP.Text.Trim();
-            if (string.IsNullOrEmpty(docP))
-            { MessageBox.Show("Ingrese el número de documento.", "Consola", MessageBoxButton.OK, MessageBoxImage.Warning); return false; }
-
             try
             {
-                if (!Sql.DocumentosPObj.VerificarId(docP, "id"))
-                { MessageBox.Show("El número de documento ya existe.", "Consola", MessageBoxButton.OK, MessageBoxImage.Warning); return false; }
+                string id     = Guid.NewGuid().ToString();
+                string codigo = _codigoDocP;
 
                 DateTime fechaFinal = CombinarFechaHora(Box_Fecha.SelectedDate ?? DateTime.Today, Box_Hora.Text);
                 string estado  = Box_Estado.Text;
                 string cuenta  = Box_Cuenta.Text;
                 string tipoPed = AppState.TipoPedido.ToLower();
 
-                Sql.DocumentosPObj.Nuevo(docP);
-                Sql.DocumentosPObj.EstablecerItem("sucursal",    docP, AppState.SucursalActiva);
-                Sql.DocumentosPObj.EstablecerItem("tercero",     docP, Box_Tercero_Identificador.Text.Trim());
-                Sql.DocumentosPObj.EstablecerItem("movimiento",  docP, AppState.TipoMovimiento);
-                Sql.DocumentosPObj.EstablecerItem("estado",      docP, estado);
-                Sql.DocumentosPObj.EstablecerItem("fecha",       docP, fechaFinal);
-                Sql.DocumentosPObj.EstablecerItem("referencia",  docP, Box_Referencia.Text.Trim());
-                Sql.DocumentosPObj.EstablecerItem("observacion", docP, _observaciones);
-                Sql.DocumentosPObj.EstablecerItem("estadoC",     docP, cuenta);
-                Sql.DocumentosPObj.EstablecerItem("tipo",        docP, tipoPed);
-                Sql.DocumentosPObj.EstablecerItem("emision",     docP, DateTime.Now);
-                Sql.DocumentosPObj.EstablecerItem("edicion",     docP, DateTime.Now);
-                Sql.DocumentosPObj.EstablecerItem("emitido",     docP, AppState.SucursalActiva);
-                Sql.DocumentosPObj.EstablecerItem("usuario",     docP, AppState.UsuarioActivo);
-                Sql.DocumentosPObj.EstablecerItem("usuarioE",    docP, AppState.UsuarioActivo);
+                Sql.DocumentosPObj.Nuevo(id);
+                Sql.DocumentosPObj.EstablecerItem("codigo",      id, codigo);
+                Sql.DocumentosPObj.EstablecerItem("sucursal",    id, AppState.SucursalActiva);
+                Sql.DocumentosPObj.EstablecerItem("tercero",     id, ResolverTerceroId());
+                Sql.DocumentosPObj.EstablecerItem("movimiento",  id, AppState.TipoMovimiento);
+                Sql.DocumentosPObj.EstablecerItem("estado",      id, estado);
+                Sql.DocumentosPObj.EstablecerItem("fecha",       id, fechaFinal);
+                Sql.DocumentosPObj.EstablecerItem("referencia",  id, Box_Referencia.Text.Trim());
+                Sql.DocumentosPObj.EstablecerItem("observacion", id, _observaciones);
+                Sql.DocumentosPObj.EstablecerItem("estadoC",     id, cuenta);
+                Sql.DocumentosPObj.EstablecerItem("tipo",        id, tipoPed);
+                Sql.DocumentosPObj.EstablecerItem("emision",     id, DateTime.Now);
+                Sql.DocumentosPObj.EstablecerItem("edicion",     id, DateTime.Now);
+                Sql.DocumentosPObj.EstablecerItem("emitido",     id, AppState.SucursalActiva);
+                Sql.DocumentosPObj.EstablecerItem("usuario",     id, AppState.UsuarioActivo);
+                Sql.DocumentosPObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
 
-                GuardarLineasPedido(docP);
-                GuardarLineasTrasaccion(docP);
-                GuardarLineasEntrega(docP);
+                GuardarLineasPedido(id);
+                GuardarLineasTrasaccion(id);
+                GuardarLineasEntrega(id);
                 OrdenarTablas();
 
                 MessageBox.Show("Guardado exitoso.", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 _cambioDocumento = _cambioPedido = _cambioTrasaccion = _cambioEntrega = false;
-                DocumentoCreadoId = docP;   // Bug 3: comunica el id al padre
+                DocumentoCreadoId = id;
                 return true;
             }
             catch (Exception ex)
@@ -1322,7 +1344,7 @@ namespace WpfAppVba
                 string estado = Box_Estado.Text;
                 string cuenta = Box_Cuenta.Text;
 
-                Sql.DocumentosPObj.EstablecerItem("tercero",     docP, Box_Tercero_Identificador.Text.Trim());
+                Sql.DocumentosPObj.EstablecerItem("tercero",     docP, ResolverTerceroId());
                 Sql.DocumentosPObj.EstablecerItem("fecha",       docP, fechaFinal);
                 Sql.DocumentosPObj.EstablecerItem("estado",      docP, estado);
                 Sql.DocumentosPObj.EstablecerItem("referencia",  docP, Box_Referencia.Text.Trim());
@@ -1332,24 +1354,10 @@ namespace WpfAppVba
                 Sql.DocumentosPObj.EstablecerItem("usuario",     docP, AppState.UsuarioActivo);
                 Sql.DocumentosPObj.EstablecerItem("usuarioE",    docP, AppState.UsuarioActivo);
 
-                // Solo eliminar y recrear las líneas que realmente cambiaron.
-                // EliminarLineas sin su correspondiente Guardar ocultaría
-                // las filas existentes sin volver a crearlas (Bug 2).
-                if (_cambioPedido)
-                {
-                    EliminarLineas(Sql.PedidosObj, "documentoP", docP);
-                    GuardarLineasPedido(docP);
-                }
-                if (_cambioTrasaccion)
-                {
-                    EliminarLineas(Sql.TrasaccionesObj, "documentoP", docP);
-                    GuardarLineasTrasaccion(docP);
-                }
-                if (_cambioEntrega)
-                {
-                    EliminarLineas(Sql.EntregasObj, "documentoP", docP);
-                    GuardarLineasEntrega(docP);
-                }
+                // Guardado diferencial: solo inserta/actualiza/oculta lo que cambió.
+                if (_cambioPedido)     GuardarLineasPedido(docP);
+                if (_cambioTrasaccion) GuardarLineasTrasaccion(docP);
+                if (_cambioEntrega)    GuardarLineasEntrega(docP);
                 OrdenarTablas();
 
                 MessageBox.Show("Guardado exitoso.", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -1360,74 +1368,130 @@ namespace WpfAppVba
             { MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error); return false; }
         }
 
-        private void EliminarLineas(DataConsulta tabla, string campo, string docP)
-        {
-            int uf = tabla.ContarFilas;
-            var ids = new List<string>();
-            for (int i = 1; i <= uf; i++)
-            {
-                var idObj = tabla.Mover(i);
-                if (idObj == null) continue;
-                string id = idObj.ToString()!;
-                if (tabla.ObtenerItem(campo, id)?.ToString() == docP)
-                    ids.Add(id);
-            }
-            foreach (var id in ids) tabla.Eliminar(id);
-        }
-
+        // Guardado diferencial: las líneas nuevas (id vacío) se insertan, las
+        // existentes se actualizan sobre su mismo id, y las que se quitaron de la
+        // grilla se ocultan (estadof). Ya no se borran y recrean todas.
         private void GuardarLineasPedido(string docP)
         {
-            for (int i = 0; i < _pedidos.Count; i++)
+            var vigentes = new HashSet<string>(
+                _pedidos.Where(p => !string.IsNullOrEmpty(p.PedidoId)).Select(p => p.PedidoId));
+
+            // Índices reservados por filas eliminadas (no se reutilizan): las ya
+            // eliminadas en SQL + las que se eliminan en este guardado.
+            var reservados = Sql.PedidosObj.IndicesNoNormales("documentoP", docP);
+            foreach (var idOrig in _pedidosOrig)
+                if (!vigentes.Contains(idOrig))
+                {
+                    var ix = Sql.PedidosObj.ObtenerItem("indice", idOrig);
+                    if (ix != null && int.TryParse(ix.ToString(), out int n)) reservados.Add(n);
+                    Sql.PedidosObj.Eliminar(idOrig);
+                }
+
+            int next = 1;
+            foreach (var item in _pedidos)
             {
-                var item  = _pedidos[i];
-                string id = $"{docP}{(i + 1):D3}";
-                Sql.PedidosObj.Nuevo(id);
-                Sql.PedidosObj.EstablecerItem("documentoP", id, docP);
-                Sql.PedidosObj.EstablecerItem("articulo",   id, item.ArticuloId);
-                Sql.PedidosObj.EstablecerItem("indice",     id, i + 1);
-                Sql.PedidosObj.EstablecerItem("cantidad",   id, item.Cantidad);
-                Sql.PedidosObj.EstablecerItem("importe",    id, item.Importe);
-                Sql.PedidosObj.EstablecerItem("forma",      id, item.Forma);
-                Sql.PedidosObj.EstablecerItem("contable",   id, item.Contable);
-                Sql.PedidosObj.EstablecerItem("tipo",       id, item.Tipo);
+                string id;
+                if (string.IsNullOrEmpty(item.PedidoId))
+                {
+                    id = Guid.NewGuid().ToString();
+                    Sql.PedidosObj.Nuevo(id);
+                    Sql.PedidosObj.EstablecerItem("documentoP", id, docP);
+                    item.PedidoId = id;
+                }
+                else id = item.PedidoId;
+
+                while (reservados.Contains(next)) next++;
+                Sql.PedidosObj.EstablecerItem("indice",   id, next);
+                next++;
+                Sql.PedidosObj.EstablecerItem("articulo", id, item.ArticuloId);
+                Sql.PedidosObj.EstablecerItem("cantidad", id, item.Cantidad);
+                Sql.PedidosObj.EstablecerItem("importe",  id, item.Importe);
+                Sql.PedidosObj.EstablecerItem("forma",    id, item.Forma);
+                Sql.PedidosObj.EstablecerItem("contable", id, item.Contable);
+                Sql.PedidosObj.EstablecerItem("tipo",     id, item.Tipo);
             }
+            _pedidosOrig = new HashSet<string>(_pedidos.Select(p => p.PedidoId));
         }
 
         private void GuardarLineasTrasaccion(string docP)
         {
-            for (int i = 0; i < _trasacciones.Count; i++)
+            var vigentes = new HashSet<string>(
+                _trasacciones.Where(t => !string.IsNullOrEmpty(t.TrasaccionId)).Select(t => t.TrasaccionId));
+
+            var reservados = Sql.TrasaccionesObj.IndicesNoNormales("documentoP", docP);
+            foreach (var idOrig in _trasaccionesOrig)
+                if (!vigentes.Contains(idOrig))
+                {
+                    var ix = Sql.TrasaccionesObj.ObtenerItem("indice", idOrig);
+                    if (ix != null && int.TryParse(ix.ToString(), out int n)) reservados.Add(n);
+                    Sql.TrasaccionesObj.Eliminar(idOrig);
+                }
+
+            int next = 1;
+            foreach (var item in _trasacciones)
             {
-                var item  = _trasacciones[i];
-                string id = $"{docP}{(i + 1):D3}";
                 DateTime fechaT = CombinarFechaHora(
                     DateTime.TryParse(item.FechaStr, out var fd) ? fd : DateTime.Today,
                     item.HoraStr);
-                Sql.TrasaccionesObj.Nuevo(id);
-                Sql.TrasaccionesObj.EstablecerItem("documentoP",  id, docP);
-                Sql.TrasaccionesObj.EstablecerItem("indice",      id, i + 1);
+                string id;
+                if (string.IsNullOrEmpty(item.TrasaccionId))
+                {
+                    id = Guid.NewGuid().ToString();
+                    Sql.TrasaccionesObj.Nuevo(id);
+                    Sql.TrasaccionesObj.EstablecerItem("documentoP", id, docP);
+                    item.TrasaccionId = id;
+                }
+                else id = item.TrasaccionId;
+
+                while (reservados.Contains(next)) next++;
+                Sql.TrasaccionesObj.EstablecerItem("indice",      id, next);
+                next++;
                 Sql.TrasaccionesObj.EstablecerItem("fecha",       id, fechaT);
                 Sql.TrasaccionesObj.EstablecerItem("descripcion", id, item.Descripcion);
                 Sql.TrasaccionesObj.EstablecerItem("importe",     id, item.Importe);
                 Sql.TrasaccionesObj.EstablecerItem("forma",       id, item.Forma);
             }
+            _trasaccionesOrig = new HashSet<string>(_trasacciones.Select(t => t.TrasaccionId));
         }
 
         private void GuardarLineasEntrega(string docP)
         {
-            for (int i = 0; i < _entregas.Count; i++)
+            var vigentes = new HashSet<string>(
+                _entregas.Where(e => !string.IsNullOrEmpty(e.EntregaId)).Select(e => e.EntregaId));
+
+            var reservados = Sql.EntregasObj.IndicesNoNormales("documentoP", docP);
+            foreach (var idOrig in _entregasOrig)
+                if (!vigentes.Contains(idOrig))
+                {
+                    var ix = Sql.EntregasObj.ObtenerItem("indice", idOrig);
+                    if (ix != null && int.TryParse(ix.ToString(), out int n)) reservados.Add(n);
+                    Sql.EntregasObj.Eliminar(idOrig);
+                }
+
+            int next = 1;
+            foreach (var item in _entregas)
             {
-                var item  = _entregas[i];
-                string id = $"{docP}{(i + 1):D3}";
                 DateTime fechaE = CombinarFechaHora(
                     DateTime.TryParse(item.FechaStr, out var fd) ? fd : DateTime.Today,
                     item.HoraStr);
-                Sql.EntregasObj.Nuevo(id);
-                Sql.EntregasObj.EstablecerItem("documentoP", id, docP);
-                Sql.EntregasObj.EstablecerItem("articulo",   id, item.ArticuloId);
-                Sql.EntregasObj.EstablecerItem("indice",     id, i + 1);
-                Sql.EntregasObj.EstablecerItem("cantidad",   id, item.Cantidad);
-                Sql.EntregasObj.EstablecerItem("fecha",      id, fechaE);
+                string id;
+                if (string.IsNullOrEmpty(item.EntregaId))
+                {
+                    id = Guid.NewGuid().ToString();
+                    Sql.EntregasObj.Nuevo(id);
+                    Sql.EntregasObj.EstablecerItem("documentoP", id, docP);
+                    item.EntregaId = id;
+                }
+                else id = item.EntregaId;
+
+                while (reservados.Contains(next)) next++;
+                Sql.EntregasObj.EstablecerItem("indice",   id, next);
+                next++;
+                Sql.EntregasObj.EstablecerItem("articulo", id, item.ArticuloId);
+                Sql.EntregasObj.EstablecerItem("cantidad", id, item.Cantidad);
+                Sql.EntregasObj.EstablecerItem("fecha",    id, fechaE);
             }
+            _entregasOrig = new HashSet<string>(_entregas.Select(e => e.EntregaId));
         }
 
         private static void OrdenarTablas()

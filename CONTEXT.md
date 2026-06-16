@@ -10,7 +10,7 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 - **Reportes Excel**: `ClosedXML 0.102.2`
 - **IDE recomendado**: Visual Studio 2022 / VS Code + extensión C#
 - **Proyecto**: `WpfAppVba/WpfAppVba.csproj`
-- **Rama de desarrollo activa**: `sistemaControl_1.5`
+- **Rama de desarrollo activa**: `claude/eloquent-hopper-gi9nlv`
 
 ## Lo Que Está Implementado y Funciona
 
@@ -24,6 +24,7 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 ### Secciones del sidebar (orden visual)
 | Botón | Panel fijo | Detalle en pestaña | Selector en pestaña |
 |-------|-----------|-------------------|---------------------|
+| 📊 Dashboard | `DashboardGeneral` | — | — |
 | 📋 Artículos | `ArticulosGeneral` | `ArticulosDetalle` (pestaña) | — |
 | 📑 Pedidos | `PedidosGeneral` | `PedidosDetalle` (pestaña) | TercerosGeneral, ArticulosGeneral |
 | 🔄 Traspasos | `TraspasosGeneral` | `TraspasosDetalle` (pestaña) | SucursalesGeneral, ArticulosGeneral |
@@ -38,6 +39,8 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 | 📊 Inventarios | `InventariosGeneral` | `InventariosDetalle` (pestaña) | ArticulosGeneral (pestaña) |
 | 🌐 Regiones | `RegionesGeneral` | `RegionesDetalle` (pestaña) | — |
 | 💲 Precios | `PreciosGeneral` | `PreciosDetalle` (pestaña) | RegionesGeneral (pestaña-selector) |
+| 🏢 Empresas | `EmpresasGeneral` | `EmpresasDetalle` (pestaña) | — |
+| 👤 Usuarios | `UsuariosGeneral` | `UsuariosDetalle` (pestaña) | — |
 | ⚙ Configuración | `Configuracion` (embedded) | — | — |
 
 ### Paneles declarados en ConsolaMovimientos
@@ -55,7 +58,10 @@ private readonly CategoriasGeneral   _panelCategorias    = new();
 private readonly InventariosGeneral  _panelInventarios   = new();
 private readonly PreciosGeneral      _panelPrecios       = new();
 private readonly RegionesGeneral     _panelRegiones      = new();
+private readonly EmpresasGeneral     _panelEmpresas      = new();
 private readonly Configuracion       _panelConfiguracion = new();
+private          DashboardGeneral    _panelDashboard     = new(); // sección "dashboard"
+private          UsuariosGeneral     _panelUsuarios      = new(); // solo admin; recreado en RecargarContexto
 ```
 
 ### Patrones de comportamiento implementados
@@ -161,9 +167,202 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - **Sin herramientas de build en el entorno cloud**: todos los cambios se aplican siguiendo patrones existentes, pero no pueden compilarse ni ejecutarse remotamente. Siempre verificar localmente antes de merge a producción.
 - **`AppState.TipoPedido` y `AppState.TipoMovimiento` son globales**: en `PedidosGeneral.AbrirEditar` se leen del DB antes de abrir la pestaña para garantizar el valor correcto. Si se abrieran dos pestañas de edición simultáneas muy rápido, podría haber condición de carrera (actualmente no es un problema práctico).
 - **`CorreccionesDetalle` ya es pestaña**: usa `OpenAsTab` de ArticulosGeneral para buscar artículos, igual que Pedidos/Traspasos.
-- **Rama de trabajo**: todos los cambios van a `sistemaControl_1.5`. Los commits se generan primero en una rama de sesión (`claude/...`) y luego se pasan a `sistemaControl_1.5` por fast-forward.
+- **Rama de trabajo**: la sesión actual trabaja en `claude/cool-hopper-vo3mxo`. (La sesión previa de multi-empresa fue `claude/brave-albattani-03ox62`.)
 
 ## Historial de Cambios por Sesión
+
+### Sesión 2026-06-15 — Resiliencia ante red inestable (Bolivia), guards de conexión y rediseño/escalado del Dashboard (rama `claude/eloquent-hopper-gi9nlv`)
+
+> Contexto: la conexión a SQL Server en Bolivia es inestable. El objetivo de la sesión fue evitar congelamientos, guardados corruptos y registros "fantasma" cuando la red se cae, más mejoras de UI en el Dashboard. **No se introdujo SQLite ni caché en disco** (se evaluó y descartó por riesgo de duplicar correlativos entre usuarios y romper la generación de códigos, que debe seguir siendo en vivo contra SQL Server).
+
+#### Resiliencia de escritura (`DataConsulta.ExportarItems` + `DatabaseConnection`)
+- **Transacción atómica por tabla**: `ExportarItems` envuelve sus INSERT + UPDATE en una sola `SqlTransaction` (todo-o-nada). En rollback restaura el `estadof` original en memoria para conservar los cambios pendientes y poder reintentar. ⚠️ La atomicidad es **por tabla**, NO por documento completo (un pedido se guarda en 4 tablas vía `OrdenarTablas` → `DocumentosPObj`, `PedidosObj`, `TrasaccionesObj`, `EntregasObj`, cada una con su propia transacción). La atomicidad multi-tabla quedó **pendiente** (limitación conocida).
+- **Inserts idempotentes**: el INSERT pasó de `VALUES (...)` a `INSERT ... SELECT ... FROM (VALUES …) AS v(cols) WHERE NOT EXISTS (SELECT 1 FROM tabla WHERE id = v.id)`, para que un reintento tras un ACK perdido no duplique filas por `id`. Los UPDATE ya son idempotentes.
+- **Descarte de inserts no persistidos (anti-fantasma)**: si `ExportarItems` falla definitivamente (tras reintentos), `DescartarInsertsNoPersistidos()` quita de la caché en memoria las filas en estado `"nuevo"` que no llegaron a SQL, para no dejar registros que se ven en la app pero no existen en la base. (Las ediciones que fallan quedan pendientes, no se revierten — limitación conocida.)
+- **`SqlRetry`** (nueva clase, `WpfAppVba.Data`): `SqlRetry.Ejecutar(Func/Action, intentos=3, baseMs=400)` reintenta con backoff exponencial **solo** ante errores SQL transitorios (números `-2, 53, 64, 121, 233, 1205, 10053/4/60/1, 11001, 40197, 40501, 40613`). Es **síncrono** (`Thread.Sleep`), así que un reintento añade una pausa breve en el hilo de UI. Envuelve: `ObtenerDatos` (lecturas), `ExportarItems` (la transacción completa) y los helpers en vivo (`CodigoExiste`, `SiguienteCodigoInt`, `SiguienteNumeroDoc`, `SiguienteNumeroDocPorEmpresa`, `MaxFecha`, `Maximo`, `VerificarId`, `IndicesNoNormales`).
+- **`DatabaseConnection.ConnectionString`**: se agregó `Connect Retry Count=3;Connect Retry Interval=10;Pooling=true;` (resiliencia de conexiones idle ante microcortes).
+- **`DatabaseConnection.Sondear(int timeoutSeg=2)`** (nuevo): sonda rápida con una conexión **propia y desechable** (timeout corto), que NO toca la conexión compartida; la usa el timer de estado de conexión.
+
+#### Estado de conexión (label en top bar) + guards de guardado/actualización
+- **`ConexionEstado`** (nueva clase estática, `WpfAppVba`): solo mantiene estado, sin UI. `EnLinea` (bool, optimista en `true`), evento `Cambio`, `Intervalo` (15 s). `Iniciar(Dispatcher)` arranca un `DispatcherTimer` que sondea en segundo plano (`DatabaseConnection.Sondear(2)` vía `Task.Run`) y marshaliza el cambio al hilo de UI. `Revisar()` fuerza una sonda inmediata.
+- **Label en la top bar** de `ConsolaMovimientos`: pill `PillConexion` + `LblConexion` ("●  En línea" verde `#2E7D32` / "●  Sin conexión" rojo `#C62828`), en la columna central. Se suscribe a `ConexionEstado.Cambio` en el ctor (`ConexionEstado.Iniciar(Dispatcher)`) y se da de baja en `ConsolaMovimientos_Closing`.
+- **`FuncionesComunes`**: `HayConexionOAvisa(owner, mensaje)` (capa 1: lee `ConexionEstado.EnLinea` instantáneo; capa 2 con cortocircuito `&&`: `TieneConexion()` real / `SELECT 1`); `VerificarConexionParaGuardar(owner)` ("Sin conexión. No se pueden guardar los cambios.") y `VerificarConexionParaActualizar(owner)` ("…no se pueden actualizar los datos.").
+- **Guard al GUARDAR** (`if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return [false];`) al inicio de `Guardar()` de los 14 `*Detalle` (Articulos, Categorias, Correcciones, Empresas, Familias, Industrias, Inventarios, Pedidos, Precios, Productos, Regiones, Sucursales, Terceros, Usuarios), `Configuracion.BtnGuardar_Click`/`BtnGuardarTema_Click` y `CambiarContrasena.BtnGuardar_Click`. (Se convirtieron a cuerpo de bloque los `Guardar()` que eran expresión.)
+- **Guard al ELIMINAR/cambiar estado**: en los `BtnEliminar_Click` de los 15 paneles `*General` y en `PreciosGeneral.BtnCambiarEstado_Click`. **NO** se guarda `ConsolaMovimientos.MarcarInactivo()` (presencia best-effort en logout, con su propio try/catch).
+- **Guard al ACTUALIZAR**: en los 16 `BtnActualizar_Click` (paneles General + Dashboard), con el mensaje de actualizar.
+
+#### Offline: arreglo del congelamiento de Configuración
+- `Configuracion.PoblarSucursales` / `ActualizarPeriodos` / `ActualizarFechaInicio`: si `ConexionEstado.EnLinea == false` usan el **caché en memoria** (`Sql.SucursalesObj` filtrado por empresa; `MaxFecha` solo se intenta online) en vez de consultar SQL Server. Antes, abrir la pestaña Configuración sin conexión consultaba SQL en el hilo de UI → con `SqlRetry` reintentaba y reventaba con `SqlException` (congelamiento ~10 s). Ahora abre al instante offline.
+
+#### AppSheets — solo "sincronizar todo"
+- Se **eliminó** `SincronizarAppsheetsDialog.xaml/.cs` y el método `AppsheetsSync.SincronizarSucursalActiva()` (y la lógica `suc != null` de los helpers `InsertarFaltantes`/`MarcarEliminados`, que ahora siempre cubren todas las sucursales de la empresa vía `CROSS JOIN`).
+- `Configuracion.BtnSincronizarAppsheets_Click` ahora llama **directamente** a `AppsheetsSync.SincronizarTodasLasSucursales()` (sin diálogo). `ArticulosGeneral` ya usaba esa función.
+
+#### Dashboard — rediseño de gráficos + escalado tipo zoom
+- **Reorganización a grilla 2 columnas × 3 filas** (`DashboardGeneral.xaml`): Col 1 = "Cantidad por mes y categoría" (filas 1-2, `RowSpan`) + "Suma por artículo" (fila 3); Col 2 = "Total por categoría" (fila 1) + "Total por familia" (filas 2-3, `RowSpan`).
+- **Escalado global tipo zoom**: TODO el contenido (segmentadores + KPIs + 3 gráficos) está envuelto en un **`Viewbox` (`Stretch="Uniform"`)** sobre un tamaño de diseño fijo `<Grid Width="1600" Height="860">`. Al minimizar/maximizar el conjunto se escala proporcionalmente; nada se recorta. (`Uniform` = sin deformar, puede dejar franja; alternativa `Fill` = llena sin franja pero deforma. Se evaluó un slider de zoom manual con `ScaleTransform`+`ScrollViewer` pero el usuario lo **revirtió**; quedó solo el escalado automático del Viewbox.)
+- **Scrolls internos selectivos** (respaldo si los datos exceden el diseño): "por mes" tiene **scroll horizontal** (su `PanelMeses` pasó de `UniformGrid` a `StackPanel Orientation="Horizontal"` para poder desbordar; el eje Y queda fijo fuera del scroll); "por categoría" y "por familia" tienen **scroll vertical**; la tabla "por artículo" conserva el scroll interno del `DataGrid`.
+
+#### Limitaciones conocidas (pendientes, NO implementadas)
+- **Atomicidad de documentos multi-tabla**: cabecera + líneas de un pedido/traspaso se guardan en transacciones separadas; un corte entre tablas puede dejar un documento incompleto en SQL. Requiere una transacción ambiental compartida en `DatabaseConnection` (cambio mayor en el acceso a datos).
+- **Revertir ediciones al fallar**: el anti-fantasma solo descarta INSERTs nuevos; una edición que falla deja la caché mostrando el valor nuevo aunque SQL tenga el viejo (hasta el próximo guardado/Actualizar). Requiere snapshot del valor previo.
+- **`SqlRetry` es síncrono**: los reintentos pausan brevemente el hilo de UI. Eliminarlo requeriría pasar el acceso a datos a async.
+
+### Sesión 2026-06-15 — Dashboard bars, sección Usuarios y ícono global (rama `claude/confident-curie-t2etpj`)
+
+#### Dashboard — barras de familia proporcionales al ancho
+- **`DashboardGeneral.xaml`**: `PanelFamilias` ScrollViewer cambiado a `HorizontalScrollBarVisibility="Disabled"` para que las columnas star tengan ancho finito.
+- **`DashboardGeneral.xaml.cs`** `RenderFamilias()`: las barras ahora usan un `innerGrid` con 2 columnas star (`total` | `maxTotal - total`); la primera columna contiene un `segsGrid` con los segmentos por categoría (star proporcional a su valor). El `track` Border usa `HorizontalAlignment=Stretch` para ocupar todo el ancho del card. El total numérico queda a la derecha pegado a la barra (`barRow` con col 1 = Auto).
+
+#### Nueva sección Usuarios (solo admin)
+- **`UsuariosGeneral.xaml/.cs`** (nuevo UserControl):
+  - Lista con DataGrid: Línea / Código / Cuenta / Nombres / Apellidos / Tipo / Estado.
+  - Buscador por cuenta/nombres/apellidos; botones Nuevo/Editar/Eliminar/Actualizar.
+  - Guarda contra eliminar al usuario activo (`fila.Id == AppState.UsuarioActivo`).
+  - `UsuarioFila`: Linea, Id, Codigo, Cuenta, Nombres, Apellidos, Tipo, EstadoU.
+- **`UsuariosDetalle.xaml/.cs`** (nuevo UserControl):
+  - Cards: IDENTIFICACIÓN (Código read-only + Cuenta), DATOS PERSONALES (Nombres + Apellidos), ACCESO (CmbTipo [admin/user] + TxtEstadoU read-only TextBlock), EMPRESA Y SUCURSAL (CmbEmpresa + CmbSucursal dependiente).
+  - Sin campo contraseña ni tema (eliminados del formulario).
+  - `TxtEstadoU` es un `TextBlock` dentro de `Border` con `ThemeBgReadOnly` — no editable.
+  - `EmpresaItem` / `SucursalItem` como clases internas privadas.
+  - `PoblarSucursales(empresaId)` hace consulta directa filtrada por empresa.
+  - `GuardarNuevo`: setea `estadoU = "inactivo"`, `estadof = "normal"`.
+  - `GuardarEditar`: NO modifica `estadoU` (gestionado automáticamente).
+- **`ConsolaMovimientos.xaml`**: botón `👤 Usuarios` (`BtnNav_Usuarios`) con `Visibility="Collapsed"` antes de Configuración; `MinWidth="960"` `MinHeight="620"`; `Closing="ConsolaMovimientos_Closing"`.
+- **`ConsolaMovimientos.xaml.cs`**:
+  - En constructor: `if (AppState.EsAdmin) BtnNav_Usuarios.Visibility = Visibility.Visible;`
+  - `_panelUsuarios` (mutable, recreado en `RecargarContexto()`); sección `"usuarios"` en ambos diccionarios.
+  - `MarcarInactivo()`: guarda `estadoU = "inactivo"` para `AppState.UsuarioActivo`; con guard `if (string.IsNullOrEmpty(...)) return;` para evitar doble ejecución.
+  - `ConsolaMovimientos_Closing`: llama `MarcarInactivo()`.
+  - `BtnCerrarSesion_Click`: llama `MarcarInactivo()` antes de limpiar `AppState.UsuarioActivo` (doble llamada en Closing es segura por el guard).
+- **`LoginWindow.xaml.cs`**: al autenticar, setea `estadoU = "activo"` y llama `ExportarItems()` antes de abrir `ConsolaMovimientos`.
+
+#### Ícono de aplicación en todas las ventanas
+- **`WpfAppVba.csproj`**: `<ApplicationIcon>icono.ico</ApplicationIcon>` + `<Resource Include="icono.ico"/>`.
+- **`ConsolaMovimientos.xaml`**: `Icon="icono.ico"` en el elemento `Window`.
+- **`App.xaml.cs`**: en el constructor, se crea `BitmapFrame.Create(new Uri("pack://application:,,,/icono.ico", UriKind.Absolute))` y se asigna a cada ventana vía el `EventManager.RegisterClassHandler` existente de `Window.Loaded` (mismo handler que aplica el modo oscuro). Esto garantiza que el ícono aparece en la barra de tareas y título de TODAS las ventanas (LoginWindow, ConsolaMovimientos, diálogos).
+  - Nota: la aproximación anterior con `<Style TargetType="Window">` en `App.xaml` no funciona porque WPF no aplica estilos implícitos de Application.Resources a subclases de Window.
+
+#### Distribución / Instalador
+- Publicación self-contained con archivo único:
+  ```
+  dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=none
+  ```
+  Resultado: 7 archivos en `bin\Release\net8.0-windows\win-x64\publish\` (1 exe ~162 MB + 6 DLLs nativas de WPF inevitables).
+- Instalador creado con **Inno Setup 6.7.3** (asistente Script Wizard): idiomas Inglés + Español; modo administrativo; acceso directo en escritorio y menú Inicio; output `Setup_SistemaGestion.exe`. Script `.iss` guardado para futuras actualizaciones (recompilar con F9 tras nuevo publish).
+
+---
+
+### Sesión 2026-06-14 — AppSheets (sincronización), orden por `secuencia` y panel Dashboard (rama `claude/affectionate-albattani-r2uilg`)
+
+#### Tabla `appsheets` + sincronización desde Configuración
+- La tabla `appsheets` la creó el usuario en SQL Server. Estructura final: `secuencia` INT IDENTITY, `estadof` NVARCHAR(255), `emision` DATETIME, `id` UNIQUEIDENTIFIER DEFAULT NEWID(), `sucursal`, `articulo`, `usuario`, `empresa` (todas UNIQUEIDENTIFIER). **La columna `indice` se eliminó** (no tenía función).
+- Nueva clase **`AppsheetsSync`** (estilo `CodigoRegenerator`, SQL directo en transacción). Métodos:
+  - `SincronizarSucursalActiva()` — solo la sucursal activa.
+  - `SincronizarTodasLasSucursales()` — todas las sucursales `estadof='normal'` de la empresa activa (INSERT vía `CROSS JOIN sucursales`).
+  - Reglas por sucursal: **INSERT** una fila por cada artículo activo (`estadof='normal'`, empresa activa) que aún no tenga fila `'normal'` en `appsheets` (rellena `articulo`, `sucursal`, `empresa`, `usuario`, `emision=GETDATE()`, `estadof='normal'`); **UPDATE `estadof='eliminado'`** las filas `'normal'` cuyo artículo ya no esté activo.
+- **Configuración**: botón **`🧾 Sincronizar AppSheets`** a la izquierda de "Cambiar Contraseña". Abre `SincronizarAppsheetsDialog` (Window) con 3 opciones: *Sincronizar todo* (todas las sucursales) / *Sincronizar sucursal activa* / *Cancelar*.
+- **Disparo automático**: al **agregar** (`ArticulosDetalle.GuardarNuevo`/`GuardarInsertar`) o **eliminar** (`ArticulosGeneral.BtnEliminar_Click`) un artículo se ejecuta `SincronizarTodasLasSucursales()` vía el helper estático `ArticulosGeneral.SincronizarAppsheetsTrasCambio()` (si falla solo avisa, no revierte el cambio del artículo). Editar un artículo NO dispara sync.
+
+#### Orden de recarga de caché por `secuencia`
+- `AppLoader.ConectarProductos`: las consultas que ordenaban `ORDER BY id ASC` ahora usan `ORDER BY secuencia ASC` (empresas, usuarios, familias, productos, Categorias, industrias, terceros, sucursales, regiones). `articulos` sigue por `familia, indice`; `precios` por `fecha`.
+
+#### Nuevo panel **Dashboard** (sidebar)
+- Nuevo `DashboardGeneral` (UserControl), sección `"dashboard"`, botón `📊 Dashboard` al tope del sidebar de `ConsolaMovimientos` (registrado en diccionarios, `MostrarPanel`, `RecargarContexto`, `BtnNav_Dashboard_Click`, `_panelDashboard`).
+- Lee del caché ya filtrado (`PedidosObj`/`TraspasosObj`) por sucursal + período activos. Venta/compra por `documentosP.movimiento`; entrada/salida por `origen`/`destino` vs sucursal activa en `documentosT`; categoría/familia/descripción/código vía `articulos` → `CategoriasObj`/`FamiliasObj`. Todo en **cantidad** (unidades). Botón **Actualizar**.
+- **Segmentador de selección única** (RadioButton, GroupName): Ventas/Compras/Entradas/Salidas; cada chip muestra su cantidad y filtra el resto; por defecto Ventas.
+- **KPIs** (a la derecha de los segmentadores, misma fila): Total unidades (tipo activo), Movimientos, Artículos distintos.
+- **Gráfico por mes**: barras **agrupadas por categoría** (una barra por categoría con valor encima), solo meses con datos, eje Y con escala (redondeo "lindo" `NiceCeil`) + cuadrícula horizontal; el total del mes va debajo del nombre del mes. Leyenda de colores por categoría. **Altura dinámica** según el alto disponible (`PanelPlot_SizeChanged`, cache `_porMesCache`).
+- **Por categoría**: barras horizontales que llenan el ancho (proporción star), eje X + cuadrícula, color propio por categoría (paleta estable `_colorCat`).
+- **Por familia**: una barra **apilada por categoría** por familia, con los totales por categoría entre el título y la barra; longitud proporcional al total de la familia (ancho fijo `AnchoBarra`).
+- **Lista de artículos**: DataGrid Código · Familia · Descripción · Cantidad · % + fila Total.
+- **Layout sin scroll general**: el contenido es un `Grid` con filas proporcionales (`Auto` / `1*` / `1.4*`); el gráfico y las tablas se estiran por resolución y solo las listas internas tienen scroll. Disposición inferior: col 1 = categoría (arriba) + artículos (abajo); col 2 = familia (ambas filas).
+- Gráficos dibujados con primitivas WPF (sin dependencias NuGet nuevas).
+
+### Sesión 2026-06-12/13 — Multi-empresa, borrado lógico, lógica de índices, períodos y limpieza (rama `claude/cool-hopper-vo3mxo`)
+
+#### Multi-empresa: formularios y empresa activa
+- Nueva sección **Empresas** en el sidebar, entre Precios y Configuración (botón `🏢 Empresas`).
+- `EmpresasGeneral` (UserControl): lista Línea/Código/Descripción/Signo; CRUD "Nueva/Editar/Eliminar Empresa" + Actualizar; patrón estándar (`_iniciado`, `Cerrando`/`IntentarCerrar`, actualización incremental, `OpenAsTab` selector clave `seleccionar-empresa|{contexto}`). Usa `Sql.EmpresasObj`.
+- `EmpresasDetalle` (UserControl): Código (int, `SiguienteCodigoInt()`, read-only al editar), Descripción, Signo (NVARCHAR(4) mayúscula), Observación (TextBox plano en `Border`, texto al tope como `TercerosDetalle`). Valida `CodigoExiste()`. Persiste `codigo, descripcion, signo, observacion, fecha, emision, edicion, usuario, usuarioE`. La columna `codigo` (INT) de `empresas` la agregó el usuario en SQL.
+- `ConsolaMovimientos`: panel `_panelEmpresas` (+ sección `"empresas"` en los diccionarios, caso en `MostrarPanel`, `BtnNav_Empresas_Click`). Los paneles General pasaron de `readonly` a mutables.
+- **Configuración**: nuevo `CmbEmpresa` ("EMPRESA ACTIVA") a la izquierda de `CmbSucursal`. `CmbSucursal` es **dependiente** de la empresa (se repuebla por consulta directa `_sucursalesEmpresa`, ya que el caché está filtrado por la empresa activa). `ActualizarFechaInicio`/`ActualizarPeriodos` leen de `_sucursalesEmpresa`.
+- **Guardar en Configuración ya NO cierra sesión**: si cambia empresa/sucursal/periodo recarga cachés (`ConectarProductos` si cambió empresa, `ConectarBases`, `ActualizarBase`, `ConectarDocumentos`) y llama `ConsolaMovimientos.RecargarContexto()` (cierra las pestañas dinámicas y **recrea los paneles General**), manteniendo el foco en Configuración; luego `CargarDatos()` repuebla sus combos. La empresa se persiste en `usuarios.empresa`. Se eliminó `CerrarSesionYReabrirLogin`.
+- **No se puede guardar sin sucursal**: si `CmbSucursal` está vacío (empresa sin sucursales) → `MessageBox` de advertencia y `return` (reemplaza un comportamiento intermedio que dejaba `usuarios.sucursal` en NULL).
+- **TOP BAR**: nuevo `LblEmpresa` ("Empresa: {desc}") a la derecha de `LblSucursal`, seteado en `ActualizarInfoUsuario()`.
+
+#### Borrado lógico global (sin DELETE físico)
+- `DataConsulta.ExportarItems` ya NO ejecuta `DELETE FROM`. Las filas con `estadof` = `"eliminado"`/`"ocultado"` se persisten con `UPDATE` del `estadof` (se filtran al recargar, que solo trae `estadof='normal'`). Se quitó el bloque DELETE y `deleteIds`. Afecta a todos los `.Eliminar()`/`.Ocultar()`. Nota: las tablas acumulan filas con estadof≠normal (no se borran nunca).
+
+#### Lógica de índices: no reutilizar índices de filas eliminadas
+- **Guardado diferencial de líneas** de documentos (antes borraban TODAS las líneas y las recreaban): nueva (id de fila vacío) → insertar; existente → `EstablecerItem` sobre su mismo id (UPDATE); quitada (estaba al abrir y ya no está) → `Eliminar()` (estadof "eliminado"). Cada detalle captura los ids originales (`_xxxOrig`) al abrir para editar y los limpia en modo nuevo. Aplicado en **PedidosDetalle** (pedidos/transacciones/entregas), **TraspasosDetalle**, **CorreccionesDetalle**, **InventariosDetalle**. Se quitaron `EliminarLineas`/loops `idsEliminar`.
+- **Índice por posición sin reutilizar eliminados**: cada línea visible se numera por su posición en la grilla, **saltando los índices reservados** por filas eliminadas (que conservan su índice). Reservados = filas `estadof <> 'normal'` en SQL (`DataConsulta.IndicesNoNormales(filtroColumna, filtroValor)`) + las que se eliminan en este guardado. Ej.: A(índice 1, eliminado) + B(índice 2, normal), insertar C sobre B → A=1 (eliminado), C=2, B=3. (Reemplaza un intento previo `SiguienteIndice` = MAX+1, ya retirado.)
+- **`articulos`** (su `indice` es la posición dentro de la familia): Eliminar (`ArticulosGeneral`) ya NO corre los índices, solo oculta (índice reservado, puede quedar hueco). Insertar (`ArticulosDetalle.GuardarInsertar`) usa el nuevo helper estático `ArticulosGeneral.RenumerarFamilia(famId)` (renumera activos por orden saltando reservados). El índice sugerido (`RecalcularIndicePorFamilia`) considera también los reservados.
+- Tablas con columna `indice` cubiertas por la regla: pedidos, transacciones, entregas, traspasos, correcciones, inventarios y articulos. (Modo editar de un artículo: mantiene su índice; reposicionar manualmente ahí aún no aplica el salto-de-reservados — pendiente menor.)
+
+#### Apertura / períodos
+- **Períodos desde la máxima fecha de inventario**: `Configuracion.ActualizarPeriodos` calcula el año inicial de `CmbPeriodo` como el año de la MÁXIMA fecha de inventario de la sucursal (`DocumentosIObj.MaxFecha("sucursal", id)`, consulta directa a SQL); si la sucursal no tiene inventarios usa el año de `sucursal.fecha`. Nuevo helper `DataConsulta.MaxFecha`. Evita elegir un período anterior al inventario (que recargaba documentos previos a esa fecha vía `ActualizarBase`). Ej.: sucursal con `fecha`=01/01/2024 e inventario 19/02/2026 → el desplegable solo muestra 2026.
+- **Fix `uniqueidentifier`**: `AppLoader.ConectarBases`/`ConectarDocumentos` usan el GUID nulo `00000000-0000-0000-0000-000000000000` cuando `SucursalActiva` está vacía (antes `sucursal = ''` contra una columna `uniqueidentifier` lanzaba *"Conversion failed when converting from a character string to uniqueidentifier"* al guardar sin sucursal y también en el login siguiente).
+
+#### Eliminación de la tabla `stocks`
+- El usuario eliminó la tabla `stocks` en SQL Server. Se quitó `SqlData.StocksObj`, su `Conectar("stocks", ...)` en `AppLoader.ConectarProductos`, y `AppState.ActualizarStocks()` + sus 3 llamadas. **No** se tocó el cálculo de stock (`StockCalculator.ContarStock/ContarStock2`, `GridStock`, columnas "Stock", avisos de stock insuficiente), que usa apertura + documentos y no dependía de la tabla.
+
+#### Otros (UI y limpieza)
+- **MovimientosGeneral**: la columna "Movimiento" muestra `código-tipo` del documento (de `Documentos[P/T/C]Obj.ObtenerItem("codigo", id)`) en vez del `id(UUID)`. Se **eliminó** `MovimientosWindow.xaml/.cs` (Window legacy sin referencias); las clases `MovimientoDato`/`MovimientoFila` se movieron a `MovimientosGeneral.xaml.cs`.
+- **Diseño esquinas redondeadas**: `EmpresasGeneral` y `RegionesGeneral` al estilo unificado (botones `ControlTemplate CornerRadius=6`, `SearchInput` redondeado, `DataGrid` en `<Border CornerRadius="6">`).
+- **Signo en maestros**: `RegionesDetalle` y `SucursalesDetalle` tienen `Box_Signo` (SIGNO, MaxLength 4, mayúscula) a la derecha de DESCRIPCIÓN; cargan/guardan `regiones.signo`/`sucursales.signo`.
+
+#### Helpers nuevos en `DataConsulta`
+- `IndicesNoNormales(filtroColumna, filtroValor)` → índices de filas `estadof <> 'normal'` del documento (para no reutilizarlos).
+- `MaxFecha(filtroColumna, filtroValor)` → máxima fecha de filas en estado normal (consulta directa).
+- (`SiguienteIndice` se introdujo y luego se retiró; reemplazado por la regla de posición + `IndicesNoNormales`.)
+
+### Sesión 2026-06-12 — Empresas, regeneración de códigos y UI de conexión (rama `claude/brave-albattani-03ox62`)
+
+#### Nueva entidad: Empresa (multi-empresa)
+- Cambios de esquema hechos por el usuario en SQL Server:
+  - Nueva tabla `empresas` (`id` UNIQUEIDENTIFIER, `secuencia` INT IDENTITY, `descripcion`, `signo` NVARCHAR(4), `observacion`, `fecha`, `emision`, `edicion`, `usuario`, `usuarioE`, `estadof`).
+  - Nueva columna `empresa` (UNIQUEIDENTIFIER) en: `usuarios, sucursales, articulos, categorias, familias, industrias, productos, regiones, stocks, terceros`.
+  - Todas las tablas tienen `id` con `DEFAULT NEWID()` y una columna `secuencia` IDENTITY (para que la herramienta SQL ordene sin tocar el `id`).
+- `AppState.EmpresaActiva` (string); se setea al iniciar sesión desde `usuarios.empresa` y se limpia en logout (`ConsolaMovimientos`, `Configuracion`).
+- `SqlData.EmpresasObj`; `AppLoader.ConectarProductos` carga la tabla `empresas`.
+- **Filtro por empresa en la carga de caché** (`ConectarProductos`, solo cuando hay empresa activa):
+  - Filtro directo `empresa = '{guid}'`: `stocks, articulos, familias, productos, Categorias, industrias, terceros, sucursales, regiones`.
+  - `usuarios`: SIN filtro (necesario para el login).
+  - `precios` (sin columna empresa): cascada `region IN (SELECT id FROM regiones WHERE empresa = '{guid}')`.
+  - Tras autenticar se vuelve a llamar `ConectarProductos()` ya filtrado por la empresa del usuario.
+- **Documentos**: se evaluó cargarlos por todas las sucursales de la empresa (cascada empresa→sucursales) pero **se revirtió**; siguen filtrándose por **sucursal activa + rango de fechas** (commit revert `4eeb572`). `ConectarBases`/`ConectarDocumentos` quedaron como antes.
+
+#### Conexión SQL Server: formulario propio (extraído de Configuración)
+- Nuevo `ConexionServidoresWindow` (Window): lista/agregar/editar/eliminar/conectar servidores (antes era el CARD "CONEXIÓN SQL SERVER" embebido en `Configuracion`).
+- Se **eliminó** ese card de `Configuracion.xaml`/`.cs` (y el estilo `SelectorBtn` y todo el code-behind de servidores); el grid de Configuración quedó a una sola columna (GENERAL + MI CUENTA).
+- `LoginWindow.BtnConfigurarConexion_Click` abre `ConexionServidoresWindow` (en vez de `ConfiguracionDbWindow`); al cerrar recarga `DatabaseConnection.CargarDesdeConfiguracion()` y reconecta. `ConfiguracionDbWindow` se conserva (diálogo de un solo servidor usado por Agregar/Editar).
+- **Conectar** no cierra el formulario: marca el servidor activo, reconfigura `DatabaseConnection` y refresca la lista (queda abierto; se cierra con "Cerrar").
+- Fix de layout: el `DataGrid` usa `MinHeight` y ocupa el espacio (`Grid` con filas), para que los botones Conectar/Editar/Eliminar queden siempre visibles.
+
+#### Regeneración de códigos (`CodigoRegenerator` + botón en `ConexionServidoresWindow`)
+- Botón "🔢 Regenerar códigos" (a la derecha de Eliminar) que ejecuta `CodigoRegenerator.RegenerarTodos()` en una transacción sobre el servidor activo. Reescribe **todas** las filas (sin filtro `estadof`).
+- Maestras (`usuarios, familias, productos, Categorias, industrias, terceros, sucursales, regiones`): `codigo = 1..N` (`ROW_NUMBER() OVER (ORDER BY id)`).
+- `documentosI/P/C`: `codigo = signo_sucursal + correlativo por sucursal`.
+- `documentosT` (traspasos): `codigo = signo_empresa + correlativo por empresa`, vía cascada `emitido → sucursales.empresa → empresas.signo` (documentosT NO tiene columna `sucursal`; tiene `origen/destino/emitido`).
+- `precios`: `codigo = signo_region + correlativo por región`.
+- Los signos siempre en **MAYÚSCULA** (`UPPER(...)`).
+
+#### Códigos: signo en mayúscula y visualización del código completo
+- Al construir el código en los detalles (`Pedidos/Traspasos/Inventarios/Correcciones/Precios`) el signo va en mayúscula (`signo.ToUpper()`).
+- **Traspasos**: el signo del código sale de `empresas.signo` (no `sucursales.signo`); nuevo método `DataConsulta.SiguienteNumeroDocPorEmpresa(signo, empresaId)` (cascada `emitido→sucursales.empresa`) para numerar el traspaso nuevo por empresa. Corrige el error "Invalid column name 'sucursal'" al crear un traspaso.
+- `Box_Documento*` (Pedidos/Traspasos/Correcciones/Inventarios) muestra el **código completo** (signo+número) en modo nuevo y editar (antes mostraba solo el número).
+- Grids "General": la columna "Documento" muestra el **código** del documento (propiedad `Codigo` agregada a `PedidoFila/TraspasoFila/CorreccionFila/InventarioFila`); la clave interna (`DocumentoP/DocumentoT/Id`) no cambia.
+- Cabecera del panel de detalle (Pedidos/Traspasos/Correcciones) muestra el código del documento.
+- Título de la pestaña de edición usa el **código** (no el id UUID); la clave de deduplicación sigue usando el id.
+
+#### ConsolaMovimientos — top bar
+- `LblUsuario` muestra el **nombre** del usuario (`usuarios.nombres`) en vez del id; conserva el Período.
+- Nuevo `LblSucursal` a la derecha con `Sucursal: {descripción}` de la sucursal activa.
+
+#### Persistencia — columna IDENTITY `secuencia`
+- `DataConsulta.ExportarItems` **excluye** la columna autogenerada `secuencia` (helper `EsAutogenerada` + `ColumnasPersistibles`) de INSERT y UPDATE, para evitar "Cannot insert/update identity column 'secuencia'". El `id` se sigue insertando explícitamente (convive con `DEFAULT NEWID()`).
+- Pendiente conocido: si se agrega un alta de `empresas` desde el app, habría que asegurarse de que su `secuencia` IDENTITY también quede excluida (ya lo está por nombre).
 
 ### Sesión anterior (antes de compactación)
 - Precios migrado a panel sidebar + pestañas (`PreciosGeneral`, `PreciosDetalle`).
@@ -178,7 +377,44 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 
 ### Sesión anterior (antes de compactación)
 - **Botón X de pestañas dinámicas**: ahora llama `IntentarCerrar()` vía reflexión si el contenido lo implementa, protegiendo cambios no guardados antes de cerrar.
-- **CONTEXT.md**: actualizado para reflejar que `CorreccionesDetalle` y `ArticulosDetalle` ya estaban migrados a pestañas en sesiones anteriores.
+
+### Sesión 2026-06-11 — Refactor id/codigo (commit c5002d6)
+Separación completa del campo `id` interno (UUID) del campo `codigo` visible al usuario en todos los formularios. **41 archivos modificados.**
+
+#### Infraestructura
+- **`AppState.cs`**: `SucursalActiva`, `RegionActiva`, `UsuarioActivo`, `AperturaIdActiva` cambiados de `long` a `string`.
+- **`DataConsulta.cs`**:
+  - `BuscarIdentificador()` ahora devuelve `string` en vez de `long`.
+  - Nuevo método `SiguienteCodigoInt()`: `MAX(CAST(codigo AS INT)) + 1` para tablas maestras.
+  - Nuevo método `SiguienteNumeroDoc(signo, filtroColumna, filtroValor)`: siguiente número de documento filtrado por sucursal o región activa; devuelve solo el número (sin el signo).
+  - Nuevo método `CodigoExiste(codigo, idActual?)`: verifica duplicados antes de guardar.
+  - Fix DELETE: ids UUID se citan correctamente en SQL (`'uuid'` con comillas).
+- **`AppLoader.cs`, `StockCalculator.cs`, `LoginWindow.xaml.cs`, `Configuracion.xaml.cs`, `ConsolaMovimientos.xaml.cs`**: actualizados para usar `AppState` con campos `string`.
+
+#### Formularios maestros (Productos, Industrias, Categorías, Regiones, Terceros, Familias, Sucursales, Artículos)
+- Modo nuevo: `id = Guid.NewGuid().ToString()`; `codigo` = entero autoincremental sugerido via `SiguienteCodigoInt()`, editable por el usuario.
+- Modo editar: usa `_idEditar` (UUID) como clave interna; `Box_Codigo` muestra el `codigo` legible.
+- Validación: `CodigoExiste()` antes de guardar nuevo; si ya existe, sugiere el siguiente disponible.
+- `OrdenarData(("codigo", false))` en todos (antes `("id", false)`).
+- Campos FK en formularios: muestran `codigo` del registro referenciado (no el UUID). Al guardar, se resuelve el UUID internamente con `BuscarIdentificador("codigo", cod)`.
+- Helpers `ResolverXxxId()` agregados en los formularios con FK (Familias→Producto, Sucursales→Región, Artículos→Familia/Industria/Categoría).
+
+#### Formularios de documentos (Pedidos, Traspasos, Correcciones, Inventarios, Precios)
+- `codigo` del documento = `signo_sucursal + numero` (ej. `"A5"`); al usuario solo se muestra el número (`"5"`); el campo Box_DocumentoX queda deshabilitado.
+- `id` del documento = `Guid.NewGuid().ToString()` (nunca visible).
+- Precios: usa `signo_region` (de `AppState.RegionActiva`) en vez de signo de sucursal.
+- Sub-registros de líneas (pedidos, trasacciones, entregas, corrección-líneas, inventario-líneas): también usan `Guid.NewGuid().ToString()` como id (antes `$"{docP}{i:D3}"`).
+- FK de tercero: `Box_Tercero_Identificador` muestra `codigo` del tercero; se resuelve UUID con `ResolverTerceroId()` al guardar.
+- Eliminado `VerificarId()` para documentos; la generación automática de UUID garantiza unicidad.
+
+#### Formularios General (todas las secciones)
+- `Seleccionar()` devuelve `fila.Codigo` (antes `fila.Id`).
+- Títulos de pestañas usan `fila.Codigo` (ej. `"Artículo A123"` en vez de UUID).
+- Columnas de DataGrid vinculadas a `Binding="{Binding Codigo}"` donde antes usaban `Id`.
+- `ConstruirFila()`: poblada con `Codigo = Sql.XxxObj.ObtenerItem("codigo", id)?.ToString() ?? ""`.
+
+#### Limpieza
+- Eliminadas todas las llamadas redundantes `.ToString()` sobre propiedades `string` de `AppState` en: `PedidosGeneral`, `TraspasosGeneral`, `CorreccionesGeneral`, `MovimientosGeneral`, `MovimientosWindow`, `InventariosGeneral`.
 
 ### Sesión 2026-06-10 — rama `master`
 
@@ -376,9 +612,9 @@ dotnet run --project WpfAppVba.csproj
 
 ### Git (rama activa)
 ```bash
-git checkout sistemaControl_1.5
-git pull origin sistemaControl_1.5
-git push -u origin sistemaControl_1.5
+git checkout claude/confident-curie-t2etpj
+git pull origin claude/confident-curie-t2etpj
+git push -u origin claude/confident-curie-t2etpj
 ```
 
 ### Restaurar paquetes NuGet (si es necesario)

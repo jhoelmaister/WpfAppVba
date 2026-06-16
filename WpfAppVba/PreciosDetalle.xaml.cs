@@ -73,7 +73,7 @@ namespace WpfAppVba
                 var ahora = DateTime.Now;
                 Box_Fecha.SelectedDate = ahora.Date;
                 Box_Hora.Text          = ahora.ToString("HH:mm:ss");
-                Box_Region_Codigo.Text = _regionId;
+                Box_Region_Codigo.Text = Sql.RegionesObj.ObtenerItem("codigo", _regionId)?.ToString() ?? "";
                 ActualizarDescripcionRegion();
             }
 
@@ -90,7 +90,8 @@ namespace WpfAppVba
             Box_Fecha.SelectedDate = fecha.Date;
             Box_Hora.Text          = fecha.ToString("HH:mm:ss");
 
-            Box_Region_Codigo.Text = Sql.PreciosObj.ObtenerItem("region", id)?.ToString() ?? "";
+            string regionId = Sql.PreciosObj.ObtenerItem("region", id)?.ToString() ?? "";
+            Box_Region_Codigo.Text = Sql.RegionesObj.ObtenerItem("codigo", regionId)?.ToString() ?? "";
             ActualizarDescripcionRegion();
 
             var precioObj = Sql.PreciosObj.ObtenerItem("precio", id);
@@ -99,10 +100,17 @@ namespace WpfAppVba
                 : "";
         }
 
+        // ─── Resolver el id (UUID) de la región a partir del código digitado ──
+        private string ResolverRegionId()
+        {
+            string cod = Box_Region_Codigo.Text.Trim();
+            return cod == "" ? "" : Sql.RegionesObj.BuscarIdentificador("codigo", cod);
+        }
+
         // ─── Descripción de la región referida ────────────────────────────────
         private void ActualizarDescripcionRegion()
         {
-            string regionId = Box_Region_Codigo.Text.Trim();
+            string regionId = ResolverRegionId();
             Box_Region_Descripcion.Text = regionId == ""
                 ? ""
                 : Sql.RegionesObj.ObtenerItem("descripcion", regionId)?.ToString() ?? "";
@@ -146,7 +154,10 @@ namespace WpfAppVba
 
         // ─── Guardar ─────────────────────────────────────────────────────────
         private bool Guardar()
-            => _modoEditar ? GuardarEditar() : GuardarNuevo();
+        {
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+            return _modoEditar ? GuardarEditar() : GuardarNuevo();
+        }
 
         private bool GuardarEditar()
         {
@@ -154,7 +165,7 @@ namespace WpfAppVba
             try
             {
                 Sql.PreciosObj.EstablecerItem("fecha",    id, ObtenerFechaHora());
-                Sql.PreciosObj.EstablecerItem("region",   id, Box_Region_Codigo.Text);
+                Sql.PreciosObj.EstablecerItem("region",   id, ResolverRegionId());
                 Sql.PreciosObj.EstablecerItem("precio",   id, ParsearPrecio());
                 Sql.PreciosObj.EstablecerItem("edicion",  id, DateTime.Now);
                 Sql.PreciosObj.EstablecerItem("usuarioE", id, AppState.UsuarioActivo);
@@ -174,13 +185,18 @@ namespace WpfAppVba
         {
             try
             {
-                long siguiente = Convert.ToInt64(Sql.PreciosObj.Maximo("id") ?? 0) + 1;
-                string id = siguiente.ToString();
+                string id = Guid.NewGuid().ToString();
+
+                // Código del precio = signo de la región activa + correlativo
+                string signo  = Sql.RegionesObj.ObtenerItem("signo", AppState.RegionActiva)?.ToString() ?? "";
+                int    numero = Sql.PreciosObj.SiguienteNumeroDoc(signo, "region", AppState.RegionActiva);
+                string codigoPrecio = $"{signo.ToUpper()}{numero}";
 
                 Sql.PreciosObj.Nuevo(id);
+                Sql.PreciosObj.EstablecerItem("codigo",   id, codigoPrecio);
                 Sql.PreciosObj.EstablecerItem("articulo", id, _articuloId);
                 Sql.PreciosObj.EstablecerItem("fecha",    id, ObtenerFechaHora());
-                Sql.PreciosObj.EstablecerItem("region",   id, Box_Region_Codigo.Text);
+                Sql.PreciosObj.EstablecerItem("region",   id, ResolverRegionId());
                 Sql.PreciosObj.EstablecerItem("precio",   id, ParsearPrecio());
                 Sql.PreciosObj.EstablecerItem("emision",  id, DateTime.Now);
                 Sql.PreciosObj.EstablecerItem("edicion",  id, DateTime.Now);

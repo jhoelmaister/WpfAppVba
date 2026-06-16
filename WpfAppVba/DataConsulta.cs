@@ -66,10 +66,12 @@ namespace WpfAppVba.Data
             return null;
         }
 
-        public long BuscarIdentificador(string columna, string valor)
+        /// <summary>Devuelve el id (UUID) de la fila cuyo <paramref name="columna"/> = <paramref name="valor"/>.
+        /// Cadena vacía si no se encuentra.</summary>
+        public string BuscarIdentificador(string columna, string valor)
         {
             var res = Buscar(columna, valor, "id");
-            return res != null ? Convert.ToInt64(res) : 0;
+            return res?.ToString() ?? "";
         }
 
         /// <summary>Devuelve el ID de la fila por índice (base 1).</summary>
@@ -92,15 +94,15 @@ namespace WpfAppVba.Data
 
         // ─── MÁXIMO / VERIFICAR ───────────────────────────────────────────────
 
-        public object? Maximo(string columna)
+        public object? Maximo(string columna) => SqlRetry.Ejecutar(() =>
         {
             var conn = DatabaseConnection.ObtenerConexion();
             using var cmd = new SqlCommand($"SELECT MAX({columna}) AS maximo FROM {_nombreTabla}", conn);
             var result = cmd.ExecuteScalar();
             return result is DBNull ? null : result;
-        }
+        });
 
-        public bool VerificarId(string valor, string columna)
+        public bool VerificarId(string valor, string columna) => SqlRetry.Ejecutar(() =>
         {
             var conn = DatabaseConnection.ObtenerConexion();
             using var cmd = new SqlCommand(
@@ -108,7 +110,133 @@ namespace WpfAppVba.Data
             cmd.Parameters.AddWithValue("@val", valor);
             int total = (int)cmd.ExecuteScalar()!;
             return total == 0;
+        });
+
+        // ─── GENERACIÓN DE CÓDIGO ─────────────────────────────────────────────
+
+        /// <summary>
+        /// Siguiente código entero para tablas maestras (familias, productos, etc.):
+        /// MAX(codigo) + 1 considerando solo filas en estado normal.
+        /// </summary>
+        public int SiguienteCodigoInt() => SqlRetry.Ejecutar(() =>
+        {
+            var conn = DatabaseConnection.ObtenerConexion();
+            using var cmd = new SqlCommand(
+                $"SELECT ISNULL(MAX(CAST(codigo AS INT)), 0) + 1 FROM {_nombreTabla} " +
+                $"WHERE estadof = 'normal' AND ISNUMERIC(codigo) = 1", conn);
+            var r = cmd.ExecuteScalar();
+            return (r is null or DBNull) ? 1 : Convert.ToInt32(r);
+        });
+
+        /// <summary>
+        /// Siguiente número correlativo para documentos cuyo codigo = signo + número
+        /// (ej. "A5"). Toma el MAX(número) de las filas en estado normal cuyo
+        /// <paramref name="filtroColumna"/> = <paramref name="filtroValor"/>
+        /// (ej. sucursal/region/origen activa) y devuelve número + 1.
+        /// </summary>
+        public int SiguienteNumeroDoc(string signo, string filtroColumna, string filtroValor) => SqlRetry.Ejecutar(() =>
+        {
+            var conn = DatabaseConnection.ObtenerConexion();
+            using var cmd = new SqlCommand(
+                $"SELECT codigo FROM {_nombreTabla} " +
+                $"WHERE estadof = 'normal' AND {filtroColumna} = @f", conn);
+            cmd.Parameters.AddWithValue("@f", filtroValor);
+
+            int max = 0;
+            using var rd = cmd.ExecuteReader();
+            while (rd.Read())
+            {
+                string c = rd[0]?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(signo) && c.StartsWith(signo, StringComparison.OrdinalIgnoreCase))
+                    c = c.Substring(signo.Length);
+                if (int.TryParse(c, out int n) && n > max) max = n;
+            }
+            return max + 1;
+        });
+
+        /// <summary>
+        /// Siguiente número correlativo para documentos cuyo codigo = signo + número,
+        /// agrupado por EMPRESA. La empresa se obtiene por la cascada
+        /// emitido (sucursal) → sucursales.empresa. Pensado para documentosT (traspasos).
+        /// </summary>
+        public int SiguienteNumeroDocPorEmpresa(string signo, string empresaId)
+        {
+            if (string.IsNullOrEmpty(empresaId)) return 1;
+
+            return SqlRetry.Ejecutar(() =>
+            {
+                var conn = DatabaseConnection.ObtenerConexion();
+                using var cmd = new SqlCommand(
+                    $"SELECT d.codigo FROM {_nombreTabla} AS d " +
+                    $"INNER JOIN sucursales AS s ON s.id = d.emitido " +
+                    $"WHERE d.estadof = 'normal' AND s.empresa = @emp", conn);
+                cmd.Parameters.AddWithValue("@emp", empresaId);
+
+                int max = 0;
+                using var rd = cmd.ExecuteReader();
+                while (rd.Read())
+                {
+                    string c = rd[0]?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(signo) && c.StartsWith(signo, StringComparison.OrdinalIgnoreCase))
+                        c = c.Substring(signo.Length);
+                    if (int.TryParse(c, out int n) && n > max) max = n;
+                }
+                return max + 1;
+            });
         }
+
+        /// <summary>
+        /// Índices ya ocupados por filas eliminadas/ocultas (estadof &lt;&gt; 'normal') del
+        /// documento cuyo <paramref name="filtroColumna"/> = <paramref name="filtroValor"/>.
+        /// Consulta directa a SQL Server (esas filas no están en el caché). Sirve para
+        /// no reutilizar esos índices al renumerar las líneas visibles.
+        /// </summary>
+        public HashSet<int> IndicesNoNormales(string filtroColumna, string filtroValor) => SqlRetry.Ejecutar(() =>
+        {
+            var res  = new HashSet<int>();
+            var conn = DatabaseConnection.ObtenerConexion();
+            using var cmd = new SqlCommand(
+                $"SELECT indice FROM {_nombreTabla} WHERE estadof <> 'normal' AND {filtroColumna} = @f", conn);
+            cmd.Parameters.AddWithValue("@f", filtroValor);
+            using var rd = cmd.ExecuteReader();
+            while (rd.Read())
+                if (rd[0] != DBNull.Value && int.TryParse(rd[0].ToString(), out int n)) res.Add(n);
+            return res;
+        });
+
+        /// <summary>
+        /// Máxima fecha (de filas en estado normal) cuyo <paramref name="filtroColumna"/> =
+        /// <paramref name="filtroValor"/>. Consulta directa a SQL Server (no usa el caché,
+        /// por lo que sirve para cualquier sucursal aunque el caché esté filtrado por otra).
+        /// Devuelve null si no hay filas.
+        /// </summary>
+        public DateTime? MaxFecha(string filtroColumna, string filtroValor) => SqlRetry.Ejecutar(() =>
+        {
+            var conn = DatabaseConnection.ObtenerConexion();
+            using var cmd = new SqlCommand(
+                $"SELECT MAX(fecha) FROM {_nombreTabla} WHERE estadof = 'normal' AND {filtroColumna} = @f", conn);
+            cmd.Parameters.AddWithValue("@f", filtroValor);
+            var r = cmd.ExecuteScalar();
+            return (r is null or DBNull) ? (DateTime?)null : Convert.ToDateTime(r);
+        });
+
+        /// <summary>
+        /// Indica si ya existe otra fila (en estado normal) con el mismo codigo.
+        /// Si se indica <paramref name="idActual"/>, esa fila se excluye (modo editar).
+        /// </summary>
+        public bool CodigoExiste(string codigo, string idActual = "") => SqlRetry.Ejecutar(() =>
+        {
+            var conn = DatabaseConnection.ObtenerConexion();
+            string sql = $"SELECT COUNT(*) FROM {_nombreTabla} WHERE estadof = 'normal' AND codigo = @c";
+            if (!string.IsNullOrEmpty(idActual)) sql += " AND id <> @id";
+
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@c", codigo);
+            if (!string.IsNullOrEmpty(idActual)) cmd.Parameters.AddWithValue("@id", idActual);
+
+            int total = (int)cmd.ExecuteScalar()!;
+            return total > 0;
+        });
 
         // ─── CRUD EN MEMORIA ──────────────────────────────────────────────────
 
@@ -173,12 +301,55 @@ namespace WpfAppVba.Data
 
         // ─── EXPORTAR A SQL SERVER ────────────────────────────────────────────
 
+        // Columnas autogeneradas por SQL Server que el app NO debe escribir
+        // (columna IDENTITY 'secuencia'). Se excluyen de INSERT y UPDATE.
+        private static bool EsAutogenerada(DataColumn c)
+        {
+            string n = c.ColumnName.ToLowerInvariant();
+            return n == "secuencia" || n == "secuensia";
+        }
+
+        private IEnumerable<DataColumn> ColumnasPersistibles =>
+            _tabla.Columns.Cast<DataColumn>().Where(c => !EsAutogenerada(c));
+
         public void ExportarItems()
         {
             if (!_tabla.Columns.Contains("estadof")) return;
+            // Reintenta TODO el guardado (la transacción completa) ante fallos transitorios.
+            // El insert idempotente evita duplicar si un reintento ocurre tras un ACK perdido.
+            try
+            {
+                SqlRetry.Ejecutar(() => ExportarItemsInterno());
+            }
+            catch
+            {
+                // Falló definitivamente tras los reintentos: quitar de la caché en memoria
+                // los INSERT que NO llegaron a SQL Server, para que no queden registros
+                // "fantasma" (visibles en la app pero inexistentes en la base de datos).
+                DescartarInsertsNoPersistidos();
+                throw;
+            }
+        }
 
+        // Quita de la caché las filas en estado "nuevo" (inserts que no se persistieron).
+        // Los UPDATE/borrados quedan pendientes (la fila ya existe en SQL) para reintentar.
+        private void DescartarInsertsNoPersistidos()
+        {
+            if (!_tabla.Columns.Contains("estadof")) return;
+            var fantasma = _tabla.Rows.Cast<DataRow>()
+                .Where(r => (r["estadof"]?.ToString() ?? "") == "nuevo")
+                .ToList();
+            foreach (var row in fantasma)
+            {
+                var key = row["id"]?.ToString()?.ToLower() ?? "";
+                if (key.Length > 0) _indiceId.Remove(key);
+                _tabla.Rows.Remove(row);
+            }
+        }
+
+        private void ExportarItemsInterno()
+        {
             var conn       = DatabaseConnection.ObtenerConexion();
-            var deleteIds  = new List<string>();
             var insertRows = new List<DataRow>();
             var updateRows = new List<DataRow>();
 
@@ -186,65 +357,97 @@ namespace WpfAppVba.Data
             {
                 switch (row["estadof"]?.ToString() ?? "")
                 {
-                    case "eliminado": deleteIds.Add(row["id"]?.ToString() ?? ""); break;
                     case "nuevo":     insertRows.Add(row);                        break;
+                    // "ocultado" y "eliminado" son borrados LÓGICOS: se persisten con un
+                    // UPDATE del estadof. NUNCA se borra físicamente una fila en SQL Server.
                     case "editado":
-                    case "ocultado":  updateRows.Add(row);                        break;
+                    case "ocultado":
+                    case "eliminado": updateRows.Add(row);                        break;
                 }
             }
 
-            // ── ELIMINACIONES ────────────────────────────────────────────────
-            foreach (var bloque in Chunks(deleteIds, 1000))
-            {
-                string lista = string.Join(",", bloque);
-                using var cmd = new SqlCommand(
-                    $"DELETE FROM {_nombreTabla} WHERE id IN ({lista})", conn);
-                cmd.ExecuteNonQuery();
-            }
+            // Nada que persistir: no se abre transacción ni conexión adicional.
+            if (insertRows.Count == 0 && updateRows.Count == 0) return;
 
-            // ── INSERCIONES ──────────────────────────────────────────────────
-            if (insertRows.Count > 0)
-            {
-                string colsStr = string.Join(",",
-                    _tabla.Columns.Cast<DataColumn>().Select(c => c.ColumnName));
+            // Estado original de cada fila a persistir. Si la transacción falla (p. ej.
+            // un corte de red a mitad del guardado), se restauran estos valores para NO
+            // perder los cambios pendientes en memoria y poder reintentar el guardado.
+            var estadosOriginales = insertRows.Concat(updateRows)
+                .Select(r => (row: r, estado: r["estadof"]))
+                .ToList();
 
-                foreach (var bloque in Chunks(insertRows, 1000))
+            // TRANSACCIÓN: el guardado es TODO-O-NADA. En red inestable evita documentos
+            // guardados a medias (cabecera sí, líneas no) si la conexión se cae a mitad.
+            using var tx = conn.BeginTransaction();
+            try
+            {
+                // ── INSERCIONES (idempotentes por id) ────────────────────────
+                if (insertRows.Count > 0)
                 {
-                    var values = new List<string>();
-                    foreach (var row in bloque)
+                    string colsStr = string.Join(",",
+                        ColumnasPersistibles.Select(c => c.ColumnName));
+                    string selCols = string.Join(",",
+                        ColumnasPersistibles.Select(c => "v." + c.ColumnName));
+
+                    foreach (var bloque in Chunks(insertRows, 1000))
                     {
-                        row["estadof"] = "normal";
-                        values.Add("(" + FormatearFila(row) + ")");
+                        var values = new List<string>();
+                        foreach (var row in bloque)
+                        {
+                            row["estadof"] = "normal";
+                            values.Add("(" + FormatearFila(row) + ")");
+                        }
+                        // INSERT ... WHERE NOT EXISTS: si un reintento ocurre tras un ACK
+                        // perdido (la fila ya se insertó), no se duplica por id.
+                        string sql =
+                            $"INSERT INTO {_nombreTabla} ({colsStr}) " +
+                            $"SELECT {selCols} FROM (VALUES {string.Join(",", values)}) AS v ({colsStr}) " +
+                            $"WHERE NOT EXISTS (SELECT 1 FROM {_nombreTabla} AS t WHERE t.id = v.id)";
+                        using var cmd = new SqlCommand(sql, conn, tx);
+                        cmd.ExecuteNonQuery();
                     }
-                    string sql = $"INSERT INTO {_nombreTabla} ({colsStr}) VALUES {string.Join(",", values)}";
-                    using var cmd = new SqlCommand(sql, conn);
-                    cmd.ExecuteNonQuery();
                 }
-            }
 
-            // ── ACTUALIZACIONES ──────────────────────────────────────────────
-            if (updateRows.Count > 0)
-            {
-                var cols = _tabla.Columns.Cast<DataColumn>().Skip(1).ToList(); // saltar id
-                string setParts  = string.Join(", ", cols.Select((c, i) => $"{c.ColumnName} = @p{i}"));
-                string sqlUpdate = $"UPDATE {_nombreTabla} SET {setParts} WHERE id = @id";
-
-                foreach (var row in updateRows)
+                // ── ACTUALIZACIONES ──────────────────────────────────────────
+                if (updateRows.Count > 0)
                 {
-                    if (row["estadof"]?.ToString() == "editado")
-                        row["estadof"] = "normal";
+                    var cols = ColumnasPersistibles
+                        .Where(c => !string.Equals(c.ColumnName, "id", StringComparison.OrdinalIgnoreCase))
+                        .ToList(); // sin id ni columnas autogeneradas (secuencia)
+                    string setParts  = string.Join(", ", cols.Select((c, i) => $"{c.ColumnName} = @p{i}"));
+                    string sqlUpdate = $"UPDATE {_nombreTabla} SET {setParts} WHERE id = @id";
 
-                    using var cmd = new SqlCommand(sqlUpdate, conn);
-                    cmd.Parameters.AddWithValue("@id", row["id"] ?? DBNull.Value);
-                    for (int i = 0; i < cols.Count; i++)
+                    foreach (var row in updateRows)
                     {
-                        var v = row[cols[i]];
-                        // strings vacíos → NULL en SQL Server
-                        if (v is string s && s.Length == 0) v = DBNull.Value;
-                        cmd.Parameters.AddWithValue($"@p{i}", v ?? DBNull.Value);
+                        if (row["estadof"]?.ToString() == "editado")
+                            row["estadof"] = "normal";
+
+                        using var cmd = new SqlCommand(sqlUpdate, conn, tx);
+                        cmd.Parameters.AddWithValue("@id", row["id"] ?? DBNull.Value);
+                        for (int i = 0; i < cols.Count; i++)
+                        {
+                            var v = row[cols[i]];
+                            // strings vacíos → NULL en SQL Server
+                            if (v is string s && s.Length == 0) v = DBNull.Value;
+                            cmd.Parameters.AddWithValue($"@p{i}", v ?? DBNull.Value);
+                        }
+                        cmd.ExecuteNonQuery();
                     }
-                    cmd.ExecuteNonQuery();
                 }
+
+                tx.Commit();
+            }
+            catch
+            {
+                // El servidor aborta la transacción ante un corte; el Rollback puede
+                // fallar si la conexión ya cayó, por eso va protegido.
+                try { tx.Rollback(); } catch { /* conexión perdida: la tx queda abortada igual */ }
+
+                // Restaurar los estadof en memoria para conservar los cambios pendientes.
+                foreach (var (row, estado) in estadosOriginales)
+                    row["estadof"] = estado;
+
+                throw;
             }
         }
 
@@ -264,7 +467,7 @@ namespace WpfAppVba.Data
 
         // ─── CARGA DESDE SQL SERVER ───────────────────────────────────────────
 
-        private void ObtenerDatos(string consulta)
+        private void ObtenerDatos(string consulta) => SqlRetry.Ejecutar(() =>
         {
             _tabla.Clear();
             _indiceId.Clear();
@@ -287,12 +490,12 @@ namespace WpfAppVba.Data
 
                 _indiceId[key] = row;
             }
-        }
+        });
 
         private string FormatearFila(DataRow row)
         {
             var partes = new List<string>();
-            foreach (DataColumn col in _tabla.Columns)
+            foreach (DataColumn col in ColumnasPersistibles)
             {
                 var val = row[col];
                 if (val == null || val is DBNull || val.ToString() == "")

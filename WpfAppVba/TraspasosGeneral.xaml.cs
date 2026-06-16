@@ -26,7 +26,12 @@ namespace WpfAppVba
         public TraspasosGeneral()
         {
             InitializeComponent();
-            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarMeses(); CargarTraspasos(); };
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarMeses(); CargarTraspasos(); };
+        }
+
+        private void ConfigurarModo()
+        {
+            if (!AppState.EsAdmin) BtnEliminar.Visibility = Visibility.Collapsed;
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
@@ -90,8 +95,8 @@ namespace WpfAppVba
                 // Filtrar por sucursal activa según tipo de movimiento
                 string origen  = Sql.DocumentosTObj.ObtenerItem("origen",  id)?.ToString() ?? "";
                 string destino = Sql.DocumentosTObj.ObtenerItem("destino", id)?.ToString() ?? "";
-                bool esSalida  = origen  == AppState.SucursalActiva.ToString();
-                bool esEntrada = destino == AppState.SucursalActiva.ToString();
+                bool esSalida  = origen  == AppState.SucursalActiva;
+                bool esEntrada = destino == AppState.SucursalActiva;
 
                 string movActual;
                 if (tipoMov == "salida")
@@ -131,7 +136,7 @@ namespace WpfAppVba
                 string emitido = Sql.DocumentosTObj.ObtenerItem("emitido", id)?.ToString() ?? "";
 
                 // Si fue emitido por otra sucursal y está "pendiente" → "pendiente revisar"
-                if (emitido != AppState.SucursalActiva.ToString() && estado == "pendiente")
+                if (emitido != AppState.SucursalActiva && estado == "pendiente")
                     estado = "pendiente revisar";
 
                 // Filtro por estado
@@ -149,6 +154,7 @@ namespace WpfAppVba
                 {
                     Linea        = linea++,
                     DocumentoT   = id,
+                    Codigo       = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                     FechaStr     = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                     Movimiento   = movActual,
                     SucursalDesc = otroSucDesc,
@@ -214,7 +220,7 @@ namespace WpfAppVba
         private TraspasoFila ConstruirFilaTraspaso(string id, int linea)
         {
             string origen   = Sql.DocumentosTObj.ObtenerItem("origen",  id)?.ToString() ?? "";
-            bool esSalida   = origen == AppState.SucursalActiva.ToString();
+            bool esSalida   = origen == AppState.SucursalActiva;
             string campOtro = esSalida ? "destino" : "origen";
 
             var fechaDocObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
@@ -225,13 +231,14 @@ namespace WpfAppVba
 
             string estado  = Sql.DocumentosTObj.ObtenerItem("estado",  id)?.ToString() ?? "";
             string emitido = Sql.DocumentosTObj.ObtenerItem("emitido", id)?.ToString() ?? "";
-            if (emitido != AppState.SucursalActiva.ToString() && estado == "pendiente")
+            if (emitido != AppState.SucursalActiva && estado == "pendiente")
                 estado = "pendiente revisar";
 
             return new TraspasoFila
             {
                 Linea        = linea,
                 DocumentoT   = id,
+                Codigo       = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 FechaStr     = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                 Movimiento   = esSalida ? "salida" : "entrada",
                 SucursalDesc = otroSucDesc,
@@ -277,7 +284,8 @@ namespace WpfAppVba
 
         private void MostrarDetalle(string documentoT)
         {
-            LblDetalleHeader.Text = $"Artículos del documento {documentoT}";
+            string codigoDoc = Sql.DocumentosTObj.ObtenerItem("codigo", documentoT)?.ToString() ?? documentoT;
+            LblDetalleHeader.Text = $"Artículos del documento {codigoDoc}";
             var detalles = new List<TraspasoDetalleFila>();
             int linea = 1;
 
@@ -420,6 +428,9 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not TraspasoFila fila) return;
 
+            // Verificación de conexión en 2 capas antes de persistir el borrado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             var res = MessageBox.Show("¿Eliminar este traspaso y todos sus artículos?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (res != MessageBoxResult.Yes) return;
@@ -468,6 +479,9 @@ namespace WpfAppVba
 
         private void BtnActualizar_Click(object sender, RoutedEventArgs e)
         {
+            // Sin conexión no se puede refrescar desde SQL: avisar y no congelar.
+            if (!FuncionesComunes.VerificarConexionParaActualizar(Window.GetWindow(this))) return;
+
             Sql.DocumentosTObj.Actualizar();
             Sql.TraspasosObj.Actualizar();
             CargarTraspasos();
@@ -480,10 +494,10 @@ namespace WpfAppVba
             int    linea  = fila.Linea;
             AppState.EventoFormularioM = "editar";
             string origenDoc = Sql.DocumentosTObj.ObtenerItem("origen", docSel)?.ToString() ?? "";
-            AppState.TipoMovimiento = origenDoc == AppState.SucursalActiva.ToString() ? "salida" : "entrada";
+            AppState.TipoMovimiento = origenDoc == AppState.SucursalActiva ? "salida" : "entrada";
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            var dlg = new TraspasosDetalle(this, docSel, tituloTab: $"Traspaso {docSel}");
+            var dlg = new TraspasosDetalle(this, docSel, tituloTab: $"Traspaso {fila.Codigo}");
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);
@@ -498,7 +512,7 @@ namespace WpfAppVba
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña($"Traspaso {docSel}", dlg, $"traspaso-{docSel}");
+            consola.AbrirPestaña($"Traspaso {fila.Codigo}", dlg, $"traspaso-{docSel}");
         }
     }
 
@@ -507,6 +521,7 @@ namespace WpfAppVba
     {
         public int    Linea        { get; set; }
         public string DocumentoT   { get; set; } = "";
+        public string Codigo       { get; set; } = "";
         public string FechaStr     { get; set; } = "";
         public string Movimiento   { get; set; } = "";
         public string SucursalDesc { get; set; } = "";

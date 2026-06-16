@@ -352,7 +352,7 @@
                     </DataGridTextColumn>
 
                     <DataGridTextColumn Header="Documento"
-                                        Binding="{Binding Id}"
+                                        Binding="{Binding Codigo}"
                                         Width="88">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">

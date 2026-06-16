@@ -35,11 +35,19 @@ namespace WpfAppVba
 
         private void ConfigurarModo()
         {
-            if (!_modoSelector) return;
-            BtnNuevo.Visibility       = Visibility.Collapsed;
-            BtnEditar.Visibility      = Visibility.Collapsed;
-            BtnEliminar.Visibility    = Visibility.Collapsed;
-            BtnSeleccionar.Visibility = Visibility.Visible;
+            if (_modoSelector)
+            {
+                BtnNuevo.Visibility       = Visibility.Collapsed;
+                BtnEditar.Visibility      = Visibility.Collapsed;
+                BtnEliminar.Visibility    = Visibility.Collapsed;
+                BtnSeleccionar.Visibility = Visibility.Visible;
+            }
+            else if (!AppState.EsAdmin)
+            {
+                BtnNuevo.Visibility    = Visibility.Collapsed;
+                BtnEditar.Visibility   = Visibility.Collapsed;
+                BtnEliminar.Visibility = Visibility.Collapsed;
+            }
         }
 
         public static void OpenAsDialog(Window owner, bool modoSelector = false, string contexto = "", Action? onCerrado = null, UIElement? llamador = null)
@@ -84,15 +92,18 @@ namespace WpfAppVba
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
 
-                string desc = Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                string desc   = Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                string codigo = Sql.SucursalesObj.ObtenerItem("codigo",      id)?.ToString() ?? "";
 
                 if (busqueda == "" ||
-                    desc.ToLower().Contains(busqueda))
+                    desc.ToLower().Contains(busqueda) ||
+                    codigo.ToLower().Contains(busqueda))
                 {
                     filas.Add(new SucursalFila
                     {
                         Linea       = linea++,
                         Id          = id,
+                        Codigo      = codigo,
                         Descripcion = desc,
                         FechaStr    = FormatearFecha(id)
                     });
@@ -112,6 +123,7 @@ namespace WpfAppVba
             {
                 Linea       = linea,
                 Id          = id,
+                Codigo      = Sql.SucursalesObj.ObtenerItem("codigo",      id)?.ToString() ?? "",
                 Descripcion = Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "",
                 FechaStr    = FormatearFecha(id)
             };
@@ -161,7 +173,7 @@ namespace WpfAppVba
         private void Seleccionar()
         {
             if (Grid1.SelectedItem is not SucursalFila fila) return;
-            SucursalSeleccionada = fila.Id;
+            SucursalSeleccionada = fila.Codigo;
             Cerrando?.Invoke();
         }
 
@@ -201,6 +213,9 @@ namespace WpfAppVba
 
         private void BtnEliminar_Click(object sender, RoutedEventArgs e)
         {
+            // Verificación de conexión en 2 capas antes de persistir el borrado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             if (!EsAdmin())
             {
                 MessageBox.Show("Se requieren permisos de administrador.", "Consola",
@@ -236,6 +251,9 @@ namespace WpfAppVba
 
         private void BtnActualizar_Click(object sender, RoutedEventArgs e)
         {
+            // Sin conexión no se puede refrescar desde SQL: avisar y no congelar.
+            if (!FuncionesComunes.VerificarConexionParaActualizar(Window.GetWindow(this))) return;
+
             Sql.SucursalesObj.Actualizar();
             CargarSucursales();
         }
@@ -270,7 +288,7 @@ namespace WpfAppVba
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña($"Sucursal {idSel}", detalle, $"sucursal-{idSel}");
+            consola.AbrirPestaña($"Sucursal {fila.Codigo}", detalle, $"sucursal-{idSel}");
         }
     }
 
@@ -279,6 +297,7 @@ namespace WpfAppVba
     {
         public int    Linea       { get; set; }
         public string Id          { get; set; } = "";
+        public string Codigo      { get; set; } = "";
         public string Descripcion { get; set; } = "";
         public string FechaStr    { get; set; } = "";
     }

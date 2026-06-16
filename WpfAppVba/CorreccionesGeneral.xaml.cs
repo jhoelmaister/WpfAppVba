@@ -26,7 +26,12 @@ namespace WpfAppVba
         public CorreccionesGeneral()
         {
             InitializeComponent();
-            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarMeses(); CargarCorrecciones(); };
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarMeses(); CargarCorrecciones(); };
+        }
+
+        private void ConfigurarModo()
+        {
+            if (!AppState.EsAdmin) BtnEliminar.Visibility = Visibility.Collapsed;
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
@@ -78,7 +83,7 @@ namespace WpfAppVba
 
                 // Filtrar por sucursal activa
                 string suc = Sql.DocumentosCObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
-                if (suc != AppState.SucursalActiva.ToString()) continue;
+                if (suc != AppState.SucursalActiva) continue;
 
                 // Filtrar por tipo de movimiento (ingreso / egreso)
                 string movimiento = Sql.DocumentosCObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
@@ -108,6 +113,7 @@ namespace WpfAppVba
                 {
                     Linea         = linea++,
                     Id            = id,
+                    Codigo        = Sql.DocumentosCObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                     Fecha         = fechaDoc,
                     FechaStr      = fechaDoc != default ? $"{fechaDoc:d} {fechaDoc:HH:mm:ss}" : "",
                     Movimiento    = movimiento,
@@ -168,6 +174,7 @@ namespace WpfAppVba
             {
                 Linea         = linea,
                 Id            = id,
+                Codigo        = Sql.DocumentosCObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 Fecha         = fecha,
                 FechaStr      = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                 Movimiento    = Sql.DocumentosCObj.ObtenerItem("movimiento", id)?.ToString() ?? "",
@@ -212,7 +219,8 @@ namespace WpfAppVba
         // ─── Panel de detalle artículos (Lista2) ─────────────────────────────
         private void MostrarDetalle(string documentoC)
         {
-            LblDetalleHeader.Text = $"Artículos del documento {documentoC}";
+            string codigoDoc = Sql.DocumentosCObj.ObtenerItem("codigo", documentoC)?.ToString() ?? documentoC;
+            LblDetalleHeader.Text = $"Artículos del documento {codigoDoc}";
             var detalles = new List<CorreccionDetalleFila>();
             int linea = 1;
 
@@ -347,6 +355,9 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not CorreccionFila fila) return;
 
+            // Verificación de conexión en 2 capas antes de persistir el borrado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             var res = MessageBox.Show("¿Eliminar esta corrección y todas sus líneas?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (res != MessageBoxResult.Yes) return;
@@ -396,6 +407,9 @@ namespace WpfAppVba
 
         private void BtnActualizar_Click(object sender, RoutedEventArgs e)
         {
+            // Sin conexión no se puede refrescar desde SQL: avisar y no congelar.
+            if (!FuncionesComunes.VerificarConexionParaActualizar(Window.GetWindow(this))) return;
+
             Sql.DocumentosCObj.Actualizar();
             Sql.CorreccionesObj.Actualizar();
             CargarCorrecciones();
@@ -413,7 +427,7 @@ namespace WpfAppVba
 
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            string titulo = $"Corrección {idSel}";
+            string titulo = $"Corrección {fila.Codigo}";
             var dlg = new CorreccionesDetalle(this, idSel, tituloTab: titulo);
             dlg.Cerrando += () =>
             {
@@ -438,6 +452,7 @@ namespace WpfAppVba
     {
         public int      Linea         { get; set; }
         public string   Id            { get; set; } = "";
+        public string   Codigo        { get; set; } = "";
         public DateTime Fecha         { get; set; }
         public string   FechaStr      { get; set; } = "";
         public string   Movimiento    { get; set; } = "";

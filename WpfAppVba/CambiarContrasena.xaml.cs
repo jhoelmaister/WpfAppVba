@@ -15,6 +15,9 @@ namespace WpfAppVba
 
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
+            // Verificación de conexión en 2 capas (label + chequeo real) antes de guardar.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(this)) return;
+
             string usuId = AppState.UsuarioActivo.ToString();
             string llaveActualBD = Sql.UsuariosObj.ObtenerItem("llave", usuId)?.ToString() ?? "";
 

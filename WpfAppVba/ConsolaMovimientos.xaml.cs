@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -12,21 +13,26 @@ namespace WpfAppVba
     {
         private Button? _btnActivo;
 
-        private readonly ArticulosGeneral    _panelArticulos    = new();
-        private readonly PedidosGeneral      _panelPedidos      = new();
-        private readonly TraspasosGeneral    _panelTraspasos    = new();
-        private readonly CorreccionesGeneral _panelCorrecciones = new();
-        private readonly TercerosGeneral     _panelTerceros     = new();
-        private readonly SucursalesGeneral   _panelSucursales   = new();
-        private readonly FamiliasGeneral     _panelFamilias     = new();
-        private readonly ProductosGeneral    _panelProductos    = new();
-        private readonly IndustriasGeneral   _panelIndustrias   = new();
-        private readonly CategoriasGeneral   _panelCategorias   = new();
-        private readonly InventariosGeneral  _panelInventarios  = new();
-        private readonly PreciosGeneral      _panelPrecios      = new();
-        private readonly RegionesGeneral     _panelRegiones     = new();
+        // Paneles "General": mutables para poder recrearlos tras un cambio de contexto
+        // (empresa/sucursal/periodo) y que relean los cachés recién cargados.
+        private ArticulosGeneral    _panelArticulos    = new();
+        private PedidosGeneral      _panelPedidos      = new();
+        private TraspasosGeneral    _panelTraspasos    = new();
+        private CorreccionesGeneral _panelCorrecciones = new();
+        private TercerosGeneral     _panelTerceros     = new();
+        private SucursalesGeneral   _panelSucursales   = new();
+        private FamiliasGeneral     _panelFamilias     = new();
+        private ProductosGeneral    _panelProductos    = new();
+        private IndustriasGeneral   _panelIndustrias   = new();
+        private CategoriasGeneral   _panelCategorias   = new();
+        private InventariosGeneral  _panelInventarios  = new();
+        private PreciosGeneral      _panelPrecios      = new();
+        private RegionesGeneral     _panelRegiones     = new();
+        private EmpresasGeneral     _panelEmpresas     = new();
         private readonly Configuracion       _panelConfiguracion= new();
-        private readonly MovimientosGeneral  _panelMovimientos  = new();
+        private UsuariosGeneral     _panelUsuarios     = new();
+        private MovimientosGeneral  _panelMovimientos  = new();
+        private DashboardGeneral    _panelDashboard    = new();
 
         // Cada sección del menú lateral conserva su propio juego de pestañas dinámicas.
         private string _seccionActiva = "articulos";
@@ -45,8 +51,11 @@ namespace WpfAppVba
             ["inventarios"]  = new List<TabItem>(),
             ["precios"]      = new List<TabItem>(),
             ["regiones"]     = new List<TabItem>(),
+            ["empresas"]     = new List<TabItem>(),
             ["configuracion"]= new List<TabItem>(),
+            ["usuarios"]     = new List<TabItem>(),
             ["movimientos"]  = new List<TabItem>(),
+            ["dashboard"]    = new List<TabItem>(),
         };
         private readonly Dictionary<string, TabItem?> _pestañaSeleccionadaPorSeccion = new()
         {
@@ -63,8 +72,11 @@ namespace WpfAppVba
             ["inventarios"]  = null,
             ["precios"]      = null,
             ["regiones"]     = null,
+            ["empresas"]     = null,
             ["configuracion"]= null,
+            ["usuarios"]     = null,
             ["movimientos"]  = null,
+            ["dashboard"]    = null,
         };
 
         public ConsolaMovimientos()
@@ -73,12 +85,90 @@ namespace WpfAppVba
             TabFijoContenido.Content = _panelArticulos;
             ActualizarInfoUsuario();
             MarcarActivo(BtnNav_Articulos);
+            if (AppState.EsAdmin) BtnNav_Usuarios.Visibility = Visibility.Visible;
+
+            // Estado de conexión: pintar el estado actual y escuchar cambios.
+            ActualizarLabelConexion(ConexionEstado.EnLinea);
+            ConexionEstado.Cambio += OnConexionCambio;
+            ConexionEstado.Iniciar(Dispatcher);
+        }
+
+        // ─── Estado de conexión (top bar) ─────────────────────────────────────
+        private void OnConexionCambio(bool enLinea) => ActualizarLabelConexion(enLinea);
+
+        private void ActualizarLabelConexion(bool enLinea)
+        {
+            if (enLinea)
+            {
+                LblConexion.Text = "●  En línea";
+                PillConexion.Background = new SolidColorBrush(Color.FromRgb(0x2E, 0x7D, 0x32)); // verde
+            }
+            else
+            {
+                LblConexion.Text = "●  Sin conexión";
+                PillConexion.Background = new SolidColorBrush(Color.FromRgb(0xC6, 0x28, 0x28)); // rojo
+            }
         }
 
         // ─── Info usuario ─────────────────────────────────────────────────────
         public void ActualizarInfoUsuario()
         {
-            LblUsuario.Text = $"Usuario: {AppState.UsuarioActivo}  |  Período: {AppState.PeriodoActivo}";
+            var sql = SqlData.Instance;
+            string nombres = sql.UsuariosObj.ObtenerItem("nombres", AppState.UsuarioActivo)?.ToString() ?? "";
+            if (string.IsNullOrWhiteSpace(nombres)) nombres = AppState.UsuarioActivo;
+            string sucursalDesc = sql.SucursalesObj.ObtenerItem("descripcion", AppState.SucursalActiva)?.ToString() ?? "";
+            string empresaDesc  = sql.EmpresasObj.ObtenerItem("descripcion", AppState.EmpresaActiva)?.ToString() ?? "";
+
+            LblUsuario.Text  = $"Usuario: {nombres}  |  Período: {AppState.PeriodoActivo}";
+            LblSucursal.Text = $"Sucursal: {sucursalDesc}";
+            LblEmpresa.Text  = $"Empresa: {empresaDesc}";
+        }
+
+        /// <summary>
+        /// Refresca toda la consola tras un cambio de contexto (empresa/sucursal/periodo)
+        /// hecho desde Configuración, sin cerrar sesión y manteniendo el enfoque en
+        /// Configuración. Recrea los paneles "General" para que relean los cachés
+        /// recién cargados (como si recién se hubiera iniciado sesión).
+        /// </summary>
+        public void RecargarContexto()
+        {
+            // 1. Cerrar todas las pestañas dinámicas (estado "recién iniciado")
+            for (int i = TabContenido.Items.Count - 1; i >= 0; i--)
+                if (TabContenido.Items[i] is TabItem t && t != TabFijo)
+                    TabContenido.Items.RemoveAt(i);
+            foreach (var clave in _pestañasPorSeccion.Keys.ToList())
+                _pestañasPorSeccion[clave].Clear();
+            foreach (var clave in _pestañaSeleccionadaPorSeccion.Keys.ToList())
+                _pestañaSeleccionadaPorSeccion[clave] = null;
+
+            // 2. Recrear los paneles "General" (no Configuración: se mantiene el enfoque)
+            _panelArticulos    = new();
+            _panelPedidos      = new();
+            _panelTraspasos    = new();
+            _panelCorrecciones = new();
+            _panelTerceros     = new();
+            _panelSucursales   = new();
+            _panelFamilias     = new();
+            _panelProductos    = new();
+            _panelIndustrias   = new();
+            _panelCategorias   = new();
+            _panelInventarios  = new();
+            _panelPrecios      = new();
+            _panelRegiones     = new();
+            _panelEmpresas     = new();
+            _panelMovimientos  = new();
+            _panelDashboard    = new();
+            _panelUsuarios     = new();
+
+            // 3. Mantener Configuración como panel fijo enfocado
+            _seccionActiva = "configuracion";
+            TabFijoContenido.Content = _panelConfiguracion;
+            TabFijoTitulo.Text = "Configuración";
+            TabContenido.SelectedItem = TabFijo;
+            MarcarActivo(BtnNav_Configuracion);
+
+            // 4. Refrescar la barra superior
+            ActualizarInfoUsuario();
         }
 
         // ─── Navegación por pestañas ──────────────────────────────────────────
@@ -119,8 +209,11 @@ namespace WpfAppVba
                 case "inventarios":  TabFijoContenido.Content = _panelInventarios;  TabFijoTitulo.Text = "Inventarios";  break;
                 case "precios":      TabFijoContenido.Content = _panelPrecios;      TabFijoTitulo.Text = "Precios";      break;
                 case "regiones":     TabFijoContenido.Content = _panelRegiones;     TabFijoTitulo.Text = "Regiones";     break;
+                case "empresas":     TabFijoContenido.Content = _panelEmpresas;     TabFijoTitulo.Text = "Empresas";     break;
                 case "configuracion":TabFijoContenido.Content = _panelConfiguracion;TabFijoTitulo.Text = "Configuración";break;
+                case "usuarios":     TabFijoContenido.Content = _panelUsuarios;     TabFijoTitulo.Text = "Usuarios";     break;
                 case "movimientos":  TabFijoContenido.Content = _panelMovimientos;  TabFijoTitulo.Text = "Movimientos";  break;
+                case "dashboard":    TabFijoContenido.Content = _panelDashboard;    TabFijoTitulo.Text = "Dashboard";    break;
             }
 
             // 3. Restaurar las pestañas propias de la nueva sección
@@ -305,10 +398,22 @@ namespace WpfAppVba
             MarcarActivo(BtnNav_Precios);
         }
 
+        private void BtnNav_Empresas_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("empresas");
+            MarcarActivo(BtnNav_Empresas);
+        }
+
         private void BtnNav_Configuracion_Click(object sender, RoutedEventArgs e)
         {
             MostrarPanel("configuracion");
             MarcarActivo(BtnNav_Configuracion);
+        }
+
+        private void BtnNav_Usuarios_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("usuarios");
+            MarcarActivo(BtnNav_Usuarios);
         }
 
         // ─── Cerrar sesión ────────────────────────────────────────────────────
@@ -317,6 +422,12 @@ namespace WpfAppVba
         {
             MostrarPanel("movimientos");
             MarcarActivo(BtnNav_Movimientos);
+        }
+
+        private void BtnNav_Dashboard_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("dashboard");
+            MarcarActivo(BtnNav_Dashboard);
         }
 
         // ─── Accesos rápidos del top bar ──────────────────────────────────────
@@ -370,10 +481,30 @@ namespace WpfAppVba
             else _panelTraspasos.AbrirNuevoTraspaso("entrada");
         }
 
+        private void MarcarInactivo()
+        {
+            if (string.IsNullOrEmpty(AppState.UsuarioActivo)) return;
+            try
+            {
+                var sql = SqlData.Instance;
+                sql.UsuariosObj.EstablecerItem("estadoU", AppState.UsuarioActivo, "inactivo");
+                sql.UsuariosObj.ExportarItems();
+            }
+            catch { }
+        }
+
+        private void ConsolaMovimientos_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            ConexionEstado.Cambio -= OnConexionCambio;
+            MarcarInactivo();
+        }
+
         private void BtnCerrarSesion_Click(object sender, RoutedEventArgs e)
         {
+            MarcarInactivo();
             AppState.SesionActiva  = false;
-            AppState.UsuarioActivo = 0;
+            AppState.UsuarioActivo = "";
+            AppState.EmpresaActiva = "";
             DatabaseConnection.CerrarConexion();
 
             var login = new LoginWindow();

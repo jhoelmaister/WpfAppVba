@@ -24,38 +24,48 @@ namespace WpfAppVba.Data
         {
             var inicio = DateTime.Now;
 
-            Sql.UsuariosObj.Conectar("usuarios",
-                "SELECT * FROM usuarios WHERE estadof = 'normal' ORDER BY id ASC");
+            string emp = AppState.EmpresaActiva;
+            // Filtro directo por empresa (solo cuando hay empresa activa).
+            string fEmp = string.IsNullOrEmpty(emp) ? "" : $" AND empresa = '{emp}'";
+            // precios no tiene columna empresa → cascada por las regiones de la empresa.
+            string fPrecios = string.IsNullOrEmpty(emp)
+                ? ""
+                : $" AND region IN (SELECT id FROM regiones WHERE empresa = '{emp}')";
 
-            Sql.StocksObj.Conectar("stocks",
-                "SELECT * FROM stocks WHERE estadof = 'normal' ORDER BY id ASC");
+            // Tabla de empresas (sin filtro de empresa).
+            Sql.EmpresasObj.Conectar("empresas",
+                "SELECT * FROM empresas WHERE estadof = 'normal' ORDER BY secuencia ASC");
+
+            // usuarios: NO se filtra por empresa (necesario para el login).
+            Sql.UsuariosObj.Conectar("usuarios",
+                "SELECT * FROM usuarios WHERE estadof = 'normal' ORDER BY secuencia ASC");
 
             Sql.ArticulosObj.Conectar("articulos",
-                "SELECT * FROM articulos WHERE estadof = 'normal' ORDER BY familia ASC, indice ASC");
+                $"SELECT * FROM articulos WHERE estadof = 'normal'{fEmp} ORDER BY familia ASC, indice ASC");
 
             Sql.FamiliasObj.Conectar("familias",
-                "SELECT * FROM familias WHERE estadof = 'normal' ORDER BY id ASC");
+                $"SELECT * FROM familias WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             Sql.ProductosObj.Conectar("productos",
-                "SELECT * FROM productos WHERE estadof = 'normal' ORDER BY id ASC");
+                $"SELECT * FROM productos WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             Sql.CategoriasObj.Conectar("Categorias",
-                "SELECT * FROM Categorias WHERE estadof = 'normal' ORDER BY id ASC");
+                $"SELECT * FROM Categorias WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             Sql.IndustriasObj.Conectar("industrias",
-                "SELECT * FROM industrias WHERE estadof = 'normal' ORDER BY id ASC");
+                $"SELECT * FROM industrias WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             Sql.TercerosObj.Conectar("terceros",
-                "SELECT * FROM terceros WHERE estadof = 'normal' ORDER BY id ASC");
+                $"SELECT * FROM terceros WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             Sql.SucursalesObj.Conectar("sucursales",
-                "SELECT * FROM sucursales WHERE estadof = 'normal' ORDER BY id ASC");
+                $"SELECT * FROM sucursales WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             Sql.PreciosObj.Conectar("precios",
-                "SELECT * FROM precios WHERE estadof = 'normal' ORDER BY fecha ASC");
+                $"SELECT * FROM precios WHERE estadof = 'normal'{fPrecios} ORDER BY fecha ASC");
 
             Sql.RegionesObj.Conectar("regiones",
-                "SELECT * FROM regiones WHERE estadof = 'normal' ORDER BY id ASC");
+                $"SELECT * FROM regiones WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             var tiempo = DateTime.Now - inicio;
             System.Diagnostics.Debug.WriteLine($"ConectarProductos: {tiempo.TotalSeconds:F2}s");
@@ -68,7 +78,11 @@ namespace WpfAppVba.Data
         /// </summary>
         public static void ConectarBases()
         {
-            long suc = AppState.SucursalActiva;
+            // Sucursal vacía (usuario sin sucursal): usar un GUID nulo válido para que
+            // la comparación contra la columna uniqueidentifier no falle y devuelva 0 filas.
+            string suc = string.IsNullOrEmpty(AppState.SucursalActiva)
+                ? "00000000-0000-0000-0000-000000000000"
+                : AppState.SucursalActiva;
 
             Sql.DocumentosIObj.Conectar("documentosI",
                 $"SELECT * FROM documentosI " +
@@ -89,7 +103,11 @@ namespace WpfAppVba.Data
         /// </summary>
         public static void ConectarDocumentos(DateTime apertura, DateTime cierre)
         {
-            long suc = AppState.SucursalActiva;
+            // Sucursal vacía (usuario sin sucursal): usar un GUID nulo válido para que
+            // la comparación contra la columna uniqueidentifier no falle y devuelva 0 filas.
+            string suc = string.IsNullOrEmpty(AppState.SucursalActiva)
+                ? "00000000-0000-0000-0000-000000000000"
+                : AppState.SucursalActiva;
             string aper = apertura.ToString("yyyyMMdd HH:mm:ss");
             string cier = cierre.ToString("yyyyMMdd HH:mm:ss");
 
@@ -117,7 +135,7 @@ namespace WpfAppVba.Data
                 $"WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
                 $"AND vg.sucursal = '{suc}' " +
-                $"ORDER BY vd.fecha ASC");
+                $"ORDER BY vd.documentoP ASC, vd.indice ASC");
 
             // ── Entregas ─────────────────────────────────────────────────────
             Sql.EntregasObj.Conectar("entregas",

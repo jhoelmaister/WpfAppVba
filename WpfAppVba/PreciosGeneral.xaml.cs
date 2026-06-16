@@ -21,7 +21,17 @@ namespace WpfAppVba
         public PreciosGeneral()
         {
             InitializeComponent();
-            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarRegiones(); CargarArbol(); CargarArticulos(); };
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarRegiones(); CargarArbol(); CargarArticulos(); };
+        }
+
+        private void ConfigurarModo()
+        {
+            if (!AppState.EsAdmin)
+            {
+                BtnNuevoPrecio.Visibility    = Visibility.Collapsed;
+                BtnEditarPrecio.Visibility   = Visibility.Collapsed;
+                BtnEliminarPrecio.Visibility = Visibility.Collapsed;
+            }
         }
 
         public void IntentarCerrar() => Cerrando?.Invoke();
@@ -217,7 +227,7 @@ namespace WpfAppVba
             {
                 Linea    = linea,
                 Id       = id,
-                Codigo   = id,
+                Codigo   = Sql.PreciosObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 Fecha    = fecha,
                 FechaStr = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                 Region   = regionDesc,
@@ -314,6 +324,7 @@ namespace WpfAppVba
         // ─── Botones de precio ────────────────────────────────────────────────
         private void BtnNuevoPrecio_Click(object sender, RoutedEventArgs e)
         {
+            if (!AppState.EsAdmin) return;
             if (ArticuloSeleccionado is not PrecioArticuloFila fila)
             {
                 MessageBox.Show("Seleccione un artículo primero.", "Consola",
@@ -348,6 +359,7 @@ namespace WpfAppVba
 
         private void BtnEditarPrecio_Click(object sender, RoutedEventArgs e)
         {
+            if (!AppState.EsAdmin) return;
             if (ArticuloSeleccionado is not PrecioArticuloFila art) return;
             if (GridPrecios.SelectedItem is not PrecioHistFila fila) return;
 
@@ -374,7 +386,11 @@ namespace WpfAppVba
 
         private void BtnEliminarPrecio_Click(object sender, RoutedEventArgs e)
         {
+            if (!AppState.EsAdmin) return;
             if (GridPrecios.SelectedItem is not PrecioHistFila fila) return;
+
+            // Verificación de conexión en 2 capas antes de persistir el borrado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
 
             var res = MessageBox.Show("¿Eliminar este registro de precio?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
@@ -401,6 +417,9 @@ namespace WpfAppVba
         // ─── Cambiar estado del artículo (mostrar/ocultar) ────────────────────
         private void BtnCambiarEstado_Click(object sender, RoutedEventArgs e)
         {
+            // Verificación de conexión en 2 capas antes de persistir el cambio de estado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             if (ArticuloSeleccionado is not PrecioArticuloFila fila)
             {
                 MessageBox.Show("Seleccione un artículo primero.", "Consola",
@@ -422,6 +441,9 @@ namespace WpfAppVba
 
         private void BtnActualizar_Click(object sender, RoutedEventArgs e)
         {
+            // Sin conexión no se puede refrescar desde SQL: avisar y no congelar.
+            if (!FuncionesComunes.VerificarConexionParaActualizar(Window.GetWindow(this))) return;
+
             Sql.ArticulosObj.Actualizar();
             Sql.PreciosObj.Actualizar();
             CargarArbol();

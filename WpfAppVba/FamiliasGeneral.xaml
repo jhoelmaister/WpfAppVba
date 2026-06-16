@@ -98,7 +98,7 @@
                   PreviewKeyDown="Grid1_PreviewKeyDown">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Línea"       Binding="{Binding Linea}"       Width="60"/>
-                <DataGridTextColumn Header="Código"      Binding="{Binding Id}"          Width="80"/>
+                <DataGridTextColumn Header="Código"      Binding="{Binding Codigo}"      Width="80"/>
                 <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
                 <DataGridTextColumn Header="Producto"    Binding="{Binding Producto}"    Width="150"/>
             </DataGrid.Columns>

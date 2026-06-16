@@ -67,7 +67,7 @@ namespace WpfAppVba.Data
             }
 
             // ── Traspasos (entradas y salidas) ───────────────────────────────
-            long sucursal = AppState.SucursalActiva;
+            string sucursal = AppState.SucursalActiva;
             int ufTrasp = Sql.TraspasosObj.ContarFilas;
 
             for (int ciclo = 1; ciclo <= ufTrasp; ciclo++)
@@ -89,8 +89,8 @@ namespace WpfAppVba.Data
                 var articuloObj = Sql.TraspasosObj.ObtenerItem("articulo", id);
                 if (articuloObj?.ToString() != codigo) continue;
 
-                long origen  = Convert.ToInt64(Sql.DocumentosTObj.ObtenerItem("origen",  documentoT) ?? 0L);
-                long destino = Convert.ToInt64(Sql.DocumentosTObj.ObtenerItem("destino", documentoT) ?? 0L);
+                string origen  = Sql.DocumentosTObj.ObtenerItem("origen",  documentoT)?.ToString() ?? "";
+                string destino = Sql.DocumentosTObj.ObtenerItem("destino", documentoT)?.ToString() ?? "";
                 double cantidad = Convert.ToDouble(Sql.TraspasosObj.ObtenerItem("cantidad", id) ?? 0);
 
                 if (origen == sucursal && destino != sucursal) salidas  += cantidad;
@@ -179,7 +179,7 @@ namespace WpfAppVba.Data
             }
 
             // ── Traspasos ────────────────────────────────────────────────────
-            long sucursal = AppState.SucursalActiva;
+            string sucursal = AppState.SucursalActiva;
             int ufTrasp = Sql.TraspasosObj.ContarFilas;
 
             for (int ciclo = 1; ciclo <= ufTrasp; ciclo++)
@@ -201,8 +201,8 @@ namespace WpfAppVba.Data
                 var articuloObj = Sql.TraspasosObj.ObtenerItem("articulo", id);
                 if (articuloObj?.ToString() != codigo) continue;
 
-                long origen  = Convert.ToInt64(Sql.DocumentosTObj.ObtenerItem("origen",  documentoT) ?? 0L);
-                long destino = Convert.ToInt64(Sql.DocumentosTObj.ObtenerItem("destino", documentoT) ?? 0L);
+                string origen  = Sql.DocumentosTObj.ObtenerItem("origen",  documentoT)?.ToString() ?? "";
+                string destino = Sql.DocumentosTObj.ObtenerItem("destino", documentoT)?.ToString() ?? "";
                 double cantidad = Convert.ToDouble(Sql.TraspasosObj.ObtenerItem("cantidad", id) ?? 0);
 
                 if (origen == sucursal && destino != sucursal) salidas  += cantidad;

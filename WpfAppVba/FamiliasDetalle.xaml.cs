@@ -57,18 +57,24 @@ namespace WpfAppVba
         private void CargarParaEditar()
         {
             string id = _idEditar;
-            Box_Codigo.Text = id;
+            Box_Codigo.Text = Sql.FamiliasObj.ObtenerItem("codigo", id)?.ToString() ?? "";
             Box_Descripcion.Text = Sql.FamiliasObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
             string productoId = Sql.FamiliasObj.ObtenerItem("producto", id)?.ToString() ?? "";
-            Box_Referido_Codigo.Text = productoId;
+            Box_Referido_Codigo.Text = Sql.ProductosObj.ObtenerItem("codigo", productoId)?.ToString() ?? "";
             Box_Referido_Descripcion.Text = Sql.ProductosObj.ObtenerItem("descripcion", productoId)?.ToString() ?? "";
             Box_Observacion.Text = Sql.FamiliasObj.ObtenerItem("observacion", id)?.ToString() ?? "";
         }
 
         private void CargarParaNuevo()
         {
-            long siguiente = Convert.ToInt64(Sql.FamiliasObj.Maximo("id") ?? 0) + 1;
-            Box_Codigo.Text = siguiente.ToString();
+            Box_Codigo.Text = Sql.FamiliasObj.SiguienteCodigoInt().ToString();
+        }
+
+        // ─── Resolver el id (UUID) del producto a partir del código digitado ──
+        private string ResolverProductoId()
+        {
+            string cod = Box_Referido_Codigo.Text.Trim();
+            return cod == "" ? "" : Sql.ProductosObj.BuscarIdentificador("codigo", cod);
         }
 
         // ─── Actualizar descripción del producto referido ─────────────────────
@@ -76,7 +82,7 @@ namespace WpfAppVba
         {
             if (_cargando) return;
             _hayCambios = true;
-            string productoId = Box_Referido_Codigo.Text.Trim();
+            string productoId = ResolverProductoId();
             Box_Referido_Descripcion.Text = productoId == ""
                 ? ""
                 : Sql.ProductosObj.ObtenerItem("descripcion", productoId)?.ToString() ?? "";
@@ -91,6 +97,8 @@ namespace WpfAppVba
         // ─── Guardar ─────────────────────────────────────────────────────────
         private bool Guardar()
         {
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+
             return AppState.EventoFormularioF == "modificar"
                 ? GuardarEditar()
                 : GuardarNuevo();
@@ -98,16 +106,16 @@ namespace WpfAppVba
 
         private bool GuardarEditar()
         {
-            string codigo = Box_Codigo.Text.Trim();
+            string id = _idEditar;
             try
             {
-                Sql.FamiliasObj.EstablecerItem("descripcion", codigo, Box_Descripcion.Text);
-                Sql.FamiliasObj.EstablecerItem("producto",    codigo, Box_Referido_Codigo.Text);
-                Sql.FamiliasObj.EstablecerItem("observacion", codigo, Box_Observacion.Text);
-                Sql.FamiliasObj.EstablecerItem("edicion",     codigo, DateTime.Now);
-                Sql.FamiliasObj.EstablecerItem("usuarioE",    codigo, AppState.UsuarioActivo);
+                Sql.FamiliasObj.EstablecerItem("descripcion", id, Box_Descripcion.Text);
+                Sql.FamiliasObj.EstablecerItem("producto",    id, ResolverProductoId());
+                Sql.FamiliasObj.EstablecerItem("observacion", id, Box_Observacion.Text);
+                Sql.FamiliasObj.EstablecerItem("edicion",     id, DateTime.Now);
+                Sql.FamiliasObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
 
-                Sql.FamiliasObj.OrdenarData(("id", false));
+                Sql.FamiliasObj.OrdenarData(("codigo", false));
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
             }
@@ -123,25 +131,28 @@ namespace WpfAppVba
             string codigo = Box_Codigo.Text.Trim();
             try
             {
-                if (!Sql.FamiliasObj.VerificarId(codigo, "id"))
+                if (Sql.FamiliasObj.CodigoExiste(codigo))
                 {
                     MessageBox.Show("El código ya existe", "Consola",
                         MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Box_Codigo.Text = Sql.FamiliasObj.SiguienteCodigoInt().ToString();
                     return false;
                 }
 
-                Sql.FamiliasObj.Nuevo(codigo);
-                Sql.FamiliasObj.EstablecerItem("descripcion", codigo, Box_Descripcion.Text);
-                Sql.FamiliasObj.EstablecerItem("producto",    codigo, Box_Referido_Codigo.Text);
-                Sql.FamiliasObj.EstablecerItem("observacion", codigo, Box_Observacion.Text);
-                Sql.FamiliasObj.EstablecerItem("emision",     codigo, DateTime.Now);
-                Sql.FamiliasObj.EstablecerItem("edicion",     codigo, DateTime.Now);
-                Sql.FamiliasObj.EstablecerItem("usuario",     codigo, AppState.UsuarioActivo);
-                Sql.FamiliasObj.EstablecerItem("usuarioE",    codigo, AppState.UsuarioActivo);
+                string id = Guid.NewGuid().ToString();
+                Sql.FamiliasObj.Nuevo(id);
+                Sql.FamiliasObj.EstablecerItem("codigo",      id, codigo);
+                Sql.FamiliasObj.EstablecerItem("descripcion", id, Box_Descripcion.Text);
+                Sql.FamiliasObj.EstablecerItem("producto",    id, ResolverProductoId());
+                Sql.FamiliasObj.EstablecerItem("observacion", id, Box_Observacion.Text);
+                Sql.FamiliasObj.EstablecerItem("emision",     id, DateTime.Now);
+                Sql.FamiliasObj.EstablecerItem("edicion",     id, DateTime.Now);
+                Sql.FamiliasObj.EstablecerItem("usuario",     id, AppState.UsuarioActivo);
+                Sql.FamiliasObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
 
-                Sql.FamiliasObj.OrdenarData(("id", false));
+                Sql.FamiliasObj.OrdenarData(("codigo", false));
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
-                ItemCreadoId = codigo;
+                ItemCreadoId = id;
                 return true;
             }
             catch (Exception ex)

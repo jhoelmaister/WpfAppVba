@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
@@ -10,6 +11,9 @@ namespace WpfAppVba
     public partial class LoginWindow : Window
     {
         private static SqlData Sql => SqlData.Instance;
+
+        // Reintenta la conexión automáticamente mientras no haya internet.
+        private DispatcherTimer? _reintentoTimer;
 
         public LoginWindow()
         {
@@ -46,18 +50,51 @@ namespace WpfAppVba
         {
             BtnIngresar.IsEnabled = false;
             MostrarEstado("Conectando a base de datos...", Colors.Gray);
+
+            bool conectado;
             try
             {
                 await Task.Run(() => AppLoader.ConectarProductos());
+                conectado = true;
+            }
+            catch
+            {
+                conectado = false;
+            }
+
+            if (conectado)
+            {
+                // Conexión recuperada: limpiar aviso y habilitar el login.
+                DetenerReintentos();
                 MostrarEstado("", Colors.Gray);
                 BtnIngresar.IsEnabled = true;
                 TxtCuenta.Focus();
             }
-            catch (Exception ex)
+            else
             {
-                MostrarEstado("Sin conexión: " + ex.Message, Colors.Red);
+                // Mensaje simple (sin volcar el error técnico de SQL Server).
+                MostrarEstado("⚠ Sin conexión. Reintentando…", Colors.Orange);
+                BtnIngresar.IsEnabled = false;
+                ProgramarReintento();
             }
         }
+
+        // ─── Auto-reconexión: reintenta cada 4 s hasta que vuelva el internet ─────
+        private void ProgramarReintento()
+        {
+            if (_reintentoTimer == null)
+            {
+                _reintentoTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
+                _reintentoTimer.Tick += async (_, _) =>
+                {
+                    _reintentoTimer!.Stop();                 // evita solapar intentos
+                    await ConectarBaseDatosAsync();          // reprograma solo si sigue offline
+                };
+            }
+            _reintentoTimer.Start();
+        }
+
+        private void DetenerReintentos() => _reintentoTimer?.Stop();
 
         // ─── Enter en contraseña dispara el login ──────────────────────────────
         private void TxtContrasena_KeyDown(object sender, KeyEventArgs e)
@@ -69,16 +106,16 @@ namespace WpfAppVba
         // ─── Configurar conexión desde el login ───────────────────────────────
         private async void BtnConfigurarConexion_Click(object sender, RoutedEventArgs e)
         {
-            // Abrir en modo edición si ya hay un servidor activo, para que al guardar
-            // se actualice el servidor existente y DatabaseConnection quede reconfigurado.
-            string activoId = ConexionConfig.ObtenerActivoId();
-            ServidorConexion? servidorActivo = string.IsNullOrEmpty(activoId)
-                ? null
-                : ConexionConfig.ObtenerPorId(activoId);
+            // Abrir el listado de servidores para agregar / editar / conectar.
+            var dlg = new ConexionServidoresWindow { Owner = this };
+            dlg.ShowDialog();
 
-            var dlg = new ConfiguracionDbWindow(servidorActivo) { Owner = this };
-            if (dlg.ShowDialog() == true)
+            // Tras gestionar los servidores, recargar la conexión activa y reconectar.
+            if (ConexionConfig.HayConfiguracion())
+            {
+                DatabaseConnection.CargarDesdeConfiguracion();
                 await ConectarBaseDatosAsync();
+            }
         }
 
         // ─── Lógica de inicio de sesión (equivalente a CommandButton1_Click) ──
@@ -125,19 +162,26 @@ namespace WpfAppVba
 
             if (encontrado)
             {
-                AppState.UsuarioActivo  = Convert.ToInt64(idEncontrado);
-                AppState.SucursalActiva = Convert.ToInt64(
-                    Sql.UsuariosObj.ObtenerItem("sucursal", idEncontrado) ?? 0);
-                AppState.RegionActiva   = Convert.ToInt64(
-                    Sql.SucursalesObj.ObtenerItem("region", AppState.SucursalActiva.ToString()) ?? 0);
+                AppState.UsuarioActivo  = idEncontrado;
+                AppState.TipoUsuario    = Sql.UsuariosObj.ObtenerItem("tipo",     idEncontrado)?.ToString() ?? "";
+                AppState.EmpresaActiva  = Sql.UsuariosObj.ObtenerItem("empresa",  idEncontrado)?.ToString() ?? "";
+                AppState.SucursalActiva = Sql.UsuariosObj.ObtenerItem("sucursal", idEncontrado)?.ToString() ?? "";
+                AppState.RegionActiva   = Sql.SucursalesObj.ObtenerItem("region", AppState.SucursalActiva)?.ToString() ?? "";
                 AppState.SesionActiva   = true;
                 AppState.PeriodoActivo  = DateTime.Now.Year.ToString();
+
+                Sql.UsuariosObj.EstablecerItem("estadoU", idEncontrado, "activo");
+                Sql.UsuariosObj.ExportarItems();
 
                 string temaUsuario = Sql.UsuariosObj.ObtenerItem("temaC", idEncontrado)?.ToString() ?? "";
                 AppState.TemaActivo = temaUsuario.Trim().ToLowerInvariant() == ThemeManager.TemaOscuro
                     ? ThemeManager.TemaOscuro
                     : ThemeManager.TemaClaro;
                 ThemeManager.AplicarTema(AppState.TemaActivo);
+
+                // Recargar catálogos ya filtrados por la empresa del usuario.
+                MostrarEstado("Cargando catálogos de la empresa...", Colors.Green);
+                await Task.Run(() => AppLoader.ConectarProductos());
 
                 MostrarEstado("Conectando a base de datos principal...", Colors.Green);
                 await Task.Run(() => AppLoader.ConectarBases());

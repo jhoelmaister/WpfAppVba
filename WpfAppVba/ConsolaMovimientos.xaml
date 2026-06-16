@@ -4,8 +4,11 @@
         xmlns:local="clr-namespace:WpfAppVba"
         Title="Sistema de Gestión"
         WindowState="Maximized"
+        MinWidth="960" MinHeight="620"
         WindowStartupLocation="CenterScreen"
-        Background="#1E2235">
+        Background="#1E2235"
+        Icon="icono.ico"
+        Closing="ConsolaMovimientos_Closing">
 
     <Window.Resources>
 
@@ -159,6 +162,15 @@
                                VerticalAlignment="Center"/>
                 </StackPanel>
 
+                <!-- Estado de conexión -->
+                <Border Grid.Column="1" x:Name="PillConexion"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        CornerRadius="10" Padding="12,4" Background="#2E7D32">
+                    <TextBlock x:Name="LblConexion" Text="●  En línea"
+                               FontSize="11" FontWeight="SemiBold"
+                               Foreground="White" VerticalAlignment="Center"/>
+                </Border>
+
                 <!-- Accesos rápidos + Usuario -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button x:Name="BtnQuick_Venta" Content="🛒  Venta"
@@ -177,6 +189,18 @@
                     <Rectangle Width="1" Height="24" Fill="#3A4059" Margin="10,0"/>
 
                     <TextBlock x:Name="LblUsuario"
+                               FontSize="11" Foreground="#9AA3B8"
+                               VerticalAlignment="Center"/>
+
+                    <Rectangle Width="1" Height="24" Fill="#3A4059" Margin="10,0"/>
+
+                    <TextBlock x:Name="LblSucursal"
+                               FontSize="11" Foreground="#9AA3B8"
+                               VerticalAlignment="Center"/>
+
+                    <Rectangle Width="1" Height="24" Fill="#3A4059" Margin="10,0"/>
+
+                    <TextBlock x:Name="LblEmpresa"
                                FontSize="11" Foreground="#9AA3B8"
                                VerticalAlignment="Center"/>
                 </StackPanel>
@@ -206,6 +230,10 @@
                                   HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="0,8,0,8">
 
+                            <Button x:Name="BtnNav_Dashboard"
+                                    Content="📊  Dashboard"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Dashboard_Click"/>
                             <Button x:Name="BtnNav_Articulos"
                                     Content="📋  Artículos"
                                     Style="{StaticResource NavBtn}"
@@ -265,6 +293,15 @@
                                     Content="💲  Precios"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Precios_Click"/>
+                            <Button x:Name="BtnNav_Empresas"
+                                    Content="🏢  Empresas"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Empresas_Click"/>
+                            <Button x:Name="BtnNav_Usuarios"
+                                    Content="👤  Usuarios"
+                                    Style="{StaticResource NavBtn}"
+                                    Visibility="Collapsed"
+                                    Click="BtnNav_Usuarios_Click"/>
                             <Button x:Name="BtnNav_Configuracion"
                                     Content="⚙  Configuración"
                                     Style="{StaticResource NavBtn}"
