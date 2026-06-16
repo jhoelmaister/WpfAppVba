@@ -160,6 +160,12 @@
                                FontSize="15" FontWeight="Bold"
                                Foreground="White"
                                VerticalAlignment="Center"/>
+                    <!-- Versión actual de la app (se rellena en código). -->
+                    <TextBlock x:Name="LblVersion"
+                               FontSize="11" FontWeight="SemiBold"
+                               Foreground="#9AA3B8"
+                               VerticalAlignment="Bottom"
+                               Margin="6,0,0,3"/>
                 </StackPanel>
 
                 <!-- Accesos rápidos + Usuario -->

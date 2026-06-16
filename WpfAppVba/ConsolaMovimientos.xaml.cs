@@ -87,6 +87,7 @@ namespace WpfAppVba
         {
             InitializeComponent();
             TabFijoContenido.Content = _panelArticulos;
+            MostrarVersion();
             ActualizarInfoUsuario();
             MarcarActivo(BtnNav_Articulos);
             if (AppState.EsAdmin) BtnNav_Usuarios.Visibility = Visibility.Visible;
@@ -99,6 +100,14 @@ namespace WpfAppVba
             // Buscar actualizaciones en segundo plano (no bloquea el arranque).
             // Si hay una nueva versión, aparece el botón "🔄 Actualizar" en la top bar.
             _ = BuscarActualizacionesAsync();
+        }
+
+        // ─── Versión de la app (top bar) ──────────────────────────────────────
+        private void MostrarVersion()
+        {
+            var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            // Mostrar Mayor.Menor.Parche (omitir el 4º componente "revision").
+            LblVersion.Text = v == null ? "" : $"v{v.Major}.{v.Minor}.{v.Build}";
         }
 
         // ─── Auto-actualización (Velopack) ────────────────────────────────────
