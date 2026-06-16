@@ -138,10 +138,15 @@ namespace WpfAppVba
             LblDescarga.Text         = "Descargando…";
             BarraDescarga.Value      = 0;
 
+            double totalMB = _actualizador.TamañoDescargaMB;
+
             var progreso = new Progress<int>(p =>
             {
                 BarraDescarga.Value = p;
-                LblDescarga.Text    = $"Descargando… {p}%";
+                double bajadoMB = totalMB * p / 100.0;
+                LblDescarga.Text = totalMB > 0
+                    ? $"Descargando… {bajadoMB:0.0} / {totalMB:0.0} MB ({p}%)"
+                    : $"Descargando… {p}%";
             });
 
             try
