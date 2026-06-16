@@ -8,27 +8,31 @@ para la distribución con auto-actualización.
 GitHub compila la app en un **Windows en la nube** (workflow `.github/workflows/release.yml`),
 así que **no necesitas tu PC ni un token manual**. Funciona incluso desde Claude en la web.
 
-**Flujo (lo que haces tú o le pides a Claude):**
+### Procedimiento oficial (2 pasos)
 
-1. Haz tus cambios de código.
-2. Sube el número en `WpfAppVba/WpfAppVba.csproj` → `<Version>` (ej. `1.0.0` → `1.0.1`).
-3. Crea y empuja un tag con esa versión:
+> ⚠️ Clave: el número de versión debe estar en **`master`** ANTES de lanzar el workflow.
+> El bump de versión que se quede solo en una rama de trabajo NO cuenta.
 
-   ```bash
-   git commit -am "v1.0.1: descripción del cambio"
-   git tag v1.0.1
-   git push origin v1.0.1
-   ```
+**Paso 1 — El cambio de versión llega a `master`.**
+Sube `<Version>` en `WpfAppVba/WpfAppVba.csproj` (ej. `1.0.0` → `1.0.1`) y haz que ese
+cambio esté en `master` (commit directo o vía PR mergeado). Si trabajas con Claude:
+*"sube la versión a 1.0.1 en master"*.
 
-4. GitHub Actions hace solo el resto: `publish` → `vpk pack` → publica la **Release**.
-   (Lo ves en la pestaña **Actions** del repo.)
-5. Las apps ya instaladas mostrarán **🔄 Actualizar** la próxima vez que se abran.
+**Paso 2 — Lanzar el workflow (lo haces tú con un clic).**
+GitHub no permite que Claude (web) dispare releases, así que este paso es manual:
 
-> También puedes lanzarlo a mano sin tag: pestaña **Actions** → *Publicar release* →
-> *Run workflow* → escribe la versión.
+1. Abre <https://github.com/jhoelmaister/WpfAppVba/actions/workflows/release.yml>
+2. Botón **Run workflow**.
+3. En *version* escribe la versión (ej. `1.0.1`) o déjalo vacío para usar la del csproj.
+4. **Run workflow** (verde).
 
-> En una sesión de Claude basta con: *"publica la versión 1.0.1"*. Claude sube el
-> `<Version>`, hace commit y empuja el tag; GitHub compila y publica.
+GitHub compila, empaqueta y publica la Release. Las apps instaladas verán **🔄 Actualizar**
+la próxima vez que se abran.
+
+> **Resumen del reparto:** Claude sube la versión a `master` → tú das **Run workflow**.
+
+> También se puede disparar empujando un tag `vX.Y.Z` desde una PC con git
+> (`git tag v1.0.1 && git push origin v1.0.1`). Útil si publicas desde tu máquina.
 
 ---
 
