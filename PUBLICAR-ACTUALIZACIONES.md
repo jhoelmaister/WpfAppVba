@@ -11,12 +11,44 @@ dotnet tool install -g vpk
 ```
 
 El feed de actualización es el repo **público** `https://github.com/jhoelmaister/wpfappvba`
-(configurado en `WpfAppVba/ActualizadorApp.cs`). Para subir releases necesitas un token
-de GitHub con permiso sobre ese repo, expuesto como variable de entorno:
+(configurado en `WpfAppVba/ActualizadorApp.cs`). Para **subir** releases necesitas un
+token de GitHub con permiso sobre ese repo.
+
+### Crear el token de GitHub (una sola vez)
+
+Dos tipos de token sirven. El **Fine-grained** es el recomendado (permisos mínimos).
+
+**Opción A — Fine-grained token (recomendado):**
+
+1. Entra a <https://github.com/settings/tokens?type=beta> (o: foto de perfil →
+   *Settings* → *Developer settings* → *Personal access tokens* → *Fine-grained tokens*).
+2. *Generate new token*.
+3. **Token name**: algo como `publicar-wpfappvba`.
+4. **Expiration**: elige una fecha (ej. 90 días o *No expiration* si lo prefieres).
+5. **Repository access** → *Only select repositories* → marca **`wpfappvba`**.
+6. **Permissions** → *Repository permissions* → busca **Contents** → ponlo en
+   **Read and write**. (Eso basta para crear releases y subir los archivos.)
+7. *Generate token* y **copia el valor** (empieza por `github_pat_…`). Solo se muestra
+   una vez.
+
+**Opción B — Token clásico (más simple, más permisos):**
+
+1. Entra a <https://github.com/settings/tokens> → *Generate new token (classic)*.
+2. **Note**: `publicar-wpfappvba`; elige *Expiration*.
+3. Marca el scope **`repo`** (completo).
+4. *Generate token* y copia el valor (empieza por `ghp_…`).
+
+### Usar el token
+
+Pásalo como variable de entorno (no lo escribas en sitios compartidos ni lo subas al repo):
 
 ```powershell
-$env:GITHUB_TOKEN = "ghp_xxxxxxxxxxxxxxxx"
+$env:GITHUB_TOKEN = "PEGA_AQUÍ_TU_TOKEN"
 ```
+
+> 🔒 **Seguridad:** trata el token como una contraseña. Si se filtra (lo pegas en un
+> chat, captura, commit…), revócalo en la misma página de *Settings → tokens* y crea
+> otro. El token **no** va dentro de la app ni del repo: solo lo usas tú al publicar.
 
 ## Publicar una versión nueva — forma rápida (un solo comando)
 
