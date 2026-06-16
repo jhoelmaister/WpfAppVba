@@ -3,6 +3,38 @@
 Guía del flujo de release de la app con **Velopack**. Reemplaza al paso de Inno Setup
 para la distribución con auto-actualización.
 
+## ⭐ Forma recomendada: publicar desde cualquier sesión (GitHub Actions)
+
+GitHub compila la app en un **Windows en la nube** (workflow `.github/workflows/release.yml`),
+así que **no necesitas tu PC ni un token manual**. Funciona incluso desde Claude en la web.
+
+**Flujo (lo que haces tú o le pides a Claude):**
+
+1. Haz tus cambios de código.
+2. Sube el número en `WpfAppVba/WpfAppVba.csproj` → `<Version>` (ej. `1.0.0` → `1.0.1`).
+3. Crea y empuja un tag con esa versión:
+
+   ```bash
+   git commit -am "v1.0.1: descripción del cambio"
+   git tag v1.0.1
+   git push origin v1.0.1
+   ```
+
+4. GitHub Actions hace solo el resto: `publish` → `vpk pack` → publica la **Release**.
+   (Lo ves en la pestaña **Actions** del repo.)
+5. Las apps ya instaladas mostrarán **🔄 Actualizar** la próxima vez que se abran.
+
+> También puedes lanzarlo a mano sin tag: pestaña **Actions** → *Publicar release* →
+> *Run workflow* → escribe la versión.
+
+> En una sesión de Claude basta con: *"publica la versión 1.0.1"*. Claude sube el
+> `<Version>`, hace commit y empuja el tag; GitHub compila y publica.
+
+---
+
+Lo de abajo es el camino **manual** (publicar desde tu propia PC Windows), por si lo
+necesitas. Con GitHub Actions normalmente no hace falta.
+
 ## Requisitos (una sola vez)
 
 ```powershell
