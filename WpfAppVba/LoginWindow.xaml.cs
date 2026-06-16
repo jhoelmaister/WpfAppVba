@@ -120,7 +120,7 @@ namespace WpfAppVba
                 TxtContrasenaVisible.Text       = TxtContrasena.Password;
                 TxtContrasena.Visibility        = Visibility.Collapsed;
                 TxtContrasenaVisible.Visibility = Visibility.Visible;
-                BtnVerContrasena.Content        = "🙈";
+                IcoVerContrasena.Text           = "\uED1A";   // Segoe MDL2: Hide
                 BtnVerContrasena.ToolTip        = "Ocultar contraseña";
                 TxtContrasenaVisible.Focus();
                 TxtContrasenaVisible.CaretIndex = TxtContrasenaVisible.Text.Length;
@@ -131,7 +131,7 @@ namespace WpfAppVba
                 TxtContrasena.Password          = TxtContrasenaVisible.Text;
                 TxtContrasenaVisible.Visibility = Visibility.Collapsed;
                 TxtContrasena.Visibility        = Visibility.Visible;
-                BtnVerContrasena.Content        = "👁";
+                IcoVerContrasena.Text           = "\uE7B3";   // Segoe MDL2: RedEye
                 BtnVerContrasena.ToolTip        = "Mostrar contraseña";
                 TxtContrasena.Focus();
             }
