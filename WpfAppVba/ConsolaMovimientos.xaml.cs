@@ -102,12 +102,14 @@ namespace WpfAppVba
             _ = BuscarActualizacionesAsync();
         }
 
-        // ─── Versión de la app (top bar) ──────────────────────────────────────
+        // ─── Versión de la app (barra de título de la ventana) ────────────────
         private void MostrarVersion()
         {
             var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-            // Mostrar Mayor.Menor.Parche (omitir el 4º componente "revision").
-            LblVersion.Text = v == null ? "" : $"v{v.Major}.{v.Minor}.{v.Build}";
+            // Title de la ventana → lo muestra Windows en la barra de título del SO.
+            Title = v == null
+                ? "Sistema de Gestión"
+                : $"Sistema de Gestión  v{v.Major}.{v.Minor}.{v.Build}";
         }
 
         // ─── Auto-actualización (Velopack) ────────────────────────────────────
