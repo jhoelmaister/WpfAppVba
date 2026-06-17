@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -577,28 +578,46 @@ namespace WpfAppVba
         // que el evento Closing no vuelva a preguntar.
         private bool _cierreConfirmado = false;
 
-        // ¿Hay alguna pestaña de trabajo (nuevo/editar) abierta, en la sección actual o
-        // en otra? Los detalles son los UserControl cuyo nombre termina en "Detalle".
-        private bool HayPestañasDeTrabajoAbiertas()
+        // ¿Hay cambios sin guardar en alguna pestaña de trabajo (nuevo/editar), en la
+        // sección actual o en otra? Se consulta el estado de cambios de cada detalle.
+        private bool HayCambiosSinGuardar()
         {
-            static bool EsTrabajo(TabItem? t) =>
-                t != null && t.Content?.GetType().Name.EndsWith("Detalle") == true;
-
             foreach (TabItem t in TabContenido.Items)
-                if (t != TabFijo && EsTrabajo(t)) return true;
+                if (t != TabFijo && TieneCambiosSinGuardar(t.Content)) return true;
             foreach (var lista in _pestañasPorSeccion.Values)
                 foreach (var t in lista)
-                    if (EsTrabajo(t)) return true;
+                    if (TieneCambiosSinGuardar(t.Content)) return true;
             return false;
         }
 
-        // Pide confirmación si hay pestañas de trabajo abiertas. Devuelve true si se
-        // puede cerrar (no hay pestañas o el usuario aceptó perder los cambios).
+        // Lee por reflexión el estado de cambios del detalle: la propiedad "HayCambios"
+        // (PedidosDetalle) o el campo "_hayCambios" (resto de detalles). Los paneles que
+        // no tengan ninguno (General/selectores) cuentan como "sin cambios".
+        private static bool TieneCambiosSinGuardar(object? content)
+        {
+            if (content == null) return false;
+            var tipo = content.GetType();
+
+            var prop = tipo.GetProperty("HayCambios",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (prop != null && prop.PropertyType == typeof(bool))
+                return prop.GetValue(content) is bool pb && pb;
+
+            var field = tipo.GetField("_hayCambios",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            if (field != null && field.FieldType == typeof(bool))
+                return field.GetValue(content) is bool fb && fb;
+
+            return false;
+        }
+
+        // Pide confirmación si hay cambios sin guardar. Devuelve true si se puede
+        // cerrar (no hay cambios o el usuario aceptó perderlos).
         private bool ConfirmarPerderCambios()
         {
-            if (!HayPestañasDeTrabajoAbiertas()) return true;
+            if (!HayCambiosSinGuardar()) return true;
             var res = MessageBox.Show(
-                "Hay pestañas de trabajo abiertas (nuevo/editar) con posibles cambios sin guardar.\n" +
+                "Hay cambios sin guardar en una o más pestañas (nuevo/editar).\n" +
                 "Si cierras se perderán esos cambios.\n\n¿Seguro que deseas cerrar?",
                 "Cerrar", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             return res == MessageBoxResult.Yes;
