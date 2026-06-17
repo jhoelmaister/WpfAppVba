@@ -783,7 +783,8 @@ namespace WpfAppVba
         private void GridItems_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
         {
             GridFocusHelper.SeleccionarTodoEnEdicion(e.EditingElement);
-            if (e.Column.Header?.ToString() == "Cantidad" && e.EditingElement is TextBox tb)
+            if (e.Column.Header?.ToString() is "Cantidad" or "Precio" or "Importe" or "Contable"
+                && e.EditingElement is TextBox tb)
                 FuncionesComunes.RestringirACantidad(tb);
         }
 

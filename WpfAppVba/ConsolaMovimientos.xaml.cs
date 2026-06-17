@@ -573,14 +573,53 @@ namespace WpfAppVba
             catch { }
         }
 
+        // Marcado cuando el cierre ya fue confirmado (p. ej. desde Cerrar sesión) para
+        // que el evento Closing no vuelva a preguntar.
+        private bool _cierreConfirmado = false;
+
+        // ¿Hay alguna pestaña de trabajo (nuevo/editar) abierta, en la sección actual o
+        // en otra? Los detalles son los UserControl cuyo nombre termina en "Detalle".
+        private bool HayPestañasDeTrabajoAbiertas()
+        {
+            static bool EsTrabajo(TabItem? t) =>
+                t != null && t.Content?.GetType().Name.EndsWith("Detalle") == true;
+
+            foreach (TabItem t in TabContenido.Items)
+                if (t != TabFijo && EsTrabajo(t)) return true;
+            foreach (var lista in _pestañasPorSeccion.Values)
+                foreach (var t in lista)
+                    if (EsTrabajo(t)) return true;
+            return false;
+        }
+
+        // Pide confirmación si hay pestañas de trabajo abiertas. Devuelve true si se
+        // puede cerrar (no hay pestañas o el usuario aceptó perder los cambios).
+        private bool ConfirmarPerderCambios()
+        {
+            if (!HayPestañasDeTrabajoAbiertas()) return true;
+            var res = MessageBox.Show(
+                "Hay pestañas de trabajo abiertas (nuevo/editar) con posibles cambios sin guardar.\n" +
+                "Si cierras se perderán esos cambios.\n\n¿Seguro que deseas cerrar?",
+                "Cerrar", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            return res == MessageBoxResult.Yes;
+        }
+
         private void ConsolaMovimientos_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            if (!_cierreConfirmado && !ConfirmarPerderCambios())
+            {
+                e.Cancel = true;   // el usuario decidió no cerrar
+                return;
+            }
             ConexionEstado.Cambio -= OnConexionCambio;
             MarcarInactivo();
         }
 
         private void BtnCerrarSesion_Click(object sender, RoutedEventArgs e)
         {
+            if (!ConfirmarPerderCambios()) return;
+            _cierreConfirmado = true;   // ya confirmado: Closing no vuelve a preguntar
+
             MarcarInactivo();
             AppState.SesionActiva  = false;
             AppState.UsuarioActivo = "";
