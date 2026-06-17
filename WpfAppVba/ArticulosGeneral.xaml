@@ -319,6 +319,7 @@
                     </DataGridTextColumn>
                     <DataGridTextColumn Header="Línea"               Binding="{Binding Linea}"       Width="55"/>
                     <DataGridTextColumn Header="Código"              Binding="{Binding Codigo}"      Width="80"/>
+                    <DataGridTextColumn Header="Categoría"           Binding="{Binding Categoria}"   Width="120"/>
                     <DataGridTextColumn Header="Descripción Completa" Binding="{Binding Descripcion}" Width="*"/>
                     <DataGridTextColumn Header="Disponible"          Binding="{Binding Disponible, StringFormat=#\,##0.##}"  Width="90"
                                         ElementStyle="{StaticResource CeldaNumero}"/>

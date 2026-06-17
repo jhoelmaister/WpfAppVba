@@ -268,13 +268,15 @@ namespace WpfAppVba
                 string desc      = Sql.ArticulosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
                 string modelo    = Sql.ArticulosObj.ObtenerItem("modelo",      id)?.ToString() ?? "";
                 string famDesc   = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString() ?? "";
+                string catDesc   = ObtenerDescripcionCategoria(id);
                 string descCompleta = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
 
-                // Filtro de búsqueda
+                // Filtro de búsqueda (código, descripción completa o categoría)
                 if (!string.IsNullOrEmpty(busqueda))
                 {
                     if (!codigo.ToLower().Contains(busqueda) &&
-                        !descCompleta.ToLower().Contains(busqueda))
+                        !descCompleta.ToLower().Contains(busqueda) &&
+                        !catDesc.ToLower().Contains(busqueda))
                         continue;
                 }
 
@@ -288,6 +290,7 @@ namespace WpfAppVba
                     Linea          = linea++,
                     Id             = id,
                     Codigo         = codigo,
+                    Categoria      = catDesc,
                     Descripcion    = descCompleta,
                     Disponible     = stock2,
                     Stock          = stock,
@@ -329,6 +332,7 @@ namespace WpfAppVba
                 if (porId.TryGetValue(d.Id, out var ex))
                 {
                     ex.Codigo         = d.Codigo;
+                    ex.Categoria      = d.Categoria;
                     ex.Descripcion    = d.Descripcion;
                     ex.Disponible     = d.Disponible;
                     ex.Stock          = d.Stock;
@@ -359,6 +363,7 @@ namespace WpfAppVba
             string desc   = Sql.ArticulosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
             string modelo = Sql.ArticulosObj.ObtenerItem("modelo",      id)?.ToString() ?? "";
             string famDesc = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? "";
+            string catDesc = ObtenerDescripcionCategoria(id);
             string descCompleta = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
 
             double stock  = StockCalculator.ContarStock(id,  DateTime.Now);
@@ -370,12 +375,21 @@ namespace WpfAppVba
                 Linea          = linea,
                 Id             = id,
                 Codigo         = codigo,
+                Categoria      = catDesc,
                 Descripcion    = descCompleta,
                 Disponible     = stock2,
                 Stock          = stock,
                 Seleccionado   = ordenIdx >= 0,
                 OrdenSeleccion = ordenIdx >= 0 ? ordenIdx + 1 : 0
             };
+        }
+
+        // Descripción de la categoría de un artículo (columna 'Categoria' del artículo).
+        private string ObtenerDescripcionCategoria(string id)
+        {
+            string catId = Sql.ArticulosObj.ObtenerItem("Categoria", id)?.ToString() ?? "";
+            if (string.IsNullOrEmpty(catId)) return "";
+            return Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "";
         }
 
         // Renumera la columna Línea, recalcula totales desde el grid y refresca.
@@ -737,6 +751,7 @@ namespace WpfAppVba
         public int    Linea          { get; set; }
         public string Id             { get; set; } = "";
         public string Codigo         { get; set; } = "";
+        public string Categoria      { get; set; } = "";
         public string Descripcion    { get; set; } = "";
         public double Disponible     { get; set; }
         public double Stock          { get; set; }
