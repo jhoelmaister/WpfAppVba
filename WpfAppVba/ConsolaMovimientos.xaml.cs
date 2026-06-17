@@ -578,16 +578,27 @@ namespace WpfAppVba
         // que el evento Closing no vuelva a preguntar.
         private bool _cierreConfirmado = false;
 
-        // ¿Hay cambios sin guardar en alguna pestaña de trabajo (nuevo/editar), en la
-        // sección actual o en otra? Se consulta el estado de cambios de cada detalle.
-        private bool HayCambiosSinGuardar()
+        // Devuelve los títulos de las pestañas (nuevo/editar) con cambios sin guardar,
+        // tanto en la sección actual como en las demás secciones.
+        private List<string> PestañasConCambios()
         {
+            var res = new List<string>();
             foreach (TabItem t in TabContenido.Items)
-                if (t != TabFijo && TieneCambiosSinGuardar(t.Content)) return true;
+                if (t != TabFijo && TieneCambiosSinGuardar(t.Content)) res.Add(TituloPestaña(t));
             foreach (var lista in _pestañasPorSeccion.Values)
                 foreach (var t in lista)
-                    if (TieneCambiosSinGuardar(t.Content)) return true;
-            return false;
+                    if (TieneCambiosSinGuardar(t.Content)) res.Add(TituloPestaña(t));
+            return res;
+        }
+
+        // Extrae el texto del título de una pestaña (el Header es un StackPanel con un
+        // TextBlock de título seguido del botón de cierre).
+        private static string TituloPestaña(TabItem t)
+        {
+            if (t.Header is System.Windows.Controls.StackPanel sp)
+                foreach (var hijo in sp.Children)
+                    if (hijo is System.Windows.Controls.TextBlock tb) return tb.Text;
+            return t.Header?.ToString() ?? "(pestaña)";
         }
 
         // Lee por reflexión el estado de cambios del detalle: la propiedad "HayCambios"
@@ -611,14 +622,18 @@ namespace WpfAppVba
             return false;
         }
 
-        // Pide confirmación si hay cambios sin guardar. Devuelve true si se puede
-        // cerrar (no hay cambios o el usuario aceptó perderlos).
+        // Pide confirmación si hay cambios sin guardar, indicando EXACTAMENTE en qué
+        // pestañas. Devuelve true si se puede cerrar (no hay cambios o el usuario aceptó
+        // perderlos).
         private bool ConfirmarPerderCambios()
         {
-            if (!HayCambiosSinGuardar()) return true;
+            var conCambios = PestañasConCambios();
+            if (conCambios.Count == 0) return true;
+
+            string detalle = string.Join("\n", conCambios.ConvertAll(t => "   •  " + t));
             var res = MessageBox.Show(
-                "Hay cambios sin guardar en una o más pestañas (nuevo/editar).\n" +
-                "Si cierras se perderán esos cambios.\n\n¿Seguro que deseas cerrar?",
+                "Hay cambios sin guardar en:\n\n" + detalle +
+                "\n\nSi cierras se perderán esos cambios.\n¿Seguro que deseas cerrar?",
                 "Cerrar", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             return res == MessageBoxResult.Yes;
         }

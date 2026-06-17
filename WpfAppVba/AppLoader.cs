@@ -25,15 +25,23 @@ namespace WpfAppVba.Data
             var inicio = DateTime.Now;
 
             string emp = AppState.EmpresaActiva;
-            // Filtro directo por empresa (solo cuando hay empresa activa).
+            // Filtro directo por empresa (solo cuando hay empresa activa). Aplica a
+            // productos, industrias, terceros, regiones, sucursales y categorías.
             string fEmp = string.IsNullOrEmpty(emp) ? "" : $" AND empresa = '{emp}'";
-            // Igual que fEmp pero calificado a la tabla 'articulos' (alias 'a'), porque la
-            // consulta de artículos hace JOIN con 'familias' (que también tiene 'empresa').
-            string fEmpArt = string.IsNullOrEmpty(emp) ? "" : $" AND a.empresa = '{emp}'";
+
+            // Cascada de la empresa por relaciones (igual que documentosT→traspasos), en
+            // vez de confiar en la columna 'empresa' de las tablas hijas:
+            //   productos (empresa) → familias (familias.producto) → articulos (articulos.familia)
+            //   regiones  (empresa) → precios  (precios.region)
+            string fFamilias = string.IsNullOrEmpty(emp) ? ""
+                : $" AND producto IN (SELECT id FROM productos WHERE estadof = 'normal' AND empresa = '{emp}')";
+            string fArticulos = string.IsNullOrEmpty(emp) ? ""
+                : $" AND a.familia IN (SELECT id FROM familias WHERE estadof = 'normal'" +
+                  $" AND producto IN (SELECT id FROM productos WHERE estadof = 'normal' AND empresa = '{emp}'))";
             // precios no tiene columna empresa → cascada por las regiones de la empresa.
             string fPrecios = string.IsNullOrEmpty(emp)
                 ? ""
-                : $" AND region IN (SELECT id FROM regiones WHERE empresa = '{emp}')";
+                : $" AND region IN (SELECT id FROM regiones WHERE estadof = 'normal' AND empresa = '{emp}')";
 
             // Tabla de empresas (sin filtro de empresa).
             Sql.EmpresasObj.Conectar("empresas",
@@ -47,13 +55,15 @@ namespace WpfAppVba.Data
             // familias. Se hace JOIN para ordenar por la 'secuencia' de la familia.
             // LEFT JOIN para no perder artículos sin familia (quedan al inicio). SELECT a.*
             // conserva el esquema de la caché idéntico al de la tabla articulos.
+            // Filtro en cascada: solo artículos cuya familia pertenece a la empresa activa.
             Sql.ArticulosObj.Conectar("articulos",
                 $"SELECT a.* FROM articulos AS a " +
                 $"LEFT JOIN familias AS f ON a.familia = f.id " +
-                $"WHERE a.estadof = 'normal'{fEmpArt} ORDER BY f.secuencia ASC, a.indice ASC");
+                $"WHERE a.estadof = 'normal'{fArticulos} ORDER BY f.secuencia ASC, a.indice ASC");
 
+            // Filtro en cascada: solo familias cuyo producto pertenece a la empresa activa.
             Sql.FamiliasObj.Conectar("familias",
-                $"SELECT * FROM familias WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
+                $"SELECT * FROM familias WHERE estadof = 'normal'{fFamilias} ORDER BY secuencia ASC");
 
             Sql.ProductosObj.Conectar("productos",
                 $"SELECT * FROM productos WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
