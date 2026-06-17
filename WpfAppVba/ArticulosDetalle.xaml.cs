@@ -259,6 +259,14 @@ namespace WpfAppVba
         {
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
 
+            // Todo artículo debe tener familia (ya no existe "Sin Clasificar").
+            if (string.IsNullOrEmpty(ResolverFamiliaId()))
+            {
+                MessageBox.Show("Debe seleccionar una familia para el artículo.", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
             return AppState.EventoFormularioA switch
             {
                 "modificar" => GuardarEditar(),

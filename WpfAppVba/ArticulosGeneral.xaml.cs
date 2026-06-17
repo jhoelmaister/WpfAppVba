@@ -155,7 +155,6 @@ namespace WpfAppVba
                 nodoTodos.Hijos.Add(nodoProd);
             }
 
-            nodoTodos.Hijos.Add(new NodoDeseado { Tag = "sinclasificar", Header = "Sin Clasificar" });
             return new List<NodoDeseado> { nodoTodos };
         }
 
@@ -251,12 +250,7 @@ namespace WpfAppVba
                 // Filtro de árbol
                 if (!string.IsNullOrEmpty(tagFiltro))
                 {
-                    if (tagFiltro == "sinclasificar")
-                    {
-                        string famDescCheck = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? "";
-                        if (!string.IsNullOrEmpty(famId) && !string.IsNullOrEmpty(famDescCheck)) continue;
-                    }
-                    else if (tagFiltro.StartsWith("familia:"))
+                    if (tagFiltro.StartsWith("familia:"))
                     {
                         string famFiltro = tagFiltro.Substring("familia:".Length);
                         if (famId != famFiltro) continue;

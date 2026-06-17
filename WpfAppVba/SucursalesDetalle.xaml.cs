@@ -228,6 +228,7 @@ namespace WpfAppVba
                 Sql.SucursalesObj.EstablecerItem("edicion",     id, DateTime.Now);
                 Sql.SucursalesObj.EstablecerItem("usuario",     id, AppState.UsuarioActivo);
                 Sql.SucursalesObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
+                Sql.SucursalesObj.EstablecerItem("empresa",     id, AppState.EmpresaActiva);
 
                 Sql.SucursalesObj.OrdenarData(("codigo", false));
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);

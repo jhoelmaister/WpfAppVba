@@ -138,6 +138,7 @@ namespace WpfAppVba
                 Sql.TercerosObj.EstablecerItem("edicion",     id, DateTime.Now);
                 Sql.TercerosObj.EstablecerItem("usuario",     id, AppState.UsuarioActivo);
                 Sql.TercerosObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
+                Sql.TercerosObj.EstablecerItem("empresa",     id, AppState.EmpresaActiva);
 
                 Sql.TercerosObj.OrdenarData(("codigo", false));
                 ItemCreadoId = id;

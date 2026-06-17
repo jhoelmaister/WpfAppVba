@@ -61,7 +61,10 @@ namespace WpfAppVba.Data
                 "SELECT NEWID(), a.id, s.id, @emp, @usu, GETDATE(), 'normal' " +
                 "FROM articulos AS a " +
                 "CROSS JOIN sucursales AS s " +
-                "WHERE a.estadof = 'normal' AND a.empresa = @emp " +
+                "WHERE a.estadof = 'normal' " +
+                "AND a.familia IN (SELECT f.id FROM familias AS f " +
+                "                  INNER JOIN productos AS p ON f.producto = p.id " +
+                "                  WHERE f.estadof = 'normal' AND p.estadof = 'normal' AND p.empresa = @emp) " +
                 "AND s.estadof = 'normal' AND s.empresa = @emp " +
                 "  AND NOT EXISTS (" +
                 "      SELECT 1 FROM appsheets AS ap " +
@@ -85,7 +88,10 @@ namespace WpfAppVba.Data
                 "AND ap.sucursal IN (SELECT id FROM sucursales WHERE empresa = @emp AND estadof = 'normal') " +
                 "  AND NOT EXISTS (" +
                 "      SELECT 1 FROM articulos AS a " +
-                "      WHERE a.id = ap.articulo AND a.estadof = 'normal' AND a.empresa = @emp" +
+                "      WHERE a.id = ap.articulo AND a.estadof = 'normal' " +
+                "      AND a.familia IN (SELECT f.id FROM familias AS f " +
+                "                        INNER JOIN productos AS p ON f.producto = p.id " +
+                "                        WHERE f.estadof = 'normal' AND p.estadof = 'normal' AND p.empresa = @emp)" +
                 "  );";
 
             using var cmd = new SqlCommand(sql, conn, tx) { CommandTimeout = 300 };
