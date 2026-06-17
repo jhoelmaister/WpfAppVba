@@ -285,23 +285,11 @@
                 </DataGridTextColumn>
                 <DataGridTextColumn Header="Código"      Binding="{Binding Codigo}"      Width="80"/>
                 <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*" IsReadOnly="True"/>
-                <DataGridTemplateColumn Header="Cantidad" Width="86">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Cantidad, StringFormat=#\,##0.##}"
-                                       HorizontalAlignment="Right" TextAlignment="Right"
-                                       VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                    <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate>
-                            <TextBox Text="{Binding Cantidad, UpdateSourceTrigger=PropertyChanged, StringFormat=#\,##0.##}"
-                                     HorizontalAlignment="Stretch"
-                                     HorizontalContentAlignment="Right"
-                                     TextAlignment="Right"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellEditingTemplate>
-                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Cantidad"
+                                    Binding="{Binding Cantidad, StringFormat=#\,##0.##}"
+                                    Width="86"
+                                    ElementStyle="{StaticResource CeldaNumero}"
+                                    EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
             </DataGrid.Columns>
         </DataGrid>
 

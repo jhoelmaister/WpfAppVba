@@ -395,8 +395,11 @@ namespace WpfAppVba
         // ─── Seleccionar todo al entrar al campo Código ───────────────────────
         private void GridItems_PreparingCellForEdit(object? sender, DataGridPreparingCellForEditEventArgs e)
         {
-            if (e.Column.Header?.ToString() is "Código" or "Cantidad")
+            string col = e.Column.Header?.ToString() ?? "";
+            if (col is "Código" or "Cantidad")
                 GridFocusHelper.SeleccionarTodoEnEdicion(e.EditingElement);
+            if (col == "Cantidad" && e.EditingElement is TextBox tb)
+                FuncionesComunes.RestringirACantidad(tb);
         }
 
         // ─── Insertar línea en la posición seleccionada ───────────────────────
