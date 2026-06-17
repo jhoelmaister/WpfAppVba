@@ -26,6 +26,9 @@ namespace WpfAppVba.Data
         {
             Sql.UsuariosObj.Conectar("usuarios",
                 "SELECT * FROM usuarios WHERE estadof = 'normal' ORDER BY secuencia ASC");
+            // Tabla de empresas (sin filtro de empresa).
+            Sql.EmpresasObj.Conectar("empresas",
+                "SELECT * FROM empresas WHERE estadof = 'normal' ORDER BY secuencia ASC");
         }
 
         // ─── ConectarProductos ────────────────────────────────────────────────
@@ -56,9 +59,7 @@ namespace WpfAppVba.Data
                 ? ""
                 : $" AND region IN (SELECT id FROM regiones WHERE estadof = 'normal' AND empresa = '{emp}')";
 
-            // Tabla de empresas (sin filtro de empresa).
-            Sql.EmpresasObj.Conectar("empresas",
-                "SELECT * FROM empresas WHERE estadof = 'normal' ORDER BY secuencia ASC");
+
 
             // usuarios: NO se filtra por empresa (necesario para el login).
             Sql.UsuariosObj.Conectar("usuarios",
