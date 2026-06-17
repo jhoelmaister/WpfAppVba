@@ -105,6 +105,7 @@ namespace WpfAppVba
                         Id          = id,
                         Codigo      = codigo,
                         Descripcion = desc,
+                        Tipo        = Sql.SucursalesObj.ObtenerItem("tipo", id)?.ToString() ?? "",
                         FechaStr    = FormatearFecha(id)
                     });
                 }
@@ -125,6 +126,7 @@ namespace WpfAppVba
                 Id          = id,
                 Codigo      = Sql.SucursalesObj.ObtenerItem("codigo",      id)?.ToString() ?? "",
                 Descripcion = Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "",
+                Tipo        = Sql.SucursalesObj.ObtenerItem("tipo",        id)?.ToString() ?? "",
                 FechaStr    = FormatearFecha(id)
             };
         }
@@ -299,6 +301,7 @@ namespace WpfAppVba
         public string Id          { get; set; } = "";
         public string Codigo      { get; set; } = "";
         public string Descripcion { get; set; } = "";
+        public string Tipo        { get; set; } = "";
         public string FechaStr    { get; set; } = "";
     }
 }

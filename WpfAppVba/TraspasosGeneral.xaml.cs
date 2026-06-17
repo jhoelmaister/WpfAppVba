@@ -32,6 +32,18 @@ namespace WpfAppVba
         private void ConfigurarModo()
         {
             if (!AppState.EsAdmin) BtnEliminar.Visibility = Visibility.Collapsed;
+
+            // "Entregar todos" solo para sucursales de tipo 'central'.
+            BtnEntregarTodos.Visibility = EsSucursalCentral()
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+
+        // ─── La sucursal activa es de tipo 'central' ──────────────────────────
+        private static bool EsSucursalCentral()
+        {
+            string tipo = Sql.SucursalesObj.ObtenerItem("tipo", AppState.SucursalActiva)?.ToString() ?? "";
+            return string.Equals(tipo.Trim(), "central", StringComparison.OrdinalIgnoreCase);
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
@@ -485,6 +497,65 @@ namespace WpfAppVba
             Sql.DocumentosTObj.Actualizar();
             Sql.TraspasosObj.Actualizar();
             CargarTraspasos();
+        }
+
+        // ─── Entregar todos (solo sucursal central) ───────────────────────────
+        // Cambia el estado de todos los documentosT cargados (sucursal activa + período)
+        // que estén en "pendiente" a "entregado". Con verificadores de conexión.
+        private void BtnEntregarTodos_Click(object sender, RoutedEventArgs e)
+        {
+            // Defensa: solo sucursal central (el botón ya está oculto en otros casos).
+            if (!EsSucursalCentral()) return;
+
+            // Verificación de conexión en 2 capas antes de persistir el cambio de estado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
+            // Recolectar los documentosT cargados cuyo estado almacenado es "pendiente".
+            var idsPendientes = new List<string>();
+            int uf = Sql.DocumentosTObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.DocumentosTObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                string estado = Sql.DocumentosTObj.ObtenerItem("estado", id)?.ToString() ?? "";
+                if (string.Equals(estado, "pendiente", StringComparison.OrdinalIgnoreCase))
+                    idsPendientes.Add(id);
+            }
+
+            if (idsPendientes.Count == 0)
+            {
+                MessageBox.Show("No hay documentos pendientes para entregar.", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var res = MessageBox.Show(
+                $"¿Marcar como 'entregado' los {idsPendientes.Count} documento(s) pendiente(s)?",
+                "Consola", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (res != MessageBoxResult.Yes) return;
+
+            try
+            {
+                foreach (var id in idsPendientes)
+                {
+                    Sql.DocumentosTObj.EstablecerItem("estado",   id, "entregado");
+                    Sql.DocumentosTObj.EstablecerItem("edicion",  id, DateTime.Now);
+                    Sql.DocumentosTObj.EstablecerItem("usuarioE", id, AppState.UsuarioActivo);
+                }
+
+                // Persiste los cambios (ExportarItems dentro de OrdenarData).
+                Sql.DocumentosTObj.OrdenarData(("fecha", false));
+
+                CargarTraspasos();
+                MessageBox.Show($"{idsPendientes.Count} documento(s) marcados como entregado.",
+                    "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al entregar: {ex.Message}", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void AbrirEditar()

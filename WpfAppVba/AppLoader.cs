@@ -27,6 +27,9 @@ namespace WpfAppVba.Data
             string emp = AppState.EmpresaActiva;
             // Filtro directo por empresa (solo cuando hay empresa activa).
             string fEmp = string.IsNullOrEmpty(emp) ? "" : $" AND empresa = '{emp}'";
+            // Igual que fEmp pero calificado a la tabla 'articulos' (alias 'a'), porque la
+            // consulta de artículos hace JOIN con 'familias' (que también tiene 'empresa').
+            string fEmpArt = string.IsNullOrEmpty(emp) ? "" : $" AND a.empresa = '{emp}'";
             // precios no tiene columna empresa → cascada por las regiones de la empresa.
             string fPrecios = string.IsNullOrEmpty(emp)
                 ? ""
@@ -40,8 +43,14 @@ namespace WpfAppVba.Data
             Sql.UsuariosObj.Conectar("usuarios",
                 "SELECT * FROM usuarios WHERE estadof = 'normal' ORDER BY secuencia ASC");
 
+            // 'familia' es uniqueidentifier: ordenar por ese GUID no respeta el orden de
+            // familias. Se hace JOIN para ordenar por la 'secuencia' de la familia.
+            // LEFT JOIN para no perder artículos sin familia (quedan al inicio). SELECT a.*
+            // conserva el esquema de la caché idéntico al de la tabla articulos.
             Sql.ArticulosObj.Conectar("articulos",
-                $"SELECT * FROM articulos WHERE estadof = 'normal'{fEmp} ORDER BY familia ASC, indice ASC");
+                $"SELECT a.* FROM articulos AS a " +
+                $"LEFT JOIN familias AS f ON a.familia = f.id " +
+                $"WHERE a.estadof = 'normal'{fEmpArt} ORDER BY f.secuencia ASC, a.indice ASC");
 
             Sql.FamiliasObj.Conectar("familias",
                 $"SELECT * FROM familias WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
