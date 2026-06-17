@@ -15,6 +15,19 @@ namespace WpfAppVba.Data
         // ─── Referencia corta al contenedor ──────────────────────────────────
         private static SqlData Sql => SqlData.Instance;
 
+        // ─── ConectarUsuarios ─────────────────────────────────────────────────
+        /// <summary>
+        /// Carga SOLO la tabla de usuarios (sin filtro de empresa), lo mínimo necesario
+        /// para validar el inicio de sesión. El resto de catálogos se cargan después de
+        /// loguear con <see cref="ConectarProductos"/>, ya filtrados por la empresa del
+        /// usuario, para no traer datos de todas las empresas antes de iniciar sesión.
+        /// </summary>
+        public static void ConectarUsuarios()
+        {
+            Sql.UsuariosObj.Conectar("usuarios",
+                "SELECT * FROM usuarios WHERE estadof = 'normal' ORDER BY secuencia ASC");
+        }
+
         // ─── ConectarProductos ────────────────────────────────────────────────
         /// <summary>
         /// Carga todos los catálogos/maestros al iniciar la aplicación.

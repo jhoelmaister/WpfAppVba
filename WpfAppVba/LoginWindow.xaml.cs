@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -54,7 +55,9 @@ namespace WpfAppVba
             bool conectado;
             try
             {
-                await Task.Run(() => AppLoader.ConectarProductos());
+                // Antes de loguear solo se carga 'usuarios' (lo mínimo para validar el
+                // login). El resto se carga tras iniciar sesión, filtrado por empresa.
+                await Task.Run(() => AppLoader.ConectarUsuarios());
                 conectado = true;
             }
             catch
@@ -134,14 +137,31 @@ namespace WpfAppVba
             }
             else
             {
-                // Mostrar -> Ocultar: devolver el valor al PasswordBox.
+                // Mostrar -> Ocultar: devolver el valor al PasswordBox, conservando la
+                // posición del cursor que tenía en el cuadro de texto visible.
+                int caret = TxtContrasenaVisible.CaretIndex;
                 TxtContrasena.Password          = TxtContrasenaVisible.Text;
                 TxtContrasenaVisible.Visibility = Visibility.Collapsed;
                 TxtContrasena.Visibility        = Visibility.Visible;
                 IcoVerContrasena.Text           = "\uE7B3";   // Segoe MDL2: RedEye
                 BtnVerContrasena.ToolTip        = "Mostrar contraseña";
                 TxtContrasena.Focus();
+                PosicionarCursorPassword(TxtContrasena, caret);
             }
+        }
+
+        // El PasswordBox no expone CaretIndex público; se usa su método interno
+        // Select(start, length) por reflexión para colocar el cursor donde estaba.
+        private static void PosicionarCursorPassword(PasswordBox pb, int index)
+        {
+            try
+            {
+                int pos = Math.Max(0, Math.Min(index, pb.Password.Length));
+                var select = typeof(PasswordBox).GetMethod("Select",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                select?.Invoke(pb, new object[] { pos, 0 });
+            }
+            catch { /* si la API interna cambia, queda el foco normal como respaldo */ }
         }
 
         // ─── Configurar conexión desde el login ───────────────────────────────
@@ -209,7 +229,6 @@ namespace WpfAppVba
                     AppState.TipoUsuario    = Sql.UsuariosObj.ObtenerItem("tipo",     idEncontrado)?.ToString() ?? "";
                     AppState.EmpresaActiva  = Sql.UsuariosObj.ObtenerItem("empresa",  idEncontrado)?.ToString() ?? "";
                     AppState.SucursalActiva = Sql.UsuariosObj.ObtenerItem("sucursal", idEncontrado)?.ToString() ?? "";
-                    AppState.RegionActiva   = Sql.SucursalesObj.ObtenerItem("region", AppState.SucursalActiva)?.ToString() ?? "";
                     AppState.SesionActiva   = true;
                     AppState.PeriodoActivo  = DateTime.Now.Year.ToString();
 
@@ -225,6 +244,10 @@ namespace WpfAppVba
                     // Recargar catálogos ya filtrados por la empresa del usuario.
                     MostrarEstado("Cargando catálogos de la empresa...", Colors.Green);
                     await Task.Run(() => AppLoader.ConectarProductos());
+
+                    // La región sale de la sucursal activa, ya disponible tras cargar
+                    // sucursales en ConectarProductos.
+                    AppState.RegionActiva = Sql.SucursalesObj.ObtenerItem("region", AppState.SucursalActiva)?.ToString() ?? "";
 
                     MostrarEstado("Conectando a base de datos principal...", Colors.Green);
                     await Task.Run(() => AppLoader.ConectarBases());
