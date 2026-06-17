@@ -60,6 +60,7 @@ namespace WpfAppVba
             Box_Nit.Text         = Sql.SucursalesObj.ObtenerItem("nit",         id)?.ToString() ?? "";
             Box_Descripcion.Text = Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
             Box_Signo.Text       = Sql.SucursalesObj.ObtenerItem("signo",       id)?.ToString() ?? "";
+            SeleccionarTipo(Sql.SucursalesObj.ObtenerItem("tipo", id)?.ToString() ?? "");
             Box_Telefono.Text    = Sql.SucursalesObj.ObtenerItem("telefono",    id)?.ToString() ?? "";
             Box_Direccion.Text   = Sql.SucursalesObj.ObtenerItem("direccion",   id)?.ToString() ?? "";
             Box_Observacion.Text = Sql.SucursalesObj.ObtenerItem("observacion", id)?.ToString() ?? "";
@@ -84,10 +85,30 @@ namespace WpfAppVba
         private void CargarParaNuevo()
         {
             Box_Codigo.Text        = Sql.SucursalesObj.SiguienteCodigoInt().ToString();
+            SeleccionarTipo("sucursal"); // valor por defecto
             var ahora = DateTime.Now;
             Box_Fecha.SelectedDate = ahora.Date;
             Box_Hora.Text          = ahora.ToString("HH:mm:ss");
         }
+
+        // ─── Selecciona el ítem del combo TIPO según el valor guardado ─────────
+        private void SeleccionarTipo(string tipo)
+        {
+            tipo = tipo.Trim().ToLower();
+            if (tipo == "") tipo = "sucursal"; // por defecto si la fila no tiene tipo aún
+            foreach (var obj in Cmb_Tipo.Items)
+                if (obj is ComboBoxItem cbi &&
+                    string.Equals(cbi.Content?.ToString(), tipo, StringComparison.OrdinalIgnoreCase))
+                {
+                    Cmb_Tipo.SelectedItem = cbi;
+                    return;
+                }
+            Cmb_Tipo.SelectedIndex = 1; // "sucursal"
+        }
+
+        // ─── Tipo seleccionado en el combo (siempre "central" o "sucursal") ────
+        private string TipoSeleccionado()
+            => (Cmb_Tipo.SelectedItem as ComboBoxItem)?.Content?.ToString()?.Trim().ToLower() ?? "sucursal";
 
         // ─── Resolver el id (UUID) de la región a partir del código digitado ──
         private string ResolverRegionId()
@@ -135,6 +156,11 @@ namespace WpfAppVba
             if (!_cargando) _hayCambios = true;
         }
 
+        private void Cmb_Tipo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_cargando) _hayCambios = true;
+        }
+
         // ─── Guardar ──────────────────────────────────────────────────────────
         private bool Guardar()
         {
@@ -153,6 +179,7 @@ namespace WpfAppVba
                 Sql.SucursalesObj.EstablecerItem("nit",         id, Box_Nit.Text);
                 Sql.SucursalesObj.EstablecerItem("descripcion", id, Box_Descripcion.Text);
                 Sql.SucursalesObj.EstablecerItem("signo",       id, Box_Signo.Text.Trim().ToUpper());
+                Sql.SucursalesObj.EstablecerItem("tipo",        id, TipoSeleccionado());
                 Sql.SucursalesObj.EstablecerItem("telefono",    id, Box_Telefono.Text);
                 Sql.SucursalesObj.EstablecerItem("region",      id, ResolverRegionId());
                 Sql.SucursalesObj.EstablecerItem("direccion",   id, Box_Direccion.Text);
@@ -191,6 +218,7 @@ namespace WpfAppVba
                 Sql.SucursalesObj.EstablecerItem("nit",         id, Box_Nit.Text);
                 Sql.SucursalesObj.EstablecerItem("descripcion", id, Box_Descripcion.Text);
                 Sql.SucursalesObj.EstablecerItem("signo",       id, Box_Signo.Text.Trim().ToUpper());
+                Sql.SucursalesObj.EstablecerItem("tipo",        id, TipoSeleccionado());
                 Sql.SucursalesObj.EstablecerItem("telefono",    id, Box_Telefono.Text);
                 Sql.SucursalesObj.EstablecerItem("region",      id, ResolverRegionId());
                 Sql.SucursalesObj.EstablecerItem("direccion",   id, Box_Direccion.Text);

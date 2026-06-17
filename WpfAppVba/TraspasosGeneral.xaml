@@ -365,6 +365,14 @@
 
                     <!-- Botones de acción -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <!-- Solo visible si la sucursal activa es de tipo 'central' (ver ConfigurarModo) -->
+                        <Button x:Name="BtnEntregarTodos"
+                                Content="Entregar todos"
+                                Background="#10B981" Foreground="White"
+                                Style="{StaticResource BtnBase}"
+                                Visibility="Collapsed"
+                                Margin="0,0,6,0"
+                                Click="BtnEntregarTodos_Click"/>
                         <Button x:Name="BtnNuevo"
                                 Content="Nuevo Traspaso"
                                 Style="{StaticResource BtnPrimario}"

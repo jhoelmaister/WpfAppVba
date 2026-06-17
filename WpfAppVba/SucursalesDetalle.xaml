@@ -136,7 +136,7 @@
                     <StackPanel>
                         <TextBlock Style="{StaticResource CardHeader}" Text="● IDENTIFICACIÓN"/>
 
-                        <Grid>
+                        <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="16"/>
@@ -154,6 +154,25 @@
                                 <TextBox x:Name="Box_Nit" Style="{StaticResource ModernInput}"
                                          TextChanged="Campo_TextChanged"
                                          PreviewTextInput="Box_Nit_PreviewTextInput"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="TIPO"/>
+                                <!-- Solo se permite 'central' o 'sucursal' (ComboBox = no se puede teclear otro valor) -->
+                                <ComboBox x:Name="Cmb_Tipo" Height="36" FontSize="13"
+                                          VerticalContentAlignment="Center"
+                                          SelectionChanged="Cmb_Tipo_SelectionChanged">
+                                    <ComboBoxItem Content="central"/>
+                                    <ComboBoxItem Content="sucursal"/>
+                                </ComboBox>
                             </StackPanel>
                         </Grid>
                     </StackPanel>
