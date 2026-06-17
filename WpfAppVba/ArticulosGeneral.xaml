@@ -278,10 +278,15 @@
                     </Style>
                 </DataGrid.ColumnHeaderStyle>
 
-                <!-- Fila verde + negrita cuando está seleccionado -->
+                <!-- Color de selección propio (azul consistente, sin depender del
+                     resaltado del sistema que cambiaba de tono al perder el foco)
+                     + verde/negrita cuando está marcado con checkbox (gana sobre el azul). -->
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">
                         <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource ThemeFilaSelGrid}"/>
+                            </Trigger>
                             <DataTrigger Binding="{Binding Seleccionado}" Value="True">
                                 <Setter Property="Background" Value="{DynamicResource ThemeFilaSeleccionada}"/>
                                 <Setter Property="FontWeight" Value="SemiBold"/>

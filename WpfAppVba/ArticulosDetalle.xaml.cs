@@ -384,6 +384,7 @@ namespace WpfAppVba
                 Sql.ArticulosObj.EstablecerItem("edicion",    id, DateTime.Now);
                 Sql.ArticulosObj.EstablecerItem("usuario",    id, AppState.UsuarioActivo);
                 Sql.ArticulosObj.EstablecerItem("usuarioE",   id, AppState.UsuarioActivo);
+                Sql.ArticulosObj.EstablecerItem("estado",     id, "mostrar");
 
                 // Reasignar índices de la familia por su orden, saltando los reservados
                 // por artículos eliminados (sin reutilizarlos).

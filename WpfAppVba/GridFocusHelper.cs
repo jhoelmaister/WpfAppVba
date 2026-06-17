@@ -43,6 +43,22 @@ namespace WpfAppVba
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
+        // Selecciona todo el texto de un TextBox que acaba de entrar en edición.
+        // El SelectAll() inmediato funciona al editar con teclado (F2/escribir), pero
+        // al entrar con CLIC del ratón el clic reposiciona el cursor DESPUÉS del
+        // SelectAll y deshace la selección. Por eso se re-despacha en prioridad Input,
+        // que corre una vez procesado el clic, garantizando que quede todo seleccionado.
+        internal static void SeleccionarTodoEnEdicion(TextBox tb)
+        {
+            tb.Focus();
+            tb.SelectAll();
+            tb.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                tb.Focus();
+                tb.SelectAll();
+            }), System.Windows.Threading.DispatcherPriority.Input);
+        }
+
         private static DataGridCell? ObtenerPrimeraCeldaVisible(DataGridRow row)
         {
             var presenter = BuscarHijoVisual<DataGridCellsPresenter>(row);

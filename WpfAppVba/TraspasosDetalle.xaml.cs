@@ -666,8 +666,7 @@ namespace WpfAppVba
             if (e.Column.Header?.ToString() is "Código" or "Cantidad" &&
                 e.EditingElement is TextBox tb)
             {
-                tb.SelectAll();
-                tb.Focus();
+                GridFocusHelper.SeleccionarTodoEnEdicion(tb);
             }
         }
 
