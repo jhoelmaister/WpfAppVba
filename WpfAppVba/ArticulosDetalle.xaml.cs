@@ -259,10 +259,11 @@ namespace WpfAppVba
         {
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
 
-            // Todo artículo debe tener familia (ya no existe "Sin Clasificar").
+            // Todo artículo debe tener una familia EXISTENTE (ya no existe "Sin
+            // Clasificar"). ResolverFamiliaId devuelve "" si está vacío o no existe.
             if (string.IsNullOrEmpty(ResolverFamiliaId()))
             {
-                MessageBox.Show("Debe seleccionar una familia para el artículo.", "Consola",
+                MessageBox.Show("Debe asignar una familia existente al artículo.", "Consola",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return false;
             }
