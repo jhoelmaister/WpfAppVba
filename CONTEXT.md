@@ -171,6 +171,33 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 
 ## Historial de Cambios por Sesión
 
+### Sesión 2026-06-18 (parte 2) — Fix de paquetes delta, bloqueo por actualización pendiente y auditoría de seguridad (login + contraseñas) (rama `master`)
+
+> Esta sesión trabajó directamente en `master` (continuación de una sesión previa con autorización ya otorgada). Cuatro commits: `863f0c8`, `ce27f98`, `021c623`, `4518260`, `6027c12`.
+
+#### Fix de paquetes delta en releases (Velopack)
+- **Problema**: cada corrida de GitHub Actions arranca de un checkout limpio, así que `vpk pack` nunca encontraba el `.nupkg` de la versión previa y solo generaba el paquete **full** (descarga completa aunque no hubiera cambios).
+- **`.github/workflows/release.yml`**: se agrega `vpk download github` (trae la última release publicada) **antes** de `vpk pack`, para que Velopack genere correctamente el delta.
+- **`ActualizadorApp.cs` (`TamañoDescargaMB`)**: antes siempre leía `TargetFullRelease.Size` (mostraba el peso de la app entera en la barra de progreso aunque se estuviera descargando un delta mucho más chico). Ahora suma `DeltasToTarget` cuando hay deltas disponibles, y solo cae al tamaño full si no los hay.
+
+#### Bloqueo de la app mientras hay una actualización pendiente
+- **Login (`LoginWindow`)**: reutiliza el patrón de actualización de `ConsolaMovimientos`. Al cargar, si `_actualizador.HayActualizacionAsync()` detecta versión nueva, se oculta el formulario de login y se muestra un bloque de actualización obligatoria (descargar + reiniciar) hasta que el usuario actualice — no se puede iniciar sesión con una versión vieja.
+- **`AppState.VersionPendiente`** (nuevo, `string?`): bandera global que se setea en `ConsolaMovimientos.BuscarActualizacionesAsync()` cuando hay una versión nueva disponible.
+- **`FuncionesComunes`**: nuevo `HayActualizacionPendienteOAvisa(owner)`, integrado en `VerificarConexionParaGuardar` **y** `VerificarConexionParaActualizar` (decisión explícita del usuario: bloquear también los botones "Actualizar" de refresco de cada grid, no solo Guardar/Eliminar). Como estos dos guards ya se usaban en los 16 módulos + Configuración + CambiarContraseña, el bloqueo quedó centralizado sin tocar cada panel. La navegación entre secciones/pestañas sigue funcionando con normalidad; solo se bloquean escritura y refresco de datos.
+
+#### Auditoría de seguridad + hashing de contraseñas + login sin volcado completo de `usuarios`
+> A pedido del usuario se hizo una auditoría de seguridad de la app. Hallazgos principales: contraseñas en texto plano, descarga de toda la tabla `usuarios` (con contraseñas de todas las cuentas) antes de autenticar, `TrustServerCertificate=True` en `DatabaseConnection` (pendiente, no se tocó), sin protección anti fuerza bruta (pendiente), releases sin firmar (pendiente). Se implementaron los dos primeros puntos (prioridad alta):
+
+- **`PasswordHasher.cs`** (nuevo, `WpfAppVba.Data`): `Hashear(contrasena)` / `Verificar(contrasena, valorAlmacenado)` con PBKDF2-SHA256, 100.000 iteraciones, salt aleatorio de 16 bytes, formato almacenado `"{iteraciones}.{saltBase64}.{hashBase64}"`. Comparación en tiempo constante (`CryptographicOperations.FixedTimeEquals`). `EsHash(valor)` distingue un hash de una contraseña vieja en texto plano.
+- **`AppLoader.ValidarLogin(cuenta, contrasena)`** (nuevo): consulta puntual y parametrizada (`SELECT id, llave FROM usuarios WHERE cuenta = @cuenta AND estadof = 'normal'`) — ya **no** se compara en el cliente contra el volcado completo de la tabla `usuarios` (que traía las contraseñas de TODAS las cuentas a memoria antes de que el usuario se autentique). Si la contraseña almacenada es un hash, verifica con `PasswordHasher.Verificar`; si es texto plano y coincide, **migra automáticamente** (la re-hashea con un `UPDATE` directo) y deja loguear.
+- **`AppLoader.ConectarUsuarios()`**: ya no se llama antes de loguear. Ahora se llama **después** de `ValidarLogin` exitoso (su doc-comment se actualizó para reflejar esto). Antes de loguear, `LoginWindow.ConectarBaseDatosAsync()` solo hace una sonda de conectividad (`DatabaseConnection.ConexionEstaActiva()`, un `SELECT 1`) en vez de cargar `usuarios`/`empresas` completas.
+- **`LoginWindow.BtnIngresar_Click`**: el loop que recorría `Sql.UsuariosObj` comparando `cuenta`/`llave` en texto plano se reemplazó por `AppLoader.ValidarLogin(...)`; si autentica, recién ahí se llama `AppLoader.ConectarUsuarios()` para poblar la caché que usan las pantallas de administración de usuarios/empresas.
+- **`CambiarContrasena.BtnGuardar_Click`**: la verificación de la contraseña actual usa `PasswordHasher.Verificar` (con fallback a comparación en texto plano para cuentas aún no migradas); la nueva contraseña se guarda siempre hasheada (`PasswordHasher.Hashear`).
+- **Pendiente de la auditoría (NO implementado esta sesión)**: `TrustServerCertificate=True` en `DatabaseConnection.cs` (riesgo MITM), protección anti fuerza bruta en el login, firma de releases de Velopack, y mover los privilegios del usuario de SQL Server de la app a un rol mínimo (solo `SELECT/INSERT/UPDATE`, sin `DELETE` — la app nunca hace `DELETE FROM`, ver borrado lógico) y restringir el acceso remoto por IP/VPN en el panel del hosting (el usuario usa SmarterASP.NET, hosting compartido — no hay firewall de servidor propio, hay que buscar la opción de "Remote MSSQL Access"/IPs permitidas en su panel).
+
+#### Notas / pendientes de esta sesión
+- **Sin build en el entorno cloud**: ninguno de estos cambios se compiló (no hay SDK de .NET en este entorno). Antes del próximo release, verificar en una máquina local: compilación, login con una cuenta existente (su contraseña en texto plano debe migrarse sola al hash en el primer login exitoso) y el flujo de "Cambiar Contraseña".
+
 ### Sesión 2026-06-18 — Selección/edición de grids, filtros multi-empresa en cascada, login con carga diferida y reubicación de Categorías (rama `claude/optimistic-dirac-5arp05`)
 
 > Contexto: el usuario **eliminó las columnas `empresa` de `articulos`, `familias` y `precios`** en SQL Server; el filtrado de esas tablas por empresa pasa a ser por **cascada de relaciones** (no por columna propia). Además, varios ajustes de UX en grids editables, login y cierre de la consola.
