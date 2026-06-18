@@ -27,7 +27,7 @@
     <SolidColorBrush x:Key="ThemeTabSelBg"     Color="#EEF2FF"/>
     <SolidColorBrush x:Key="ThemeTabHoverBg"   Color="#E8ECF8"/>
     <SolidColorBrush x:Key="ThemeNavActivoBg"  Color="#CFE4FF"/>
-    <SolidColorBrush x:Key="ThemeNavHoverBg"   Color="#E1EEFF"/>
+    <SolidColorBrush x:Key="ThemeNavHoverBg"   Color="#CFE4FF"/>
 
     <!-- ── DataGrid ─────────────────────────────────────────────────── -->
     <SolidColorBrush x:Key="ThemeDataGridBg"      Color="#FFFFFF"/>
