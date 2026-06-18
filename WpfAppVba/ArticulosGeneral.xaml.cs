@@ -456,16 +456,6 @@ namespace WpfAppVba
             CargarArticulos();
         }
 
-        // Al reciclar contenedores de fila (virtualización), WPF puede dejar el
-        // AlternationIndex del contenedor reusado con la paridad de su fila
-        // anterior en vez de la posición actual, y el zebra (RowBackground /
-        // AlternatingRowBackground) queda desfasado tras recargar/scrollear.
-        // Se fuerza aquí según la posición real de la fila.
-        private void Grid1_LoadingRow(object sender, DataGridRowEventArgs e)
-        {
-            e.Row.AlternationIndex = e.Row.GetIndex() % 2;
-        }
-
         // ─── Doble clic ───────────────────────────────────────────────────────
         private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {

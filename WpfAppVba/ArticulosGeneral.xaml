@@ -263,9 +263,9 @@
                       BorderThickness="0"
                       FontSize="12"
                       RowHeight="34"
+                      VirtualizingPanel.VirtualizationMode="Standard"
                       MouseDoubleClick="Grid1_MouseDoubleClick"
-                      PreviewKeyDown="Grid1_PreviewKeyDown"
-                      LoadingRow="Grid1_LoadingRow">
+                      PreviewKeyDown="Grid1_PreviewKeyDown">
 
                 <DataGrid.ColumnHeaderStyle>
                     <Style TargetType="DataGridColumnHeader">
