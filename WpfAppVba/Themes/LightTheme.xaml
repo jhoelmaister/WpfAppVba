@@ -7,6 +7,8 @@
     <SolidColorBrush x:Key="ThemeBgContenido"  Color="#F4F6FB"/>
     <SolidColorBrush x:Key="ThemeBgReadOnly"   Color="#F5F5F5"/>
     <SolidColorBrush x:Key="ThemeInputBg"      Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ThemeBgTopBar"     Color="#E9ECF2"/>
+    <SolidColorBrush x:Key="ThemeBgSidebar"    Color="#ECEEF3"/>
 
     <!-- ── Texto ────────────────────────────────────────────────────── -->
     <SolidColorBrush x:Key="ThemeTexto"        Color="#1A1A2E"/>

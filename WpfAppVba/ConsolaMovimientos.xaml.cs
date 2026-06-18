@@ -392,12 +392,15 @@ namespace WpfAppVba
             {
                 _btnActivo.Background  = Brushes.Transparent;
                 _btnActivo.BorderBrush = Brushes.Transparent;
-                _btnActivo.Foreground  = new SolidColorBrush(Color.FromRgb(0x9A, 0xA3, 0xB8));
+                _btnActivo.SetResourceReference(Control.ForegroundProperty, "ThemeTextoSec");
             }
-            _btnActivo      = btn;
-            btn.Background  = new SolidColorBrush(Color.FromRgb(0x25, 0x2A, 0x40));
+            _btnActivo = btn;
+            // SetResourceReference (en vez de asignar un Brush fijo) para que el
+            // resaltado del ítem activo siga el tema actual incluso si el usuario
+            // cambia de tema sin volver a hacer clic en el ítem.
+            btn.SetResourceReference(Control.BackgroundProperty, "ThemeTabSelBg");
             btn.BorderBrush = new SolidColorBrush(Color.FromRgb(0x4A, 0x6F, 0xE3));
-            btn.Foreground  = Brushes.White;
+            btn.SetResourceReference(Control.ForegroundProperty, "ThemeTexto");
         }
 
         // ─── Navegación lateral ───────────────────────────────────────────────
