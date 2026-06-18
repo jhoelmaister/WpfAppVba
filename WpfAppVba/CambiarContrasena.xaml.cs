@@ -60,7 +60,10 @@ namespace WpfAppVba
             string nueva     = Valor(PwdNueva, TxtNuevaVisible);
             string confirmar = Valor(PwdConfirmar, TxtConfirmarVisible);
 
-            if (actual != llaveActualBD)
+            bool actualValida = PasswordHasher.Verificar(actual, llaveActualBD)
+                || (!PasswordHasher.EsHash(llaveActualBD) && actual == llaveActualBD);
+
+            if (!actualValida)
             {
                 MessageBox.Show("La contraseña actual es incorrecta.", "Cambiar Contraseña",
                                 MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -84,7 +87,7 @@ namespace WpfAppVba
                 return;
             }
 
-            Sql.UsuariosObj.EstablecerItem("llave", usuId, nueva);
+            Sql.UsuariosObj.EstablecerItem("llave", usuId, PasswordHasher.Hashear(nueva));
             Sql.UsuariosObj.ExportarItems();
 
             MessageBox.Show("Contraseña actualizada correctamente.", "Cambiar Contraseña",

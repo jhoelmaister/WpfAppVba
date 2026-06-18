@@ -71,10 +71,10 @@ namespace WpfAppVba
             bool conectado;
             try
             {
-                // Antes de loguear solo se carga 'usuarios' (lo mínimo para validar el
-                // login). El resto se carga tras iniciar sesión, filtrado por empresa.
-                await Task.Run(() => AppLoader.ConectarUsuarios());
-                conectado = true;
+                // Antes de loguear NO se descarga ninguna tabla (ni siquiera 'usuarios':
+                // contiene las contraseñas de todas las cuentas). Solo se verifica que
+                // el servidor responda; el login se valida con una consulta puntual.
+                conectado = await Task.Run(() => DatabaseConnection.ConexionEstaActiva());
             }
             catch
             {
@@ -269,31 +269,26 @@ namespace WpfAppVba
             string idEncontrado = "";
             bool encontrado = false;
 
-            await Task.Run(() =>
+            try
             {
-                int uf = Sql.UsuariosObj.ContarFilas;
-                for (int ciclo = 1; ciclo <= uf; ciclo++)
-                {
-                    var idObj = Sql.UsuariosObj.Mover(ciclo);
-                    if (idObj == null) continue;
-                    string id = idObj.ToString()!;
-
-                    string cuentaDb    = Sql.UsuariosObj.ObtenerItem("cuenta", id)?.ToString() ?? "";
-                    string contrasenaDb = Sql.UsuariosObj.ObtenerItem("llave",  id)?.ToString() ?? "";
-
-                    if (cuentaDb == cuenta && contrasenaDb == contrasena)
-                    {
-                        idEncontrado = id;
-                        encontrado   = true;
-                        break;
-                    }
-                }
-            });
+                await Task.Run(() => idEncontrado = AppLoader.ValidarLogin(cuenta, contrasena));
+                encontrado = !string.IsNullOrEmpty(idEncontrado);
+            }
+            catch
+            {
+                // Sin conexión al validar: tratar como credenciales no verificadas.
+                encontrado = false;
+            }
 
             if (encontrado)
             {
                 try
                 {
+                    // Recién autenticado: ahora sí se cargan los catálogos de usuarios
+                    // y empresas (ya no hace falta ocultarlos de un usuario sin loguear).
+                    MostrarEstado("Cargando datos de la cuenta...", Colors.Green);
+                    await Task.Run(() => AppLoader.ConectarUsuarios());
+
                     AppState.UsuarioActivo  = idEncontrado;
                     AppState.TipoUsuario    = Sql.UsuariosObj.ObtenerItem("tipo",     idEncontrado)?.ToString() ?? "";
                     AppState.EmpresaActiva  = Sql.UsuariosObj.ObtenerItem("empresa",  idEncontrado)?.ToString() ?? "";
