@@ -264,7 +264,8 @@
                       FontSize="12"
                       RowHeight="34"
                       MouseDoubleClick="Grid1_MouseDoubleClick"
-                      PreviewKeyDown="Grid1_PreviewKeyDown">
+                      PreviewKeyDown="Grid1_PreviewKeyDown"
+                      LoadingRow="Grid1_LoadingRow">
 
                 <DataGrid.ColumnHeaderStyle>
                     <Style TargetType="DataGridColumnHeader">
