@@ -171,6 +171,29 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 
 ## Historial de Cambios por Sesión
 
+### Sesión 2026-06-18 (parte 3) — ConsolaMovimientos: resaltado de Ítems de navegación, login limpia/enfoca contraseña al fallar; TimePicker probado y revertido (rama `claude/quirky-bardeen-al3g9g`)
+
+#### Resaltado de Ítems de navegación en `ConsolaMovimientos` (tema claro)
+- El tema oscuro no se tocó en ningún momento de esta sesión (confirmado por el usuario: "en tema oscuro esta bien").
+- Se agregaron tres claves de tema **dedicadas** al sidebar de navegación (en vez de reusar `ThemeTabSelBg`/`ThemeTabHoverBg`, que también pinta tabs en otras partes de `ConsolaMovimientos.xaml` y `App.xaml` — para no generar regresiones visuales en esos otros usos):
+  - `ThemeNavActivoBg`: fondo de la pestaña de navegación **activa/seleccionada**. Tema claro `#4A90E2` (azul), tema oscuro `#2A4A7A`.
+  - `ThemeNavHoverBg`: fondo al pasar el puntero sobre una pestaña de navegación (no activa). Tema claro `#CFE4FF` (azul claro — el mismo valor que ya tenía antes de esta sesión, no cambió en la práctica), tema oscuro `#2D3152`.
+  - `ThemeNavActivoFg`: color de letra de la pestaña activa. Tema claro `#000000` (negro), tema oscuro `#E8EAED`.
+  - Archivos: `WpfAppVba/Themes/LightTheme.xaml`, `WpfAppVba/Themes/DarkTheme.xaml`.
+- **`ConsolaMovimientos.xaml`** (estilo `NavBtn`, `ControlTemplate.Triggers`): el trigger `IsMouseOver` pinta `Borde.Background` con `ThemeNavHoverBg`; el trigger `IsPressed`/estado activo pinta con `ThemeNavActivoBg`.
+- **`ConsolaMovimientos.xaml.cs` (`MarcarActivo(Button btn)`)**: al activar una pestaña, se le aplica `SetResourceReference(BackgroundProperty, "ThemeNavActivoBg")` y `SetResourceReference(ForegroundProperty, "ThemeNavActivoFg")` (en vez de un color fijo), para que reaccione en vivo a un cambio de tema. Al desactivar la pestaña previa, vuelve a fondo transparente y a `ThemeTextoSec`.
+- **Iteración con varios cambios de opinión del usuario durante la sesión** (se documenta para no repetir el mismo error): se probó azul claro para el activo, luego "mismo color que el hover", luego "plomo oscuro y que el hover de la pestaña activa no cambie" (en este paso se cometió un error: al implementarlo se modificó también `ThemeNavHoverBg` general, lo cual rompió el hover de las pestañas NO activas, que el usuario dijo que "estaba bien como estaba" — quedó claro que "activo" y "hover" deben tratarse como estados independientes salvo que se pida unificarlos explícitamente). Estado final pedido y aplicado: **activo = fondo azul `#4A90E2` con letras negras; hover = azul claro `#CFE4FF` sin cambios**.
+
+#### Login: limpia y enfoca el campo de contraseña si las credenciales son incorrectas
+- **`LoginWindow.xaml.cs` (`BtnIngresar_Click`, rama de credenciales incorrectas)**: además de mostrar el mensaje de error, ahora limpia `TxtContrasena` y `TxtContrasenaVisible` y enfoca el que esté visible (`TxtContrasena` si está oculto el de texto plano, si no `TxtContrasenaVisible`), para que el usuario pueda volver a escribir sin borrar manualmente.
+
+#### Probado y revertido: TimePicker de Extended WPF Toolkit
+- A pedido del usuario se implementó `xctk:TimePicker` (Extended WPF Toolkit / Xceed, paquete `Extended.Wpf.Toolkit`) en los 6 formularios que registran hora (`TraspasosDetalle`, `SucursalesDetalle`, `PreciosDetalle`, `PedidosDetalle`, `InventariosDetalle`, `CorreccionesDetalle`).
+- El usuario pidió revertir todo el cambio (`git reset --hard 5b4218abf88d15146dac663d8dc709e4e21f09ce` + force-push sobre `claude/quirky-bardeen-al3g9g`). **Estado actual: NO hay TimePicker ni dependencia de Extended Wpf Toolkit en el repo** (confirmado sin referencias a `xctk` en ningún archivo); los 6 formularios siguen usando `Box_Hora` como `TextBox` con `TimeSpan.TryParse`. Se deja documentado para que una futura sesión sepa que ya se intentó y se descartó (no por un problema técnico, sino por decisión del usuario en ese momento).
+
+#### Notas / pendientes de esta sesión
+- Sin build en el entorno cloud (no hay SDK de .NET disponible); verificar localmente antes de dar por cerrado.
+
 ### Sesión 2026-06-18 (parte 2) — Fix de paquetes delta, bloqueo por actualización pendiente y auditoría de seguridad (login + contraseñas) (rama `master`)
 
 > Esta sesión trabajó directamente en `master` (continuación de una sesión previa con autorización ya otorgada). Cuatro commits: `863f0c8`, `ce27f98`, `021c623`, `4518260`, `6027c12`.
