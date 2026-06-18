@@ -753,6 +753,9 @@ namespace WpfAppVba
     public class ArticuloFila
     {
         public int    Linea          { get; set; }
+        // Zebra de Grid1 calculado desde el dato (no desde AlternationIndex, que es
+        // solo lectura y se desfasa al reciclar contenedores virtualizados).
+        public bool   FilaPar        => Linea % 2 == 0;
         public string Id             { get; set; } = "";
         public string Codigo         { get; set; } = "";
         public string Categoria      { get; set; } = "";
