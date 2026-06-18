@@ -6,12 +6,16 @@
    - Leer CONTEXT.md y el código existente relevante antes de proponer cualquier cambio.
    - No reinventar patrones ya establecidos (estilos, nombres, estructura del design system).
 
-2. Plan antes de ejecutar
-   - Mostrar un resumen del plan (archivos, cambios, motivo).
-   - Esperar confirmación explícita del usuario antes de aplicar nada.
+2. Ejecutar directo en pedidos claros
+   - Si el pedido es concreto y acotado (pocos archivos, reversible, sin ambigüedad) o ya está
+     cubierto por una regla de este archivo (ej. Reglas de Git): aplicarlo directo, sin pedir
+     confirmación antes ni preguntar "¿querés que...?". Avisar después qué se hizo.
+   - Mostrar plan y esperar confirmación explícita SOLO en cambios grandes/estructurales: muchos
+     archivos, difíciles de revertir, o que tocan arquitectura/diseño ya establecido.
 
-3. Ante la duda
-   - Preguntar antes de asumir, especialmente en cambios estructurales o que afecten varios archivos.
+3. Ante la duda real
+   - Preguntar solo cuando algo no se pueda resolver con el contexto, el código o las reglas de
+     este archivo. Si una regla ya lo dice, no volver a preguntar.
 
 4. CONTEXT.md
    - NO actualizar CONTEXT.md automáticamente después de cada cambio confirmado.
