@@ -400,7 +400,7 @@ namespace WpfAppVba
             // cambia de tema sin volver a hacer clic en el ítem.
             btn.SetResourceReference(Control.BackgroundProperty, "ThemeNavActivoBg");
             btn.BorderBrush = new SolidColorBrush(Color.FromRgb(0x4A, 0x6F, 0xE3));
-            btn.SetResourceReference(Control.ForegroundProperty, "ThemeTexto");
+            btn.SetResourceReference(Control.ForegroundProperty, "ThemeNavActivoFg");
         }
 
         // ─── Navegación lateral ───────────────────────────────────────────────
