@@ -25,13 +25,11 @@ Estas reglas aplican durante toda la sesión, no solo al inicio.
 - Solo hacer push de `master`.
 - Las ramas `claude/*` existen únicamente en local.
 
-> **Excepción inevitable — sesiones remotas/web (Claude Code on the web):** la plataforma
-> obliga a desarrollar y pushear a una rama `claude/*` designada por la sesión; el
-> contenedor es efímero y ese push es el único respaldo del trabajo hasta el merge final
-> a `master`. Esa instrucción de plataforma no es opcional y no puede desactivarse desde
-> este archivo. En esas sesiones, la regla de arriba se cumple en su intención (no usar
-> `claude/*` como destino final, fusionar y pushear siempre a `master`), pero el push
-> intermedio a la rama de sesión sí va a ocurrir.
+> **Sesiones remotas/web:** esta regla se cumple literal, sin excepción — tampoco como
+> backup intermedio. El contenedor de la sesión es efímero, así que el riesgo es real y
+> aceptado: si la sesión se corta antes de pushear a `master`, el trabajo no pusheado se
+> pierde sin respaldo. Para acotar esa ventana, pushear a `master` apenas un cambio esté
+> confirmado y listo, en vez de acumular varios cambios antes de pushear.
 
 ## Publicar versiones (actualizaciones automáticas)
 
