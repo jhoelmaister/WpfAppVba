@@ -120,6 +120,7 @@ namespace WpfAppVba
             {
                 if (await _actualizador.HayActualizacionAsync())
                 {
+                    AppState.VersionPendiente   = _actualizador.VersionNueva;
                     BloqueActualizar.Visibility = Visibility.Visible;
                     BtnActualizar.Visibility    = Visibility.Visible;
                     BtnActualizar.ToolTip       = $"Nueva versión disponible: {_actualizador.VersionNueva}";

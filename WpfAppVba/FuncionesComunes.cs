@@ -43,13 +43,35 @@ namespace WpfAppVba
             return hay;
         }
 
+        // ─── Guard de actualización pendiente (Velopack) ──────────────────────
+        /// <summary>
+        /// Si hay una actualización pendiente (AppState.VersionPendiente), avisa y
+        /// bloquea la acción: nada debe escribir ni recargar datos con una versión
+        /// desactualizada hasta que el usuario actualice.
+        /// </summary>
+        private static bool HayActualizacionPendienteOAvisa(Window? owner)
+        {
+            if (string.IsNullOrEmpty(AppState.VersionPendiente)) return false;
+            MessageBox.Show(owner,
+                $"Hay una actualización pendiente (versión {AppState.VersionPendiente}). " +
+                "Debes actualizar para continuar.",
+                "Actualización requerida", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return true;
+        }
+
         /// <summary>Guard de conexión para acciones de guardado/borrado.</summary>
         public static bool VerificarConexionParaGuardar(Window? owner = null)
-            => HayConexionOAvisa(owner, "Sin conexión. No se pueden guardar los cambios.");
+        {
+            if (HayActualizacionPendienteOAvisa(owner)) return false;
+            return HayConexionOAvisa(owner, "Sin conexión. No se pueden guardar los cambios.");
+        }
 
         /// <summary>Guard de conexión para acciones de actualizar/refrescar datos.</summary>
         public static bool VerificarConexionParaActualizar(Window? owner = null)
-            => HayConexionOAvisa(owner, "Sin conexión. No se pueden actualizar los datos.");
+        {
+            if (HayActualizacionPendienteOAvisa(owner)) return false;
+            return HayConexionOAvisa(owner, "Sin conexión. No se pueden actualizar los datos.");
+        }
 
         // ─── Equivalente a ValidarSoloNumeros ────────────────────────────────
         /// <summary>

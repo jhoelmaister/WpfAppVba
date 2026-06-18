@@ -21,6 +21,12 @@ namespace WpfAppVba.Data
         public static string TipoUsuario       { get; set; } = "";
         public static bool   EsAdmin           => TipoUsuario == "admin";
 
+        // ─── Actualización pendiente (Velopack) ──────────────────────────────
+        // Null = sin actualización pendiente. Si tiene valor, hay una versión nueva
+        // publicada: se bloquean guardados/eliminaciones/actualizaciones en toda la
+        // app hasta que el usuario actualice y reinicie.
+        public static string? VersionPendiente { get; set; }
+
         // ─── Rango de fechas activo ───────────────────────────────────────────
         public static DateTime DataFechaInicio { get; set; }
         public static DateTime DataFechaFinal  { get; set; }
