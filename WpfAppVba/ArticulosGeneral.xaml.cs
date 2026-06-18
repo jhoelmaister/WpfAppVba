@@ -30,6 +30,10 @@ namespace WpfAppVba
 
         private bool _iniciado = false;
 
+        // Cuando es true, los cambios de selección del árbol NO recargan la grilla
+        // (se usa durante el refresco incremental de "Actualizar" para no recargar todo).
+        private bool _suspenderEventosArbol = false;
+
         /// <summary>Constructor sin parámetros requerido por el compilador XAML.</summary>
         public ArticulosGeneral() : this(null, null) { }
 
@@ -112,65 +116,123 @@ namespace WpfAppVba
         private void CargarArbol()
         {
             Tree1.Items.Clear();
+            foreach (var d in ConstruirArbolDeseado())
+                Tree1.Items.Add(CrearNodo(d, expandidoPorDefecto: true));
 
-            // Nodo raíz "Todos"
-            var nodoTodos = new TreeViewItem { Header = "Todos", Tag = "todos" };
+            // Seleccionar primer nodo (raíz "Todos")
+            if (Tree1.Items.Count > 0 && Tree1.Items[0] is TreeViewItem raiz)
+                raiz.IsSelected = true;
+        }
 
-            // Productos
+        // Estructura "deseada" del árbol según la caché actual (fuente única para la
+        // carga inicial y el refresco incremental).
+        private List<NodoDeseado> ConstruirArbolDeseado()
+        {
+            var nodoTodos = new NodoDeseado { Tag = "todos", Header = "Todos" };
+
             int ufProd = Sql.ProductosObj.ContarFilas;
             for (int i = 1; i <= ufProd; i++)
             {
                 var idObj = Sql.ProductosObj.Mover(i);
                 if (idObj == null) continue;
-                string prodId = idObj.ToString()!;
+                string prodId   = idObj.ToString()!;
                 string prodDesc = Sql.ProductosObj.ObtenerItem("descripcion", prodId)?.ToString() ?? prodId;
 
-                var nodoProd = new TreeViewItem
-                {
-                    Header = prodDesc,
-                    Tag    = $"producto:{prodId}"
-                };
+                var nodoProd = new NodoDeseado { Tag = $"producto:{prodId}", Header = prodDesc };
 
-                // Familias de este producto
                 int ufFam = Sql.FamiliasObj.ContarFilas;
                 for (int j = 1; j <= ufFam; j++)
                 {
                     var famIdObj = Sql.FamiliasObj.Mover(j);
                     if (famIdObj == null) continue;
                     string famId = famIdObj.ToString()!;
-                    string famProd = Sql.FamiliasObj.ObtenerItem("producto", famId)?.ToString() ?? "";
-                    if (famProd != prodId) continue;
+                    if ((Sql.FamiliasObj.ObtenerItem("producto", famId)?.ToString() ?? "") != prodId) continue;
 
                     string famDesc = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? famId;
-                    var nodoFam = new TreeViewItem
-                    {
-                        Header = famDesc,
-                        Tag    = $"familia:{famId}"
-                    };
-                    nodoProd.Items.Add(nodoFam);
+                    nodoProd.Hijos.Add(new NodoDeseado { Tag = $"familia:{famId}", Header = famDesc });
                 }
 
-                nodoProd.IsExpanded = true;
-                nodoTodos.Items.Add(nodoProd);
+                nodoTodos.Hijos.Add(nodoProd);
             }
 
-            // Nodo "Sin Clasificar"
-            var nodoSin = new TreeViewItem { Header = "Sin Clasificar", Tag = "sinclasificar" };
-            nodoTodos.Items.Add(nodoSin);
+            return new List<NodoDeseado> { nodoTodos };
+        }
 
-            nodoTodos.IsExpanded = true;
-            Tree1.Items.Add(nodoTodos);
+        private static TreeViewItem CrearNodo(NodoDeseado d, bool expandidoPorDefecto)
+        {
+            var tvi = new TreeViewItem { Header = d.Header, Tag = d.Tag };
+            foreach (var h in d.Hijos) tvi.Items.Add(CrearNodo(h, expandidoPorDefecto));
+            if (d.Hijos.Count > 0) tvi.IsExpanded = expandidoPorDefecto;
+            return tvi;
+        }
 
-            // Seleccionar primer nodo
-            nodoTodos.IsSelected = true;
+        // Reconcilia el árbol existente con la estructura deseada: actualiza encabezados,
+        // agrega nodos nuevos y quita los eliminados, preservando la expansión y selección
+        // de los nodos que se conservan (no reconstruye todo).
+        private void RefrescarArbolIncremental() => ReconciliarNodos(Tree1.Items, ConstruirArbolDeseado());
+
+        private void ReconciliarNodos(ItemCollection existentes, List<NodoDeseado> deseados)
+        {
+            var porTag = new Dictionary<string, TreeViewItem>();
+            foreach (var obj in existentes)
+                if (obj is TreeViewItem t && t.Tag is string tag) porTag[tag] = t;
+
+            var nuevos = new List<TreeViewItem>(deseados.Count);
+            foreach (var d in deseados)
+            {
+                if (porTag.TryGetValue(d.Tag, out var ex))
+                {
+                    if (!Equals(ex.Header, d.Header)) ex.Header = d.Header;
+                    ReconciliarNodos(ex.Items, d.Hijos);   // recurse (preserva IsExpanded)
+                    nuevos.Add(ex);
+                }
+                else nuevos.Add(CrearNodo(d, expandidoPorDefecto: true));
+            }
+
+            // Solo tocar la colección si cambió la membresía o el orden (evita perder
+            // la selección/expansión cuando no hubo cambios reales).
+            bool igual = existentes.Count == nuevos.Count;
+            if (igual)
+                for (int i = 0; i < nuevos.Count; i++)
+                    if (!ReferenceEquals(existentes[i], nuevos[i])) { igual = false; break; }
+
+            if (!igual)
+            {
+                existentes.Clear();
+                foreach (var n in nuevos) existentes.Add(n);
+            }
+        }
+
+        private void RestaurarSeleccionArbol(string tag)
+        {
+            var nodo = BuscarNodoPorTag(Tree1.Items, tag) ?? BuscarNodoPorTag(Tree1.Items, "todos");
+            if (nodo != null && !nodo.IsSelected) nodo.IsSelected = true;
+        }
+
+        private static TreeViewItem? BuscarNodoPorTag(ItemCollection items, string tag)
+        {
+            foreach (var obj in items)
+            {
+                if (obj is not TreeViewItem t) continue;
+                if (t.Tag is string tg && tg == tag) return t;
+                var hijo = BuscarNodoPorTag(t.Items, tag);
+                if (hijo != null) return hijo;
+            }
+            return null;
         }
 
         // ─── Carga la lista de artículos ──────────────────────────────────────
         public void CargarArticulos()
         {
+            Grid1.ItemsSource = ConstruirListaArticulos();
+            RenumerarYActualizarTotales();
+        }
+
+        // Construye la lista de artículos según el filtro activo (sin tocar la UI).
+        private List<ArticuloFila> ConstruirListaArticulos()
+        {
             var lista = new List<ArticuloFila>();
             int linea = 1;
-            double totalDisp = 0, totalStock = 0;
 
             // Filtros excluyentes: solo se aplica el del modo activo
             string busqueda  = _modoFiltro == "busqueda" ? TxtBuscar.Text.Trim().ToLower() : "";
@@ -188,12 +250,7 @@ namespace WpfAppVba
                 // Filtro de árbol
                 if (!string.IsNullOrEmpty(tagFiltro))
                 {
-                    if (tagFiltro == "sinclasificar")
-                    {
-                        string famDescCheck = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? "";
-                        if (!string.IsNullOrEmpty(famId) && !string.IsNullOrEmpty(famDescCheck)) continue;
-                    }
-                    else if (tagFiltro.StartsWith("familia:"))
+                    if (tagFiltro.StartsWith("familia:"))
                     {
                         string famFiltro = tagFiltro.Substring("familia:".Length);
                         if (famId != famFiltro) continue;
@@ -211,13 +268,15 @@ namespace WpfAppVba
                 string desc      = Sql.ArticulosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
                 string modelo    = Sql.ArticulosObj.ObtenerItem("modelo",      id)?.ToString() ?? "";
                 string famDesc   = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString() ?? "";
+                string catDesc   = ObtenerDescripcionCategoria(id);
                 string descCompleta = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
 
-                // Filtro de búsqueda
+                // Filtro de búsqueda (código, descripción completa o categoría)
                 if (!string.IsNullOrEmpty(busqueda))
                 {
                     if (!codigo.ToLower().Contains(busqueda) &&
-                        !descCompleta.ToLower().Contains(busqueda))
+                        !descCompleta.ToLower().Contains(busqueda) &&
+                        !catDesc.ToLower().Contains(busqueda))
                         continue;
                 }
 
@@ -231,25 +290,16 @@ namespace WpfAppVba
                     Linea          = linea++,
                     Id             = id,
                     Codigo         = codigo,
+                    Categoria      = catDesc,
                     Descripcion    = descCompleta,
                     Disponible     = stock2,
                     Stock          = stock,
                     Seleccionado   = ordenIdx >= 0,
                     OrdenSeleccion = ordenIdx >= 0 ? ordenIdx + 1 : 0
                 });
-
-                totalDisp  += stock2;
-                totalStock += stock;
             }
 
-            Grid1.ItemsSource       = lista;
-            TxtTotalArticulos.Text  = lista.Count.ToString("N0");
-            TxtTotalDisponible.Text = totalDisp.ToString("N0");
-            TxtTotalStock.Text      = totalStock.ToString("N0");
-            LblSubtitulo.Text       = $"{lista.Count:N0} artículos";
-
-            if (ModoExportar)
-                LblSeleccionados.Text = $"Seleccionados: {_seleccionados.Count}";
+            return lista;
         }
 
         // ─── Obtener filtro del árbol ─────────────────────────────────────────
@@ -264,6 +314,47 @@ namespace WpfAppVba
         private List<ArticuloFila> FilasGrid =>
             Grid1.ItemsSource as List<ArticuloFila> ?? new List<ArticuloFila>();
 
+        // Refresca la grilla con la caché actual sin recrear las filas: actualiza en
+        // sitio las que ya existen (por Id), agrega las nuevas, quita las eliminadas y
+        // reordena según el filtro activo. Conserva las instancias (y por tanto la
+        // selección por referencia) de las filas que se mantienen.
+        private void RefrescarGridIncremental()
+        {
+            var deseadas = ConstruirListaArticulos();
+
+            var actuales = FilasGrid;
+            var porId = new Dictionary<string, ArticuloFila>();
+            foreach (var f in actuales) porId[f.Id] = f;
+
+            var resultado = new List<ArticuloFila>(deseadas.Count);
+            foreach (var d in deseadas)
+            {
+                if (porId.TryGetValue(d.Id, out var ex))
+                {
+                    ex.Codigo         = d.Codigo;
+                    ex.Categoria      = d.Categoria;
+                    ex.Descripcion    = d.Descripcion;
+                    ex.Disponible     = d.Disponible;
+                    ex.Stock          = d.Stock;
+                    ex.Seleccionado   = d.Seleccionado;
+                    ex.OrdenSeleccion = d.OrdenSeleccion;
+                    resultado.Add(ex);
+                }
+                else resultado.Add(d);
+            }
+
+            actuales.Clear();
+            actuales.AddRange(resultado);
+            RenumerarYActualizarTotales();   // renumera Línea + totales + Items.Refresh()
+        }
+
+        private void RestaurarSeleccionGrid(string artId)
+        {
+            if (string.IsNullOrEmpty(artId)) return;
+            var item = FilasGrid.Find(x => x.Id == artId);
+            if (item != null) EnfocarFila(item);
+        }
+
         // Construye una sola fila para un artículo (incluye cálculo de stock).
         private ArticuloFila ConstruirFila(string id, int linea)
         {
@@ -272,6 +363,7 @@ namespace WpfAppVba
             string desc   = Sql.ArticulosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
             string modelo = Sql.ArticulosObj.ObtenerItem("modelo",      id)?.ToString() ?? "";
             string famDesc = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? "";
+            string catDesc = ObtenerDescripcionCategoria(id);
             string descCompleta = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
 
             double stock  = StockCalculator.ContarStock(id,  DateTime.Now);
@@ -283,12 +375,21 @@ namespace WpfAppVba
                 Linea          = linea,
                 Id             = id,
                 Codigo         = codigo,
+                Categoria      = catDesc,
                 Descripcion    = descCompleta,
                 Disponible     = stock2,
                 Stock          = stock,
                 Seleccionado   = ordenIdx >= 0,
                 OrdenSeleccion = ordenIdx >= 0 ? ordenIdx + 1 : 0
             };
+        }
+
+        // Descripción de la categoría de un artículo (columna 'Categoria' del artículo).
+        private string ObtenerDescripcionCategoria(string id)
+        {
+            string catId = Sql.ArticulosObj.ObtenerItem("Categoria", id)?.ToString() ?? "";
+            if (string.IsNullOrEmpty(catId)) return "";
+            return Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "";
         }
 
         // Renumera la columna Línea, recalcula totales desde el grid y refresca.
@@ -322,6 +423,7 @@ namespace WpfAppVba
         // ─── Eventos árbol y búsqueda ─────────────────────────────────────────
         private void Tree1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
+            if (_suspenderEventosArbol) return;   // refresco incremental en curso
             _modoFiltro = "familia";
             CargarArticulos();
         }
@@ -482,9 +584,23 @@ namespace WpfAppVba
             // Sin conexión no se puede refrescar desde SQL: avisar y no congelar.
             if (!FuncionesComunes.VerificarConexionParaActualizar(Window.GetWindow(this))) return;
 
+            // Recordar el enfoque actual para restaurarlo tras el refresco.
+            string tagArbolSel = (Tree1.SelectedItem as TreeViewItem)?.Tag?.ToString() ?? "todos";
+            string artSelId    = (Grid1.SelectedItem as ArticuloFila)?.Id ?? "";
+
+            // Recargar la caché desde SQL (única fuente de datos).
             AppState.ActualizarProductos();
-            CargarArbol();
-            CargarArticulos();
+
+            // Árbol: refresco incremental (alta/baja/edición de nodos) preservando
+            // expansión y selección; sin disparar la recarga de la grilla por el evento.
+            _suspenderEventosArbol = true;
+            RefrescarArbolIncremental();
+            RestaurarSeleccionArbol(tagArbolSel);
+            _suspenderEventosArbol = false;
+
+            // Grilla: refresco incremental preservando selección y foco.
+            RefrescarGridIncremental();
+            RestaurarSeleccionGrid(artSelId);
         }
 
         /// <summary>
@@ -619,6 +735,14 @@ namespace WpfAppVba
             if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
             GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
+
+        // Nodo "deseado" del árbol (estructura ligera para la reconciliación incremental).
+        private sealed class NodoDeseado
+        {
+            public string Tag    = "";
+            public string Header = "";
+            public List<NodoDeseado> Hijos = new();
+        }
     }
 
     // ─── Modelos ──────────────────────────────────────────────────────────────
@@ -627,6 +751,7 @@ namespace WpfAppVba
         public int    Linea          { get; set; }
         public string Id             { get; set; } = "";
         public string Codigo         { get; set; } = "";
+        public string Categoria      { get; set; } = "";
         public string Descripcion    { get; set; } = "";
         public double Disponible     { get; set; }
         public double Stock          { get; set; }

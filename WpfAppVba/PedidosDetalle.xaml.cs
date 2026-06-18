@@ -782,7 +782,10 @@ namespace WpfAppVba
 
         private void GridItems_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
         {
-            if (e.EditingElement is TextBox tb) { tb.SelectAll(); tb.Focus(); }
+            GridFocusHelper.SeleccionarTodoEnEdicion(e.EditingElement);
+            if (e.Column.Header?.ToString() is "Cantidad" or "Precio" or "Importe" or "Contable"
+                && e.EditingElement is TextBox tb)
+                FuncionesComunes.RestringirACantidad(tb);
         }
 
         private void GridItems_BeginningEdit(object sender, DataGridBeginningEditEventArgs e)
@@ -1103,7 +1106,9 @@ namespace WpfAppVba
 
         private void GridEntregas_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
         {
-            if (e.EditingElement is TextBox tb) { tb.SelectAll(); tb.Focus(); }
+            GridFocusHelper.SeleccionarTodoEnEdicion(e.EditingElement);
+            if (e.Column.Header?.ToString() == "Cantidad" && e.EditingElement is TextBox tb)
+                FuncionesComunes.RestringirACantidad(tb);
         }
 
         // ─── Botones Entregas ─────────────────────────────────────────────────

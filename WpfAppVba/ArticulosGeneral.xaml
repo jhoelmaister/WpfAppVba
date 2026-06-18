@@ -278,13 +278,21 @@
                     </Style>
                 </DataGrid.ColumnHeaderStyle>
 
-                <!-- Fila verde + negrita cuando está seleccionado -->
+                <!-- Color de selección propio (azul consistente, sin depender del
+                     resaltado del sistema que cambiaba de tono al perder el foco)
+                     + verde cuando está marcado con checkbox (gana sobre el azul).
+                     Alto FIJO de fila (Height=34) para que la selección NO cambie el
+                     tamaño de las filas, y SIN cambiar el FontWeight (que forzaba a WPF
+                     a re-medir la fila y producía el "salto" con la virtualización). -->
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">
+                        <Setter Property="Height" Value="34"/>
                         <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource ThemeFilaSelGrid}"/>
+                            </Trigger>
                             <DataTrigger Binding="{Binding Seleccionado}" Value="True">
                                 <Setter Property="Background" Value="{DynamicResource ThemeFilaSeleccionada}"/>
-                                <Setter Property="FontWeight" Value="SemiBold"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -314,6 +322,7 @@
                     </DataGridTextColumn>
                     <DataGridTextColumn Header="Línea"               Binding="{Binding Linea}"       Width="55"/>
                     <DataGridTextColumn Header="Código"              Binding="{Binding Codigo}"      Width="80"/>
+                    <DataGridTextColumn Header="Categoría"           Binding="{Binding Categoria}"   Width="120"/>
                     <DataGridTextColumn Header="Descripción Completa" Binding="{Binding Descripcion}" Width="*"/>
                     <DataGridTextColumn Header="Disponible"          Binding="{Binding Disponible, StringFormat=#\,##0.##}"  Width="90"
                                         ElementStyle="{StaticResource CeldaNumero}"/>

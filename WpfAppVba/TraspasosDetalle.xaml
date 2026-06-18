@@ -332,9 +332,15 @@
         </Border>
 
         <!-- ════════════════════════════════════════════════════════ -->
-        <!-- 2 · GRID ARTÍCULOS                                      -->
+        <!-- 2 · GRID ARTÍCULOS  +  CATEGORÍAS (derecha)            -->
         <!-- ════════════════════════════════════════════════════════ -->
-        <Border Grid.Row="2" BorderThickness="0">
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="220"/>
+            </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" BorderThickness="0">
             <DataGrid x:Name="GridItems"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
@@ -382,6 +388,33 @@
                 </DataGrid.Columns>
             </DataGrid>
         </Border>
+
+            <!-- Categorías (a la derecha del grid) -->
+            <Border Grid.Column="1"
+                    Background="{DynamicResource ThemeBgSurface}"
+                    BorderBrush="{DynamicResource ThemeBorde}"
+                    BorderThickness="1,0,0,0"
+                    Padding="10,8">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Categorías"
+                               Style="{StaticResource SectionHeader}"/>
+                    <DataGrid x:Name="GridCategorias"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              IsReadOnly="True"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              BorderThickness="0"
+                              FontSize="10">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Categoría" Binding="{Binding Categoria}" Width="*"/>
+                            <DataGridTextColumn Header="Cant."     Binding="{Binding Cantidad}"  Width="50"
+                                                ElementStyle="{StaticResource CeldaNumero}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+        </Grid>
 
         <!-- ════════════════════════════════════════════════════════ -->
         <!-- 3 · STOCK + OBSERVACIONES (debajo del grid)             -->
@@ -482,29 +515,6 @@
                                    FontSize="17" FontWeight="SemiBold"
                                    HorizontalAlignment="Right"
                                    Foreground="{DynamicResource ThemeTexto}"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Categorías -->
-                <Border Style="{StaticResource MetricCard}" Padding="6,4" VerticalAlignment="Top">
-                    <StackPanel>
-                        <TextBlock Text="Categorías" FontSize="10"
-                                   Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-                        <DataGrid x:Name="GridCategorias"
-                                  AutoGenerateColumns="False"
-                                  CanUserAddRows="False"
-                                  IsReadOnly="True"
-                                  HeadersVisibility="Column"
-                                  GridLinesVisibility="Horizontal"
-                                  BorderThickness="0"
-                                  FontSize="10"
-                                  Width="170" MaxHeight="78">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Categoría" Binding="{Binding Categoria}" Width="*"/>
-                                <DataGridTextColumn Header="Cant."     Binding="{Binding Cantidad}"  Width="50"
-                                                    ElementStyle="{StaticResource CeldaNumero}"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
                     </StackPanel>
                 </Border>
 

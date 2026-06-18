@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -25,9 +26,7 @@ namespace WpfAppVba
         // ─── Al abrir: verificar config y cargar catálogos base ──────────────
         private async void LoginWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            BtnIngresar.IsEnabled   = false;
-            TxtCuenta.IsEnabled     = false;
-            TxtContrasena.IsEnabled = false;
+            HabilitarControles(false);
 
             if (!ConexionConfig.HayConfiguracion())
             {
@@ -50,15 +49,15 @@ namespace WpfAppVba
 
         private async Task ConectarBaseDatosAsync()
         {
-            BtnIngresar.IsEnabled   = false;
-            TxtCuenta.IsEnabled     = false;
-            TxtContrasena.IsEnabled = false;
+            HabilitarControles(false);
             MostrarEstado("Conectando a base de datos...", Colors.Gray);
 
             bool conectado;
             try
             {
-                await Task.Run(() => AppLoader.ConectarProductos());
+                // Antes de loguear solo se carga 'usuarios' (lo mínimo para validar el
+                // login). El resto se carga tras iniciar sesión, filtrado por empresa.
+                await Task.Run(() => AppLoader.ConectarUsuarios());
                 conectado = true;
             }
             catch
@@ -71,20 +70,28 @@ namespace WpfAppVba
                 // Conexión recuperada: limpiar aviso y habilitar el login.
                 DetenerReintentos();
                 MostrarEstado("", Colors.Gray);
-                BtnIngresar.IsEnabled   = true;
-                TxtCuenta.IsEnabled     = true;
-                TxtContrasena.IsEnabled = true;
+                HabilitarControles(true);
                 TxtCuenta.Focus();
             }
             else
             {
                 // Mensaje simple (sin volcar el error técnico de SQL Server).
                 MostrarEstado("⚠ Sin conexión. Reintentando…", Colors.Orange);
-                BtnIngresar.IsEnabled   = false;
-                TxtCuenta.IsEnabled     = false;
-                TxtContrasena.IsEnabled = false;
+                HabilitarControles(false);
                 ProgramarReintento();
             }
+        }
+
+        // Habilita/deshabilita TODOS los controles de credenciales a la vez (incluido
+        // el botón del ojo y la caja de texto visible) para que nada quede editable
+        // mientras se conecta o se valida el inicio de sesión.
+        private void HabilitarControles(bool habilitado)
+        {
+            BtnIngresar.IsEnabled          = habilitado;
+            TxtCuenta.IsEnabled            = habilitado;
+            TxtContrasena.IsEnabled        = habilitado;
+            TxtContrasenaVisible.IsEnabled = habilitado;
+            BtnVerContrasena.IsEnabled     = habilitado;
         }
 
         // ─── Auto-reconexión: reintenta cada 4 s hasta que vuelva el internet ─────
@@ -114,6 +121,9 @@ namespace WpfAppVba
         // ─── Mostrar / ocultar contraseña ──────────────────────────────────────
         private void BtnVerContrasena_Click(object sender, RoutedEventArgs e)
         {
+            // Bloqueado mientras se conecta/valida: no alternar ni reactivar el campo.
+            if (!BtnVerContrasena.IsEnabled) return;
+
             if (TxtContrasena.Visibility == Visibility.Visible)
             {
                 // Ocultar -> Mostrar: pasar el valor al TextBox visible.
@@ -127,14 +137,31 @@ namespace WpfAppVba
             }
             else
             {
-                // Mostrar -> Ocultar: devolver el valor al PasswordBox.
+                // Mostrar -> Ocultar: devolver el valor al PasswordBox, conservando la
+                // posición del cursor que tenía en el cuadro de texto visible.
+                int caret = TxtContrasenaVisible.CaretIndex;
                 TxtContrasena.Password          = TxtContrasenaVisible.Text;
                 TxtContrasenaVisible.Visibility = Visibility.Collapsed;
                 TxtContrasena.Visibility        = Visibility.Visible;
                 IcoVerContrasena.Text           = "\uE7B3";   // Segoe MDL2: RedEye
                 BtnVerContrasena.ToolTip        = "Mostrar contraseña";
                 TxtContrasena.Focus();
+                PosicionarCursorPassword(TxtContrasena, caret);
             }
+        }
+
+        // El PasswordBox no expone CaretIndex público; se usa su método interno
+        // Select(start, length) por reflexión para colocar el cursor donde estaba.
+        private static void PosicionarCursorPassword(PasswordBox pb, int index)
+        {
+            try
+            {
+                int pos = Math.Max(0, Math.Min(index, pb.Password.Length));
+                var select = typeof(PasswordBox).GetMethod("Select",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                select?.Invoke(pb, new object[] { pos, 0 });
+            }
+            catch { /* si la API interna cambia, queda el foco normal como respaldo */ }
         }
 
         // ─── Configurar conexión desde el login ───────────────────────────────
@@ -166,9 +193,7 @@ namespace WpfAppVba
                 return;
             }
 
-            BtnIngresar.IsEnabled   = false;
-            TxtCuenta.IsEnabled     = false;
-            TxtContrasena.IsEnabled = false;
+            HabilitarControles(false);
 
             MostrarEstado("Verificando credenciales...", Colors.Green);
 
@@ -198,49 +223,62 @@ namespace WpfAppVba
 
             if (encontrado)
             {
-                AppState.UsuarioActivo  = idEncontrado;
-                AppState.TipoUsuario    = Sql.UsuariosObj.ObtenerItem("tipo",     idEncontrado)?.ToString() ?? "";
-                AppState.EmpresaActiva  = Sql.UsuariosObj.ObtenerItem("empresa",  idEncontrado)?.ToString() ?? "";
-                AppState.SucursalActiva = Sql.UsuariosObj.ObtenerItem("sucursal", idEncontrado)?.ToString() ?? "";
-                AppState.RegionActiva   = Sql.SucursalesObj.ObtenerItem("region", AppState.SucursalActiva)?.ToString() ?? "";
-                AppState.SesionActiva   = true;
-                AppState.PeriodoActivo  = DateTime.Now.Year.ToString();
+                try
+                {
+                    AppState.UsuarioActivo  = idEncontrado;
+                    AppState.TipoUsuario    = Sql.UsuariosObj.ObtenerItem("tipo",     idEncontrado)?.ToString() ?? "";
+                    AppState.EmpresaActiva  = Sql.UsuariosObj.ObtenerItem("empresa",  idEncontrado)?.ToString() ?? "";
+                    AppState.SucursalActiva = Sql.UsuariosObj.ObtenerItem("sucursal", idEncontrado)?.ToString() ?? "";
+                    AppState.SesionActiva   = true;
+                    AppState.PeriodoActivo  = DateTime.Now.Year.ToString();
 
-                Sql.UsuariosObj.EstablecerItem("estadoU", idEncontrado, "activo");
-                Sql.UsuariosObj.ExportarItems();
+                    Sql.UsuariosObj.EstablecerItem("estadoU", idEncontrado, "activo");
+                    Sql.UsuariosObj.ExportarItems();
 
-                string temaUsuario = Sql.UsuariosObj.ObtenerItem("temaC", idEncontrado)?.ToString() ?? "";
-                AppState.TemaActivo = temaUsuario.Trim().ToLowerInvariant() == ThemeManager.TemaOscuro
-                    ? ThemeManager.TemaOscuro
-                    : ThemeManager.TemaClaro;
-                ThemeManager.AplicarTema(AppState.TemaActivo);
+                    string temaUsuario = Sql.UsuariosObj.ObtenerItem("temaC", idEncontrado)?.ToString() ?? "";
+                    AppState.TemaActivo = temaUsuario.Trim().ToLowerInvariant() == ThemeManager.TemaOscuro
+                        ? ThemeManager.TemaOscuro
+                        : ThemeManager.TemaClaro;
+                    ThemeManager.AplicarTema(AppState.TemaActivo);
 
-                // Recargar catálogos ya filtrados por la empresa del usuario.
-                MostrarEstado("Cargando catálogos de la empresa...", Colors.Green);
-                await Task.Run(() => AppLoader.ConectarProductos());
+                    // Recargar catálogos ya filtrados por la empresa del usuario.
+                    MostrarEstado("Cargando catálogos de la empresa...", Colors.Green);
+                    await Task.Run(() => AppLoader.ConectarProductos());
 
-                MostrarEstado("Conectando a base de datos principal...", Colors.Green);
-                await Task.Run(() => AppLoader.ConectarBases());
+                    // La región sale de la sucursal activa, ya disponible tras cargar
+                    // sucursales en ConectarProductos.
+                    AppState.RegionActiva = Sql.SucursalesObj.ObtenerItem("region", AppState.SucursalActiva)?.ToString() ?? "";
 
-                MostrarEstado($"Actualizando datos del período {AppState.PeriodoActivo}...", Colors.Green);
-                await Task.Run(() => AppState.ActualizarBase(DateTime.Now.Year));
+                    MostrarEstado("Conectando a base de datos principal...", Colors.Green);
+                    await Task.Run(() => AppLoader.ConectarBases());
 
-                MostrarEstado("Cargando documentos...", Colors.Green);
-                await Task.Run(() => AppLoader.ConectarDocumentos(
-                    AppState.DataFechaInicio, AppState.DataFechaFinal));
+                    MostrarEstado($"Actualizando datos del período {AppState.PeriodoActivo}...", Colors.Green);
+                    await Task.Run(() => AppState.ActualizarBase(DateTime.Now.Year));
 
-                MostrarEstado("¡Conexión exitosa!", Colors.Green);
+                    MostrarEstado("Cargando documentos...", Colors.Green);
+                    await Task.Run(() => AppLoader.ConectarDocumentos(
+                        AppState.DataFechaInicio, AppState.DataFechaFinal));
 
-                var main = new ConsolaMovimientos();
-                main.Show();
-                Close();
+                    MostrarEstado("¡Conexión exitosa!", Colors.Green);
+
+                    var main = new ConsolaMovimientos();
+                    main.Show();
+                    Close();
+                }
+                catch
+                {
+                    // Se perdió la conexión durante la carga del caché: cancelar el
+                    // inicio de sesión, avisar y desbloquear todo para reintentar.
+                    AppState.SesionActiva  = false;
+                    AppState.UsuarioActivo = "";
+                    MostrarEstado("⚠ Sin conexión. No se pudo cargar los datos; intenta más tarde.", Colors.Orange);
+                    HabilitarControles(true);
+                }
             }
             else
             {
                 MostrarEstado("Cuenta o contraseña incorrecta", Colors.Red);
-                BtnIngresar.IsEnabled   = true;
-                TxtCuenta.IsEnabled     = true;
-                TxtContrasena.IsEnabled = true;
+                HabilitarControles(true);
             }
         }
 

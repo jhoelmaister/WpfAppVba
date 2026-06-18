@@ -10,7 +10,7 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 - **Reportes Excel**: `ClosedXML 0.102.2`
 - **IDE recomendado**: Visual Studio 2022 / VS Code + extensión C#
 - **Proyecto**: `WpfAppVba/WpfAppVba.csproj`
-- **Rama de desarrollo activa**: `claude/eloquent-hopper-gi9nlv`
+- **Rama de desarrollo activa**: `claude/optimistic-dirac-5arp05`
 
 ## Lo Que Está Implementado y Funciona
 
@@ -170,6 +170,50 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - **Rama de trabajo**: la sesión actual trabaja en `claude/cool-hopper-vo3mxo`. (La sesión previa de multi-empresa fue `claude/brave-albattani-03ox62`.)
 
 ## Historial de Cambios por Sesión
+
+### Sesión 2026-06-18 — Selección/edición de grids, filtros multi-empresa en cascada, login con carga diferida y reubicación de Categorías (rama `claude/optimistic-dirac-5arp05`)
+
+> Contexto: el usuario **eliminó las columnas `empresa` de `articulos`, `familias` y `precios`** en SQL Server; el filtrado de esas tablas por empresa pasa a ser por **cascada de relaciones** (no por columna propia). Además, varios ajustes de UX en grids editables, login y cierre de la consola.
+
+#### ArticulosGeneral — grid de artículos
+- **Color de selección propio**: nuevo brush `ThemeFilaSelGrid` (claro `#D7E5FF`, oscuro `#33426B`) en ambos temas; `Grid1.RowStyle` lo aplica con `Trigger IsSelected=True` (antes dependía del resaltado del sistema, que cambiaba de tono al perder el foco). El verde `ThemeFilaSeleccionada` (checkbox marcado en modo importar) gana sobre el azul.
+- **Alto de fila fijo + sin negrita**: `Setter Height="34"` en el estilo de fila y se **quitó** `FontWeight=SemiBold` del trigger de `Seleccionado`. Ese cambio de FontWeight forzaba a WPF a re-medir la fila y, con la virtualización, cambiaba el alto de las filas al seleccionar/marcar (visible en modo importar: scroll + seleccionar + doble clic, más notorio en modo oscuro).
+- **Nueva columna "Categoría"** entre Código y Descripción Completa (`ArticuloFila.Categoria` ← `articulos.Categoria` → `Categorias.descripcion`). El buscador (`TxtBuscar`) ahora también coincide y **filtra por la categoría**.
+- **Actualizar incremental** (`BtnActualizar_Click`): recarga la caché y refresca **sin reconstruir todo**, preservando selección/foco/scroll y la expansión del árbol. `Tree1` se reconcilia por `Tag` (alta/baja/edición de nodos); `Grid1` hace diff por `Id` (actualiza en sitio, agrega, quita) reusando instancias. Helpers nuevos: `ConstruirListaArticulos`, `ConstruirArbolDeseado`/`CrearNodo`/`ReconciliarNodos`/`RestaurarSeleccionArbol`/`BuscarNodoPorTag`, `RefrescarGridIncremental`/`RestaurarSeleccionGrid`. Flag `_suspenderEventosArbol` para que la reconciliación del árbol no dispare recargas.
+- **Se eliminó el nodo "Sin Clasificar"** del árbol y su filtro (todo artículo debe tener familia).
+
+#### Edición de celdas — seleccionar todo + solo números
+- **`GridFocusHelper.SeleccionarTodoEnEdicion(FrameworkElement?)`**: al entrar a editar, selecciona todo el texto; busca el `TextBox` dentro del `EditingElement` (sirve para `DataGridTextColumn` **y** `DataGridTemplateColumn`) y re-despacha `SelectAll` en `DispatcherPriority.Input` para que el clic del ratón no deshaga la selección. Aplicado en los `PreparingCellForEdit` de Inventarios, Correcciones, Traspasos y Pedidos (líneas + entregas).
+- **Columna Cantidad unificada**: en `InventariosDetalle` y `CorreccionesDetalle` pasó de `DataGridTemplateColumn` a `DataGridTextColumn` con `CeldaNumero`/`CeldaNumeroEditar` (mismo aspecto que Pedidos/Traspasos).
+- **`FuncionesComunes.RestringirACantidad(TextBox)`**: bloquea letras/símbolos al escribir **y al pegar** (`DataObject` pasting), permitiendo solo dígitos y separadores `,`/`.` (sin depender de la cultura). Aplicado a Cantidad en los 4 formularios y, además, a **Precio, Importe y Contable** en `PedidosDetalle` (GridItems).
+
+#### Reubicación de Categorías a la derecha del grid
+- En `InventariosDetalle`, `CorreccionesDetalle` y `TraspasosDetalle`: el panel **Categorías** se movió a una columna (220px) a la derecha de `GridItems` (se quitó de la barra de totales inferior, que conserva Total unidades / Diferentes).
+- En `PedidosDetalle`: **Categorías** a la derecha de `GridItems` (pestaña Artículos, `GridCategorias`) y de `GridEntregas` (pestaña Entregas, `GridCategoriasE`); se quitaron ambas tarjetas de la barra de totales. La lógica `CargarTotalesCategoria*` ya existía; solo se reubicó el XAML.
+
+#### ArticulosDetalle / FamiliasDetalle — validaciones y estado
+- **Artículo: familia obligatoria y existente** — `ArticulosDetalle.Guardar()` no guarda si `ResolverFamiliaId()` es vacío (campo vacío o código inexistente). Cubre nuevo/insertar/editar.
+- **Familia: producto obligatorio y existente** — `FamiliasDetalle.Guardar()` no guarda si `ResolverProductoId()` es vacío.
+- **Estado por defecto** — `ArticulosDetalle.GuardarInsertar` ahora fija `estado="mostrar"` (igual que `GuardarNuevo`).
+- **ID interno oculto** — el badge "ID" de `ArticulosDetalle` queda `Visibility="Collapsed"`; `Box_Identificador` se conserva (oculto) porque el code-behind guarda el GUID ahí.
+
+#### Multi-empresa — filtros de carga de caché (sin columna `empresa` en articulos/familias/precios)
+- `AppLoader.ConectarProductos`: productos, industrias, terceros, regiones, sucursales y categorías filtran **directo** por `empresa = empresa activa`. **familias** filtran por `producto IN (productos de la empresa)`, **artículos** por `familia IN (familias de la empresa)` (cascada de 2 niveles), y **precios** por `region IN (regiones de la empresa)` — sin tocar la columna `empresa` de esas tablas hijas.
+- **empresa por defecto al crear** (`GuardarNuevo`): Productos, Industrias, Terceros, Regiones, Sucursales y Categorías establecen `empresa = AppState.EmpresaActiva`.
+- **`AppsheetsSync`**: dejó de usar `articulos.empresa`; filtra los artículos de la empresa por cascada `familia → producto → empresa` (en INSERT y en UPDATE de marcado eliminado).
+
+#### Login (LoginWindow) — carga diferida, robustez y UX
+- **`AppLoader.ConectarUsuarios()`** (nuevo): antes de iniciar sesión solo carga `usuarios` (+`empresas`), lo mínimo para validar el login. El resto de catálogos se carga **tras loguear** con `ConectarProductos` (ya filtrado por empresa). `AppState.RegionActiva` se calcula **después** de `ConectarProductos` (cuando `sucursales` ya está en caché).
+- **Bloqueo total de controles**: `HabilitarControles(bool)` habilita/deshabilita juntos usuario, contraseña (`PasswordBox`), caja de texto visible y **botón del ojo** (antes el ojo seguía activo y reactivaba el campo al alternar).
+- **Caída de conexión post-login**: la carga de caché va en `try/catch`; si se cae la red, avisa en el label, cancela el inicio de sesión (limpia `SesionActiva`/`UsuarioActivo`) y **desbloquea todo** para reintentar, en vez de cerrarse.
+- **Cursor del ojo**: al alternar mostrar/ocultar, el cursor del `PasswordBox` se reposiciona en el índice que tenía la caja visible (vía el método interno `PasswordBox.Select` por reflexión); antes saltaba al inicio.
+
+#### ConsolaMovimientos — cierre con cambios sin guardar
+- Al cerrar la ventana (o al cerrar sesión), si hay **cambios sin guardar** en alguna pestaña de detalle (nuevo/editar), pide confirmación **Sí/No listando exactamente los títulos** de las pestañas afectadas. Detecta cambios por reflexión: propiedad `HayCambios` (PedidosDetalle) o campo `_hayCambios` (resto de detalles); los paneles General/selectores cuentan como "sin cambios". Si no hay cambios, cierra sin preguntar. Flag `_cierreConfirmado` para no preguntar dos veces en el flujo de logout. Helpers: `PestañasConCambios`, `TituloPestaña`, `TieneCambiosSinGuardar`, `ConfirmarPerderCambios`.
+
+#### Notas / pendientes de esta sesión
+- **Sin build en el entorno cloud**: todos los cambios siguen patrones existentes pero **no se compilaron**; verificar localmente (especialmente: alto de fila fijo en modo importar/oscuro, select-all en columnas Cantidad de plantilla, restricción numérica, y el aviso de cierre con cambios).
+- **Orden de despliegue para borrar columnas**: como `ConectarProductos` usa `SELECT *`, conviene desplegar primero esta versión y **luego** borrar en SQL las columnas `empresa` de `articulos`/`familias`/`precios` (una versión vieja corriendo sí fallaría si se borran antes).
 
 ### Sesión 2026-06-15 — Resiliencia ante red inestable (Bolivia), guards de conexión y rediseño/escalado del Dashboard (rama `claude/eloquent-hopper-gi9nlv`)
 

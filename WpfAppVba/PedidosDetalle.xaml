@@ -363,8 +363,14 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- DataGrid artículos -->
-                    <DataGrid x:Name="GridItems" Grid.Row="1"
+                    <!-- DataGrid artículos + Categorías (derecha) -->
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="220"/>
+                        </Grid.ColumnDefinitions>
+
+                    <DataGrid x:Name="GridItems" Grid.Column="0"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
                               SelectionMode="Single"
@@ -451,6 +457,33 @@
                                                 EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
                         </DataGrid.Columns>
                     </DataGrid>
+
+                        <!-- Categorías (a la derecha del grid) -->
+                        <Border Grid.Column="1"
+                                Background="{DynamicResource ThemeBgSurface}"
+                                BorderBrush="{DynamicResource ThemeBorde}"
+                                BorderThickness="1,0,0,0"
+                                Padding="10,8">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Top" Text="Categorías"
+                                           Style="{StaticResource SectionHeader}"/>
+                                <DataGrid x:Name="GridCategorias"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          IsReadOnly="True"
+                                          HeadersVisibility="Column"
+                                          GridLinesVisibility="Horizontal"
+                                          BorderThickness="0"
+                                          FontSize="10">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Categoría" Binding="{Binding Categoria}" Width="*"/>
+                                        <DataGridTextColumn Header="Cant."     Binding="{Binding Cantidad}"  Width="50"
+                                                            ElementStyle="{StaticResource CeldaNumero}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </DockPanel>
+                        </Border>
+                    </Grid>
 
                     <!-- Panel inferior: Precios | Stock | Observaciones -->
                     <Grid Grid.Row="2" Background="{DynamicResource ThemeBgSurface}">
@@ -689,8 +722,14 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Grid entregas -->
-                    <DataGrid x:Name="GridEntregas" Grid.Row="1"
+                    <!-- Grid entregas + Categorías (derecha) -->
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="220"/>
+                        </Grid.ColumnDefinitions>
+
+                    <DataGrid x:Name="GridEntregas" Grid.Column="0"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
                               SelectionMode="Single"
@@ -744,6 +783,33 @@
                                                 Binding="{Binding HoraStr}"     Width="74"/>
                         </DataGrid.Columns>
                     </DataGrid>
+
+                        <!-- Categorías entregadas (a la derecha del grid) -->
+                        <Border Grid.Column="1"
+                                Background="{DynamicResource ThemeBgSurface}"
+                                BorderBrush="{DynamicResource ThemeBorde}"
+                                BorderThickness="1,0,0,0"
+                                Padding="10,8">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Top" Text="Categorías"
+                                           Style="{StaticResource SectionHeader}"/>
+                                <DataGrid x:Name="GridCategoriasE"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          IsReadOnly="True"
+                                          HeadersVisibility="Column"
+                                          GridLinesVisibility="Horizontal"
+                                          BorderThickness="0"
+                                          FontSize="10">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Categoría" Binding="{Binding Categoria}" Width="*"/>
+                                        <DataGridTextColumn Header="Cant."     Binding="{Binding Cantidad}"  Width="50"
+                                                            ElementStyle="{StaticResource CeldaNumero}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </DockPanel>
+                        </Border>
+                    </Grid>
                 </Grid>
             </TabItem>
 
@@ -793,30 +859,6 @@
                                                Foreground="{DynamicResource ThemeTexto}"/>
                                 </StackPanel>
                             </Border>
-                            <!-- Categorías -->
-                            <Border Style="{StaticResource MetricCard}" Padding="6,4" VerticalAlignment="Top">
-                                <StackPanel>
-                                    <TextBlock Text="Categorías" FontSize="10"
-                                               Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-                                    <DataGrid x:Name="GridCategorias"
-                                              AutoGenerateColumns="False"
-                                              CanUserAddRows="False"
-                                              IsReadOnly="True"
-                                              HeadersVisibility="Column"
-                                              GridLinesVisibility="Horizontal"
-                                              BorderThickness="0"
-                                              FontSize="10"
-                                              Width="170" MaxHeight="78">
-                                        <DataGrid.Columns>
-                                            <DataGridTextColumn Header="Categoría"
-                                                                Binding="{Binding Categoria}" Width="*"/>
-                                            <DataGridTextColumn Header="Cant."
-                                                                Binding="{Binding Cantidad}" Width="50"
-                                                                ElementStyle="{StaticResource CeldaNumero}"/>
-                                        </DataGrid.Columns>
-                                    </DataGrid>
-                                </StackPanel>
-                            </Border>
                         </StackPanel>
                     </StackPanel>
 
@@ -846,30 +888,6 @@
                                                FontSize="17" FontWeight="SemiBold"
                                                HorizontalAlignment="Right"
                                                Foreground="{DynamicResource ThemeTexto}"/>
-                                </StackPanel>
-                            </Border>
-                            <!-- Categorías entregadas -->
-                            <Border Style="{StaticResource MetricCard}" Padding="6,4" VerticalAlignment="Top">
-                                <StackPanel>
-                                    <TextBlock Text="Categorías" FontSize="10"
-                                               Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,2"/>
-                                    <DataGrid x:Name="GridCategoriasE"
-                                              AutoGenerateColumns="False"
-                                              CanUserAddRows="False"
-                                              IsReadOnly="True"
-                                              HeadersVisibility="Column"
-                                              GridLinesVisibility="Horizontal"
-                                              BorderThickness="0"
-                                              FontSize="10"
-                                              Width="170" MaxHeight="78">
-                                        <DataGrid.Columns>
-                                            <DataGridTextColumn Header="Categoría"
-                                                                Binding="{Binding Categoria}" Width="*"/>
-                                            <DataGridTextColumn Header="Cant."
-                                                                Binding="{Binding Cantidad}" Width="50"
-                                                                ElementStyle="{StaticResource CeldaNumero}"/>
-                                        </DataGrid.Columns>
-                                    </DataGrid>
                                 </StackPanel>
                             </Border>
                         </StackPanel>

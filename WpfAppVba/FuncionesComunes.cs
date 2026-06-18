@@ -85,6 +85,52 @@ namespace WpfAppVba
             e.Handled = !e.Text.All(c => char.IsLetter(c) || (permitirEspacios && c == ' '));
         }
 
+        // ─── Restricción de entrada para celdas de Cantidad ──────────────────
+        /// <summary>
+        /// Restringe un TextBox a una cantidad numérica: solo dígitos, separador de
+        /// miles (,) y un único separador decimal (.). Bloquea letras y otros caracteres,
+        /// tanto al escribir como al pegar.
+        /// </summary>
+        public static void RestringirACantidad(TextBox tb)
+        {
+            tb.PreviewTextInput -= CantidadPreviewTextInput;
+            tb.PreviewTextInput += CantidadPreviewTextInput;
+            DataObject.RemovePastingHandler(tb, CantidadPasting);
+            DataObject.AddPastingHandler(tb, CantidadPasting);
+        }
+
+        private static void CantidadPreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            if (sender is not TextBox tb) return;
+            // Texto resultante tras aplicar la entrada sobre la selección actual.
+            string prospecto = tb.Text.Substring(0, tb.SelectionStart)
+                             + e.Text
+                             + tb.Text.Substring(tb.SelectionStart + tb.SelectionLength);
+            e.Handled = !EsCantidadValida(prospecto);
+        }
+
+        private static void CantidadPasting(object sender, DataObjectPastingEventArgs e)
+        {
+            if (sender is not TextBox tb) { e.CancelCommand(); return; }
+            if (!e.DataObject.GetDataPresent(typeof(string))) { e.CancelCommand(); return; }
+
+            string pegado    = (string)e.DataObject.GetData(typeof(string))!;
+            string prospecto = tb.Text.Substring(0, tb.SelectionStart)
+                             + pegado
+                             + tb.Text.Substring(tb.SelectionStart + tb.SelectionLength);
+            if (!EsCantidadValida(prospecto)) e.CancelCommand();
+        }
+
+        // Válido: dígitos y separadores de miles/decimales (',' o '.'); cualquier otro
+        // carácter (letras, símbolos, espacios) se rechaza. Se aceptan ambos separadores
+        // para no depender de la cultura (es-BO usa ',' decimal y '.' miles; en-US al revés).
+        private static bool EsCantidadValida(string s)
+        {
+            foreach (char c in s)
+                if (!char.IsDigit(c) && c != ',' && c != '.') return false;
+            return true;
+        }
+
         // ─── Equivalente a UnirVariables(...) ────────────────────────────────
         /// <summary>
         /// Une valores no vacíos separados por espacio.

@@ -259,6 +259,15 @@ namespace WpfAppVba
         {
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
 
+            // Todo artículo debe tener una familia EXISTENTE (ya no existe "Sin
+            // Clasificar"). ResolverFamiliaId devuelve "" si está vacío o no existe.
+            if (string.IsNullOrEmpty(ResolverFamiliaId()))
+            {
+                MessageBox.Show("Debe asignar una familia existente al artículo.", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
             return AppState.EventoFormularioA switch
             {
                 "modificar" => GuardarEditar(),
@@ -384,6 +393,7 @@ namespace WpfAppVba
                 Sql.ArticulosObj.EstablecerItem("edicion",    id, DateTime.Now);
                 Sql.ArticulosObj.EstablecerItem("usuario",    id, AppState.UsuarioActivo);
                 Sql.ArticulosObj.EstablecerItem("usuarioE",   id, AppState.UsuarioActivo);
+                Sql.ArticulosObj.EstablecerItem("estado",     id, "mostrar");
 
                 // Reasignar índices de la familia por su orden, saltando los reservados
                 // por artículos eliminados (sin reutilizarlos).

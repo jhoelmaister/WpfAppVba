@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -573,14 +574,86 @@ namespace WpfAppVba
             catch { }
         }
 
+        // Marcado cuando el cierre ya fue confirmado (p. ej. desde Cerrar sesión) para
+        // que el evento Closing no vuelva a preguntar.
+        private bool _cierreConfirmado = false;
+
+        // Devuelve los títulos de las pestañas (nuevo/editar) con cambios sin guardar,
+        // tanto en la sección actual como en las demás secciones.
+        private List<string> PestañasConCambios()
+        {
+            var res = new List<string>();
+            foreach (TabItem t in TabContenido.Items)
+                if (t != TabFijo && TieneCambiosSinGuardar(t.Content)) res.Add(TituloPestaña(t));
+            foreach (var lista in _pestañasPorSeccion.Values)
+                foreach (var t in lista)
+                    if (TieneCambiosSinGuardar(t.Content)) res.Add(TituloPestaña(t));
+            return res;
+        }
+
+        // Extrae el texto del título de una pestaña (el Header es un StackPanel con un
+        // TextBlock de título seguido del botón de cierre).
+        private static string TituloPestaña(TabItem t)
+        {
+            if (t.Header is System.Windows.Controls.StackPanel sp)
+                foreach (var hijo in sp.Children)
+                    if (hijo is System.Windows.Controls.TextBlock tb) return tb.Text;
+            return t.Header?.ToString() ?? "(pestaña)";
+        }
+
+        // Lee por reflexión el estado de cambios del detalle: la propiedad "HayCambios"
+        // (PedidosDetalle) o el campo "_hayCambios" (resto de detalles). Los paneles que
+        // no tengan ninguno (General/selectores) cuentan como "sin cambios".
+        private static bool TieneCambiosSinGuardar(object? content)
+        {
+            if (content == null) return false;
+            var tipo = content.GetType();
+
+            var prop = tipo.GetProperty("HayCambios",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (prop != null && prop.PropertyType == typeof(bool))
+                return prop.GetValue(content) is bool pb && pb;
+
+            var field = tipo.GetField("_hayCambios",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            if (field != null && field.FieldType == typeof(bool))
+                return field.GetValue(content) is bool fb && fb;
+
+            return false;
+        }
+
+        // Pide confirmación si hay cambios sin guardar, indicando EXACTAMENTE en qué
+        // pestañas. Devuelve true si se puede cerrar (no hay cambios o el usuario aceptó
+        // perderlos).
+        private bool ConfirmarPerderCambios()
+        {
+            var conCambios = PestañasConCambios();
+            if (conCambios.Count == 0) return true;
+
+            string detalle = string.Join("\n", conCambios.ConvertAll(t => "   •  " + t));
+            var res = MessageBox.Show(
+                "Hay cambios sin guardar en:\n\n" + detalle +
+                "\n\nSi cierras se perderán esos cambios.\n¿Seguro que deseas cerrar?",
+                "Cerrar", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            return res == MessageBoxResult.Yes;
+        }
+
         private void ConsolaMovimientos_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            if (!_cierreConfirmado && !ConfirmarPerderCambios())
+            {
+                e.Cancel = true;   // el usuario decidió no cerrar
+                return;
+            }
             ConexionEstado.Cambio -= OnConexionCambio;
             MarcarInactivo();
         }
 
         private void BtnCerrarSesion_Click(object sender, RoutedEventArgs e)
         {
+            if (!ConfirmarPerderCambios()) return;
+            _cierreConfirmado = true;   // ya confirmado: Closing no vuelve a preguntar
+
             MarcarInactivo();
             AppState.SesionActiva  = false;
             AppState.UsuarioActivo = "";

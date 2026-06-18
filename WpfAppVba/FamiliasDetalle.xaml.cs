@@ -99,6 +99,15 @@ namespace WpfAppVba
         {
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
 
+            // La familia debe tener asignado un producto EXISTENTE (ResolverProductoId
+            // devuelve "" tanto si está vacío como si el código no existe).
+            if (string.IsNullOrEmpty(ResolverProductoId()))
+            {
+                MessageBox.Show("Debe asignar un producto existente a la familia.", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
             return AppState.EventoFormularioF == "modificar"
                 ? GuardarEditar()
                 : GuardarNuevo();
