@@ -26,9 +26,9 @@
     <!-- ── Tabs ─────────────────────────────────────────────────────── -->
     <SolidColorBrush x:Key="ThemeTabSelBg"     Color="#EEF2FF"/>
     <SolidColorBrush x:Key="ThemeTabHoverBg"   Color="#E8ECF8"/>
-    <SolidColorBrush x:Key="ThemeNavActivoBg"  Color="#5C5F66"/>
+    <SolidColorBrush x:Key="ThemeNavActivoBg"  Color="#4A90E2"/>
     <SolidColorBrush x:Key="ThemeNavHoverBg"   Color="#CFE4FF"/>
-    <SolidColorBrush x:Key="ThemeNavActivoFg"  Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ThemeNavActivoFg"  Color="#000000"/>
 
     <!-- ── DataGrid ─────────────────────────────────────────────────── -->
     <SolidColorBrush x:Key="ThemeDataGridBg"      Color="#FFFFFF"/>
