@@ -59,6 +59,17 @@ jobs:
           -p:PublishSingleFile=true -p:DebugType=none
           -o ./publish
 
+      - name: Descargar release anterior (para generar delta)
+        # vpk pack solo genera delta si encuentra localmente el .nupkg full de la
+        # versión previa. Cada corrida de Actions empieza desde cero, así que sin este
+        # paso siempre se publica solo el paquete full (descarga completa para el usuario).
+        # continue-on-error: en la primera release no hay nada que descargar.
+        continue-on-error: true
+        run: >
+          vpk download github
+          --repoUrl https://github.com/jhoelmaister/wpfappvba
+          --token ${{ secrets.GITHUB_TOKEN }}
+
       - name: Pack (Setup.exe + nupkg full/delta + RELEASES)
         run: >
           vpk pack
