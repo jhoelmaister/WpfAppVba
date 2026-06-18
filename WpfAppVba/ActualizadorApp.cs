@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Velopack;
 using Velopack.Sources;
@@ -31,8 +32,22 @@ namespace WpfAppVba
         /// <summary>Versión nueva detectada (null si no hay ninguna pendiente).</summary>
         public string? VersionNueva => _update?.TargetFullRelease.Version.ToString();
 
-        /// <summary>Tamaño del paquete de la versión nueva, en MB (0 si no hay update).</summary>
-        public double TamañoDescargaMB => (_update?.TargetFullRelease.Size ?? 0) / 1024.0 / 1024.0;
+        /// <summary>
+        /// Tamaño real a descargar, en MB (0 si no hay update). Si hay deltas disponibles
+        /// (caso normal), Velopack descarga esos en vez del paquete completo; usar
+        /// TargetFullRelease.Size aquí mostraría siempre el peso de la app entera.
+        /// </summary>
+        public double TamañoDescargaMB
+        {
+            get
+            {
+                if (_update == null) return 0;
+                long bytes = _update.DeltasToTarget.Length > 0
+                    ? _update.DeltasToTarget.Sum(d => d.Size)
+                    : _update.TargetFullRelease.Size;
+                return bytes / 1024.0 / 1024.0;
+            }
+        }
 
         /// <summary>
         /// Consulta el feed. Devuelve true si hay una versión más nueva que la instalada.
