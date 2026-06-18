@@ -36,10 +36,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Borde" Property="Background" Value="{DynamicResource ThemeTabHoverBg}"/>
+                                <Setter TargetName="Borde" Property="Background" Value="{DynamicResource ThemeNavHoverBg}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Borde" Property="Background" Value="{DynamicResource ThemeTabSelBg}"/>
+                                <Setter TargetName="Borde" Property="Background" Value="{DynamicResource ThemeNavActivoBg}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
