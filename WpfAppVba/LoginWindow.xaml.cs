@@ -343,6 +343,13 @@ namespace WpfAppVba
             {
                 MostrarEstado("Cuenta o contraseña incorrecta", Colors.Red);
                 HabilitarControles(true);
+
+                TxtContrasena.Clear();
+                TxtContrasenaVisible.Clear();
+                if (TxtContrasena.Visibility == Visibility.Visible)
+                    TxtContrasena.Focus();
+                else
+                    TxtContrasenaVisible.Focus();
             }
         }
 

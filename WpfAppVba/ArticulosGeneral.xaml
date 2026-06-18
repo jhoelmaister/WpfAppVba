@@ -278,16 +278,26 @@
                     </Style>
                 </DataGrid.ColumnHeaderStyle>
 
-                <!-- Color de selección propio (azul consistente, sin depender del
-                     resaltado del sistema que cambiaba de tono al perder el foco)
-                     + verde cuando está marcado con checkbox (gana sobre el azul).
-                     Alto FIJO de fila (Height=34) para que la selección NO cambie el
-                     tamaño de las filas, y SIN cambiar el FontWeight (que forzaba a WPF
-                     a re-medir la fila y producía el "salto" con la virtualización). -->
+                <!-- Zebra calculado desde el dato (FilaPar), NO desde AlternationIndex:
+                     esa propiedad la administra internamente el generador de
+                     contenedores y es de solo lectura; al reciclar contenedores
+                     virtualizados (selección, marcado, scroll) no siempre se
+                     recalculaba bien y el zebra quedaba desfasado. Color de selección
+                     propio (azul, sin depender del resaltado del sistema que cambiaba
+                     de tono al perder el foco) + verde cuando está marcado con
+                     checkbox (gana sobre el azul, y ambos ganan sobre el zebra por ir
+                     después en la lista de triggers). Alto FIJO de fila (Height=34)
+                     para que la selección NO cambie el tamaño de las filas, y SIN
+                     cambiar el FontWeight (que forzaba a WPF a re-medir la fila y
+                     producía el "salto" con la virtualización). -->
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">
                         <Setter Property="Height" Value="34"/>
+                        <Setter Property="Background" Value="{DynamicResource ThemeDataGridBg}"/>
                         <Style.Triggers>
+                            <DataTrigger Binding="{Binding FilaPar}" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource ThemeDataGridAltBg}"/>
+                            </DataTrigger>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter Property="Background" Value="{DynamicResource ThemeFilaSelGrid}"/>
                             </Trigger>

@@ -6,7 +6,7 @@
         WindowState="Maximized"
         MinWidth="960" MinHeight="620"
         WindowStartupLocation="CenterScreen"
-        Background="#1E2235"
+        Background="{DynamicResource ThemeBgPrincipal}"
         Icon="icono.ico"
         Closing="ConsolaMovimientos_Closing">
 
@@ -22,7 +22,7 @@
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="Foreground" Value="#9AA3B8"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -36,10 +36,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Borde" Property="Background" Value="#232840"/>
+                                <Setter TargetName="Borde" Property="Background" Value="{DynamicResource ThemeNavHoverBg}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Borde" Property="Background" Value="#2D3350"/>
+                                <Setter TargetName="Borde" Property="Background" Value="{DynamicResource ThemeNavActivoBg}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -139,7 +139,7 @@
         <!-- ════════════════════════════════════════════════════════════ -->
         <!-- TOP BAR                                                      -->
         <!-- ════════════════════════════════════════════════════════════ -->
-        <Border Grid.Row="0" Background="#252A40">
+        <Border Grid.Row="0" Background="{DynamicResource ThemeBgTopBar}">
             <Grid Margin="16,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -158,7 +158,7 @@
                     </Border>
                     <TextBlock Text="Sistema de Gestión"
                                FontSize="15" FontWeight="Bold"
-                               Foreground="White"
+                               Foreground="{DynamicResource ThemeTexto}"
                                VerticalAlignment="Center"/>
                 </StackPanel>
 
@@ -177,25 +177,25 @@
                             Style="{StaticResource QuickBtn}" Background="#43A047"
                             Click="BtnQuick_Entrada_Click"/>
 
-                    <Rectangle Width="1" Height="24" Fill="#3A4059" Margin="10,0"/>
+                    <Rectangle Width="1" Height="24" Fill="{DynamicResource ThemeBorde}" Margin="10,0"/>
 
                     <TextBlock x:Name="LblUsuario"
-                               FontSize="11" Foreground="#9AA3B8"
+                               FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
                                VerticalAlignment="Center"/>
 
-                    <Rectangle Width="1" Height="24" Fill="#3A4059" Margin="10,0"/>
+                    <Rectangle Width="1" Height="24" Fill="{DynamicResource ThemeBorde}" Margin="10,0"/>
 
                     <TextBlock x:Name="LblSucursal"
-                               FontSize="11" Foreground="#9AA3B8"
+                               FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
                                VerticalAlignment="Center"/>
 
-                    <Rectangle Width="1" Height="24" Fill="#3A4059" Margin="10,0"/>
+                    <Rectangle Width="1" Height="24" Fill="{DynamicResource ThemeBorde}" Margin="10,0"/>
 
                     <TextBlock x:Name="LblEmpresa"
-                               FontSize="11" Foreground="#9AA3B8"
+                               FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
                                VerticalAlignment="Center"/>
 
-                    <Rectangle Width="1" Height="24" Fill="#3A4059" Margin="10,0"/>
+                    <Rectangle Width="1" Height="24" Fill="{DynamicResource ThemeBorde}" Margin="10,0"/>
 
                     <!-- ── Actualización de la app (manual / opt-in) ──────────── -->
                     <!-- Oculto mientras no haya versión nueva. 3 estados visuales. -->
@@ -253,7 +253,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- ── BARRA LATERAL ──────────────────────────────────── -->
-            <Border Grid.Column="0" Background="#1A1E2E">
+            <Border Grid.Column="0" Background="{DynamicResource ThemeBgSidebar}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
@@ -291,7 +291,7 @@
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Movimientos_Click"/>
 
-                            <Rectangle Height="1" Fill="#252A40" Margin="12,8"/>
+                            <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="12,8"/>
 
                             <Button x:Name="BtnNav_Terceros"
                                     Content="👥  Terceros"
@@ -349,7 +349,7 @@
                     <!-- Cerrar sesión (fijo al fondo) -->
                     <Border Grid.Row="1"
                             BorderThickness="0,1,0,0"
-                            BorderBrush="#252A40">
+                            BorderBrush="{DynamicResource ThemeBorde}">
                         <Button Content="⏻  Cerrar Sesión"
                                 Style="{StaticResource NavBtn}"
                                 Foreground="#EF5350"

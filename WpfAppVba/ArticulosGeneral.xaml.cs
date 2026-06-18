@@ -727,11 +727,15 @@ namespace WpfAppVba
             else
                 _seleccionados.Add(idActual);
 
-            CargarArticulos();
+            // Refresco incremental: conserva las instancias de fila (y sus contenedores
+            // visuales reciclados) en vez de reemplazar todo el ItemsSource. Reemplazar
+            // la lista entera (CargarArticulos) hacía que la virtualización reciclara
+            // contenedores entre instancias distintas y se viera un "parpadeo" de
+            // colores de fondo al seleccionar/marcar, sobre todo en modo oscuro.
+            RefrescarGridIncremental();
 
             // Restaurar selección y foco al mismo ítem
-            var item = (Grid1.ItemsSource as System.Collections.Generic.List<ArticuloFila>)
-                       ?.Find(x => x.Id == idActual);
+            var item = FilasGrid.Find(x => x.Id == idActual);
             if (item != null) { Grid1.SelectedItem = item; Grid1.ScrollIntoView(item); }
             GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
@@ -749,6 +753,9 @@ namespace WpfAppVba
     public class ArticuloFila
     {
         public int    Linea          { get; set; }
+        // Zebra de Grid1 calculado desde el dato (no desde AlternationIndex, que es
+        // solo lectura y se desfasa al reciclar contenedores virtualizados).
+        public bool   FilaPar        => Linea % 2 == 0;
         public string Id             { get; set; } = "";
         public string Codigo         { get; set; } = "";
         public string Categoria      { get; set; } = "";
