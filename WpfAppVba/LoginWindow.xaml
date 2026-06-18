@@ -126,52 +126,92 @@
                            Foreground="{DynamicResource ThemeTexto}"
                            HorizontalAlignment="Center" Margin="0,0,0,24"/>
 
-                <!-- Usuario -->
-                <TextBlock Text="Usuario" FontSize="12"
-                           Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,5"/>
-                <TextBox x:Name="TxtCuenta" Style="{StaticResource ModernInput}" Margin="0,0,0,14"/>
+                <!-- ── Actualización obligatoria (Velopack) ───────────────────── -->
+                <!-- Mientras haya una versión nueva pendiente, reemplaza el formulario
+                     de login: el usuario debe actualizar antes de poder ingresar. -->
+                <StackPanel x:Name="BloqueActualizar" Visibility="Collapsed">
+                    <TextBlock Text="⚠ Actualización requerida" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeTexto}"
+                               HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                    <TextBlock x:Name="LblVersionNueva" FontSize="11" TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               Foreground="{DynamicResource ThemeTextoSec}"
+                               HorizontalAlignment="Center" Margin="0,0,0,16"/>
 
-                <!-- Contraseña -->
-                <TextBlock Text="Contraseña" FontSize="12"
-                           Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,5"/>
-                <Grid Margin="0,0,0,18">
-                    <!-- Oculta (por defecto) -->
-                    <PasswordBox x:Name="TxtContrasena" Style="{StaticResource ModernPassword}"
-                                 Padding="10,0,40,0"
+                    <!-- Estado A: hay versión nueva (el usuario decide cuándo) -->
+                    <Button x:Name="BtnActualizar" Content="🔄  Actualizar ahora"
+                            Style="{StaticResource BtnPrimario}" Background="#6C4AE3"
+                            Click="BtnActualizar_Click"/>
+
+                    <!-- Estado B: descargando en segundo plano -->
+                    <StackPanel x:Name="PanelDescarga" Visibility="Collapsed">
+                        <TextBlock x:Name="LblDescarga" Text="Descargando…" FontSize="11"
+                                   Foreground="{DynamicResource ThemeTextoSec}"
+                                   HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                        <ProgressBar x:Name="BarraDescarga" Height="8"
+                                     Minimum="0" Maximum="100" Value="0"
+                                     Background="{DynamicResource ThemeInputBg}"
+                                     Foreground="#6C4AE3" BorderThickness="0"/>
+                    </StackPanel>
+
+                    <!-- Estado C: lista para reiniciar (el usuario decide cuándo) -->
+                    <Button x:Name="BtnReiniciar" Visibility="Collapsed"
+                            Content="✅  Reiniciar para actualizar"
+                            Style="{StaticResource BtnPrimario}" Background="#2E7D32"
+                            Click="BtnReiniciar_Click"/>
+                </StackPanel>
+
+                <!-- ── Formulario de login (oculto mientras haya actualización pendiente) ── -->
+                <StackPanel x:Name="PanelLogin">
+
+                    <!-- Usuario -->
+                    <TextBlock Text="Usuario" FontSize="12"
+                               Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,5"/>
+                    <TextBox x:Name="TxtCuenta" Style="{StaticResource ModernInput}" Margin="0,0,0,14"/>
+
+                    <!-- Contraseña -->
+                    <TextBlock Text="Contraseña" FontSize="12"
+                               Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,5"/>
+                    <Grid Margin="0,0,0,18">
+                        <!-- Oculta (por defecto) -->
+                        <PasswordBox x:Name="TxtContrasena" Style="{StaticResource ModernPassword}"
+                                     Padding="10,0,40,0"
+                                     KeyDown="TxtContrasena_KeyDown"/>
+                        <!-- Visible (al pulsar el ojo) -->
+                        <TextBox x:Name="TxtContrasenaVisible" Style="{StaticResource ModernInput}"
+                                 Padding="10,0,40,0" Visibility="Collapsed"
                                  KeyDown="TxtContrasena_KeyDown"/>
-                    <!-- Visible (al pulsar el ojo) -->
-                    <TextBox x:Name="TxtContrasenaVisible" Style="{StaticResource ModernInput}"
-                             Padding="10,0,40,0" Visibility="Collapsed"
-                             KeyDown="TxtContrasena_KeyDown"/>
-                    <!-- Botón mostrar / ocultar (icono monocromo: respeta el tema) -->
-                    <Button x:Name="BtnVerContrasena"
-                            Width="32" Height="32"
-                            HorizontalAlignment="Right" VerticalAlignment="Center"
-                            Margin="0,0,3,0"
-                            Background="Transparent" BorderThickness="0" Cursor="Hand"
-                            ToolTip="Mostrar contraseña"
-                            Click="BtnVerContrasena_Click">
-                        <TextBlock x:Name="IcoVerContrasena" Text="&#xE7B3;"
-                                   FontFamily="Segoe MDL2 Assets" FontSize="16"
-                                   Foreground="{DynamicResource ThemeTexto}"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Button>
-                </Grid>
+                        <!-- Botón mostrar / ocultar (icono monocromo: respeta el tema) -->
+                        <Button x:Name="BtnVerContrasena"
+                                Width="32" Height="32"
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Margin="0,0,3,0"
+                                Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                ToolTip="Mostrar contraseña"
+                                Click="BtnVerContrasena_Click">
+                            <TextBlock x:Name="IcoVerContrasena" Text="&#xE7B3;"
+                                       FontFamily="Segoe MDL2 Assets" FontSize="16"
+                                       Foreground="{DynamicResource ThemeTexto}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+                    </Grid>
 
-                <!-- Botón Ingresar -->
-                <Button x:Name="BtnIngresar" Content="Ingresar"
-                        Style="{StaticResource BtnPrimario}"
-                        Click="BtnIngresar_Click"/>
+                    <!-- Botón Ingresar -->
+                    <Button x:Name="BtnIngresar" Content="Ingresar"
+                            Style="{StaticResource BtnPrimario}"
+                            Click="BtnIngresar_Click"/>
 
-                <!-- Estado -->
-                <TextBlock x:Name="LblEstado" FontSize="11" Margin="0,10,0,0"
-                           HorizontalAlignment="Center" TextWrapping="Wrap"/>
+                    <!-- Estado -->
+                    <TextBlock x:Name="LblEstado" FontSize="11" Margin="0,10,0,0"
+                               HorizontalAlignment="Center" TextWrapping="Wrap"/>
 
-                <!-- Configurar conexión -->
-                <Button x:Name="BtnConfigurarConexion" Content="⚙ Configurar conexión"
-                        Style="{StaticResource BtnLink}"
-                        HorizontalAlignment="Center" Margin="0,6,0,0"
-                        Click="BtnConfigurarConexion_Click"/>
+                    <!-- Configurar conexión -->
+                    <Button x:Name="BtnConfigurarConexion" Content="⚙ Configurar conexión"
+                            Style="{StaticResource BtnLink}"
+                            HorizontalAlignment="Center" Margin="0,6,0,0"
+                            Click="BtnConfigurarConexion_Click"/>
+
+                </StackPanel>
 
             </StackPanel>
         </Border>
