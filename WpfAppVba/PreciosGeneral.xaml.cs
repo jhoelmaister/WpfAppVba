@@ -34,8 +34,8 @@ namespace WpfAppVba
             if (!AppState.EsAdmin)
             {
                 BtnNuevoPrecio.Visibility    = Visibility.Collapsed;
-                BtnEditarPrecio.Visibility   = Visibility.Collapsed;
                 BtnEliminarPrecio.Visibility = Visibility.Collapsed;
+                GridPrecios.ContextMenu      = null;
             }
         }
 
@@ -65,8 +65,14 @@ namespace WpfAppVba
 
         private void CmbRegion_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (ArticuloSeleccionado is PrecioArticuloFila fila)
-                CargarPrecios(fila.Id);
+            string? idSel = ArticuloSeleccionado?.Id;
+            CargarArticulos();
+            if (idSel == null) return;
+
+            var fila = (Grid1.ItemsSource as List<PrecioArticuloFila>)?.Find(f => f.Id == idSel);
+            if (fila == null) return;
+            Grid1.SelectedItem = fila;
+            CargarPrecios(fila.Id);
         }
 
         // ─── Árbol de productos/familias (igual a ArticulosGeneral) ───────────
@@ -171,7 +177,8 @@ namespace WpfAppVba
                     Id          = id,
                     Codigo      = codigo,
                     Descripcion = descCompleta,
-                    Estado      = Sql.ArticulosObj.ObtenerItem("estado", id)?.ToString() ?? ""
+                    Estado      = Sql.ArticulosObj.ObtenerItem("estado", id)?.ToString() ?? "",
+                    Precio      = ObtenerPrecioVigente(id, RegionSeleccionadaId)
                 });
             }
 
@@ -225,7 +232,8 @@ namespace WpfAppVba
                 Id       = id,
                 Codigo   = Sql.PreciosObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 Fecha    = fecha,
-                FechaStr = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
+                FechaStr = fecha != default ? $"{fecha:d}" : "",
+                HoraStr  = fecha != default ? $"{fecha:HH:mm:ss}" : "",
                 Region   = regionDesc,
                 Precio   = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0)
             };
@@ -315,6 +323,18 @@ namespace WpfAppVba
             if (e.Key != Key.Enter) return;
             e.Handled = true;
             BtnEditarPrecio_Click(sender, e);
+        }
+
+        // ─── Clic derecho en grid de precios → selecciona la fila bajo el cursor
+        //     antes de abrir el menú contextual (Nuevo/Editar/Eliminar Precio) ──
+        private void GridPrecios_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            DependencyObject? source = e.OriginalSource as DependencyObject;
+            while (source != null && source is not DataGridRow)
+                source = VisualTreeHelper.GetParent(source);
+
+            if (source is DataGridRow row)
+                row.IsSelected = true;
         }
 
         // ─── Botones de precio ────────────────────────────────────────────────
@@ -617,6 +637,7 @@ namespace WpfAppVba
         public string Codigo      { get; set; } = "";
         public string Descripcion { get; set; } = "";
         public string Estado      { get; set; } = "";
+        public double Precio      { get; set; }
     }
 
     public class PrecioHistFila
@@ -626,6 +647,7 @@ namespace WpfAppVba
         public string   Codigo   { get; set; } = "";
         public DateTime Fecha    { get; set; }
         public string   FechaStr { get; set; } = "";
+        public string   HoraStr  { get; set; } = "";
         public string   Region   { get; set; } = "";
         public double   Precio   { get; set; }
     }
