@@ -91,15 +91,17 @@
         <!-- Panel derecho -->
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>   <!-- Buscador -->
-                <RowDefinition Height="*"/>      <!-- Grid artículos -->
-                <RowDefinition Height="Auto"/>   <!-- Etiqueta historial -->
-                <RowDefinition Height="*"/>      <!-- Grid precios -->
+                <RowDefinition Height="Auto"/>   <!-- Buscador / filtro región -->
+                <RowDefinition Height="*"/>      <!-- Grid artículos / Grid precios -->
                 <RowDefinition Height="Auto"/>   <!-- Botones -->
             </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
             <!-- Buscador -->
-            <Grid Grid.Row="0" Margin="0,0,0,8">
+            <Grid Grid.Row="0" Grid.Column="0" Margin="0,0,8,8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -111,8 +113,20 @@
                         Click="BtnBuscar_Click"/>
             </Grid>
 
+            <!-- Filtro de región (arriba de GridPrecios) -->
+            <Grid Grid.Row="0" Grid.Column="1" Margin="8,0,0,8">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <TextBlock Text="Región:" VerticalAlignment="Center"
+                               FontSize="12" Margin="0,0,6,0"
+                               Foreground="{DynamicResource ThemeTextoSec}"/>
+                    <ComboBox x:Name="CmbRegion" Width="200" Height="26" FontSize="12"
+                              DisplayMemberPath="Descripcion" SelectedValuePath="Id"
+                              SelectionChanged="CmbRegion_SelectionChanged"/>
+                </StackPanel>
+            </Grid>
+
             <!-- Grid de artículos -->
-            <Border Grid.Row="1" CornerRadius="6" ClipToBounds="True"
+            <Border Grid.Row="1" Grid.Column="0" Margin="0,0,8,0" CornerRadius="6" ClipToBounds="True"
                     BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
                     Background="{DynamicResource ThemeBgSurface}">
             <DataGrid x:Name="Grid1"
@@ -135,20 +149,8 @@
             </DataGrid>
             </Border>
 
-            <!-- Filtro de región -->
-            <Grid Grid.Row="2" Margin="0,8,0,4">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <TextBlock Text="Región:" VerticalAlignment="Center"
-                               FontSize="12" Margin="0,0,6,0"
-                               Foreground="{DynamicResource ThemeTextoSec}"/>
-                    <ComboBox x:Name="CmbRegion" Width="200" Height="26" FontSize="12"
-                              DisplayMemberPath="Descripcion" SelectedValuePath="Id"
-                              SelectionChanged="CmbRegion_SelectionChanged"/>
-                </StackPanel>
-            </Grid>
-
             <!-- Grid de precios (historial) -->
-            <Border Grid.Row="3" CornerRadius="6" ClipToBounds="True"
+            <Border Grid.Row="1" Grid.Column="1" Margin="8,0,0,0" CornerRadius="6" ClipToBounds="True"
                     BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
                     Background="{DynamicResource ThemeBgSurface}">
             <DataGrid x:Name="GridPrecios"
@@ -165,7 +167,6 @@
                     <DataGridTextColumn Header="Línea"  Binding="{Binding Linea}"    Width="55"/>
                     <DataGridTextColumn Header="Código" Binding="{Binding Codigo}"   Width="80"/>
                     <DataGridTextColumn Header="Fecha"  Binding="{Binding FechaStr}" Width="160"/>
-                    <DataGridTextColumn Header="Región" Binding="{Binding Region}"   Width="*"/>
                     <DataGridTextColumn Header="Precio" Binding="{Binding Precio, StringFormat=#\,##0.##}" Width="120"
                                         ElementStyle="{StaticResource CeldaNumero}"/>
                 </DataGrid.Columns>
@@ -173,13 +174,22 @@
             </Border>
 
             <!-- Botones -->
-            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-                <Button x:Name="BtnNuevoPrecio"    Content="Nuevo Precio"    Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"   Click="BtnNuevoPrecio_Click"/>
-                <Button x:Name="BtnEditarPrecio"   Content="Editar Precio"   Margin="0,0,6,0" Style="{StaticResource BtnSecundario}" Click="BtnEditarPrecio_Click"/>
-                <Button x:Name="BtnEliminarPrecio" Content="Eliminar Precio" Margin="0,0,6,0" Style="{StaticResource BtnPeligro}"    Click="BtnEliminarPrecio_Click"/>
-                <Button Content="Cambiar Estado"  Margin="0,0,6,0" Style="{StaticResource BtnSuccess}"    Click="BtnCambiarEstado_Click"/>
-                <Button Content="Actualizar"      Margin="0,0,0,0" Style="{StaticResource BtnSecundario}" Click="BtnActualizar_Click"/>
-            </StackPanel>
+            <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,8,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Button x:Name="BtnListaPreciosPdf" Content="📄 Lista de Precios PDF" Grid.Column="0"
+                        HorizontalAlignment="Left" Style="{StaticResource BtnSecundario}"
+                        Click="BtnListaPreciosPdf_Click"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="BtnNuevoPrecio"    Content="Nuevo Precio"    Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"   Click="BtnNuevoPrecio_Click"/>
+                    <Button x:Name="BtnEditarPrecio"   Content="Editar Precio"   Margin="0,0,6,0" Style="{StaticResource BtnSecundario}" Click="BtnEditarPrecio_Click"/>
+                    <Button x:Name="BtnEliminarPrecio" Content="Eliminar Precio" Margin="0,0,6,0" Style="{StaticResource BtnPeligro}"    Click="BtnEliminarPrecio_Click"/>
+                    <Button Content="Cambiar Estado"  Margin="0,0,6,0" Style="{StaticResource BtnSuccess}"    Click="BtnCambiarEstado_Click"/>
+                    <Button Content="Actualizar"      Margin="0,0,0,0" Style="{StaticResource BtnSecundario}" Click="BtnActualizar_Click"/>
+                </StackPanel>
+            </Grid>
         </Grid>
     </Grid>
 </UserControl>

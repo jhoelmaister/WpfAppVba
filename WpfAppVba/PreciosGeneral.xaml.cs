@@ -4,6 +4,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using Microsoft.Win32;
+using PdfSharp;
+using PdfSharp.Drawing;
+using PdfSharp.Fonts;
+using PdfSharp.Pdf;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
@@ -106,10 +111,6 @@ namespace WpfAppVba
                 nodoTodos.Items.Add(nodoProd);
             }
 
-            // Nodo "Sin Clasificar"
-            var nodoSin = new TreeViewItem { Header = "Sin Clasificar", Tag = "sinclasificar" };
-            nodoTodos.Items.Add(nodoSin);
-
             nodoTodos.IsExpanded = true;
             Tree1.Items.Add(nodoTodos);
 
@@ -137,12 +138,7 @@ namespace WpfAppVba
                 // Filtro de árbol
                 if (!string.IsNullOrEmpty(tagFiltro))
                 {
-                    if (tagFiltro == "sinclasificar")
-                    {
-                        string famDescCheck = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? "";
-                        if (!string.IsNullOrEmpty(famId) && !string.IsNullOrEmpty(famDescCheck)) continue;
-                    }
-                    else if (tagFiltro.StartsWith("familia:"))
+                    if (tagFiltro.StartsWith("familia:"))
                     {
                         string famFiltro = tagFiltro.Substring("familia:".Length);
                         if (famId != famFiltro) continue;
@@ -448,6 +444,168 @@ namespace WpfAppVba
             Sql.PreciosObj.Actualizar();
             CargarArbol();
             CargarArticulos();
+        }
+
+        // ─── Lista de precios en PDF (agrupada por familia) ───────────────────
+        private void BtnListaPreciosPdf_Click(object sender, RoutedEventArgs e)
+        {
+            string regionId   = RegionSeleccionadaId;
+            string regionDesc = RegionSeleccionadaDesc;
+            if (string.IsNullOrEmpty(regionId))
+            {
+                MessageBox.Show("Seleccione una región primero.", "Lista de precios",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var dlg = new SaveFileDialog
+            {
+                Title            = "Guardar lista de precios",
+                FileName         = $"{DateTime.Now:yyyyMMdd HHmmss} lista de precios {regionDesc}.pdf",
+                DefaultExt       = ".pdf",
+                Filter           = "PDF (*.pdf)|*.pdf",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            };
+            if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
+
+            var btn = sender as Button;
+            try
+            {
+                if (btn != null) btn.IsEnabled = false;
+                Mouse.OverrideCursor = Cursors.Wait;
+
+                GenerarPdfListaPrecios(dlg.FileName, regionId, regionDesc);
+
+                MessageBox.Show("Lista de precios generada correctamente.", "Lista de precios",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al generar la lista de precios:\n{ex.Message}", "Lista de precios",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+                if (btn != null) btn.IsEnabled = true;
+            }
+        }
+
+        private void GenerarPdfListaPrecios(string filePath, string regionId, string regionDesc)
+        {
+            GlobalFontSettings.UseWindowsFontsUnderWindows = true;
+
+            var fontTitulo = new XFont("Arial", 14, XFontStyleEx.Bold);
+            var fontGrupo  = new XFont("Arial", 11, XFontStyleEx.Bold);
+            var fontCuerpo = new XFont("Arial", 10, XFontStyleEx.Regular);
+
+            const double margen = 40;
+            var document = new PdfDocument();
+            PdfPage page = document.AddPage();
+            page.Size = PageSize.A4;
+            XGraphics gfx = XGraphics.FromPdfPage(page);
+            double y = margen;
+
+            void NuevaPagina()
+            {
+                page = document.AddPage();
+                page.Size = PageSize.A4;
+                gfx = XGraphics.FromPdfPage(page);
+                y = margen;
+            }
+
+            void AsegurarEspacio(double alto)
+            {
+                if (y + alto > page.Height - margen) NuevaPagina();
+            }
+
+            gfx.DrawString($"Lista de Precios — {regionDesc}", fontTitulo, XBrushes.Black, new XPoint(margen, y));
+            y += 22;
+
+            int ufProd = Sql.ProductosObj.ContarFilas;
+            for (int i = 1; i <= ufProd; i++)
+            {
+                var prodIdObj = Sql.ProductosObj.Mover(i);
+                if (prodIdObj == null) continue;
+                string prodId   = prodIdObj.ToString()!;
+                string prodDesc = Sql.ProductosObj.ObtenerItem("descripcion", prodId)?.ToString() ?? prodId;
+
+                int ufFam = Sql.FamiliasObj.ContarFilas;
+                for (int j = 1; j <= ufFam; j++)
+                {
+                    var famIdObj = Sql.FamiliasObj.Mover(j);
+                    if (famIdObj == null) continue;
+                    string famId = famIdObj.ToString()!;
+                    if ((Sql.FamiliasObj.ObtenerItem("producto", famId)?.ToString() ?? "") != prodId) continue;
+                    string famDesc = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? famId;
+
+                    // Artículos visibles ("mostrar") de esta familia
+                    var articulos = new List<(string codigo, string desc, double precio)>();
+                    int ufArt = Sql.ArticulosObj.ContarFilas;
+                    for (int k = 1; k <= ufArt; k++)
+                    {
+                        var artIdObj = Sql.ArticulosObj.Mover(k);
+                        if (artIdObj == null) continue;
+                        string artId = artIdObj.ToString()!;
+                        if ((Sql.ArticulosObj.ObtenerItem("familia", artId)?.ToString() ?? "") != famId) continue;
+                        if ((Sql.ArticulosObj.ObtenerItem("estado",  artId)?.ToString() ?? "") != "mostrar") continue;
+
+                        string codigo = Sql.ArticulosObj.ObtenerItem("codigo",      artId)?.ToString() ?? "";
+                        string desc   = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString() ?? "";
+                        double precio = ObtenerPrecioVigente(artId, regionId);
+                        articulos.Add((codigo, desc, precio));
+                    }
+
+                    if (articulos.Count == 0) continue;
+
+                    AsegurarEspacio(18 + 14);
+                    gfx.DrawString($"{prodDesc} & {famDesc}", fontGrupo, XBrushes.Black, new XPoint(margen, y));
+                    y += 18;
+
+                    foreach (var art in articulos)
+                    {
+                        AsegurarEspacio(14);
+                        gfx.DrawString($"{art.codigo}  {art.desc}", fontCuerpo, XBrushes.Black, new XPoint(margen + 12, y));
+                        string precioStr = art.precio.ToString("#,##0.##");
+                        XSize sz = gfx.MeasureString(precioStr, fontCuerpo);
+                        gfx.DrawString(precioStr, fontCuerpo, XBrushes.Black,
+                            new XPoint(page.Width - margen - sz.Width, y));
+                        y += 14;
+                    }
+
+                    y += 10;
+                }
+            }
+
+            document.Save(filePath);
+        }
+
+        // ─── Precio vigente (más reciente) de un artículo en una región ───────
+        private double ObtenerPrecioVigente(string articuloId, string regionId)
+        {
+            double precio = 0;
+            DateTime mejorFecha = default;
+
+            int uf = Sql.PreciosObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.PreciosObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+
+                if (Sql.PreciosObj.ObtenerItem("articulo", id)?.ToString() != articuloId) continue;
+                if ((Sql.PreciosObj.ObtenerItem("region", id)?.ToString() ?? "") != regionId) continue;
+
+                var fechaObj = Sql.PreciosObj.ObtenerItem("fecha", id);
+                DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : default;
+                if (fecha >= mejorFecha)
+                {
+                    mejorFecha = fecha;
+                    precio = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0);
+                }
+            }
+
+            return precio;
         }
     }
 
