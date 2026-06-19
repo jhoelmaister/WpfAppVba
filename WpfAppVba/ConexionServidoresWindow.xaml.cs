@@ -140,35 +140,6 @@ namespace WpfAppVba
                             MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        private async void BtnRegenerarCodigos_Click(object sender, RoutedEventArgs e)
-        {
-            var r = MessageBox.Show(
-                "Se regenerarán los códigos (desde 1) de las tablas maestras, de documentosT/I/P/C " +
-                "y de precios.\n\nEsta acción SOBRESCRIBE los códigos existentes en el servidor activo. " +
-                "¿Continuar?",
-                "Regenerar códigos", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (r != MessageBoxResult.Yes) return;
-
-            BtnRegenerarCodigos.IsEnabled = false;
-            System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
-            try
-            {
-                string resumen = await System.Threading.Tasks.Task.Run(CodigoRegenerator.RegenerarTodos);
-                MessageBox.Show($"Códigos regenerados (filas actualizadas):\n\n{resumen}",
-                                "Regenerar códigos", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error al regenerar códigos:\n{ex.Message}",
-                                "Regenerar códigos", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                System.Windows.Input.Mouse.OverrideCursor = null;
-                BtnRegenerarCodigos.IsEnabled = true;
-            }
-        }
-
         private void BtnCerrar_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;

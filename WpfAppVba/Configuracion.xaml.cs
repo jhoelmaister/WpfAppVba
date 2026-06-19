@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -56,8 +57,9 @@ namespace WpfAppVba
                 TxtTipo.Text      = tipo;
 
                 bool esAdmin = AppState.EsAdmin;
-                CmbEmpresa.IsEnabled   = esAdmin;
-                CmbSucursal.IsEnabled  = esAdmin;
+                CmbEmpresa.IsEnabled          = esAdmin;
+                CmbSucursal.IsEnabled         = esAdmin;
+                BtnRegenerarCodigos.IsEnabled = esAdmin;
 
                 // Tema: si el valor de BD no es válido, usar el tema activo o "claro"
                 string temaInicial = temaDb.Trim().ToLowerInvariant() == ThemeManager.TemaOscuro
@@ -241,6 +243,39 @@ namespace WpfAppVba
         private void CmbTema_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             // El tema solo se aplica al guardar con BtnGuardarTema
+        }
+
+        // ─── Regenerar códigos (solo admin) ────────────────────────────────────
+        private async void BtnRegenerarCodigos_Click(object sender, RoutedEventArgs e)
+        {
+            var r = MessageBox.Show(
+                "Se regenerarán los códigos (desde 1) de las tablas maestras, de documentosT/I/P/C " +
+                "y de precios.\n\nEsta acción SOBRESCRIBE los códigos existentes en el servidor activo. " +
+                "¿Continuar?",
+                "Regenerar códigos", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (r != MessageBoxResult.Yes) return;
+
+            var btn = sender as Button;
+            try
+            {
+                if (btn != null) btn.IsEnabled = false;
+                Mouse.OverrideCursor = Cursors.Wait;
+
+                string resumen = await Task.Run(CodigoRegenerator.RegenerarTodos);
+
+                MessageBox.Show($"Códigos regenerados (filas actualizadas):\n\n{resumen}",
+                                "Regenerar códigos", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al regenerar códigos:\n{ex.Message}",
+                                "Regenerar códigos", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+                if (btn != null) btn.IsEnabled = true;
+            }
         }
 
         // ─── Sincronizar AppSheets ────────────────────────────────────────────
