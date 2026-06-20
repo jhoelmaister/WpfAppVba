@@ -96,22 +96,13 @@ namespace WpfAppVba.Data
             // Cascada de la empresa por relaciones (igual que documentosT→traspasos), en
             // vez de confiar en la columna 'empresa' de las tablas hijas:
             //   productos (empresa) → familias (familias.producto) → articulos (articulos.familia)
-            //   regiones  (empresa) → documentosL (documentosL.region) → precios (precios.documentoL)
+            // documentosL/precios cascadean igual (regiones → documentosL → precios), pero se
+            // cargan en ConectarDocumentos junto con los demás documentos del período.
             string fFamilias = string.IsNullOrEmpty(emp) ? ""
                 : $" AND producto IN (SELECT id FROM productos WHERE estadof = 'normal' AND empresa = '{emp}')";
             string fArticulos = string.IsNullOrEmpty(emp) ? ""
                 : $" AND a.familia IN (SELECT id FROM familias WHERE estadof = 'normal'" +
                   $" AND producto IN (SELECT id FROM productos WHERE estadof = 'normal' AND empresa = '{emp}'))";
-            // documentosL no tiene columna empresa → cascada por las regiones de la empresa.
-            string fDocumentosL = string.IsNullOrEmpty(emp)
-                ? ""
-                : $" AND region IN (SELECT id FROM regiones WHERE estadof = 'normal' AND empresa = '{emp}')";
-            // precios no tiene columna empresa → cascada por los documentosL de la empresa.
-            string fPrecios = string.IsNullOrEmpty(emp)
-                ? ""
-                : $" AND documentoL IN (SELECT id FROM documentosL WHERE estadof = 'normal'{fDocumentosL})";
-
-
 
             // usuarios: NO se filtra por empresa (necesario para el login).
             Sql.UsuariosObj.Conectar("usuarios",
@@ -148,13 +139,6 @@ namespace WpfAppVba.Data
 
             Sql.RegionesObj.Conectar("regiones",
                 $"SELECT * FROM regiones WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
-
-            // documentosL (cabecera de listas de precios) + precios (líneas).
-            Sql.DocumentosLObj.Conectar("documentosL",
-                $"SELECT * FROM documentosL WHERE estadof = 'normal'{fDocumentosL} ORDER BY fecha ASC");
-
-            Sql.PreciosObj.Conectar("precios",
-                $"SELECT * FROM precios WHERE estadof = 'normal'{fPrecios} ORDER BY documentoL ASC, indice ASC");
 
             var tiempo = DateTime.Now - inicio;
             System.Diagnostics.Debug.WriteLine($"ConectarProductos: {tiempo.TotalSeconds:F2}s");
@@ -268,6 +252,32 @@ namespace WpfAppVba.Data
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
                 $"AND vg.sucursal = '{suc}' " +
                 $"ORDER BY vd.documentoC ASC, vd.indice ASC");
+
+            // ── DocumentosL (listas de precios) ───────────────────────────────
+            // documentosL no tiene columna empresa ni sucursal → cascada por las
+            // regiones de la empresa (no aplica filtro de sucursal/origen/destino).
+            string emp = AppState.EmpresaActiva;
+            string fDocumentosL = string.IsNullOrEmpty(emp) ? ""
+                : $" AND region IN (SELECT id FROM regiones WHERE estadof = 'normal' AND empresa = '{emp}')";
+
+            Sql.DocumentosLObj.Conectar("documentosL",
+                $"SELECT * FROM documentosL " +
+                $"WHERE estadof = 'normal' " +
+                $"AND fecha >= '{aper}' AND fecha <= '{cier}'" +
+                $"{fDocumentosL} " +
+                $"ORDER BY fecha ASC");
+
+            // ── Precios ────────────────────────────────────────────────────────
+            string fDocumentosLJoin = string.IsNullOrEmpty(emp) ? ""
+                : $" AND vg.region IN (SELECT id FROM regiones WHERE estadof = 'normal' AND empresa = '{emp}')";
+
+            Sql.PreciosObj.Conectar("precios",
+                $"SELECT vd.* FROM precios AS vd " +
+                $"INNER JOIN documentosL AS vg ON vd.documentoL = vg.id " +
+                $"WHERE vg.estadof = 'normal' " +
+                $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}'" +
+                $"{fDocumentosLJoin} " +
+                $"ORDER BY vd.documentoL ASC, vd.indice ASC");
         }
     }
 }

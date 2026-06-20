@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
+using Microsoft.Data.SqlClient;
 
 namespace WpfAppVba.Data
 {
@@ -139,6 +141,7 @@ namespace WpfAppVba.Data
                 int ufArticulos   = Sql.ArticulosObj.ContarFilas;
                 int ufInventarios = Sql.InventariosObj.ContarFilas;
                 var apertura      = new AperturaItem[ufArticulos + 1]; // base-1 como VBA
+                var preciosApertura = ObtenerPreciosApertura(inicio);
 
                 for (int ciclo = 1; ciclo <= ufArticulos; ciclo++)
                 {
@@ -170,7 +173,8 @@ namespace WpfAppVba.Data
                     {
                         ArticuloId = id,
                         Fecha      = inicio,
-                        Cantidad   = cantidad
+                        Cantidad   = cantidad,
+                        Precio     = preciosApertura.TryGetValue(id, out var precioApertura) ? precioApertura : 0
                     };
                 }
 
@@ -185,6 +189,7 @@ namespace WpfAppVba.Data
 
                 int ufArticulos = Sql.ArticulosObj.ContarFilas;
                 var apertura    = new AperturaItem[ufArticulos + 1];
+                var preciosApertura = ObtenerPreciosApertura(inicio);
 
                 for (int ciclo = 1; ciclo <= ufArticulos; ciclo++)
                 {
@@ -196,7 +201,8 @@ namespace WpfAppVba.Data
                     {
                         ArticuloId = id,
                         Fecha      = inicio,
-                        Cantidad   = 0
+                        Cantidad   = 0,
+                        Precio     = preciosApertura.TryGetValue(id, out var precioApertura) ? precioApertura : 0
                     };
                 }
 
@@ -219,6 +225,7 @@ namespace WpfAppVba.Data
 
                 int ufArticulos = Sql.ArticulosObj.ContarFilas;
                 var aperturaNueva = new AperturaItem[ufArticulos + 1];
+                var preciosApertura = ObtenerPreciosApertura(final);
 
                 for (int ciclo = 1; ciclo <= ufArticulos; ciclo++)
                 {
@@ -230,7 +237,8 @@ namespace WpfAppVba.Data
                     {
                         ArticuloId = id,
                         Fecha      = final,
-                        Cantidad   = StockCalculator.ContarStock(id, final)
+                        Cantidad   = StockCalculator.ContarStock(id, final),
+                        Precio     = preciosApertura.TryGetValue(id, out var precioApertura) ? precioApertura : 0
                     };
                 }
 
@@ -242,6 +250,40 @@ namespace WpfAppVba.Data
             DataFechaInicio = inicio;
             DataFechaFinal  = final;
         }
+
+        /// <summary>
+        /// Precio de apertura por artículo: el de la documentoL más reciente con
+        /// fecha &lt;= fechaCorte (articulo → precios.articulo → precios.documentoL →
+        /// documentosL.fecha, máxima fecha). Consulta directa a SQL Server (bypassa
+        /// el caché, que queda filtrado por período) — una sola consulta para todos
+        /// los artículos, igual razón por la que documentosI/inventarios se cargan
+        /// sin filtro de fecha para poder calcular la apertura de stock.
+        /// </summary>
+        private static Dictionary<string, double> ObtenerPreciosApertura(DateTime fechaCorte)
+        {
+            var resultado = new Dictionary<string, double>();
+            var conn = DatabaseConnection.ObtenerConexion();
+            using var cmd = new SqlCommand(
+                "SELECT p.articulo, p.precio FROM precios AS p " +
+                "INNER JOIN documentosL AS dl ON p.documentoL = dl.id " +
+                "INNER JOIN ( " +
+                "    SELECT p2.articulo, MAX(dl2.fecha) AS maxFecha " +
+                "    FROM precios AS p2 " +
+                "    INNER JOIN documentosL AS dl2 ON p2.documentoL = dl2.id " +
+                "    WHERE p2.estadof = 'normal' AND dl2.estadof = 'normal' AND dl2.fecha <= @fecha " +
+                "    GROUP BY p2.articulo " +
+                ") AS ult ON ult.articulo = p.articulo AND dl.fecha = ult.maxFecha " +
+                "WHERE p.estadof = 'normal' AND dl.estadof = 'normal'", conn);
+            cmd.Parameters.AddWithValue("@fecha", fechaCorte);
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                string articuloId = reader["articulo"].ToString() ?? "";
+                if (articuloId == "" || resultado.ContainsKey(articuloId)) continue;
+                resultado[articuloId] = Convert.ToDouble(reader["precio"]);
+            }
+            return resultado;
+        }
     }
 
     // ─── Tipos auxiliares ─────────────────────────────────────────────────────
@@ -252,6 +294,7 @@ namespace WpfAppVba.Data
         public string   ArticuloId { get; set; } = "";
         public DateTime Fecha      { get; set; }
         public double   Cantidad   { get; set; }
+        public double   Precio     { get; set; }
     }
 
     /// <summary>Resultado de IniciarAsync() — indica qué ventana mostrar.</summary>

@@ -299,9 +299,21 @@ namespace WpfAppVba
 
         private double ObtenerPrecioArticulo(string artId)
         {
-            double precio = 0;
             DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
+
+            // Apertura como piso: precio vigente al inicio del período activo (igual
+            // que StockCalculator usa AperturaActiva como piso de cantidad), por si el
+            // caché de precios (filtrado por período) no tiene una lista más reciente.
+            double precio = 0;
             DateTime? mejorFecha = null;
+            foreach (var item in AppState.AperturaActiva)
+            {
+                if (item == null || item.ArticuloId != artId) continue;
+                if (item.Fecha > fechaDoc) continue;
+                precio     = item.Precio;
+                mejorFecha = item.Fecha;
+            }
+
             int uf = Sql.PreciosObj.ContarFilas;
             for (int p = 1; p <= uf; p++)
             {
