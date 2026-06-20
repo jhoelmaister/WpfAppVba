@@ -10,7 +10,8 @@ namespace WpfAppVba.Data
     ///   • documentosI/P/C → signo de la sucursal + correlativo por sucursal.
     ///   • documentosT (traspasos) → signo de la empresa + correlativo por empresa
     ///     (la empresa se obtiene por la cascada emitido → sucursales → empresas).
-    ///   • precios   → signo de la región + correlativo por región.
+    ///   • documentosL (listas de precios) → signo de la empresa + correlativo por
+    ///     empresa (columna 'empresa' directa, igual criterio que documentosT).
     /// Trabaja directamente sobre SQL Server y reescribe TODAS las filas.
     /// </summary>
     public static class CodigoRegenerator
@@ -51,7 +52,7 @@ namespace WpfAppVba.Data
 
                 resumen.AppendLine($"documentosT: {RenumerarTraspasosPorEmpresa(conn, tx)}");
 
-                resumen.AppendLine($"precios: {RenumerarPreciosPorRegion(conn, tx)}");
+                resumen.AppendLine($"documentosL: {RenumerarDocumentosLPorEmpresa(conn, tx)}");
 
                 tx.Commit();
             }
@@ -107,15 +108,15 @@ namespace WpfAppVba.Data
             return Ejecutar(conn, tx, sql);
         }
 
-        // ─── Precios: codigo = signo región + correlativo por región ─────────
-        private static int RenumerarPreciosPorRegion(SqlConnection conn, SqlTransaction tx)
+        // ─── DocumentosL: codigo = signo empresa + correlativo por empresa ───
+        private static int RenumerarDocumentosLPorEmpresa(SqlConnection conn, SqlTransaction tx)
         {
             string sql =
                 ";WITH cte AS (" +
-                "  SELECT p.codigo AS codigo, ISNULL(UPPER(r.signo), '') AS signo, " +
-                "         ROW_NUMBER() OVER (PARTITION BY p.region ORDER BY p.fecha, p.id) AS rn " +
-                "  FROM precios AS p " +
-                "  LEFT JOIN regiones AS r ON r.id = p.region " +
+                "  SELECT d.codigo AS codigo, ISNULL(UPPER(e.signo), '') AS signo, " +
+                "         ROW_NUMBER() OVER (PARTITION BY d.empresa ORDER BY d.fecha, d.id) AS rn " +
+                "  FROM documentosL AS d " +
+                "  LEFT JOIN empresas AS e ON e.id = d.empresa " +
                 ") UPDATE cte SET codigo = signo + CAST(rn AS NVARCHAR(50));";
             return Ejecutar(conn, tx, sql);
         }
