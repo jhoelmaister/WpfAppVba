@@ -130,8 +130,6 @@
                                 <ColumnDefinition Width="160"/>
                                 <ColumnDefinition Width="16"/>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="16"/>
-                                <ColumnDefinition Width="120"/>
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0">
@@ -143,13 +141,6 @@
                             <StackPanel Grid.Column="2">
                                 <TextBlock Style="{StaticResource SectionLabel}" Text="DESCRIPCIÓN"/>
                                 <TextBox x:Name="Box_Descripcion" Style="{StaticResource ModernInput}"
-                                         TextChanged="Campo_TextChanged"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="4">
-                                <TextBlock Style="{StaticResource SectionLabel}" Text="SIGNO"/>
-                                <TextBox x:Name="Box_Signo" Style="{StaticResource ModernInput}"
-                                         MaxLength="4" CharacterCasing="Upper"
                                          TextChanged="Campo_TextChanged"/>
                             </StackPanel>
                         </Grid>
