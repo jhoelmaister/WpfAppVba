@@ -130,8 +130,9 @@ namespace WpfAppVba
         private void CargarParaNuevo()
         {
             Box_DocumentoL.IsEnabled = false;
-            int numero          = Sql.DocumentosLObj.SiguienteCodigoInt();
-            _codigoDocL          = numero.ToString();
+            string signo  = Sql.EmpresasObj.ObtenerItem("signo", AppState.EmpresaActiva)?.ToString() ?? "";
+            int    numero = Sql.DocumentosLObj.SiguienteNumeroDoc(signo, "empresa", AppState.EmpresaActiva);
+            _codigoDocL          = $"{signo.ToUpper()}{numero}";
             Box_DocumentoL.Text  = _codigoDocL;
             Box_Fecha.SelectedDate = DateTime.Today;
             Box_Hora.Text          = DateTime.Now.ToString("HH:mm:ss");
@@ -450,6 +451,7 @@ namespace WpfAppVba
 
                 Sql.DocumentosLObj.Nuevo(docId);
                 Sql.DocumentosLObj.EstablecerItem("codigo",      docId, _codigoDocL);
+                Sql.DocumentosLObj.EstablecerItem("empresa",     docId, AppState.EmpresaActiva);
                 Sql.DocumentosLObj.EstablecerItem("fecha",       docId, fecha);
                 Sql.DocumentosLObj.EstablecerItem("region",      docId, CboRegion.SelectedValue?.ToString() ?? "");
                 Sql.DocumentosLObj.EstablecerItem("referencia",  docId, Box_Referencia.Text.Trim());
