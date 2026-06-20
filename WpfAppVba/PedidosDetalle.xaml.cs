@@ -301,16 +301,24 @@ namespace WpfAppVba
         {
             double precio = 0;
             DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
+            DateTime? mejorFecha = null;
             int uf = Sql.PreciosObj.ContarFilas;
             for (int p = 1; p <= uf; p++)
             {
                 var pid = Sql.PreciosObj.Mover(p)?.ToString();
                 if (pid == null) continue;
                 if (Sql.PreciosObj.ObtenerItem("articulo", pid)?.ToString() != artId) continue;
-                var fp = Sql.PreciosObj.ObtenerItem("fecha", pid);
+                string docLId = Sql.PreciosObj.ObtenerItem("documentoL", pid)?.ToString() ?? "";
+                if (docLId == "") continue;
+                var fp = Sql.DocumentosLObj.ObtenerItem("fecha", docLId);
                 if (fp == null) continue;
-                if (Convert.ToDateTime(fp) <= fechaDoc)
+                DateTime fecha = Convert.ToDateTime(fp);
+                if (fecha > fechaDoc) continue;
+                if (mejorFecha == null || fecha > mejorFecha)
+                {
+                    mejorFecha = fecha;
                     precio = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", pid) ?? 0);
+                }
             }
             return precio;
         }
@@ -578,7 +586,8 @@ namespace WpfAppVba
                 var pid = Sql.PreciosObj.Mover(i)?.ToString();
                 if (pid == null) continue;
                 if (Sql.PreciosObj.ObtenerItem("articulo", pid)?.ToString() != fila.ArticuloId) continue;
-                var fp = Sql.PreciosObj.ObtenerItem("fecha", pid);
+                string docLId = Sql.PreciosObj.ObtenerItem("documentoL", pid)?.ToString() ?? "";
+                var fp = docLId != "" ? Sql.DocumentosLObj.ObtenerItem("fecha", docLId) : null;
                 precios.Add(new PrecioFila
                 {
                     Codigo = fila.Codigo,

@@ -21,7 +21,6 @@ namespace WpfAppVba.Data
         public DataConsulta IndustriasObj   { get; } = new();
         public DataConsulta TercerosObj     { get; } = new();
         public DataConsulta SucursalesObj   { get; } = new();
-        public DataConsulta PreciosObj      { get; } = new();
         public DataConsulta RegionesObj     { get; } = new();
 
         // ─── Documentos e inventario ─────────────────────────────────────────
@@ -42,6 +41,10 @@ namespace WpfAppVba.Data
         // ─── Correcciones de stock ───────────────────────────────────────────
         public DataConsulta DocumentosCObj  { get; } = new();
         public DataConsulta CorreccionesObj { get; } = new();
+
+        // ─── Listas de precios ────────────────────────────────────────────────
+        public DataConsulta DocumentosLObj  { get; } = new();
+        public DataConsulta PreciosObj      { get; } = new();
 
         private SqlData() { } // constructor privado → usar Instance
     }

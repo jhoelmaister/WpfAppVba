@@ -96,16 +96,20 @@ namespace WpfAppVba.Data
             // Cascada de la empresa por relaciones (igual que documentosT→traspasos), en
             // vez de confiar en la columna 'empresa' de las tablas hijas:
             //   productos (empresa) → familias (familias.producto) → articulos (articulos.familia)
-            //   regiones  (empresa) → precios  (precios.region)
+            //   regiones  (empresa) → documentosL (documentosL.region) → precios (precios.documentoL)
             string fFamilias = string.IsNullOrEmpty(emp) ? ""
                 : $" AND producto IN (SELECT id FROM productos WHERE estadof = 'normal' AND empresa = '{emp}')";
             string fArticulos = string.IsNullOrEmpty(emp) ? ""
                 : $" AND a.familia IN (SELECT id FROM familias WHERE estadof = 'normal'" +
                   $" AND producto IN (SELECT id FROM productos WHERE estadof = 'normal' AND empresa = '{emp}'))";
-            // precios no tiene columna empresa → cascada por las regiones de la empresa.
-            string fPrecios = string.IsNullOrEmpty(emp)
+            // documentosL no tiene columna empresa → cascada por las regiones de la empresa.
+            string fDocumentosL = string.IsNullOrEmpty(emp)
                 ? ""
                 : $" AND region IN (SELECT id FROM regiones WHERE estadof = 'normal' AND empresa = '{emp}')";
+            // precios no tiene columna empresa → cascada por los documentosL de la empresa.
+            string fPrecios = string.IsNullOrEmpty(emp)
+                ? ""
+                : $" AND documentoL IN (SELECT id FROM documentosL WHERE estadof = 'normal'{fDocumentosL})";
 
 
 
@@ -142,11 +146,15 @@ namespace WpfAppVba.Data
             Sql.SucursalesObj.Conectar("sucursales",
                 $"SELECT * FROM sucursales WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
-            Sql.PreciosObj.Conectar("precios",
-                $"SELECT * FROM precios WHERE estadof = 'normal'{fPrecios} ORDER BY fecha ASC");
-
             Sql.RegionesObj.Conectar("regiones",
                 $"SELECT * FROM regiones WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
+
+            // documentosL (cabecera de listas de precios) + precios (líneas).
+            Sql.DocumentosLObj.Conectar("documentosL",
+                $"SELECT * FROM documentosL WHERE estadof = 'normal'{fDocumentosL} ORDER BY fecha ASC");
+
+            Sql.PreciosObj.Conectar("precios",
+                $"SELECT * FROM precios WHERE estadof = 'normal'{fPrecios} ORDER BY documentoL ASC, indice ASC");
 
             var tiempo = DateTime.Now - inicio;
             System.Diagnostics.Debug.WriteLine($"ConectarProductos: {tiempo.TotalSeconds:F2}s");
