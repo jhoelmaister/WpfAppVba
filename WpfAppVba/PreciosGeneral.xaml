@@ -145,8 +145,6 @@
                     <DataGridTextColumn Header="Código"      Binding="{Binding Codigo}"      Width="80"/>
                     <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
                     <DataGridTextColumn Header="Estado"      Binding="{Binding Estado}"      Width="90"/>
-                    <DataGridTextColumn Header="Precio"      Binding="{Binding Precio, StringFormat=#\,##0.##}" Width="100"
-                                        ElementStyle="{StaticResource CeldaNumero}"/>
                 </DataGrid.Columns>
             </DataGrid>
             </Border>
@@ -164,20 +162,11 @@
                       BorderThickness="0"
                       FontSize="12"
                       MouseDoubleClick="GridPrecios_MouseDoubleClick"
-                      PreviewKeyDown="GridPrecios_PreviewKeyDown"
-                      PreviewMouseRightButtonDown="GridPrecios_PreviewMouseRightButtonDown">
-                <DataGrid.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="Nuevo Precio"    Click="BtnNuevoPrecio_Click"/>
-                        <MenuItem Header="Editar Precio"   Click="BtnEditarPrecio_Click"/>
-                        <MenuItem Header="Eliminar Precio" Click="BtnEliminarPrecio_Click"/>
-                    </ContextMenu>
-                </DataGrid.ContextMenu>
+                      PreviewKeyDown="GridPrecios_PreviewKeyDown">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Línea"  Binding="{Binding Linea}"    Width="55"/>
                     <DataGridTextColumn Header="Código" Binding="{Binding Codigo}"   Width="80"/>
-                    <DataGridTextColumn Header="Fecha"  Binding="{Binding FechaStr}" Width="100"/>
-                    <DataGridTextColumn Header="Hora"   Binding="{Binding HoraStr}"  Width="90"/>
+                    <DataGridTextColumn Header="Fecha"  Binding="{Binding FechaStr}" Width="160"/>
                     <DataGridTextColumn Header="Precio" Binding="{Binding Precio, StringFormat=#\,##0.##}" Width="120"
                                         ElementStyle="{StaticResource CeldaNumero}"/>
                 </DataGrid.Columns>
@@ -195,6 +184,7 @@
                         Click="BtnListaPreciosPdf_Click"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button x:Name="BtnNuevoPrecio"    Content="Nuevo Precio"    Margin="0,0,6,0" Style="{StaticResource BtnPrimario}"   Click="BtnNuevoPrecio_Click"/>
+                    <Button x:Name="BtnEditarPrecio"   Content="Editar Precio"   Margin="0,0,6,0" Style="{StaticResource BtnSecundario}" Click="BtnEditarPrecio_Click"/>
                     <Button x:Name="BtnEliminarPrecio" Content="Eliminar Precio" Margin="0,0,6,0" Style="{StaticResource BtnPeligro}"    Click="BtnEliminarPrecio_Click"/>
                     <Button Content="Cambiar Estado"  Margin="0,0,6,0" Style="{StaticResource BtnSuccess}"    Click="BtnCambiarEstado_Click"/>
                     <Button Content="Actualizar"      Margin="0,0,0,0" Style="{StaticResource BtnSecundario}" Click="BtnActualizar_Click"/>
