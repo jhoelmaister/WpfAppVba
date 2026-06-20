@@ -6,21 +6,24 @@ namespace WpfAppVba.Data
 {
     /// <summary>
     /// Regenera la columna <c>codigo</c> de las tablas del sistema:
-    ///   • Maestras  → numeración secuencial 1..N.
-    ///   • documentosI/P/C → signo de la sucursal + correlativo por sucursal.
+    ///   • Maestras  → numeración secuencial 1..N, ordenada por 'secuencia'.
+    ///   • documentosI/P/C → signo de la sucursal + correlativo por sucursal,
+    ///     ordenado por fecha dentro de cada sucursal.
     ///   • documentosT (traspasos) → signo de la empresa + correlativo por empresa
-    ///     (la empresa se obtiene por la cascada emitido → sucursales → empresas).
+    ///     (la empresa se obtiene por la cascada emitido → sucursales → empresas),
+    ///     ordenado por fecha dentro de cada empresa.
     ///   • documentosL (listas de precios) → signo de la empresa + correlativo por
-    ///     empresa (columna 'empresa' directa, igual criterio que documentosT).
+    ///     empresa (columna 'empresa' directa, igual criterio que documentosT),
+    ///     ordenado por fecha dentro de cada empresa.
     /// Trabaja directamente sobre SQL Server y reescribe TODAS las filas.
     /// </summary>
     public static class CodigoRegenerator
     {
-        // Tablas maestras → código entero secuencial.
+        // Tablas maestras → código entero secuencial, ordenadas por 'secuencia'.
         private static readonly string[] Maestras =
         {
             "usuarios", "familias", "productos", "Categorias", "industrias",
-            "terceros", "sucursales", "regiones"
+            "terceros", "sucursales", "regiones", "empresas"
         };
 
         // Documentos con columna 'sucursal' → signo de la sucursal + correlativo
@@ -65,12 +68,12 @@ namespace WpfAppVba.Data
             return resumen.ToString().TrimEnd();
         }
 
-        // ─── Maestras: codigo = 1..N (orden por id) ──────────────────────────
+        // ─── Maestras: codigo = 1..N (orden por secuencia) ───────────────────
         private static int RenumerarMaestra(SqlConnection conn, SqlTransaction tx, string tabla)
         {
             string sql =
                 $";WITH cte AS (" +
-                $"  SELECT codigo, ROW_NUMBER() OVER (ORDER BY id) AS rn " +
+                $"  SELECT codigo, ROW_NUMBER() OVER (ORDER BY secuencia, id) AS rn " +
                 $"  FROM {tabla}" +
                 $") UPDATE cte SET codigo = CAST(rn AS NVARCHAR(50));";
             return Ejecutar(conn, tx, sql);
