@@ -212,10 +212,12 @@ namespace WpfAppVba.Data
                 // Periodo diferente: proyectar la apertura recién asignada arriba (base de
                 // ContarStock) hacia el inicio del nuevo periodo.
                 final = new DateTime(periodo, 1, 1, 0, 0, 0);
-                AppLoader.ConectarDocumentos(inicio, final);
+                AppLoader.ConectarDocumentos(inicio, final); // primera carga (trae también precios/documentosL)
 
                 var aperturaNueva        = new AperturaItem[ufArticulos + 1];
-                var preciosAperturaFinal = ObtenerPreciosApertura(final);
+                // Segunda consulta evitada: se escanea el caché de precios/documentosL que
+                // dejó la carga de arriba, en vez de volver a consultar la base.
+                var preciosAperturaFinal = ObtenerPreciosAperturaDesdeCache();
 
                 for (int ciclo = 1; ciclo <= ufArticulos; ciclo++)
                 {
@@ -242,12 +244,12 @@ namespace WpfAppVba.Data
         }
 
         /// <summary>
-        /// Precio de apertura por artículo: el de la documentoL más reciente con
-        /// fecha &lt;= fechaCorte (articulo → precios.articulo → precios.documentoL →
-        /// documentosL.fecha, máxima fecha). Consulta directa a SQL Server (bypassa
-        /// el caché, que queda filtrado por período) — una sola consulta para todos
-        /// los artículos, igual razón por la que documentosI/inventarios se cargan
-        /// sin filtro de fecha para poder calcular la apertura de stock.
+        /// Precio de apertura por artículo cuando NO hay puente de período: el de la
+        /// documentoL más reciente con fecha &lt;= fechaCorte. Consulta directa a SQL
+        /// Server porque en este caso el caché de precios/documentosL todavía no se
+        /// cargó (recién se carga después, filtrado por período, desde el llamador).
+        /// Cuando SÍ hay puente, ese caché ya lo carga ConectarDocumentos dentro de
+        /// ActualizarBase → ver <see cref="ObtenerPreciosAperturaDesdeCache"/>.
         /// </summary>
         private static Dictionary<string, double> ObtenerPreciosApertura(DateTime fechaCorte)
         {
@@ -272,6 +274,43 @@ namespace WpfAppVba.Data
                 if (articuloId == "" || resultado.ContainsKey(articuloId)) continue;
                 resultado[articuloId] = Convert.ToDouble(reader["precio"]);
             }
+            return resultado;
+        }
+
+        /// <summary>
+        /// Precio de apertura por artículo cuando SÍ hay puente de período: el de mayor
+        /// documentosL.fecha por artículo, escaneando el caché de Sql.PreciosObj /
+        /// Sql.DocumentosLObj que ya dejó cargado AppLoader.ConectarDocumentos (llamado
+        /// justo antes, dentro del mismo puente) — sin volver a consultar la base.
+        /// </summary>
+        private static Dictionary<string, double> ObtenerPreciosAperturaDesdeCache()
+        {
+            var resultado  = new Dictionary<string, double>();
+            var mejorFecha = new Dictionary<string, DateTime>();
+
+            int ufPrecios = Sql.PreciosObj.ContarFilas;
+            for (int ciclo = 1; ciclo <= ufPrecios; ciclo++)
+            {
+                var idObj = Sql.PreciosObj.Mover(ciclo);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+
+                string articuloId = Sql.PreciosObj.ObtenerItem("articulo", id)?.ToString() ?? "";
+                if (articuloId == "") continue;
+
+                string documentoL = Sql.PreciosObj.ObtenerItem("documentoL", id)?.ToString() ?? "";
+                if (documentoL == "") continue;
+
+                var fechaObj = Sql.DocumentosLObj.ObtenerItem("fecha", documentoL);
+                if (fechaObj == null) continue;
+                DateTime fecha = Convert.ToDateTime(fechaObj);
+
+                if (mejorFecha.TryGetValue(articuloId, out var actual) && fecha <= actual) continue;
+
+                mejorFecha[articuloId] = fecha;
+                resultado[articuloId]  = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0);
+            }
+
             return resultado;
         }
     }
