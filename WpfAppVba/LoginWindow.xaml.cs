@@ -329,13 +329,14 @@ namespace WpfAppVba
                     main.Show();
                     Close();
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Se perdió la conexión durante la carga del caché: cancelar el
-                    // inicio de sesión, avisar y desbloquear todo para reintentar.
+                    // Cancelar el inicio de sesión, avisar y desbloquear todo para
+                    // reintentar. Se muestra el mensaje real: no toda falla acá es de
+                    // conexión (puede ser un error de SQL real, p.ej. de esquema).
                     AppState.SesionActiva  = false;
                     AppState.UsuarioActivo = "";
-                    MostrarEstado("⚠ Sin conexión. No se pudo cargar los datos; intenta más tarde.", Colors.Orange);
+                    MostrarEstado($"⚠ No se pudo cargar los datos: {ex.Message}", Colors.Orange);
                     HabilitarControles(true);
                 }
             }
