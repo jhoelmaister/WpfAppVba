@@ -123,9 +123,9 @@ namespace WpfAppVba.Data
 
                 if (fecha > maximo)
                 {
-                    maximo            = fecha;
+                    maximo               = fecha;
                     aperturaidEncontrada = id;
-                    encontrado        = true;
+                    encontrado           = true;
                 }
             }
 
@@ -134,23 +134,41 @@ namespace WpfAppVba.Data
             if (encontrado)
             {
                 // Apertura desde el último inventario
-                inicio        = maximo;
-                AperturaFecha = inicio;
+                inicio           = maximo;
                 AperturaIdActiva = aperturaidEncontrada;
+            }
+            else
+            {
+                // Sin inventario previo: usar la fecha de creación de la sucursal
+                var fechaSucObj = Sql.SucursalesObj.ObtenerItem("fecha", SucursalActiva);
+                inicio = fechaSucObj != null ? Convert.ToDateTime(fechaSucObj) : DateTime.Today;
+            }
 
-                int ufArticulos   = Sql.ArticulosObj.ContarFilas;
-                int ufInventarios = Sql.InventariosObj.ContarFilas;
-                var apertura      = new AperturaItem[ufArticulos + 1]; // base-1 como VBA
-                var preciosApertura = ObtenerPreciosApertura(inicio);
+            AperturaFecha = inicio;
 
-                for (int ciclo = 1; ciclo <= ufArticulos; ciclo++)
+            // Si hay puente de período (rama de abajo), los precios de ESTA pasada se
+            // descartan apenas se recalculan con el corte final → no consultarlos todavía
+            // evita una consulta a precios/documentosL que terminaría desperdiciada.
+            // La cantidad SÍ hay que calcularla igual: ContarStock (rama del puente) lee
+            // AppState.AperturaActiva como base, así que esta pasada debe quedar asignada
+            // antes de que se ejecute.
+            bool periodoPuente = inicio.Year != periodo;
+
+            int ufArticulos     = Sql.ArticulosObj.ContarFilas;
+            int ufInventarios   = encontrado ? Sql.InventariosObj.ContarFilas : 0;
+            var apertura        = new AperturaItem[ufArticulos + 1]; // base-1 como VBA
+            var preciosApertura = periodoPuente ? new Dictionary<string, double>() : ObtenerPreciosApertura(inicio);
+
+            for (int ciclo = 1; ciclo <= ufArticulos; ciclo++)
+            {
+                var idObj = Sql.ArticulosObj.Mover(ciclo);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+
+                double cantidad = 0;
+
+                if (encontrado)
                 {
-                    var idObj = Sql.ArticulosObj.Mover(ciclo);
-                    if (idObj == null) continue;
-                    string id = idObj.ToString()!;
-
-                    double cantidad = 0;
-
                     // Buscar en inventarios la cantidad para este artículo en la apertura
                     for (int ciclo2 = 1; ciclo2 <= ufInventarios; ciclo2++)
                     {
@@ -168,64 +186,36 @@ namespace WpfAppVba.Data
                         cantidad = cantObj != null ? Convert.ToDouble(cantObj) : 0;
                         break;
                     }
-
-                    apertura[ciclo] = new AperturaItem
-                    {
-                        ArticuloId = id,
-                        Fecha      = inicio,
-                        Cantidad   = cantidad,
-                        Precio     = preciosApertura.TryGetValue(id, out var precioApertura) ? precioApertura : 0
-                    };
                 }
 
-                AperturaActiva = apertura;
-            }
-            else
-            {
-                // Sin inventario previo: usar la fecha de creación de la sucursal
-                var fechaSucObj = Sql.SucursalesObj.ObtenerItem("fecha", SucursalActiva);
-                inicio        = fechaSucObj != null ? Convert.ToDateTime(fechaSucObj) : DateTime.Today;
-                AperturaFecha = inicio;
-
-                int ufArticulos = Sql.ArticulosObj.ContarFilas;
-                var apertura    = new AperturaItem[ufArticulos + 1];
-                var preciosApertura = ObtenerPreciosApertura(inicio);
-
-                for (int ciclo = 1; ciclo <= ufArticulos; ciclo++)
+                apertura[ciclo] = new AperturaItem
                 {
-                    var idObj = Sql.ArticulosObj.Mover(ciclo);
-                    if (idObj == null) continue;
-                    string id = idObj.ToString()!;
-
-                    apertura[ciclo] = new AperturaItem
-                    {
-                        ArticuloId = id,
-                        Fecha      = inicio,
-                        Cantidad   = 0,
-                        Precio     = preciosApertura.TryGetValue(id, out var precioApertura) ? precioApertura : 0
-                    };
-                }
-
-                AperturaActiva = apertura;
+                    ArticuloId = id,
+                    Fecha      = inicio,
+                    Cantidad   = cantidad,
+                    Precio     = preciosApertura.TryGetValue(id, out var precioApertura) ? precioApertura : 0
+                };
             }
+
+            AperturaActiva = apertura;
 
             // ── Determinar rango final según el periodo solicitado ────────────
             DateTime final;
 
-            if (inicio.Year == periodo)
+            if (!periodoPuente)
             {
                 // Mismo año: rango hasta fin de año
                 final = new DateTime(periodo, 12, 31, 23, 59, 59);
             }
             else
             {
-                // Periodo diferente: calcular apertura al inicio del periodo
+                // Periodo diferente: proyectar la apertura recién asignada arriba (base de
+                // ContarStock) hacia el inicio del nuevo periodo.
                 final = new DateTime(periodo, 1, 1, 0, 0, 0);
                 AppLoader.ConectarDocumentos(inicio, final);
 
-                int ufArticulos = Sql.ArticulosObj.ContarFilas;
-                var aperturaNueva = new AperturaItem[ufArticulos + 1];
-                var preciosApertura = ObtenerPreciosApertura(final);
+                var aperturaNueva        = new AperturaItem[ufArticulos + 1];
+                var preciosAperturaFinal = ObtenerPreciosApertura(final);
 
                 for (int ciclo = 1; ciclo <= ufArticulos; ciclo++)
                 {
@@ -238,7 +228,7 @@ namespace WpfAppVba.Data
                         ArticuloId = id,
                         Fecha      = final,
                         Cantidad   = StockCalculator.ContarStock(id, final),
-                        Precio     = preciosApertura.TryGetValue(id, out var precioApertura) ? precioApertura : 0
+                        Precio     = preciosAperturaFinal.TryGetValue(id, out var precioApertura) ? precioApertura : 0
                     };
                 }
 
