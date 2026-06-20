@@ -656,6 +656,15 @@ namespace WpfAppVba
         private void BtnCerrarSesion_Click(object sender, RoutedEventArgs e)
         {
             if (!ConfirmarPerderCambios()) return;
+            CerrarSesionInterno();
+        }
+
+        // Cierra sesión sin volver a pedir confirmación de cambios sin guardar: la usa
+        // un llamador que ya avisó al usuario de antemano (p. ej. Regenerar códigos).
+        public void CerrarSesionForzada() => CerrarSesionInterno();
+
+        private void CerrarSesionInterno()
+        {
             _cierreConfirmado = true;   // ya confirmado: Closing no vuelve a preguntar
 
             MarcarInactivo();

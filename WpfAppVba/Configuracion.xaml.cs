@@ -248,10 +248,12 @@ namespace WpfAppVba
         // ─── Regenerar códigos (solo admin) ────────────────────────────────────
         private async void BtnRegenerarCodigos_Click(object sender, RoutedEventArgs e)
         {
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             var r = MessageBox.Show(
-                "Se regenerarán los códigos (desde 1) de las tablas maestras, de documentosT/I/P/C " +
-                "y de precios.\n\nEsta acción SOBRESCRIBE los códigos existentes en el servidor activo. " +
-                "¿Continuar?",
+                "Se regenerarán los códigos (desde 1) de las tablas maestras y de documentosT/I/P/C/L. " +
+                "Al finalizar se cerrará la sesión.\n\nEsta acción SOBRESCRIBE los códigos existentes " +
+                "en el servidor activo. ¿Continuar?",
                 "Regenerar códigos", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (r != MessageBoxResult.Yes) return;
 
@@ -263,8 +265,11 @@ namespace WpfAppVba
 
                 string resumen = await Task.Run(CodigoRegenerator.RegenerarTodos);
 
-                MessageBox.Show($"Códigos regenerados (filas actualizadas):\n\n{resumen}",
+                MessageBox.Show($"Códigos regenerados (filas actualizadas):\n\n{resumen}" +
+                                "\n\nSe cerrará la sesión.",
                                 "Regenerar códigos", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                (Window.GetWindow(this) as ConsolaMovimientos)?.CerrarSesionForzada();
             }
             catch (Exception ex)
             {
