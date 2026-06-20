@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Data.SqlClient;
 
 namespace WpfAppVba.Data
 {
@@ -15,6 +16,69 @@ namespace WpfAppVba.Data
         // ─── Referencia corta al contenedor ──────────────────────────────────
         private static SqlData Sql => SqlData.Instance;
 
+        // ─── ConectarUsuarios ─────────────────────────────────────────────────
+        /// <summary>
+        /// Carga la tabla de usuarios y empresas completas. Se llama DESPUÉS de
+        /// autenticar (ver <see cref="ValidarLogin"/>), nunca antes: así no se
+        /// descargan las contraseñas de todas las cuentas a un cliente sin loguear.
+        /// El resto de catálogos se cargan luego con <see cref="ConectarProductos"/>,
+        /// ya filtrados por la empresa del usuario.
+        /// </summary>
+        public static void ConectarUsuarios()
+        {
+            Sql.UsuariosObj.Conectar("usuarios",
+                "SELECT * FROM usuarios WHERE estadof = 'normal' ORDER BY secuencia ASC");
+            // Tabla de empresas (sin filtro de empresa).
+            Sql.EmpresasObj.Conectar("empresas",
+                "SELECT * FROM empresas WHERE estadof = 'normal' ORDER BY secuencia ASC");
+        }
+
+        // ─── ValidarLogin ─────────────────────────────────────────────────────
+        /// <summary>
+        /// Valida una cuenta/contraseña con una consulta puntual y parametrizada,
+        /// SIN descargar la tabla completa de usuarios (con todas las contraseñas)
+        /// antes de autenticar. Devuelve el id del usuario si las credenciales son
+        /// correctas, o cadena vacía si no.
+        /// Migra automáticamente contraseñas antiguas en texto plano: si la
+        /// contraseña almacenada no tiene el formato de hash pero coincide en texto
+        /// plano, la re-hashea y la guarda antes de devolver el id.
+        /// </summary>
+        public static string ValidarLogin(string cuenta, string contrasena)
+        {
+            var conn = DatabaseConnection.ObtenerConexion();
+
+            string id = "";
+            string llaveDb = "";
+            using (var cmd = new SqlCommand(
+                "SELECT id, llave FROM usuarios WHERE cuenta = @cuenta AND estadof = 'normal'", conn))
+            {
+                cmd.Parameters.AddWithValue("@cuenta", cuenta);
+                using var reader = cmd.ExecuteReader();
+                if (reader.Read())
+                {
+                    id      = reader["id"].ToString() ?? "";
+                    llaveDb = reader["llave"] is DBNull ? "" : reader["llave"].ToString() ?? "";
+                }
+            }
+
+            if (string.IsNullOrEmpty(id)) return "";
+
+            if (PasswordHasher.Verificar(contrasena, llaveDb)) return id;
+
+            // Migración: contraseña antigua en texto plano que coincide → re-hashear.
+            if (!PasswordHasher.EsHash(llaveDb) && llaveDb == contrasena)
+            {
+                using var cmdUpd = new SqlCommand(
+                    "UPDATE usuarios SET llave = @llave WHERE id = @id", conn);
+                cmdUpd.Parameters.AddWithValue("@llave", PasswordHasher.Hashear(contrasena));
+                cmdUpd.Parameters.AddWithValue("@id", new Guid(id));
+                cmdUpd.ExecuteNonQuery();
+                return id;
+            }
+
+            return "";
+        }
+
         // ─── ConectarProductos ────────────────────────────────────────────────
         /// <summary>
         /// Carga todos los catálogos/maestros al iniciar la aplicación.
@@ -24,38 +88,73 @@ namespace WpfAppVba.Data
         {
             var inicio = DateTime.Now;
 
+            string emp = AppState.EmpresaActiva;
+            // Filtro directo por empresa (solo cuando hay empresa activa). Aplica a
+            // productos, industrias, terceros, regiones, sucursales y categorías.
+            string fEmp = string.IsNullOrEmpty(emp) ? "" : $" AND empresa = '{emp}'";
+
+            // Cascada de la empresa por relaciones (igual que documentosT→traspasos), en
+            // vez de confiar en la columna 'empresa' de las tablas hijas:
+            //   productos (empresa) → familias (familias.producto) → articulos (articulos.familia)
+            //   regiones  (empresa) → documentosL (documentosL.region) → precios (precios.documentoL)
+            string fFamilias = string.IsNullOrEmpty(emp) ? ""
+                : $" AND producto IN (SELECT id FROM productos WHERE estadof = 'normal' AND empresa = '{emp}')";
+            string fArticulos = string.IsNullOrEmpty(emp) ? ""
+                : $" AND a.familia IN (SELECT id FROM familias WHERE estadof = 'normal'" +
+                  $" AND producto IN (SELECT id FROM productos WHERE estadof = 'normal' AND empresa = '{emp}'))";
+            // documentosL no tiene columna empresa → cascada por las regiones de la empresa.
+            string fDocumentosL = string.IsNullOrEmpty(emp)
+                ? ""
+                : $" AND region IN (SELECT id FROM regiones WHERE estadof = 'normal' AND empresa = '{emp}')";
+            // precios no tiene columna empresa → cascada por los documentosL de la empresa.
+            string fPrecios = string.IsNullOrEmpty(emp)
+                ? ""
+                : $" AND documentoL IN (SELECT id FROM documentosL WHERE estadof = 'normal'{fDocumentosL})";
+
+
+
+            // usuarios: NO se filtra por empresa (necesario para el login).
             Sql.UsuariosObj.Conectar("usuarios",
-                "SELECT * FROM usuarios WHERE estadof = 'normal' ORDER BY id ASC");
+                "SELECT * FROM usuarios WHERE estadof = 'normal' ORDER BY secuencia ASC");
 
-            Sql.StocksObj.Conectar("stocks",
-                "SELECT * FROM stocks WHERE estadof = 'normal' ORDER BY id ASC");
-
+            // 'familia' es uniqueidentifier: ordenar por ese GUID no respeta el orden de
+            // familias. Se hace JOIN para ordenar por la 'secuencia' de la familia.
+            // LEFT JOIN para no perder artículos sin familia (quedan al inicio). SELECT a.*
+            // conserva el esquema de la caché idéntico al de la tabla articulos.
+            // Filtro en cascada: solo artículos cuya familia pertenece a la empresa activa.
             Sql.ArticulosObj.Conectar("articulos",
-                "SELECT * FROM articulos WHERE estadof = 'normal' ORDER BY familia ASC, indice ASC");
+                $"SELECT a.* FROM articulos AS a " +
+                $"LEFT JOIN familias AS f ON a.familia = f.id " +
+                $"WHERE a.estadof = 'normal'{fArticulos} ORDER BY f.secuencia ASC, a.indice ASC");
 
+            // Filtro en cascada: solo familias cuyo producto pertenece a la empresa activa.
             Sql.FamiliasObj.Conectar("familias",
-                "SELECT * FROM familias WHERE estadof = 'normal' ORDER BY id ASC");
+                $"SELECT * FROM familias WHERE estadof = 'normal'{fFamilias} ORDER BY secuencia ASC");
 
             Sql.ProductosObj.Conectar("productos",
-                "SELECT * FROM productos WHERE estadof = 'normal' ORDER BY id ASC");
+                $"SELECT * FROM productos WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             Sql.CategoriasObj.Conectar("Categorias",
-                "SELECT * FROM Categorias WHERE estadof = 'normal' ORDER BY id ASC");
+                $"SELECT * FROM Categorias WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             Sql.IndustriasObj.Conectar("industrias",
-                "SELECT * FROM industrias WHERE estadof = 'normal' ORDER BY id ASC");
+                $"SELECT * FROM industrias WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             Sql.TercerosObj.Conectar("terceros",
-                "SELECT * FROM terceros WHERE estadof = 'normal' ORDER BY id ASC");
+                $"SELECT * FROM terceros WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             Sql.SucursalesObj.Conectar("sucursales",
-                "SELECT * FROM sucursales WHERE estadof = 'normal' ORDER BY id ASC");
-
-            Sql.PreciosObj.Conectar("precios",
-                "SELECT * FROM precios WHERE estadof = 'normal' ORDER BY fecha ASC");
+                $"SELECT * FROM sucursales WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
             Sql.RegionesObj.Conectar("regiones",
-                "SELECT * FROM regiones WHERE estadof = 'normal' ORDER BY id ASC");
+                $"SELECT * FROM regiones WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
+
+            // documentosL (cabecera de listas de precios) + precios (líneas).
+            Sql.DocumentosLObj.Conectar("documentosL",
+                $"SELECT * FROM documentosL WHERE estadof = 'normal'{fDocumentosL} ORDER BY fecha ASC");
+
+            Sql.PreciosObj.Conectar("precios",
+                $"SELECT * FROM precios WHERE estadof = 'normal'{fPrecios} ORDER BY documentoL ASC, indice ASC");
 
             var tiempo = DateTime.Now - inicio;
             System.Diagnostics.Debug.WriteLine($"ConectarProductos: {tiempo.TotalSeconds:F2}s");
@@ -68,7 +167,11 @@ namespace WpfAppVba.Data
         /// </summary>
         public static void ConectarBases()
         {
-            long suc = AppState.SucursalActiva;
+            // Sucursal vacía (usuario sin sucursal): usar un GUID nulo válido para que
+            // la comparación contra la columna uniqueidentifier no falle y devuelva 0 filas.
+            string suc = string.IsNullOrEmpty(AppState.SucursalActiva)
+                ? "00000000-0000-0000-0000-000000000000"
+                : AppState.SucursalActiva;
 
             Sql.DocumentosIObj.Conectar("documentosI",
                 $"SELECT * FROM documentosI " +
@@ -89,7 +192,11 @@ namespace WpfAppVba.Data
         /// </summary>
         public static void ConectarDocumentos(DateTime apertura, DateTime cierre)
         {
-            long suc = AppState.SucursalActiva;
+            // Sucursal vacía (usuario sin sucursal): usar un GUID nulo válido para que
+            // la comparación contra la columna uniqueidentifier no falle y devuelva 0 filas.
+            string suc = string.IsNullOrEmpty(AppState.SucursalActiva)
+                ? "00000000-0000-0000-0000-000000000000"
+                : AppState.SucursalActiva;
             string aper = apertura.ToString("yyyyMMdd HH:mm:ss");
             string cier = cierre.ToString("yyyyMMdd HH:mm:ss");
 
@@ -117,7 +224,7 @@ namespace WpfAppVba.Data
                 $"WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
                 $"AND vg.sucursal = '{suc}' " +
-                $"ORDER BY vd.fecha ASC");
+                $"ORDER BY vd.documentoP ASC, vd.indice ASC");
 
             // ── Entregas ─────────────────────────────────────────────────────
             Sql.EntregasObj.Conectar("entregas",

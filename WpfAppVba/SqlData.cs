@@ -12,8 +12,8 @@ namespace WpfAppVba.Data
         public static SqlData Instance => _instance ??= new SqlData();
 
         // ─── Tablas de catálogo / maestros ───────────────────────────────────
+        public DataConsulta EmpresasObj     { get; } = new();
         public DataConsulta UsuariosObj     { get; } = new();
-        public DataConsulta StocksObj       { get; } = new();
         public DataConsulta ArticulosObj    { get; } = new();
         public DataConsulta FamiliasObj     { get; } = new();
         public DataConsulta ProductosObj    { get; } = new();
@@ -21,7 +21,6 @@ namespace WpfAppVba.Data
         public DataConsulta IndustriasObj   { get; } = new();
         public DataConsulta TercerosObj     { get; } = new();
         public DataConsulta SucursalesObj   { get; } = new();
-        public DataConsulta PreciosObj      { get; } = new();
         public DataConsulta RegionesObj     { get; } = new();
 
         // ─── Documentos e inventario ─────────────────────────────────────────
@@ -42,6 +41,10 @@ namespace WpfAppVba.Data
         // ─── Correcciones de stock ───────────────────────────────────────────
         public DataConsulta DocumentosCObj  { get; } = new();
         public DataConsulta CorreccionesObj { get; } = new();
+
+        // ─── Listas de precios ────────────────────────────────────────────────
+        public DataConsulta DocumentosLObj  { get; } = new();
+        public DataConsulta PreciosObj      { get; } = new();
 
         private SqlData() { } // constructor privado → usar Instance
     }

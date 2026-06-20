@@ -58,17 +58,6 @@
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
         </Style>
-        <Style x:Key="SelectorBtn" TargetType="Button">
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="Padding" Value="14,0"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
-            <Setter Property="Background" Value="{DynamicResource ThemeBgSurface}"/>
-            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Margin" Value="0,0,8,0"/>
-        </Style>
         <Style x:Key="CardBorder" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource ThemeBgSurface}"/>
             <Setter Property="CornerRadius" Value="10"/>
@@ -111,10 +100,19 @@
 
         <!-- ══ CONTENIDO ══════════════════════════════════════════════ -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16,20,0">
-            <StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <!-- ▸ CARD: GENERAL -->
-                <Border Style="{StaticResource CardBorder}">
+                <!-- ▸ CARD: GENERAL (fila 0) -->
+                <Border Style="{StaticResource CardBorder}"
+                        Grid.Column="0" Grid.Row="0" Margin="0,0,0,12">
                     <StackPanel>
                         <TextBlock Style="{StaticResource CardHeader}" Text="● GENERAL"/>
 
@@ -145,73 +143,9 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ▸ CARD: CONEXIÓN SQL SERVER -->
-                <Border Style="{StaticResource CardBorder}">
-                    <StackPanel>
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Style="{StaticResource CardHeader}"
-                                       Text="● CONEXIÓN SQL SERVER" Margin="0"/>
-                            <Button Grid.Column="1" x:Name="BtnAgregarServidor" Content="＋ Agregar"
-                                    Height="30" FontSize="12" FontWeight="SemiBold" Padding="14,0"
-                                    Background="#1A73E8" Foreground="White"
-                                    BorderThickness="0" Cursor="Hand"
-                                    Click="BtnAgregarServidor_Click"/>
-                        </Grid>
-
-                        <Border BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
-                                CornerRadius="6">
-                            <ListView x:Name="LstServidores" Height="150"
-                                      BorderThickness="0"
-                                      Background="{DynamicResource ThemeInputBg}"
-                                      Foreground="{DynamicResource ThemeTexto}"
-                                      FontSize="12"
-                                      SelectionMode="Single"
-                                      ItemContainerStyle="{StaticResource ServerListItemStyle}"
-                                      MouseDoubleClick="LstServidores_MouseDoubleClick"
-                                      SelectionChanged="LstServidores_SelectionChanged">
-                                <ListView.View>
-                                    <GridView ColumnHeaderContainerStyle="{StaticResource ServerListHeaderStyle}">
-                                        <GridViewColumn Header="" Width="32"
-                                                        DisplayMemberBinding="{Binding Activo}"/>
-                                        <GridViewColumn Header="Alias" Width="140"
-                                                        DisplayMemberBinding="{Binding Nombre}"/>
-                                        <GridViewColumn Header="Servidor" Width="160"
-                                                        DisplayMemberBinding="{Binding Servidor}"/>
-                                        <GridViewColumn Header="Base de datos" Width="150"
-                                                        DisplayMemberBinding="{Binding BaseDatos}"/>
-                                    </GridView>
-                                </ListView.View>
-                            </ListView>
-                        </Border>
-
-                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                            <Button x:Name="BtnConectarServidor" Content="🔌 Conectar"
-                                    Height="32" FontSize="12" FontWeight="SemiBold" Padding="14,0"
-                                    Background="#2E7D32" Foreground="White"
-                                    BorderThickness="0" Cursor="Hand" Margin="0,0,8,0"
-                                    Click="BtnConectarServidor_Click"/>
-                            <Button x:Name="BtnEditarServidor" Content="✎ Editar"
-                                    Style="{StaticResource SelectorBtn}"
-                                    Click="BtnEditarServidor_Click"/>
-                            <Button x:Name="BtnEliminarServidor" Content="🗑 Eliminar"
-                                    Height="32" FontSize="12" Padding="14,0"
-                                    Background="#D93025" Foreground="White"
-                                    BorderThickness="0" Cursor="Hand"
-                                    Click="BtnEliminarServidor_Click"/>
-                        </StackPanel>
-
-                        <TextBlock FontSize="11" Foreground="{DynamicResource ThemeTextoMuted}"
-                                   TextWrapping="Wrap" Margin="0,10,0,0"
-                                   Text="Los cambios de servidor activo se aplican al reiniciar la aplicación. Al editar no se muestran las credenciales guardadas."/>
-                    </StackPanel>
-                </Border>
-
-                <!-- ▸ CARD: MI CUENTA -->
-                <Border Style="{StaticResource CardBorder}" Margin="0,0,0,0">
+                <!-- ▸ CARD: MI CUENTA (fila 1) -->
+                <Border Style="{StaticResource CardBorder}"
+                        Grid.Column="0" Grid.Row="1" Margin="0,0,0,12">
                     <StackPanel>
                         <TextBlock Style="{StaticResource CardHeader}" Text="● MI CUENTA"/>
 
@@ -251,12 +185,27 @@
                             </StackPanel>
                         </Grid>
 
-                        <StackPanel Margin="0,0,0,12">
-                            <TextBlock Style="{StaticResource SectionLabel}" Text="SUCURSAL ACTIVA"/>
-                            <ComboBox x:Name="CmbSucursal" Style="{StaticResource ModernCombo}"
-                                      DisplayMemberPath="Descripcion"
-                                      SelectionChanged="CmbSucursal_SelectionChanged"/>
-                        </StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="EMPRESA ACTIVA"/>
+                                <ComboBox x:Name="CmbEmpresa" Style="{StaticResource ModernCombo}"
+                                          DisplayMemberPath="Descripcion"
+                                          SelectionChanged="CmbEmpresa_SelectionChanged"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="SUCURSAL ACTIVA"/>
+                                <ComboBox x:Name="CmbSucursal" Style="{StaticResource ModernCombo}"
+                                          DisplayMemberPath="Descripcion"
+                                          SelectionChanged="CmbSucursal_SelectionChanged"/>
+                            </StackPanel>
+                        </Grid>
 
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
@@ -276,17 +225,17 @@
                             </StackPanel>
                         </Grid>
 
-                        <Button x:Name="BtnCambiarContrasena" Content="🔑 Cambiar Contraseña"
-                                Height="34" FontSize="12" Padding="14,0"
-                                Background="#5C6BC0" Foreground="White"
+                        <Button x:Name="BtnGuardar" Content="&#x1F4BE; Guardar Cambios"
+                                Height="34" FontSize="12" FontWeight="SemiBold" Padding="14,0"
+                                Background="#1A73E8" Foreground="White"
                                 BorderThickness="0" Cursor="Hand"
                                 HorizontalAlignment="Left"
-                                Click="BtnCambiarContrasena_Click"/>
+                                Click="BtnGuardar_Click"/>
                     </StackPanel>
                 </Border>
 
-                <Rectangle Height="16"/>
-            </StackPanel>
+                <Rectangle Height="16" Grid.Column="0" Grid.Row="2"/>
+            </Grid>
         </ScrollViewer>
 
         <!-- ══ BARRA DE ACCIONES ══════════════════════════════════════ -->
@@ -294,11 +243,21 @@
                 BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,1,0,0"
                 Padding="20,10">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button x:Name="BtnGuardar" Content="&#x1F4BE; Guardar Cambios"
+                <Button x:Name="BtnRegenerarCodigos" Content="🔢 Regenerar códigos"
                         Height="36" FontSize="13" FontWeight="SemiBold" Padding="18,0"
-                        Background="#1A73E8" Foreground="White"
+                        Background="#6A1B9A" Foreground="White"
+                        BorderThickness="0" Cursor="Hand" Margin="0,0,10,0"
+                        Click="BtnRegenerarCodigos_Click"/>
+                <Button x:Name="BtnSincronizarAppsheets" Content="🧾 Sincronizar AppSheets"
+                        Height="36" FontSize="13" FontWeight="SemiBold" Padding="18,0"
+                        Background="#2E7D32" Foreground="White"
+                        BorderThickness="0" Cursor="Hand" Margin="0,0,10,0"
+                        Click="BtnSincronizarAppsheets_Click"/>
+                <Button x:Name="BtnCambiarContrasena" Content="🔑 Cambiar Contraseña"
+                        Height="36" FontSize="13" FontWeight="SemiBold" Padding="18,0"
+                        Background="#5C6BC0" Foreground="White"
                         BorderThickness="0" Cursor="Hand"
-                        Click="BtnGuardar_Click"/>
+                        Click="BtnCambiarContrasena_Click"/>
             </StackPanel>
         </Border>
     </Grid>

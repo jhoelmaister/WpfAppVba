@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -25,7 +26,12 @@ namespace WpfAppVba
         public PedidosGeneral()
         {
             InitializeComponent();
-            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarMeses(); CargarPedidos(); };
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarMeses(); CargarPedidos(); };
+        }
+
+        private void ConfigurarModo()
+        {
+            if (!AppState.EsAdmin) BtnEliminar.Visibility = Visibility.Collapsed;
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
@@ -86,7 +92,7 @@ namespace WpfAppVba
                     !string.Equals(movDoc, tipoMov, StringComparison.OrdinalIgnoreCase)) continue;
 
                 string sucursal = Sql.DocumentosPObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
-                if (sucursal != AppState.SucursalActiva.ToString()) continue;
+                if (sucursal != AppState.SucursalActiva) continue;
 
                 // Filtro por mes (solo en modo "filtros", independiente de TxtBuscar)
                 if (!string.IsNullOrEmpty(mesFiltro))
@@ -104,10 +110,10 @@ namespace WpfAppVba
                 string terceroId   = Sql.DocumentosPObj.ObtenerItem("tercero", id)?.ToString() ?? "";
                 string terceroDesc = Sql.TercerosObj.ObtenerItem("descripcion", terceroId)?.ToString() ?? terceroId;
 
-                string estado = Sql.DocumentosPObj.ObtenerItem("estado", id)?.ToString() ?? "";
+                string estado = (Sql.DocumentosPObj.ObtenerItem("estado", id)?.ToString() ?? "").ToLower();
 
                 // ── Usar estadoC (campo correcto en VBA) para cuenta ──────────
-                string estadoC = Sql.DocumentosPObj.ObtenerItem("estadoC", id)?.ToString() ?? "";
+                string estadoC = (Sql.DocumentosPObj.ObtenerItem("estadoC", id)?.ToString() ?? "").ToLower();
 
                 // Filtro por estado
                 if (!string.IsNullOrEmpty(filtroEstado) &&
@@ -131,6 +137,7 @@ namespace WpfAppVba
                 {
                     Linea       = linea++,
                     DocumentoP  = id,
+                    Codigo      = Sql.DocumentosPObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                     FechaStr    = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                     Movimiento  = movDoc,
                     TerceroDesc = terceroDesc,
@@ -144,9 +151,14 @@ namespace WpfAppVba
                 totalImporte += importe;
             }
 
-            Grid1.ItemsSource = lista;
-            TxtTotalCantidad.Text = totalCant.ToString("N0");
-            TxtTotalImporte.Text  = totalImporte.ToString("N2");
+            Grid1.ItemsSource        = lista;
+            TxtTotalCantidad.Text    = totalCant.ToString("N0");
+            TxtTotalImporte.Text     = totalImporte.ToString("N2");
+            TxtTotalDocumentos.Text  = lista.Count.ToString("N0");
+            TxtTotalPendientes.Text  = lista.Count(f => f.Estado == "pendiente"
+                                                     || f.Estado == "pendiente parcial").ToString();
+            TxtCuentaPendientes.Text = lista.Count(f => f.Cuenta == "pendiente"
+                                                     || f.Cuenta == "pendiente parcial").ToString();
 
             // ── Título correcto según VBA ─────────────────────────────────────
             LblTipoMovimiento.Text = tipoMov switch
@@ -155,6 +167,12 @@ namespace WpfAppVba
                 "compra" => "Compras de Productos",
                 _        => "Pedidos (Ventas y Compras)"
             };
+            int año = AppState.DataFechaFinal.Year > 2000
+                ? AppState.DataFechaFinal.Year
+                : DateTime.Now.Year;
+            LblSubtitulo.Text = string.IsNullOrEmpty(_mesActivo)
+                ? año.ToString()
+                : $"{_mesActivo} {año}";
 
             // Ocultar el panel de detalle al recargar
             OcultarDetalle();
@@ -165,7 +183,7 @@ namespace WpfAppVba
         {
             if (BtnFiltroPendiente?.IsChecked == true)      return "pendiente";
             if (BtnFiltroEntregado?.IsChecked == true)      return "entregado";
-            if (BtnFiltroEntregaParcial?.IsChecked == true) return "entrega parcial";
+            if (BtnFiltroEntregaParcial?.IsChecked == true) return "pendiente parcial";
             return "";
         }
 
@@ -205,14 +223,15 @@ namespace WpfAppVba
             DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
             string terceroId   = Sql.DocumentosPObj.ObtenerItem("tercero", id)?.ToString() ?? "";
             string terceroDesc = Sql.TercerosObj.ObtenerItem("descripcion", terceroId)?.ToString() ?? terceroId;
-            string estado  = Sql.DocumentosPObj.ObtenerItem("estado",  id)?.ToString() ?? "";
-            string estadoC = Sql.DocumentosPObj.ObtenerItem("estadoC", id)?.ToString() ?? "";
+            string estado  = (Sql.DocumentosPObj.ObtenerItem("estado",  id)?.ToString() ?? "").ToLower();
+            string estadoC = (Sql.DocumentosPObj.ObtenerItem("estadoC", id)?.ToString() ?? "").ToLower();
             string movDoc  = Sql.DocumentosPObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
 
             return new PedidoFila
             {
                 Linea       = linea,
                 DocumentoP  = id,
+                Codigo      = Sql.DocumentosPObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 FechaStr    = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                 Movimiento  = movDoc,
                 TerceroDesc = terceroDesc,
@@ -234,8 +253,13 @@ namespace WpfAppVba
                 totalCant    += f.Cantidad;
                 totalImporte += f.Importe;
             }
-            TxtTotalCantidad.Text = totalCant.ToString("N0");
-            TxtTotalImporte.Text  = totalImporte.ToString("N2");
+            TxtTotalCantidad.Text    = totalCant.ToString("N0");
+            TxtTotalImporte.Text     = totalImporte.ToString("N2");
+            TxtTotalDocumentos.Text  = lista.Count.ToString("N0");
+            TxtTotalPendientes.Text  = lista.Count(f => f.Estado == "pendiente"
+                                                     || f.Estado == "pendiente parcial").ToString();
+            TxtCuentaPendientes.Text = lista.Count(f => f.Cuenta == "pendiente"
+                                                     || f.Cuenta == "pendiente parcial").ToString();
             Grid1.Items.Refresh();
         }
 
@@ -275,6 +299,8 @@ namespace WpfAppVba
 
         private void MostrarDetalle(string documentoP)
         {
+            string codigoDoc = Sql.DocumentosPObj.ObtenerItem("codigo", documentoP)?.ToString() ?? documentoP;
+            LblDetalleHeader.Text = $"Artículos del documento {codigoDoc}";
             var detalles = new List<PedidoDetalleFila>();
             int linea = 1;
 
@@ -306,15 +332,12 @@ namespace WpfAppVba
             }
 
             Lista2.ItemsSource = detalles;
-            PanelDetalle.Visibility = detalles.Count > 0
-                ? Visibility.Visible
-                : Visibility.Collapsed;
         }
 
         private void OcultarDetalle()
         {
-            PanelDetalle.Visibility = Visibility.Collapsed;
-            Lista2.ItemsSource = null;
+            LblDetalleHeader.Text  = "Artículos del documento";
+            Lista2.ItemsSource     = null;
         }
 
         // ─── Eventos árbol y filtros ──────────────────────────────────────────
@@ -394,11 +417,13 @@ namespace WpfAppVba
         private void BtnNuevoNormal_Click(object sender, RoutedEventArgs e)
             => AbrirNuevoPedido("normal");
 
-        private void AbrirNuevoPedido(string tipoPedido)
+        // tipoMovimiento: si se indica ("venta"/"compra") fuerza el movimiento;
+        // si es null se toma del filtro activo. Público para accesos rápidos del top bar.
+        public void AbrirNuevoPedido(string tipoPedido, string? tipoMovimiento = null)
         {
             AppState.EventoFormularioM = "nuevo";
             AppState.TipoPedido        = tipoPedido;
-            string filtroTipo = ObtenerFiltroTipo();
+            string filtroTipo = tipoMovimiento ?? ObtenerFiltroTipo();
             AppState.TipoMovimiento = string.IsNullOrEmpty(filtroTipo) ? "venta" : filtroTipo;
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
@@ -424,6 +449,9 @@ namespace WpfAppVba
         private void BtnEliminar_Click(object sender, RoutedEventArgs e)
         {
             if (Grid1.SelectedItem is not PedidoFila fila) return;
+
+            // Verificación de conexión en 2 capas antes de persistir el borrado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
 
             var res = MessageBox.Show("¿Eliminar este pedido y todos sus artículos?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
@@ -474,6 +502,9 @@ namespace WpfAppVba
 
         private void BtnActualizar_Click(object sender, RoutedEventArgs e)
         {
+            // Sin conexión no se puede refrescar desde SQL: avisar y no congelar.
+            if (!FuncionesComunes.VerificarConexionParaActualizar(Window.GetWindow(this))) return;
+
             Sql.DocumentosPObj.Actualizar();
             Sql.PedidosObj.Actualizar();
             CargarPedidos();
@@ -489,7 +520,7 @@ namespace WpfAppVba
             AppState.TipoPedido     = Sql.DocumentosPObj.ObtenerItem("tipo",       docSel)?.ToString() ?? "rapido";
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            var dlg = new PedidosDetalle(this, docSel, tituloTab: $"Pedido {docSel}");
+            var dlg = new PedidosDetalle(this, docSel, tituloTab: $"Pedido {fila.Codigo}");
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);
@@ -504,7 +535,7 @@ namespace WpfAppVba
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña($"Pedido {docSel}", dlg, $"pedido-{docSel}");
+            consola.AbrirPestaña($"Pedido {fila.Codigo}", dlg, $"pedido-{docSel}");
         }
     }
 
@@ -513,6 +544,7 @@ namespace WpfAppVba
     {
         public int    Linea       { get; set; }
         public string DocumentoP  { get; set; } = "";
+        public string Codigo      { get; set; } = "";
         public string FechaStr    { get; set; } = "";
         public string Movimiento  { get; set; } = "";
         public string TerceroDesc { get; set; } = "";

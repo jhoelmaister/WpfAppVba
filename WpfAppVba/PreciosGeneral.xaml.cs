@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -11,182 +12,198 @@ namespace WpfAppVba
     public partial class PreciosGeneral : System.Windows.Controls.UserControl
     {
         private static SqlData Sql => SqlData.Instance;
+        private string _mesActivo  = "";
+        private string _modoFiltro = "filtros"; // "filtros" = Tree1 | "busquedas" = TxtBuscar
 
-        // Modo de filtro activo: "todos" | "busqueda" | "familia"
-        private string _modoFiltro = "todos";
         private bool _iniciado = false;
 
         public event Action? Cerrando;
+        public void IntentarCerrar() => Cerrando?.Invoke();
 
         public PreciosGeneral()
         {
             InitializeComponent();
-            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarRegiones(); CargarArbol(); CargarArticulos(); };
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarRegiones(); CargarMeses(); CargarListas(); };
         }
 
-        public void IntentarCerrar() => Cerrando?.Invoke();
+        private void ConfigurarModo()
+        {
+            if (!AppState.EsAdmin)
+            {
+                BtnNuevo.Visibility    = Visibility.Collapsed;
+                BtnEditar.Visibility   = Visibility.Collapsed;
+                BtnEliminar.Visibility = Visibility.Collapsed;
+            }
+        }
 
-        // ─── Carga el selector de regiones ───────────────────────────────────
+        // ─── Combo de regiones (filtro) ───────────────────────────────────────
         private void CargarRegiones()
         {
-            var lista = new List<RegionItem>();
+            var lista = new List<RegionItem> { new RegionItem { Id = "", Descripcion = "Todas las regiones" } };
+
             int uf = Sql.RegionesObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
             {
                 var idObj = Sql.RegionesObj.Mover(i);
                 if (idObj == null) continue;
-                string id = idObj.ToString()!;
-                string desc = Sql.RegionesObj.ObtenerItem("descripcion", id)?.ToString() ?? id;
-                lista.Add(new RegionItem { Id = id, Descripcion = desc });
+                string id      = idObj.ToString()!;
+                string codigo  = Sql.RegionesObj.ObtenerItem("codigo",      id)?.ToString() ?? "";
+                string desc    = Sql.RegionesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                lista.Add(new RegionItem { Id = id, Descripcion = $"{codigo} - {desc}" });
             }
-            CmbRegion.ItemsSource = lista;
-            if (lista.Count > 0) CmbRegion.SelectedIndex = 0;
+
+            CboRegion.DisplayMemberPath = "Descripcion";
+            CboRegion.SelectedValuePath = "Id";
+            CboRegion.ItemsSource       = lista;
+            CboRegion.SelectedIndex     = 0;
         }
 
-        // ─── Región actualmente seleccionada en el filtro ─────────────────────
-        private RegionItem? RegionSeleccionada => CmbRegion.SelectedItem as RegionItem;
-        private string RegionSeleccionadaId   => RegionSeleccionada?.Id ?? "";
-        private string RegionSeleccionadaDesc => RegionSeleccionada?.Descripcion ?? "";
-
-        private void CmbRegion_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (ArticuloSeleccionado is PrecioArticuloFila fila)
-                CargarPrecios(fila.Id);
-        }
-
-        // ─── Árbol de productos/familias (igual a ArticulosGeneral) ───────────
-        private void CargarArbol()
+        // ─── Carga el árbol de meses ──────────────────────────────────────────
+        private void CargarMeses()
         {
             Tree1.Items.Clear();
+            string[] meses = { "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+                                "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre" };
 
-            var nodoTodos = new TreeViewItem { Header = "Todos", Tag = "todos" };
-
-            int ufProd = Sql.ProductosObj.ContarFilas;
-            for (int i = 1; i <= ufProd; i++)
+            var nodoGeneral = new TreeViewItem
             {
-                var idObj = Sql.ProductosObj.Mover(i);
-                if (idObj == null) continue;
-                string prodId = idObj.ToString()!;
-                string prodDesc = Sql.ProductosObj.ObtenerItem("descripcion", prodId)?.ToString() ?? prodId;
+                Header     = "General",
+                Tag        = "",
+                IsExpanded = true
+            };
+            foreach (var mes in meses)
+                nodoGeneral.Items.Add(new TreeViewItem { Header = mes, Tag = mes });
 
-                var nodoProd = new TreeViewItem
-                {
-                    Header = prodDesc,
-                    Tag    = $"producto:{prodId}"
-                };
+            Tree1.Items.Add(nodoGeneral);
 
-                int ufFam = Sql.FamiliasObj.ContarFilas;
-                for (int j = 1; j <= ufFam; j++)
-                {
-                    var famIdObj = Sql.FamiliasObj.Mover(j);
-                    if (famIdObj == null) continue;
-                    string famId = famIdObj.ToString()!;
-                    string famProd = Sql.FamiliasObj.ObtenerItem("producto", famId)?.ToString() ?? "";
-                    if (famProd != prodId) continue;
-
-                    string famDesc = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? famId;
-                    nodoProd.Items.Add(new TreeViewItem
-                    {
-                        Header = famDesc,
-                        Tag    = $"familia:{famId}"
-                    });
-                }
-
-                nodoProd.IsExpanded = true;
-                nodoTodos.Items.Add(nodoProd);
+            int mesActual = DateTime.Now.Month - 1;
+            if (nodoGeneral.Items[mesActual] is TreeViewItem ti)
+            {
+                ti.IsSelected = true;
+                _mesActivo = meses[mesActual];
             }
-
-            // Nodo "Sin Clasificar"
-            var nodoSin = new TreeViewItem { Header = "Sin Clasificar", Tag = "sinclasificar" };
-            nodoTodos.Items.Add(nodoSin);
-
-            nodoTodos.IsExpanded = true;
-            Tree1.Items.Add(nodoTodos);
-
-            nodoTodos.IsSelected = true;
         }
 
-        // ─── Carga la lista de artículos (filtrada por árbol/búsqueda) ────────
-        public void CargarArticulos()
+        // ─── Carga la lista de documentos de precios (documentosL) ───────────
+        public void CargarListas()
         {
-            var lista = new List<PrecioArticuloFila>();
+            if (TxtBuscar == null || Grid1 == null) return;
+
+            var lista = new List<PrecioListaFila>();
             int linea = 1;
+            string busqueda  = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
+            string mesFiltro = _modoFiltro == "filtros"   ? _mesActivo : "";
+            string regionId  = CboRegion?.SelectedValue?.ToString() ?? "";
 
-            string busqueda  = _modoFiltro == "busqueda" ? TxtBuscar.Text.Trim().ToLower() : "";
-            string tagFiltro = _modoFiltro == "familia"  ? ObtenerTagFiltro()              : "";
-
-            int uf = Sql.ArticulosObj.ContarFilas;
+            int uf = Sql.DocumentosLObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
             {
-                var idObj = Sql.ArticulosObj.Mover(i);
+                var idObj = Sql.DocumentosLObj.Mover(i);
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
 
-                string famId = Sql.ArticulosObj.ObtenerItem("familia", id)?.ToString() ?? "";
+                string region = Sql.DocumentosLObj.ObtenerItem("region", id)?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(regionId) && region != regionId) continue;
 
-                // Filtro de árbol
-                if (!string.IsNullOrEmpty(tagFiltro))
+                var fechaDocObj = Sql.DocumentosLObj.ObtenerItem("fecha", id);
+                DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
+                if (!string.IsNullOrEmpty(mesFiltro))
                 {
-                    if (tagFiltro == "sinclasificar")
-                    {
-                        string famDescCheck = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? "";
-                        if (!string.IsNullOrEmpty(famId) && !string.IsNullOrEmpty(famDescCheck)) continue;
-                    }
-                    else if (tagFiltro.StartsWith("familia:"))
-                    {
-                        string famFiltro = tagFiltro.Substring("familia:".Length);
-                        if (famId != famFiltro) continue;
-                    }
-                    else if (tagFiltro.StartsWith("producto:"))
-                    {
-                        string prodFiltro = tagFiltro.Substring("producto:".Length);
-                        string famProd    = Sql.FamiliasObj.ObtenerItem("producto", famId)?.ToString() ?? "";
-                        if (famProd != prodFiltro) continue;
-                    }
+                    if (fechaDocObj == null) continue;
+                    string mesDoc = ObtenerNombreMes(fechaDoc.Month);
+                    if (!string.Equals(mesDoc, mesFiltro, StringComparison.OrdinalIgnoreCase)) continue;
                 }
 
-                string codigo  = Sql.ArticulosObj.ObtenerItem("codigo",      id)?.ToString() ?? "";
-                string desc    = Sql.ArticulosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
-                string modelo  = Sql.ArticulosObj.ObtenerItem("modelo",      id)?.ToString() ?? "";
-                string famDesc = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString() ?? "";
-                string descCompleta = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
+                string codigo      = Sql.DocumentosLObj.ObtenerItem("codigo",      id)?.ToString() ?? "";
+                string observacion = Sql.DocumentosLObj.ObtenerItem("observacion", id)?.ToString() ?? "";
 
-                // Filtro de búsqueda
                 if (!string.IsNullOrEmpty(busqueda))
-                {
-                    if (!codigo.ToLower().Contains(busqueda) &&
-                        !descCompleta.ToLower().Contains(busqueda))
+                    if (!codigo.ToLower().Contains(busqueda) && !observacion.ToLower().Contains(busqueda))
                         continue;
-                }
 
-                lista.Add(new PrecioArticuloFila
-                {
-                    Linea       = linea++,
-                    Id          = id,
-                    Codigo      = codigo,
-                    Descripcion = descCompleta,
-                    Estado      = Sql.ArticulosObj.ObtenerItem("estado", id)?.ToString() ?? ""
-                });
+                lista.Add(ConstruirFila(id, linea++));
             }
 
-            Grid1.ItemsSource = lista;
-            GridPrecios.ItemsSource = null;
+            Grid1.ItemsSource       = lista;
+            TxtTotalDocumentos.Text = lista.Count.ToString("N0");
+            TxtTotalLineas.Text     = lista.Sum(f => f.Lineas).ToString("N0");
+
+            int año = AppState.DataFechaFinal.Year > 2000
+                ? AppState.DataFechaFinal.Year
+                : DateTime.Now.Year;
+            LblSubtitulo.Text = string.IsNullOrEmpty(_mesActivo)
+                ? año.ToString()
+                : $"{_mesActivo} {año}";
+
+            OcultarDetalle();
         }
 
-        // ─── Obtener filtro del árbol ─────────────────────────────────────────
-        private string ObtenerTagFiltro()
+        // ─── Nombre de mes ────────────────────────────────────────────────────
+        private static string ObtenerNombreMes(int mes)
         {
-            if (Tree1.SelectedItem is TreeViewItem item)
-                return item.Tag?.ToString() ?? "todos";
-            return "todos";
+            string[] meses = { "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+                                "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre" };
+            return mes >= 1 && mes <= 12 ? meses[mes - 1] : "";
         }
 
-        // ─── Carga el historial de precios del artículo seleccionado ──────────
-        private void CargarPrecios(string articuloId)
+        // ─── Helpers de actualización incremental del Grid1 ───────────────────
+        private List<PrecioListaFila> FilasGrid =>
+            Grid1.ItemsSource as List<PrecioListaFila> ?? new List<PrecioListaFila>();
+
+        private PrecioListaFila ConstruirFila(string id, int linea)
         {
-            var lista = new List<PrecioHistFila>();
+            var fechaObj = Sql.DocumentosLObj.ObtenerItem("fecha", id);
+            DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : default;
+            string region  = Sql.DocumentosLObj.ObtenerItem("region", id)?.ToString() ?? "";
+            var (cantLineas, valor) = CalcularTotales(id);
+            return new PrecioListaFila
+            {
+                Linea      = linea,
+                Id         = id,
+                Codigo     = Sql.DocumentosLObj.ObtenerItem("codigo", id)?.ToString() ?? "",
+                Fecha      = fecha,
+                FechaStr   = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
+                RegionDesc = Sql.RegionesObj.ObtenerItem("descripcion", region)?.ToString() ?? "",
+                Lineas     = cantLineas,
+                ValorTotal = valor
+            };
+        }
+
+        private void RenumerarYTotales()
+        {
+            var lista = FilasGrid;
+            int n = 1;
+            foreach (var f in lista) f.Linea = n++;
+            TxtTotalDocumentos.Text = lista.Count.ToString("N0");
+            TxtTotalLineas.Text     = lista.Sum(f => f.Lineas).ToString("N0");
+            Grid1.Items.Refresh();
+        }
+
+        // ─── Cuenta líneas y suma el valor de un documentoL ───────────────────
+        private static (int lineas, double valor) CalcularTotales(string documentoL)
+        {
+            int lineas = 0;
+            double valor = 0;
+            int uf = Sql.PreciosObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.PreciosObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                if (Sql.PreciosObj.ObtenerItem("documentoL", id)?.ToString() != documentoL) continue;
+                lineas++;
+                valor += Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0);
+            }
+            return (lineas, valor);
+        }
+
+        // ─── Panel de detalle artículos (Lista2) ─────────────────────────────
+        private void MostrarDetalle(string documentoL)
+        {
+            string codigoDoc = Sql.DocumentosLObj.ObtenerItem("codigo", documentoL)?.ToString() ?? documentoL;
+            LblDetalleHeader.Text = $"Artículos de la lista {codigoDoc}";
+            var detalles = new List<PrecioDetalleFila>();
             int linea = 1;
-            string regionFiltro = RegionSeleccionadaId;
 
             int uf = Sql.PreciosObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -194,54 +211,53 @@ namespace WpfAppVba
                 var idObj = Sql.PreciosObj.Mover(i);
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
+                if (Sql.PreciosObj.ObtenerItem("documentoL", id)?.ToString() != documentoL) continue;
 
-                if (Sql.PreciosObj.ObtenerItem("articulo", id)?.ToString() != articuloId) continue;
-                if (!string.IsNullOrEmpty(regionFiltro) &&
-                    (Sql.PreciosObj.ObtenerItem("region", id)?.ToString() ?? "") != regionFiltro) continue;
+                string artId  = Sql.PreciosObj.ObtenerItem("articulo", id)?.ToString() ?? "";
+                string codigo = Sql.ArticulosObj.ObtenerItem("codigo", artId)?.ToString() ?? artId;
 
-                lista.Add(ConstruirFilaPrecio(id, linea++));
+                string desc     = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString() ?? "";
+                string famId    = Sql.ArticulosObj.ObtenerItem("familia", artId)?.ToString() ?? "";
+                string famDesc  = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? "";
+                string modelo   = Sql.ArticulosObj.ObtenerItem("modelo", artId)?.ToString() ?? "";
+                string descFull = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
+
+                double precio = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0);
+
+                detalles.Add(new PrecioDetalleFila
+                {
+                    Linea       = linea++,
+                    Codigo      = codigo,
+                    Descripcion = descFull,
+                    Precio      = precio
+                });
             }
 
-            GridPrecios.ItemsSource = lista;
+            Lista2.ItemsSource = detalles;
         }
 
-        private PrecioHistFila ConstruirFilaPrecio(string id, int linea)
+        private void OcultarDetalle()
         {
-            var fechaObj = Sql.PreciosObj.ObtenerItem("fecha", id);
-            DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : default;
-            string regionId   = Sql.PreciosObj.ObtenerItem("region", id)?.ToString() ?? "";
-            string regionDesc = Sql.RegionesObj.ObtenerItem("descripcion", regionId)?.ToString() ?? regionId;
-
-            return new PrecioHistFila
-            {
-                Linea    = linea,
-                Id       = id,
-                Fecha    = fecha,
-                FechaStr = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
-                Region   = regionDesc,
-                Precio   = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0)
-            };
+            LblDetalleHeader.Text = "Artículos de la lista";
+            Lista2.ItemsSource    = null;
         }
 
-        // ─── Lista del historial de precios en memoria ────────────────────────
-        private List<PrecioHistFila> PreciosGrid =>
-            GridPrecios.ItemsSource as List<PrecioHistFila> ?? new List<PrecioHistFila>();
-
-        private void RenumerarPrecios()
+        // ─── Selección en Grid1 → mostrar detalle ────────────────────────────
+        private void Grid1_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            int n = 1;
-            foreach (var f in PreciosGrid) f.Linea = n++;
-            GridPrecios.Items.Refresh();
+            if (Grid1.SelectedItem is PrecioListaFila fila)
+                MostrarDetalle(fila.Id);
+            else
+                OcultarDetalle();
         }
 
-        // ─── Artículo actualmente seleccionado ────────────────────────────────
-        private PrecioArticuloFila? ArticuloSeleccionado => Grid1.SelectedItem as PrecioArticuloFila;
-
-        // ─── Eventos árbol y búsqueda ─────────────────────────────────────────
+        // ─── Eventos de árbol ─────────────────────────────────────────────────
         private void Tree1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            _modoFiltro = "familia";
-            CargarArticulos();
+            if (Tree1.SelectedItem is TreeViewItem ti)
+                _mesActivo = ti.Tag?.ToString() ?? "";
+            _modoFiltro = "filtros";
+            CargarListas();
         }
 
         private void Tree1_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -252,199 +268,184 @@ namespace WpfAppVba
 
             if (source is TreeViewItem tvi && tvi.IsSelected)
             {
-                _modoFiltro = "familia";
-                CargarArticulos();
+                _modoFiltro = "filtros";
+                CargarListas();
             }
         }
 
+        private void CboRegion_SelectionChanged(object sender, SelectionChangedEventArgs e)
+            => CargarListas();
+
+        // ─── Búsqueda (independiente del Tree1) ──────────────────────────────
         private void TxtBuscar_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key != Key.Enter) return;
-            _modoFiltro = "busqueda";
-            CargarArticulos();
+            _modoFiltro = "busquedas";
+            CargarListas();
         }
 
         private void BtnBuscar_Click(object sender, RoutedEventArgs e)
         {
-            _modoFiltro = "busqueda";
-            CargarArticulos();
+            _modoFiltro = "busquedas";
+            CargarListas();
         }
 
-        // ─── Al seleccionar un artículo → cargar su historial ─────────────────
-        private void Grid1_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (ArticuloSeleccionado is not PrecioArticuloFila fila)
-            {
-                GridPrecios.ItemsSource = null;
-                return;
-            }
-            CargarPrecios(fila.Id);
-        }
-
-        // ─── Doble clic / Enter en grid de artículos → nuevo precio ───────────
+        // ─── Doble clic / Enter = editar ──────────────────────────────────────
         private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             e.Handled = true;
-            BtnNuevoPrecio_Click(sender, e);
+            AbrirEditar();
         }
 
         private void Grid1_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key != Key.Enter) return;
             e.Handled = true;
-            BtnNuevoPrecio_Click(sender, e);
+            AbrirEditar();
         }
 
-        // ─── Doble clic / Enter en grid de precios → editar precio ────────────
-        private void GridPrecios_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        // ─── Botones ──────────────────────────────────────────────────────────
+        private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
-            e.Handled = true;
-            BtnEditarPrecio_Click(sender, e);
-        }
-
-        private void GridPrecios_PreviewKeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key != Key.Enter) return;
-            e.Handled = true;
-            BtnEditarPrecio_Click(sender, e);
-        }
-
-        // ─── Botones de precio ────────────────────────────────────────────────
-        private void BtnNuevoPrecio_Click(object sender, RoutedEventArgs e)
-        {
-            if (ArticuloSeleccionado is not PrecioArticuloFila fila)
-            {
-                MessageBox.Show("Seleccione un artículo primero.", "Consola",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (string.IsNullOrEmpty(RegionSeleccionadaId))
-            {
-                MessageBox.Show("Seleccione una región primero.", "Consola",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+            if (!AppState.EsAdmin) return;
+            AppState.EventoFormularioL = "nuevo";
 
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-
-            var detalle = new PreciosDetalle(fila.Id, fila.Codigo, fila.Descripcion,
-                                             "", RegionSeleccionadaId, RegionSeleccionadaDesc);
-            detalle.Cerrando += () =>
+            string titulo = "Nueva Lista de Precios";
+            string clave  = "nueva-lista-precios";
+            var dlg = new PreciosDetalle(this, tituloTab: titulo);
+            dlg.Cerrando += () =>
             {
-                consola.CerrarPestaña(detalle);
-                if (detalle.ItemCreadoId == null) return;
-                var nueva = ConstruirFilaPrecio(detalle.ItemCreadoId, 0);
-                PreciosGrid.Add(nueva);
-                RenumerarPrecios();
-                GridPrecios.SelectedItem = nueva; GridPrecios.ScrollIntoView(nueva);
-                GridFocusHelper.EnfocarCeldaSeleccionada(GridPrecios);
+                consola.CerrarPestaña(dlg);
+                if (dlg.ItemCreadoId == null) return;
+                var nueva = ConstruirFila(dlg.ItemCreadoId, 0);
+                FilasGrid.Add(nueva);
+                RenumerarYTotales();
+                Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña("Nuevo Precio", detalle, $"nuevo-precio-{fila.Id}");
+            consola.AbrirPestaña(titulo, dlg, clave);
         }
 
-        private void BtnEditarPrecio_Click(object sender, RoutedEventArgs e)
+        private void BtnEditar_Click(object sender, RoutedEventArgs e)
         {
-            if (ArticuloSeleccionado is not PrecioArticuloFila art) return;
-            if (GridPrecios.SelectedItem is not PrecioHistFila fila) return;
-
-            string idSel = fila.Id;
-            var consola = Window.GetWindow(this) as ConsolaMovimientos;
-            if (consola == null) return;
-            var detalle = new PreciosDetalle(art.Id, art.Codigo, art.Descripcion, fila.Id);
-            detalle.Cerrando += () =>
-            {
-                consola.CerrarPestaña(detalle);
-                var lista = PreciosGrid;
-                int idx   = lista.IndexOf(fila);
-                if (idx >= 0)
-                {
-                    var actualizada = ConstruirFilaPrecio(idSel, fila.Linea);
-                    lista[idx] = actualizada;
-                    RenumerarPrecios();
-                    GridPrecios.SelectedItem = actualizada; GridPrecios.ScrollIntoView(actualizada);
-                }
-                GridFocusHelper.EnfocarCeldaSeleccionada(GridPrecios);
-            };
-            consola.AbrirPestaña("Editar Precio", detalle, $"precio-{idSel}");
+            if (!AppState.EsAdmin) return;
+            AbrirEditar();
         }
 
-        private void BtnEliminarPrecio_Click(object sender, RoutedEventArgs e)
+        private void BtnEliminar_Click(object sender, RoutedEventArgs e)
         {
-            if (GridPrecios.SelectedItem is not PrecioHistFila fila) return;
+            if (!AppState.EsAdmin) return;
+            if (Grid1.SelectedItem is not PrecioListaFila fila) return;
 
-            var res = MessageBox.Show("¿Eliminar este registro de precio?", "Consola",
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
+            var res = MessageBox.Show("¿Eliminar esta lista de precios y todas sus líneas?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (res != MessageBoxResult.Yes) return;
 
-            Sql.PreciosObj.EstablecerItem("edicion",  fila.Id, DateTime.Now);
-            Sql.PreciosObj.EstablecerItem("usuarioE", fila.Id, AppState.UsuarioActivo);
-            Sql.PreciosObj.Ocultar(fila.Id);
-            Sql.PreciosObj.OrdenarData(("fecha", false));
-
-            var lista = PreciosGrid;
-            int idx   = lista.IndexOf(fila);
-            if (idx >= 0) lista.RemoveAt(idx);
-            RenumerarPrecios();
-
-            if (lista.Count > 0)
+            try
             {
-                var sel = lista[Math.Min(idx, lista.Count - 1)];
-                GridPrecios.SelectedItem = sel; GridPrecios.ScrollIntoView(sel);
-            }
-            GridFocusHelper.EnfocarCeldaSeleccionada(GridPrecios);
-        }
+                int uf = Sql.PreciosObj.ContarFilas;
+                var idsOcultar = new List<string>();
+                for (int i = 1; i <= uf; i++)
+                {
+                    var idObj = Sql.PreciosObj.Mover(i);
+                    if (idObj == null) continue;
+                    string id = idObj.ToString()!;
+                    if (Sql.PreciosObj.ObtenerItem("documentoL", id)?.ToString() == fila.Id)
+                        idsOcultar.Add(id);
+                }
+                foreach (string id in idsOcultar)
+                    Sql.PreciosObj.Ocultar(id);
 
-        // ─── Cambiar estado del artículo (mostrar/ocultar) ────────────────────
-        private void BtnCambiarEstado_Click(object sender, RoutedEventArgs e)
-        {
-            if (ArticuloSeleccionado is not PrecioArticuloFila fila)
+                Sql.DocumentosLObj.EstablecerItem("edicion",  fila.Id, DateTime.Now);
+                Sql.DocumentosLObj.EstablecerItem("usuarioE", fila.Id, AppState.UsuarioActivo);
+                Sql.DocumentosLObj.Ocultar(fila.Id);
+
+                Sql.PreciosObj.OrdenarData(("documentoL", false), ("indice", false));
+                Sql.DocumentosLObj.OrdenarData(("fecha", false));
+
+                var lista = FilasGrid;
+                int idx   = lista.IndexOf(fila);
+                if (idx >= 0) lista.RemoveAt(idx);
+                RenumerarYTotales();
+
+                if (lista.Count > 0)
+                {
+                    var sel = lista[Math.Min(idx, lista.Count - 1)];
+                    Grid1.SelectedItem = sel; Grid1.ScrollIntoView(sel);
+                }
+                else OcultarDetalle();
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            }
+            catch (Exception ex)
             {
-                MessageBox.Show("Seleccione un artículo primero.", "Consola",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
-            string actual = Sql.ArticulosObj.ObtenerItem("estado", fila.Id)?.ToString() ?? "mostrar";
-            string nuevo  = actual == "mostrar" ? "ocultar" : "mostrar";
-
-            Sql.ArticulosObj.EstablecerItem("estado",   fila.Id, nuevo);
-            Sql.ArticulosObj.EstablecerItem("edicion",  fila.Id, DateTime.Now);
-            Sql.ArticulosObj.EstablecerItem("usuarioE", fila.Id, AppState.UsuarioActivo);
-            Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
-
-            fila.Estado = nuevo;
-            Grid1.Items.Refresh();
         }
 
         private void BtnActualizar_Click(object sender, RoutedEventArgs e)
         {
-            Sql.ArticulosObj.Actualizar();
+            if (!FuncionesComunes.VerificarConexionParaActualizar(Window.GetWindow(this))) return;
+
+            Sql.DocumentosLObj.Actualizar();
             Sql.PreciosObj.Actualizar();
-            CargarArbol();
-            CargarArticulos();
+            CargarRegiones();
+            CargarListas();
+        }
+
+        // ─── Helper ───────────────────────────────────────────────────────────
+        private void AbrirEditar()
+        {
+            if (Grid1.SelectedItem is not PrecioListaFila fila) return;
+
+            string idSel = fila.Id;
+            int    linea = fila.Linea;
+            AppState.EventoFormularioL = "editar";
+
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            string titulo = $"Lista de Precios {fila.Codigo}";
+            var dlg = new PreciosDetalle(this, idSel, tituloTab: titulo);
+            dlg.Cerrando += () =>
+            {
+                consola.CerrarPestaña(dlg);
+                var lista = FilasGrid;
+                int idx   = lista.IndexOf(fila);
+                if (idx >= 0)
+                {
+                    var actualizada = ConstruirFila(idSel, linea);
+                    lista[idx] = actualizada;
+                    RenumerarYTotales();
+                    Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
+                }
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            };
+            consola.AbrirPestaña(titulo, dlg, $"lista-precios-{idSel}");
         }
     }
 
-    // ─── Modelos de fila ──────────────────────────────────────────────────────
-    public class PrecioArticuloFila
+    // ─── Modelos ──────────────────────────────────────────────────────────────
+    public class PrecioListaFila
     {
-        public int    Linea       { get; set; }
-        public string Id          { get; set; } = "";
-        public string Codigo      { get; set; } = "";
-        public string Descripcion { get; set; } = "";
-        public string Estado      { get; set; } = "";
+        public int      Linea      { get; set; }
+        public string   Id         { get; set; } = "";
+        public string   Codigo     { get; set; } = "";
+        public DateTime Fecha      { get; set; }
+        public string   FechaStr   { get; set; } = "";
+        public string   RegionDesc { get; set; } = "";
+        public int      Lineas     { get; set; }
+        public double   ValorTotal { get; set; }
     }
 
-    public class PrecioHistFila
+    public class PrecioDetalleFila
     {
-        public int      Linea    { get; set; }
-        public string   Id       { get; set; } = "";
-        public DateTime Fecha    { get; set; }
-        public string   FechaStr { get; set; } = "";
-        public string   Region   { get; set; } = "";
-        public double   Precio   { get; set; }
+        public int    Linea       { get; set; }
+        public string Codigo      { get; set; } = "";
+        public string Descripcion { get; set; } = "";
+        public double Precio      { get; set; }
     }
 
     public class RegionItem

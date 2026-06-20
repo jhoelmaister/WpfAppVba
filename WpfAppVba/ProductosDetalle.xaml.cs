@@ -56,14 +56,13 @@ namespace WpfAppVba
         private void CargarParaEditar()
         {
             string id = _idEditar;
-            Box_Codigo.Text      = id;
+            Box_Codigo.Text      = Sql.ProductosObj.ObtenerItem("codigo",      id)?.ToString() ?? "";
             Box_Descripcion.Text = Sql.ProductosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
         }
 
         private void CargarParaNuevo()
         {
-            long siguiente = Convert.ToInt64(Sql.ProductosObj.Maximo("id") ?? 0) + 1;
-            Box_Codigo.Text = siguiente.ToString();
+            Box_Codigo.Text = Sql.ProductosObj.SiguienteCodigoInt().ToString();
         }
 
         // ─── Detectar cambios en cualquier campo ──────────────────────────────
@@ -74,18 +73,21 @@ namespace WpfAppVba
 
         // ─── Guardar ─────────────────────────────────────────────────────────
         private bool Guardar()
-            => _modoEditar ? GuardarEditar() : GuardarNuevo();
+        {
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+            return _modoEditar ? GuardarEditar() : GuardarNuevo();
+        }
 
         private bool GuardarEditar()
         {
-            string codigo = Box_Codigo.Text.Trim();
+            string id = _idEditar;
             try
             {
-                Sql.ProductosObj.EstablecerItem("descripcion", codigo, Box_Descripcion.Text);
-                Sql.ProductosObj.EstablecerItem("edicion",     codigo, DateTime.Now);
-                Sql.ProductosObj.EstablecerItem("usuarioE",    codigo, AppState.UsuarioActivo);
+                Sql.ProductosObj.EstablecerItem("descripcion", id, Box_Descripcion.Text);
+                Sql.ProductosObj.EstablecerItem("edicion",     id, DateTime.Now);
+                Sql.ProductosObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
 
-                Sql.ProductosObj.OrdenarData(("id", false));
+                Sql.ProductosObj.OrdenarData(("codigo", false));
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
             }
@@ -101,23 +103,27 @@ namespace WpfAppVba
             string codigo = Box_Codigo.Text.Trim();
             try
             {
-                if (!Sql.ProductosObj.VerificarId(codigo, "id"))
+                if (Sql.ProductosObj.CodigoExiste(codigo))
                 {
                     MessageBox.Show("El código ya existe", "Consola",
                         MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Box_Codigo.Text = Sql.ProductosObj.SiguienteCodigoInt().ToString();
                     return false;
                 }
 
-                Sql.ProductosObj.Nuevo(codigo);
-                Sql.ProductosObj.EstablecerItem("descripcion", codigo, Box_Descripcion.Text);
-                Sql.ProductosObj.EstablecerItem("emision",     codigo, DateTime.Now);
-                Sql.ProductosObj.EstablecerItem("edicion",     codigo, DateTime.Now);
-                Sql.ProductosObj.EstablecerItem("usuario",     codigo, AppState.UsuarioActivo);
-                Sql.ProductosObj.EstablecerItem("usuarioE",    codigo, AppState.UsuarioActivo);
+                string id = Guid.NewGuid().ToString();
+                Sql.ProductosObj.Nuevo(id);
+                Sql.ProductosObj.EstablecerItem("codigo",      id, codigo);
+                Sql.ProductosObj.EstablecerItem("descripcion", id, Box_Descripcion.Text);
+                Sql.ProductosObj.EstablecerItem("emision",     id, DateTime.Now);
+                Sql.ProductosObj.EstablecerItem("edicion",     id, DateTime.Now);
+                Sql.ProductosObj.EstablecerItem("usuario",     id, AppState.UsuarioActivo);
+                Sql.ProductosObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
+                Sql.ProductosObj.EstablecerItem("empresa",     id, AppState.EmpresaActiva);
 
-                Sql.ProductosObj.OrdenarData(("id", false));
+                Sql.ProductosObj.OrdenarData(("codigo", false));
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
-                ItemCreadoId = codigo;
+                ItemCreadoId = id;
                 return true;
             }
             catch (Exception ex)

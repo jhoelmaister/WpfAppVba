@@ -54,11 +54,19 @@ namespace WpfAppVba
 
         private void ConfigurarModo()
         {
-            if (!ModoSelector) return;
-            BtnNuevo.Visibility       = Visibility.Collapsed;
-            BtnEditar.Visibility      = Visibility.Collapsed;
-            BtnEliminar.Visibility    = Visibility.Collapsed;
-            BtnSeleccionar.Visibility = Visibility.Visible;
+            if (ModoSelector)
+            {
+                BtnNuevo.Visibility       = Visibility.Collapsed;
+                BtnEditar.Visibility      = Visibility.Collapsed;
+                BtnEliminar.Visibility    = Visibility.Collapsed;
+                BtnSeleccionar.Visibility = Visibility.Visible;
+            }
+            else if (!AppState.EsAdmin)
+            {
+                BtnNuevo.Visibility    = Visibility.Collapsed;
+                BtnEditar.Visibility   = Visibility.Collapsed;
+                BtnEliminar.Visibility = Visibility.Collapsed;
+            }
         }
 
         // ─── Carga la lista ────────────────────────────────────────────────────
@@ -75,16 +83,18 @@ namespace WpfAppVba
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
 
-                string desc = Sql.RegionesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                string desc   = Sql.RegionesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                string codigo = Sql.RegionesObj.ObtenerItem("codigo",      id)?.ToString() ?? "";
 
                 if (busqueda == "" ||
                     desc.ToLower().Contains(busqueda) ||
-                    id.ToLower().Contains(busqueda))
+                    codigo.ToLower().Contains(busqueda))
                 {
                     filas.Add(new RegionFila
                     {
                         Linea       = linea++,
                         Id          = id,
+                        Codigo      = codigo,
                         Descripcion = desc
                     });
                 }
@@ -103,6 +113,7 @@ namespace WpfAppVba
             {
                 Linea       = linea,
                 Id          = id,
+                Codigo      = Sql.RegionesObj.ObtenerItem("codigo",      id)?.ToString() ?? "",
                 Descripcion = Sql.RegionesObj.ObtenerItem("descripcion", id)?.ToString() ?? ""
             };
         }
@@ -142,7 +153,7 @@ namespace WpfAppVba
         private void Seleccionar()
         {
             if (Grid1.SelectedItem is not RegionFila fila) return;
-            _callbackSeleccion?.Invoke(fila.Id);
+            _callbackSeleccion?.Invoke(fila.Codigo);
             Cerrando?.Invoke();
         }
 
@@ -175,6 +186,9 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not RegionFila fila) return;
 
+            // Verificación de conexión en 2 capas antes de persistir el borrado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             var res = MessageBox.Show("¿Eliminar esta región?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
 
@@ -201,12 +215,16 @@ namespace WpfAppVba
 
         private void BtnActualizar_Click(object sender, RoutedEventArgs e)
         {
+            // Sin conexión no se puede refrescar desde SQL: avisar y no congelar.
+            if (!FuncionesComunes.VerificarConexionParaActualizar(Window.GetWindow(this))) return;
+
             Sql.RegionesObj.Actualizar();
             CargarRegiones();
         }
 
         private void AbrirEditar()
         {
+            if (!AppState.EsAdmin) return;
             if (Grid1.SelectedItem is not RegionFila fila) return;
             string idSel = fila.Id;
             int    linea = fila.Linea;
@@ -227,7 +245,7 @@ namespace WpfAppVba
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña($"Región {idSel}", detalle, $"region-{idSel}");
+            consola.AbrirPestaña($"Región {fila.Codigo}", detalle, $"region-{idSel}");
         }
     }
 
@@ -236,6 +254,7 @@ namespace WpfAppVba
     {
         public int    Linea       { get; set; }
         public string Id          { get; set; } = "";
+        public string Codigo      { get; set; } = "";
         public string Descripcion { get; set; } = "";
     }
 }

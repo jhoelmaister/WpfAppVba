@@ -72,15 +72,15 @@ namespace WpfAppVba
             Box_Indice.Text        = Sql.ArticulosObj.ObtenerItem("indice",      id)?.ToString() ?? "";
 
             string famId = Sql.ArticulosObj.ObtenerItem("familia", id)?.ToString() ?? "";
-            Box_Identificador_Familia.Text = famId;
+            Box_Identificador_Familia.Text = Sql.FamiliasObj.ObtenerItem("codigo", famId)?.ToString() ?? "";
             ActualizarDescripcionFamilia();
 
             string indId = Sql.ArticulosObj.ObtenerItem("industria", id)?.ToString() ?? "";
-            Box_Identificador_Industria.Text = indId;
+            Box_Identificador_Industria.Text = Sql.IndustriasObj.ObtenerItem("codigo", indId)?.ToString() ?? "";
             ActualizarDescripcionIndustria();
 
             string catId = Sql.ArticulosObj.ObtenerItem("Categoria", id)?.ToString() ?? "";
-            Box_Identificador_Categoria.Text = catId;
+            Box_Identificador_Categoria.Text = Sql.CategoriasObj.ObtenerItem("codigo", catId)?.ToString() ?? "";
             ActualizarDescripcionCategoria();
 
             Box_Descripcion.Text = Sql.ArticulosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
@@ -90,21 +90,19 @@ namespace WpfAppVba
 
         private void CargarParaNuevo()
         {
-            long siguiente = Convert.ToInt64(Sql.ArticulosObj.Maximo("id") ?? 0) + 1;
-            Box_Identificador.Text = siguiente.ToString();
+            Box_Identificador.Text = Guid.NewGuid().ToString();
             Box_Indice.Text        = "1";
         }
 
         private void CargarParaInsertar()
         {
-            long siguiente = Convert.ToInt64(Sql.ArticulosObj.Maximo("id") ?? 0) + 1;
-            Box_Identificador.Text = siguiente.ToString();
+            Box_Identificador.Text = Guid.NewGuid().ToString();
 
-            // Tomar familia e indice del artículo de referencia
-            string famRef = Sql.ArticulosObj.ObtenerItem("familia", _idEditar)?.ToString() ?? "";
-            string indRef = Sql.ArticulosObj.ObtenerItem("indice",  _idEditar)?.ToString() ?? "1";
+            // Tomar familia (código) e indice del artículo de referencia
+            string famRefId = Sql.ArticulosObj.ObtenerItem("familia", _idEditar)?.ToString() ?? "";
+            string indRef   = Sql.ArticulosObj.ObtenerItem("indice",  _idEditar)?.ToString() ?? "1";
 
-            Box_Identificador_Familia.Text = famRef;
+            Box_Identificador_Familia.Text = Sql.FamiliasObj.ObtenerItem("codigo", famRefId)?.ToString() ?? "";
             Box_Indice.Text                = indRef;
             ActualizarDescripcionFamilia();
 
@@ -114,10 +112,29 @@ namespace WpfAppVba
             BtnVerFamilias.IsEnabled            = false;
         }
 
+        // ─── Resolver id (UUID) de los referidos a partir del código digitado ─
+        private string ResolverFamiliaId()
+        {
+            string c = Box_Identificador_Familia.Text.Trim();
+            return c == "" ? "" : Sql.FamiliasObj.BuscarIdentificador("codigo", c);
+        }
+
+        private string ResolverIndustriaId()
+        {
+            string c = Box_Identificador_Industria.Text.Trim();
+            return c == "" ? "" : Sql.IndustriasObj.BuscarIdentificador("codigo", c);
+        }
+
+        private string ResolverCategoriaId()
+        {
+            string c = Box_Identificador_Categoria.Text.Trim();
+            return c == "" ? "" : Sql.CategoriasObj.BuscarIdentificador("codigo", c);
+        }
+
         // ─── Cuando cambia la familia en modo "nuevo": indice = max(familia) + 1 ───
         private void RecalcularIndicePorFamilia()
         {
-            string famId = Box_Identificador_Familia.Text.Trim();
+            string famId = ResolverFamiliaId();
             if (string.IsNullOrEmpty(famId)) return;
 
             int indiceMax = 0;
@@ -135,13 +152,18 @@ namespace WpfAppVba
                 if (ind > indiceMax) indiceMax = ind;
             }
 
+            // También considerar los índices reservados por artículos eliminados, para
+            // sugerir un índice que NO reutilice uno reservado (queda más allá de todos).
+            foreach (int r in Sql.ArticulosObj.IndicesNoNormales("familia", famId))
+                if (r > indiceMax) indiceMax = r;
+
             Box_Indice.Text = (indiceMax + 1).ToString();
         }
 
         // ─── Actualizar descripciones de referidos ────────────────────────────
         private void ActualizarDescripcionFamilia()
         {
-            string famId = Box_Identificador_Familia.Text.Trim();
+            string famId = ResolverFamiliaId();
             Box_Familia_Descripcion.Text = string.IsNullOrEmpty(famId)
                 ? ""
                 : Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? "";
@@ -149,7 +171,7 @@ namespace WpfAppVba
 
         private void ActualizarDescripcionIndustria()
         {
-            string id = Box_Identificador_Industria.Text.Trim();
+            string id = ResolverIndustriaId();
             Box_Industria_Descripcion.Text = string.IsNullOrEmpty(id)
                 ? ""
                 : Sql.IndustriasObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
@@ -157,7 +179,7 @@ namespace WpfAppVba
 
         private void ActualizarDescripcionCategoria()
         {
-            string id = Box_Identificador_Categoria.Text.Trim();
+            string id = ResolverCategoriaId();
             Box_Categoria_Descripcion.Text = string.IsNullOrEmpty(id)
                 ? ""
                 : Sql.CategoriasObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
@@ -229,12 +251,23 @@ namespace WpfAppVba
         // ─── Ver movimientos del artículo ─────────────────────────────────────
         private void BtnVerMovimientos_Click(object sender, RoutedEventArgs e)
         {
-            new MovimientosWindow(Box_Codigo.Text.Trim()) { Owner = Window.GetWindow(this) }.ShowDialog();
+            MovimientosGeneral.OpenAsTab(Window.GetWindow(this)!, Box_Codigo.Text.Trim());
         }
 
         // ─── Guardar ─────────────────────────────────────────────────────────
         private bool Guardar()
         {
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+
+            // Todo artículo debe tener una familia EXISTENTE (ya no existe "Sin
+            // Clasificar"). ResolverFamiliaId devuelve "" si está vacío o no existe.
+            if (string.IsNullOrEmpty(ResolverFamiliaId()))
+            {
+                MessageBox.Show("Debe asignar una familia existente al artículo.", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
             return AppState.EventoFormularioA switch
             {
                 "modificar" => GuardarEditar(),
@@ -245,18 +278,18 @@ namespace WpfAppVba
 
         private bool GuardarEditar()
         {
-            string codigo = Box_Identificador.Text.Trim();
+            string id = _idEditar;
             try
             {
-                Sql.ArticulosObj.EstablecerItem("indice",     codigo, Box_Indice.Text);
-                Sql.ArticulosObj.EstablecerItem("familia",    codigo, Box_Identificador_Familia.Text);
-                Sql.ArticulosObj.EstablecerItem("industria",  codigo, Box_Identificador_Industria.Text);
-                Sql.ArticulosObj.EstablecerItem("Categoria",  codigo, Box_Identificador_Categoria.Text);
-                Sql.ArticulosObj.EstablecerItem("descripcion",codigo, Box_Descripcion.Text);
-                Sql.ArticulosObj.EstablecerItem("modelo",     codigo, Box_Modelo.Text);
-                Sql.ArticulosObj.EstablecerItem("observacion",codigo, Box_Observacion.Text);
-                Sql.ArticulosObj.EstablecerItem("edicion",    codigo, DateTime.Now);
-                Sql.ArticulosObj.EstablecerItem("usuarioE",   codigo, AppState.UsuarioActivo);
+                Sql.ArticulosObj.EstablecerItem("indice",     id, Box_Indice.Text);
+                Sql.ArticulosObj.EstablecerItem("familia",    id, ResolverFamiliaId());
+                Sql.ArticulosObj.EstablecerItem("industria",  id, ResolverIndustriaId());
+                Sql.ArticulosObj.EstablecerItem("Categoria",  id, ResolverCategoriaId());
+                Sql.ArticulosObj.EstablecerItem("descripcion",id, Box_Descripcion.Text);
+                Sql.ArticulosObj.EstablecerItem("modelo",     id, Box_Modelo.Text);
+                Sql.ArticulosObj.EstablecerItem("observacion",id, Box_Observacion.Text);
+                Sql.ArticulosObj.EstablecerItem("edicion",    id, DateTime.Now);
+                Sql.ArticulosObj.EstablecerItem("usuarioE",   id, AppState.UsuarioActivo);
 
                 Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -274,7 +307,7 @@ namespace WpfAppVba
             string codigo = Box_Codigo.Text.Trim();
             try
             {
-                if (!Sql.ArticulosObj.VerificarId(codigo, "codigo"))
+                if (Sql.ArticulosObj.CodigoExiste(codigo))
                 {
                     MessageBox.Show("El código ya existe", "Consola",
                         MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -285,9 +318,9 @@ namespace WpfAppVba
                 Sql.ArticulosObj.Nuevo(id);
                 Sql.ArticulosObj.EstablecerItem("codigo",     id, codigo);
                 Sql.ArticulosObj.EstablecerItem("indice",     id, Box_Indice.Text);
-                Sql.ArticulosObj.EstablecerItem("familia",    id, Box_Identificador_Familia.Text);
-                Sql.ArticulosObj.EstablecerItem("industria",  id, Box_Identificador_Industria.Text);
-                Sql.ArticulosObj.EstablecerItem("Categoria",  id, Box_Identificador_Categoria.Text);
+                Sql.ArticulosObj.EstablecerItem("familia",    id, ResolverFamiliaId());
+                Sql.ArticulosObj.EstablecerItem("industria",  id, ResolverIndustriaId());
+                Sql.ArticulosObj.EstablecerItem("Categoria",  id, ResolverCategoriaId());
                 Sql.ArticulosObj.EstablecerItem("descripcion",id, Box_Descripcion.Text);
                 Sql.ArticulosObj.EstablecerItem("modelo",     id, Box_Modelo.Text);
                 Sql.ArticulosObj.EstablecerItem("observacion",id, Box_Observacion.Text);
@@ -298,9 +331,12 @@ namespace WpfAppVba
                 Sql.ArticulosObj.EstablecerItem("estado",     id, "mostrar");
 
                 Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
-                AppState.ActualizarStocks();
 
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Artículo nuevo → sincronizar AppSheets (todas las sucursales).
+                ArticulosGeneral.SincronizarAppsheetsTrasCambio();
+
                 ItemCreadoId = id;
                 return true;
             }
@@ -316,15 +352,15 @@ namespace WpfAppVba
             string codigo = Box_Codigo.Text.Trim();
             try
             {
-                if (!Sql.ArticulosObj.VerificarId(codigo, "codigo"))
+                if (Sql.ArticulosObj.CodigoExiste(codigo))
                 {
                     MessageBox.Show("El código ya existe", "Consola",
                         MessageBoxButton.OK, MessageBoxImage.Warning);
                     return false;
                 }
 
-                string famNueva = Box_Identificador_Familia.Text.Trim();
-                int    indNuevo = Convert.ToInt32(Box_Indice.Text);
+                string famNuevaId = ResolverFamiliaId();
+                int    indNuevo   = Convert.ToInt32(Box_Indice.Text);
 
                 // Bump: subir 1 a todos los indices >= indNuevo dentro de la misma familia
                 int uf = Sql.ArticulosObj.ContarFilas;
@@ -335,7 +371,7 @@ namespace WpfAppVba
                     string idIt = idObj.ToString()!;
 
                     string fam = Sql.ArticulosObj.ObtenerItem("familia", idIt)?.ToString() ?? "";
-                    if (fam != famNueva) continue;
+                    if (fam != famNuevaId) continue;
 
                     int ind = Convert.ToInt32(Sql.ArticulosObj.ObtenerItem("indice", idIt) ?? 0);
                     if (ind >= indNuevo)
@@ -347,9 +383,9 @@ namespace WpfAppVba
                 Sql.ArticulosObj.Nuevo(id);
                 Sql.ArticulosObj.EstablecerItem("codigo",     id, codigo);
                 Sql.ArticulosObj.EstablecerItem("indice",     id, indNuevo);
-                Sql.ArticulosObj.EstablecerItem("familia",    id, famNueva);
-                Sql.ArticulosObj.EstablecerItem("industria",  id, Box_Identificador_Industria.Text);
-                Sql.ArticulosObj.EstablecerItem("Categoria",  id, Box_Identificador_Categoria.Text);
+                Sql.ArticulosObj.EstablecerItem("familia",    id, famNuevaId);
+                Sql.ArticulosObj.EstablecerItem("industria",  id, ResolverIndustriaId());
+                Sql.ArticulosObj.EstablecerItem("Categoria",  id, ResolverCategoriaId());
                 Sql.ArticulosObj.EstablecerItem("descripcion",id, Box_Descripcion.Text);
                 Sql.ArticulosObj.EstablecerItem("modelo",     id, Box_Modelo.Text);
                 Sql.ArticulosObj.EstablecerItem("observacion",id, Box_Observacion.Text);
@@ -357,11 +393,19 @@ namespace WpfAppVba
                 Sql.ArticulosObj.EstablecerItem("edicion",    id, DateTime.Now);
                 Sql.ArticulosObj.EstablecerItem("usuario",    id, AppState.UsuarioActivo);
                 Sql.ArticulosObj.EstablecerItem("usuarioE",   id, AppState.UsuarioActivo);
+                Sql.ArticulosObj.EstablecerItem("estado",     id, "mostrar");
+
+                // Reasignar índices de la familia por su orden, saltando los reservados
+                // por artículos eliminados (sin reutilizarlos).
+                ArticulosGeneral.RenumerarFamilia(famNuevaId);
 
                 Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
-                AppState.ActualizarStocks();
 
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Artículo insertado → sincronizar AppSheets (todas las sucursales).
+                ArticulosGeneral.SincronizarAppsheetsTrasCambio();
+
                 ItemCreadoId = id;
                 return true;
             }

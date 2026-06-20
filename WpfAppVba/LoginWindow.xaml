@@ -6,49 +6,212 @@
         ResizeMode="NoResize"
         Background="{DynamicResource ThemeBgPrincipal}">
 
+    <Window.Resources>
+
+        <Style x:Key="ModernInput" TargetType="TextBox">
+            <Setter Property="Height"                   Value="36"/>
+            <Setter Property="FontSize"                 Value="13"/>
+            <Setter Property="Padding"                  Value="10,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush"              Value="{DynamicResource ThemeBordeInput}"/>
+            <Setter Property="BorderThickness"          Value="1"/>
+            <Setter Property="Background"               Value="{DynamicResource ThemeInputBg}"/>
+            <Setter Property="Foreground"               Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ModernPassword" TargetType="PasswordBox">
+            <Setter Property="Height"                   Value="36"/>
+            <Setter Property="FontSize"                 Value="13"/>
+            <Setter Property="Padding"                  Value="10,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush"              Value="{DynamicResource ThemeBordeInput}"/>
+            <Setter Property="BorderThickness"          Value="1"/>
+            <Setter Property="Background"               Value="{DynamicResource ThemeInputBg}"/>
+            <Setter Property="Foreground"               Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="BtnPrimario" TargetType="Button">
+            <Setter Property="Height"          Value="36"/>
+            <Setter Property="FontSize"        Value="13"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Background"      Value="#1A73E8"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="BtnLink" TargetType="Button">
+            <Setter Property="Height"          Value="28"/>
+            <Setter Property="FontSize"        Value="11"/>
+            <Setter Property="Background"      Value="Transparent"/>
+            <Setter Property="Foreground"      Value="{DynamicResource ThemeTextoSec}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="8,0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+
     <Grid>
-        <Border Background="{DynamicResource ThemeBgSurface}" CornerRadius="8" Margin="30,30,30,30">
+        <Border Background="{DynamicResource ThemeBgSurface}" CornerRadius="8" Margin="30">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.15" Color="Black"/>
             </Border.Effect>
-            <StackPanel Margin="30,25,30,25" VerticalAlignment="Center">
+            <StackPanel Margin="30,25" VerticalAlignment="Center">
 
                 <!-- Título -->
                 <TextBlock Text="Iniciar Sesión" FontSize="20" FontWeight="Bold"
-                           Foreground="{DynamicResource ThemeTexto}" HorizontalAlignment="Center"
-                           Margin="0,0,0,20"/>
+                           Foreground="{DynamicResource ThemeTexto}"
+                           HorizontalAlignment="Center" Margin="0,0,0,24"/>
 
-                <!-- Usuario -->
-                <TextBlock Text="Usuario" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,4"/>
-                <TextBox x:Name="TxtCuenta" Height="34" FontSize="13"
-                         Padding="8,6" BorderBrush="{DynamicResource ThemeBordeInput}" BorderThickness="1"
-                         Margin="0,0,0,12"/>
+                <!-- ── Actualización obligatoria (Velopack) ───────────────────── -->
+                <!-- Mientras haya una versión nueva pendiente, reemplaza el formulario
+                     de login: el usuario debe actualizar antes de poder ingresar. -->
+                <StackPanel x:Name="BloqueActualizar" Visibility="Collapsed">
+                    <TextBlock Text="⚠ Actualización requerida" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeTexto}"
+                               HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                    <TextBlock x:Name="LblVersionNueva" FontSize="11" TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               Foreground="{DynamicResource ThemeTextoSec}"
+                               HorizontalAlignment="Center" Margin="0,0,0,16"/>
 
-                <!-- Contraseña -->
-                <TextBlock Text="Contraseña" FontSize="12" Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,4"/>
-                <PasswordBox x:Name="TxtContrasena" Height="34" FontSize="13"
-                             Padding="8,6" BorderBrush="{DynamicResource ThemeBordeInput}" BorderThickness="1"
-                             Margin="0,0,0,16"
-                             KeyDown="TxtContrasena_KeyDown"/>
+                    <!-- Estado A: hay versión nueva (el usuario decide cuándo) -->
+                    <Button x:Name="BtnActualizar" Content="🔄  Actualizar ahora"
+                            Style="{StaticResource BtnPrimario}" Background="#6C4AE3"
+                            Click="BtnActualizar_Click"/>
 
-                <!-- Botón -->
-                <Button x:Name="BtnIngresar" Content="Ingresar" Height="36"
-                        FontSize="13" FontWeight="SemiBold"
-                        Background="#1A73E8" Foreground="White"
-                        BorderThickness="0" Cursor="Hand"
-                        Click="BtnIngresar_Click"/>
+                    <!-- Estado B: descargando en segundo plano -->
+                    <StackPanel x:Name="PanelDescarga" Visibility="Collapsed">
+                        <TextBlock x:Name="LblDescarga" Text="Descargando…" FontSize="11"
+                                   Foreground="{DynamicResource ThemeTextoSec}"
+                                   HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                        <ProgressBar x:Name="BarraDescarga" Height="8"
+                                     Minimum="0" Maximum="100" Value="0"
+                                     Background="{DynamicResource ThemeInputBg}"
+                                     Foreground="#6C4AE3" BorderThickness="0"/>
+                    </StackPanel>
 
-                <!-- Estado -->
-                <TextBlock x:Name="LblEstado" FontSize="11" Margin="0,10,0,0"
-                           HorizontalAlignment="Center" TextWrapping="Wrap"/>
+                    <!-- Estado C: lista para reiniciar (el usuario decide cuándo) -->
+                    <Button x:Name="BtnReiniciar" Visibility="Collapsed"
+                            Content="✅  Reiniciar para actualizar"
+                            Style="{StaticResource BtnPrimario}" Background="#2E7D32"
+                            Click="BtnReiniciar_Click"/>
+                </StackPanel>
 
-                <!-- Configurar conexión -->
-                <Button x:Name="BtnConfigurarConexion" Content="⚙ Configurar conexión"
-                        Height="28" FontSize="11"
-                        Background="Transparent" Foreground="{DynamicResource ThemeTextoSec}"
-                        BorderThickness="0" Cursor="Hand"
-                        HorizontalAlignment="Center" Margin="0,6,0,0"
-                        Click="BtnConfigurarConexion_Click"/>
+                <!-- ── Formulario de login (oculto mientras haya actualización pendiente) ── -->
+                <StackPanel x:Name="PanelLogin">
+
+                    <!-- Usuario -->
+                    <TextBlock Text="Usuario" FontSize="12"
+                               Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,5"/>
+                    <TextBox x:Name="TxtCuenta" Style="{StaticResource ModernInput}" Margin="0,0,0,14"/>
+
+                    <!-- Contraseña -->
+                    <TextBlock Text="Contraseña" FontSize="12"
+                               Foreground="{DynamicResource ThemeTextoSec}" Margin="0,0,0,5"/>
+                    <Grid Margin="0,0,0,18">
+                        <!-- Oculta (por defecto) -->
+                        <PasswordBox x:Name="TxtContrasena" Style="{StaticResource ModernPassword}"
+                                     Padding="10,0,40,0"
+                                     KeyDown="TxtContrasena_KeyDown"/>
+                        <!-- Visible (al pulsar el ojo) -->
+                        <TextBox x:Name="TxtContrasenaVisible" Style="{StaticResource ModernInput}"
+                                 Padding="10,0,40,0" Visibility="Collapsed"
+                                 KeyDown="TxtContrasena_KeyDown"/>
+                        <!-- Botón mostrar / ocultar (icono monocromo: respeta el tema) -->
+                        <Button x:Name="BtnVerContrasena"
+                                Width="32" Height="32"
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Margin="0,0,3,0"
+                                Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                ToolTip="Mostrar contraseña"
+                                Click="BtnVerContrasena_Click">
+                            <TextBlock x:Name="IcoVerContrasena" Text="&#xE7B3;"
+                                       FontFamily="Segoe MDL2 Assets" FontSize="16"
+                                       Foreground="{DynamicResource ThemeTexto}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+                    </Grid>
+
+                    <!-- Botón Ingresar -->
+                    <Button x:Name="BtnIngresar" Content="Ingresar"
+                            Style="{StaticResource BtnPrimario}"
+                            Click="BtnIngresar_Click"/>
+
+                    <!-- Estado -->
+                    <TextBlock x:Name="LblEstado" FontSize="11" Margin="0,10,0,0"
+                               HorizontalAlignment="Center" TextWrapping="Wrap"/>
+
+                    <!-- Configurar conexión -->
+                    <Button x:Name="BtnConfigurarConexion" Content="⚙ Configurar conexión"
+                            Style="{StaticResource BtnLink}"
+                            HorizontalAlignment="Center" Margin="0,6,0,0"
+                            Click="BtnConfigurarConexion_Click"/>
+
+                </StackPanel>
 
             </StackPanel>
         </Border>

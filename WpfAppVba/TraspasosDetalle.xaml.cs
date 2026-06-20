@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
@@ -19,11 +20,14 @@ namespace WpfAppVba
         private bool _cargando        = true;
         private bool _editarFormulario = false;
         private List<TraspasoItemFila> _items = new();
+        // IDs de las líneas existentes al abrir para editar (para el guardado diferencial).
+        private HashSet<string> _itemsOrig = new();
 
         private readonly HashSet<string> _articulosAlertados = new();
 
         private bool _iniciado = false;
         private readonly string _tituloTab;
+        private string _codigoDocT = "";
 
         /// <summary>
         /// ID del documento recién creado (solo en modo "nuevo").
@@ -38,6 +42,13 @@ namespace WpfAppVba
             _idEditar  = idEditar;
             _tituloTab = tituloTab;
             Loaded    += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
+        }
+
+        // ─── Cambiar tipo de movimiento en pestaña existente ─────────────────
+        public void CambiarTipoMovimiento(string tipo)
+        {
+            AppState.TipoMovimiento = tipo.ToLower();
+            CboMovimiento.SelectedIndex = tipo.ToLower() == "salida" ? 1 : 0;
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
@@ -64,18 +75,19 @@ namespace WpfAppVba
         private void CargarParaEditar()
         {
             Box_DocumentoT.IsEnabled = false;
-            Box_DocumentoT.Text = _idEditar;
+            string codigoDocEdit = Sql.DocumentosTObj.ObtenerItem("codigo", _idEditar)?.ToString() ?? "";
+            Box_DocumentoT.Text = codigoDocEdit;
 
             var fechaObj = Sql.DocumentosTObj.ObtenerItem("fecha", _idEditar);
             DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : DateTime.Now;
             Box_Fecha.SelectedDate = fecha.Date;
             Box_Hora.Text = fecha.ToString("HH:mm:ss");
 
-            // Sucursal opuesta
+            // Sucursal opuesta — mostrar codigo, no UUID
             string tipo    = AppState.TipoMovimiento.ToLower();
             string campOtro = tipo == "salida" ? "destino" : "origen";
-            string otroId  = Sql.DocumentosTObj.ObtenerItem(campOtro, _idEditar)?.ToString() ?? "";
-            Box_Sucursal_Identificador.Text = otroId;
+            string otroUuid  = Sql.DocumentosTObj.ObtenerItem(campOtro, _idEditar)?.ToString() ?? "";
+            Box_Sucursal_Identificador.Text = Sql.SucursalesObj.ObtenerItem("codigo", otroUuid)?.ToString() ?? "";
             ActualizarDescripcionSucursal();
 
             // Emisión / Edición
@@ -90,7 +102,7 @@ namespace WpfAppVba
             // Permisos según emitido ─────────────────────────────────────────
             string emitido  = Sql.DocumentosTObj.ObtenerItem("emitido", _idEditar)?.ToString() ?? "";
             string estadoDB = Sql.DocumentosTObj.ObtenerItem("estado",  _idEditar)?.ToString() ?? "pendiente";
-            bool esLocal    = (emitido == AppState.SucursalActiva.ToString());
+            bool esLocal    = (emitido == AppState.SucursalActiva);
 
             if (esLocal)
             {
@@ -129,6 +141,8 @@ namespace WpfAppVba
             }
 
             // Cargar artículos
+            ActualizarBadgeEstado();
+
             _items.Clear();
             int linea = 1;
             int uf = Sql.TraspasosObj.ContarFilas;
@@ -154,6 +168,7 @@ namespace WpfAppVba
                     Cantidad    = cant
                 });
             }
+            _itemsOrig = new HashSet<string>(_items.Select(x => x.TraspasoId));
             RefrescarGrid();
         }
 
@@ -161,9 +176,11 @@ namespace WpfAppVba
         private void CargarParaNuevo()
         {
             _editarFormulario = true;
-            Box_DocumentoT.IsEnabled = true;
-            long siguiente = Convert.ToInt64(Sql.DocumentosTObj.Maximo("id") ?? 0) + 1;
-            Box_DocumentoT.Text = siguiente.ToString();
+            Box_DocumentoT.IsEnabled = false;
+            string signo  = Sql.EmpresasObj.ObtenerItem("signo", AppState.EmpresaActiva)?.ToString() ?? "";
+            int    numero = Sql.DocumentosTObj.SiguienteNumeroDocPorEmpresa(signo, AppState.EmpresaActiva);
+            _codigoDocT          = $"{signo.ToUpper()}{numero}";
+            Box_DocumentoT.Text      = _codigoDocT;
 
             DateTime ahora = DateTime.Now;
             Box_Fecha.SelectedDate = ahora.Date;
@@ -174,7 +191,10 @@ namespace WpfAppVba
             TxtEmision.Text = $"{ahora:d} {ahora:HH:mm:ss}";
             TxtEdicion.Text = $"{ahora:d} {ahora:HH:mm:ss}";
 
+            ActualizarBadgeEstado();
+
             _items.Clear();
+            _itemsOrig.Clear();
             RefrescarGrid();
         }
 
@@ -192,10 +212,44 @@ namespace WpfAppVba
             if (Box_Estado.Items.Count > 0) Box_Estado.SelectedIndex = 0;
         }
 
+        private void ActualizarBadgeEstado()
+        {
+            string estado = ((Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "").ToLower();
+            (BadgeEstado.Background, TxtBadgeEstado.Foreground, TxtBadgeEstado.Text) = estado switch
+            {
+                "entregado"         => (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
+                                        new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)), "Entregado"),
+                "pendiente revisar" => (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
+                                        new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Pendiente revisar"),
+                _                   => (new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)),
+                                        new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E)), "Pendiente")
+            };
+
+            // Ícono y color según tipo (entrada/salida)
+            string tipo    = AppState.TipoMovimiento.ToLower();
+            bool esSalida  = tipo == "salida";
+            LblIconoTipo.Text       = esSalida ? "SA" : "EN";
+            IconoBorde.Background   = esSalida
+                ? new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7))
+                : new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5));
+            LblIconoTipo.Foreground = esSalida
+                ? new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E))
+                : new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46));
+
+            LblDocNum.Text       = Box_DocumentoT.Text;
+            LblSucursalTipo.Text = esSalida ? "Sucursal destino" : "Sucursal origen";
+        }
+
+        private string ResolverSucursalId()
+        {
+            string cod = Box_Sucursal_Identificador.Text.Trim();
+            return cod == "" ? "" : Sql.SucursalesObj.BuscarIdentificador("codigo", cod);
+        }
+
         private void ActualizarDescripcionSucursal()
         {
-            string id = Box_Sucursal_Identificador.Text.Trim();
-            Box_Sucursal_Descripcion.Text = Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+            string id = ResolverSucursalId();
+            Box_Sucursal_Descripcion.Text = id == "" ? "" : Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
         }
 
         private static string ObtenerDescripcionArticulo(string artId)
@@ -245,34 +299,55 @@ namespace WpfAppVba
         // ─── Totales por categoría ────────────────────────────────────────────
         private void CargarTotales()
         {
-            double totalPeq = 0, totalMed = 0, totalGra = 0, totalOtros = 0, totalUnidades = 0;
+            double totalUnidades = 0;
             var distintos = new HashSet<string>();
 
+            // Inicializar todas las categorías existentes con cantidad 0
+            var categoriaIds   = new List<string>();
+            var categoriaDescs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var porCategoria   = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+
+            int ufCat = Sql.CategoriasObj.ContarFilas;
+            for (int i = 1; i <= ufCat; i++)
+            {
+                var idObj = Sql.CategoriasObj.Mover(i);
+                if (idObj == null) continue;
+                string catId   = idObj.ToString()!;
+                string catDesc = Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? catId;
+                categoriaIds.Add(catId);
+                categoriaDescs[catId] = catDesc;
+                porCategoria[catDesc] = 0;
+            }
+
+            double cantOtros = 0;
             foreach (var item in _items)
             {
                 totalUnidades += item.Cantidad;
                 if (!string.IsNullOrEmpty(item.ArticuloId))
                     distintos.Add(item.ArticuloId);
 
-                string catId   = Sql.ArticulosObj.ObtenerItem("categoria",   item.ArticuloId)?.ToString() ?? "";
-                string catDesc = string.IsNullOrEmpty(catId) ? "" :
-                                 Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "";
-
-                switch (catDesc.ToLower())
-                {
-                    case "pequeña": totalPeq   += item.Cantidad; break;
-                    case "mediana": totalMed   += item.Cantidad; break;
-                    case "grande":  totalGra   += item.Cantidad; break;
-                    default:        totalOtros += item.Cantidad; break;
-                }
+                string catId   = Sql.ArticulosObj.ObtenerItem("categoria", item.ArticuloId)?.ToString() ?? "";
+                string catDesc = (!string.IsNullOrEmpty(catId) && categoriaDescs.ContainsKey(catId))
+                                 ? categoriaDescs[catId] : "";
+                if (!string.IsNullOrEmpty(catDesc))
+                    porCategoria[catDesc] += item.Cantidad;
+                else
+                    cantOtros += item.Cantidad;
             }
 
-            TxtTotalPeq.Text            = totalPeq.ToString("N0");
-            TxtTotalMed.Text            = totalMed.ToString("N0");
-            TxtTotalGra.Text            = totalGra.ToString("N0");
-            TxtTotalOtros.Text          = totalOtros.ToString("N0");
-            TxtTotalUnidades.Text       = totalUnidades.ToString("N0");
-            TxtUnidadesDiferentes.Text  = distintos.Count.ToString();
+            TxtTotalUnidades.Text      = totalUnidades.ToString("N0");
+            TxtUnidadesDiferentes.Text = distintos.Count.ToString();
+
+            var filas = categoriaIds
+                .Select(id => new CategoriaCantFila
+                {
+                    Categoria = categoriaDescs[id],
+                    Cantidad  = porCategoria[categoriaDescs[id]].ToString("N0")
+                })
+                .ToList();
+            filas.Add(new CategoriaCantFila { Categoria = "Otros", Cantidad = cantOtros.ToString("N0") });
+
+            GridCategorias.ItemsSource = filas;
         }
 
         // ─── Stock del artículo seleccionado (GridStock / Lista3) ─────────────
@@ -329,12 +404,14 @@ namespace WpfAppVba
             AppState.TipoMovimiento = tipo;
             LblTitulo.Text = tipo == "salida" ? "Salida de Productos Detalle" : "Entrada de Productos Detalle";
             _hayCambios = true;
+            ActualizarBadgeEstado();
         }
 
         // ─── Eventos de campos ────────────────────────────────────────────────
         private void Campo_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (!_cargando) _hayCambios = true;
+            if (sender == Box_DocumentoT) LblDocNum.Text = Box_DocumentoT.Text;
         }
 
         private void Campo_DateChanged(object sender, SelectionChangedEventArgs e)
@@ -345,15 +422,24 @@ namespace WpfAppVba
         private void Campo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!_cargando) _hayCambios = true;
+            if (sender == Box_Estado) ActualizarBadgeEstado();
         }
 
         private void Box_Sucursal_Identificador_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (!_cargando)
+            if (_cargando) return;
+            string cod = Box_Sucursal_Identificador.Text.Trim();
+            string activaCodigo = Sql.SucursalesObj.ObtenerItem("codigo", AppState.SucursalActiva)?.ToString() ?? "";
+            if (cod != "" && cod == activaCodigo)
             {
-                ActualizarDescripcionSucursal();
-                _hayCambios = true;
+                MessageBox.Show("No puede seleccionar la sucursal activa como destino/origen.",
+                    "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
+                Box_Sucursal_Identificador.Text = "";
+                Box_Sucursal_Descripcion.Text   = "";
+                return;
             }
+            ActualizarDescripcionSucursal();
+            _hayCambios = true;
         }
 
         private void Box_Numeros_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -371,9 +457,17 @@ namespace WpfAppVba
             {
                 if (SucursalesGeneral.SucursalSeleccionada != null)
                 {
-                    Box_Sucursal_Identificador.Text = SucursalesGeneral.SucursalSeleccionada;
-                    ActualizarDescripcionSucursal();
+                    string selCodigo = SucursalesGeneral.SucursalSeleccionada;
                     SucursalesGeneral.SucursalSeleccionada = null;
+                    string activaCodigo = Sql.SucursalesObj.ObtenerItem("codigo", AppState.SucursalActiva)?.ToString() ?? "";
+                    if (selCodigo == activaCodigo)
+                    {
+                        MessageBox.Show("No puede seleccionar la sucursal activa como destino/origen.",
+                            "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    Box_Sucursal_Identificador.Text = selCodigo;
+                    ActualizarDescripcionSucursal();
                     _hayCambios = true;
                 }
             });
@@ -514,10 +608,9 @@ namespace WpfAppVba
                 e.EditingElement is TextBox tb)
             {
                 string codigo  = tb.Text.Trim();
-                long artIdNum  = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
-                if (artIdNum > 0)
+                string artId   = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
+                if (!string.IsNullOrEmpty(artId))
                 {
-                    string artId     = artIdNum.ToString();
                     fila.ArticuloId  = artId;
                     fila.Codigo      = codigo;
                     fila.Descripcion = ObtenerDescripcionArticulo(artId);
@@ -570,12 +663,11 @@ namespace WpfAppVba
         // ─── Seleccionar todo al entrar al campo Código ───────────────────────
         private void GridItems_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
         {
-            if (e.Column.Header?.ToString() is "Código" or "Cantidad" &&
-                e.EditingElement is TextBox tb)
-            {
-                tb.SelectAll();
-                tb.Focus();
-            }
+            string col = e.Column.Header?.ToString() ?? "";
+            if (col is "Código" or "Cantidad")
+                GridFocusHelper.SeleccionarTodoEnEdicion(e.EditingElement);
+            if (col == "Cantidad" && e.EditingElement is TextBox tb)
+                FuncionesComunes.RestringirACantidad(tb);
         }
 
         // ─── Insertar línea en la posición seleccionada ───────────────────────
@@ -606,66 +698,50 @@ namespace WpfAppVba
 
         // ─── Guardar ──────────────────────────────────────────────────────────
         private bool Guardar()
-            => AppState.EventoFormularioM == "editar" ? GuardarEditar() : GuardarNuevo();
+        {
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+            return AppState.EventoFormularioM == "editar" ? GuardarEditar() : GuardarNuevo();
+        }
 
         private bool GuardarNuevo()
         {
-            string docT = Box_DocumentoT.Text.Trim();
-            if (string.IsNullOrEmpty(docT))
-            {
-                MessageBox.Show("Ingrese el número de documento.", "Consola",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return false;
-            }
-
             try
             {
-                if (!Sql.DocumentosTObj.VerificarId(docT, "id"))
-                {
-                    MessageBox.Show("El número de documento ya existe.", "Consola",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return false;
-                }
-
                 DateTime fechaBase  = Box_Fecha.SelectedDate ?? DateTime.Today;
                 DateTime fechaFinal = CombinarFechaHora(fechaBase, Box_Hora.Text);
 
-                string tipo    = AppState.TipoMovimiento.ToLower();
-                string origen  = tipo == "salida"  ? AppState.SucursalActiva.ToString() : Box_Sucursal_Identificador.Text.Trim();
-                string destino = tipo == "entrada" ? AppState.SucursalActiva.ToString() : Box_Sucursal_Identificador.Text.Trim();
-                string estado  = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "pendiente";
+                string tipo      = AppState.TipoMovimiento.ToLower();
+                string otroUuid  = ResolverSucursalId();
+                string origenId  = tipo == "salida"  ? AppState.SucursalActiva : otroUuid;
+                string destinoId = tipo == "entrada" ? AppState.SucursalActiva : otroUuid;
+                string estado    = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "pendiente";
 
-                Sql.DocumentosTObj.Nuevo(docT);
-                Sql.DocumentosTObj.EstablecerItem("origen",      docT, origen);
-                Sql.DocumentosTObj.EstablecerItem("destino",     docT, destino);
-                Sql.DocumentosTObj.EstablecerItem("fecha",       docT, fechaFinal);
-                Sql.DocumentosTObj.EstablecerItem("estado",      docT, estado);
-                Sql.DocumentosTObj.EstablecerItem("referencia",  docT, Box_Referencia.Text.Trim());
-                Sql.DocumentosTObj.EstablecerItem("observacion", docT, Box_Observaciones.Text.Trim());
-                Sql.DocumentosTObj.EstablecerItem("emision",     docT, DateTime.Now);
-                Sql.DocumentosTObj.EstablecerItem("edicion",     docT, DateTime.Now);
-                Sql.DocumentosTObj.EstablecerItem("usuario",     docT, AppState.UsuarioActivo);
-                Sql.DocumentosTObj.EstablecerItem("usuarioE",    docT, AppState.UsuarioActivo);
-                Sql.DocumentosTObj.EstablecerItem("emitido",     docT, AppState.SucursalActiva);
+                string id = Guid.NewGuid().ToString();
 
-                // ── Crear líneas con ID = documentoT + indice 3 dígitos (igual VBA) ──
-                for (int i = 0; i < _items.Count; i++)
-                {
-                    var item  = _items[i];
-                    string idStr = $"{docT}{(i + 1):D3}";   // e.g. "123001"
-                    Sql.TraspasosObj.Nuevo(idStr);
-                    Sql.TraspasosObj.EstablecerItem("documentoT", idStr, docT);
-                    Sql.TraspasosObj.EstablecerItem("articulo",   idStr, item.ArticuloId);
-                    Sql.TraspasosObj.EstablecerItem("cantidad",   idStr, item.Cantidad);
-                    Sql.TraspasosObj.EstablecerItem("indice",     idStr, i + 1);
-                }
+                Sql.DocumentosTObj.Nuevo(id);
+                Sql.DocumentosTObj.EstablecerItem("codigo",      id, _codigoDocT);
+                Sql.DocumentosTObj.EstablecerItem("origen",      id, origenId);
+                Sql.DocumentosTObj.EstablecerItem("destino",     id, destinoId);
+                Sql.DocumentosTObj.EstablecerItem("sucursal",    id, AppState.SucursalActiva);
+                Sql.DocumentosTObj.EstablecerItem("fecha",       id, fechaFinal);
+                Sql.DocumentosTObj.EstablecerItem("estado",      id, estado);
+                Sql.DocumentosTObj.EstablecerItem("referencia",  id, Box_Referencia.Text.Trim());
+                Sql.DocumentosTObj.EstablecerItem("observacion", id, Box_Observaciones.Text.Trim());
+                Sql.DocumentosTObj.EstablecerItem("emision",     id, DateTime.Now);
+                Sql.DocumentosTObj.EstablecerItem("edicion",     id, DateTime.Now);
+                Sql.DocumentosTObj.EstablecerItem("usuario",     id, AppState.UsuarioActivo);
+                Sql.DocumentosTObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
+                Sql.DocumentosTObj.EstablecerItem("emitido",     id, AppState.SucursalActiva);
+
+                // ── Crear líneas (diferencial: documento nuevo → todas se insertan) ──
+                GuardarLineasTraspaso(id);
 
                 Sql.DocumentosTObj.OrdenarData(("fecha", false));
                 Sql.TraspasosObj.OrdenarData(("documentoT", false), ("indice", false));
 
                 MessageBox.Show("Guardado exitoso.", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 _hayCambios = false;
-                DocumentoCreadoId = docT;   // Bug 3: comunica el id al padre
+                DocumentoCreadoId = id;
                 return true;
             }
             catch (Exception ex)
@@ -690,39 +766,18 @@ namespace WpfAppVba
                 // Si es "pendiente revisar" guardar como "pendiente" en la DB (igual VBA)
                 if (estado == "pendiente revisar") estado = "pendiente";
 
+                string otroUuidE = ResolverSucursalId();
+
                 Sql.DocumentosTObj.EstablecerItem("fecha",       docT, fechaFinal);
-                Sql.DocumentosTObj.EstablecerItem(campOtro,      docT, Box_Sucursal_Identificador.Text.Trim());
+                Sql.DocumentosTObj.EstablecerItem(campOtro,      docT, otroUuidE);
                 Sql.DocumentosTObj.EstablecerItem("estado",      docT, estado);
                 Sql.DocumentosTObj.EstablecerItem("referencia",  docT, Box_Referencia.Text.Trim());
                 Sql.DocumentosTObj.EstablecerItem("observacion", docT, Box_Observaciones.Text.Trim());
                 Sql.DocumentosTObj.EstablecerItem("edicion",     docT, DateTime.Now);
                 Sql.DocumentosTObj.EstablecerItem("usuarioE",    docT, AppState.UsuarioActivo);
 
-                // ── Eliminar líneas existentes (igual VBA: .eliminar, no .ocultar) ──
-                int uf = Sql.TraspasosObj.ContarFilas;
-                var idsEliminar = new List<string>();
-                for (int i = 1; i <= uf; i++)
-                {
-                    var idObj = Sql.TraspasosObj.Mover(i);
-                    if (idObj == null) continue;
-                    string id = idObj.ToString()!;
-                    if (Sql.TraspasosObj.ObtenerItem("documentoT", id)?.ToString() == docT)
-                        idsEliminar.Add(id);
-                }
-                foreach (var id in idsEliminar)
-                    Sql.TraspasosObj.Eliminar(id);
-
-                // ── Re-crear con ID = documentoT + indice 3 dígitos (igual VBA) ──
-                for (int i = 0; i < _items.Count; i++)
-                {
-                    var item  = _items[i];
-                    string idStr = $"{docT}{(i + 1):D3}";
-                    Sql.TraspasosObj.Nuevo(idStr);
-                    Sql.TraspasosObj.EstablecerItem("documentoT", idStr, docT);
-                    Sql.TraspasosObj.EstablecerItem("articulo",   idStr, item.ArticuloId);
-                    Sql.TraspasosObj.EstablecerItem("cantidad",   idStr, item.Cantidad);
-                    Sql.TraspasosObj.EstablecerItem("indice",     idStr, i + 1);
-                }
+                // ── Guardado diferencial de líneas (inserta/actualiza/oculta) ──
+                GuardarLineasTraspaso(docT);
 
                 Sql.DocumentosTObj.OrdenarData(("fecha", false));
                 Sql.TraspasosObj.OrdenarData(("documentoT", false), ("indice", false));
@@ -736,6 +791,43 @@ namespace WpfAppVba
                 MessageBox.Show($"Error: {ex.Message}", "Consola", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
+        }
+
+        // ─── Guardado diferencial de líneas (inserta/actualiza/oculta) ────────
+        private void GuardarLineasTraspaso(string docT)
+        {
+            var vigentes = new HashSet<string>(
+                _items.Where(x => !string.IsNullOrEmpty(x.TraspasoId)).Select(x => x.TraspasoId));
+
+            var reservados = Sql.TraspasosObj.IndicesNoNormales("documentoT", docT);
+            foreach (var idOrig in _itemsOrig)
+                if (!vigentes.Contains(idOrig))
+                {
+                    var ix = Sql.TraspasosObj.ObtenerItem("indice", idOrig);
+                    if (ix != null && int.TryParse(ix.ToString(), out int n)) reservados.Add(n);
+                    Sql.TraspasosObj.Eliminar(idOrig);
+                }
+
+            int next = 1;
+            foreach (var item in _items)
+            {
+                string id;
+                if (string.IsNullOrEmpty(item.TraspasoId))
+                {
+                    id = Guid.NewGuid().ToString();
+                    Sql.TraspasosObj.Nuevo(id);
+                    Sql.TraspasosObj.EstablecerItem("documentoT", id, docT);
+                    item.TraspasoId = id;
+                }
+                else id = item.TraspasoId;
+
+                while (reservados.Contains(next)) next++;
+                Sql.TraspasosObj.EstablecerItem("indice",   id, next);
+                next++;
+                Sql.TraspasosObj.EstablecerItem("articulo", id, item.ArticuloId);
+                Sql.TraspasosObj.EstablecerItem("cantidad", id, item.Cantidad);
+            }
+            _itemsOrig = new HashSet<string>(_items.Select(x => x.TraspasoId));
         }
 
         // ─── Combinar fecha + hora ────────────────────────────────────────────

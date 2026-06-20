@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using ClosedXML.Excel;
 using Microsoft.Win32;
 using WpfAppVba.Data;
@@ -15,27 +16,84 @@ namespace WpfAppVba
         public InformeExcelArticulos()
         {
             InitializeComponent();
-            TxtFecha.Text = DateTime.Now.ToString("dd/MM/yyyy");
+            var ahora = DateTime.Now;
+            TxtFecha.Text = ahora.ToString("dd/MM/yyyy");
+            TxtHora.Text  = ahora.ToString("HH:mm:ss");
+            ActualizarNombreArchivo();
         }
 
+        // ─── Actualiza la preview del nombre de archivo ───────────────────────
+        private void ActualizarNombreArchivo()
+        {
+            string nombre = TxtNombre.Text.Trim();
+            string prefijoFecha = ObtenerPrefijoFecha();
+            string nombreBase   = string.IsNullOrEmpty(nombre)
+                ? $"{prefijoFecha} informe"
+                : $"{prefijoFecha} informe {nombre}";
+
+            TxtNombrePreview.Text = $"Nombre de archivo: {SanitizarNombre(nombreBase)}.xlsx";
+        }
+
+        private string ObtenerPrefijoFecha()
+        {
+            string fechaStr = TxtFecha.Text.Trim();
+            string horaStr  = TxtHora.Text.Trim();
+
+            if (DateTime.TryParseExact(fechaStr,
+                    new[] { "dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "d-M-yyyy", "yyyy-MM-dd" },
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None, out DateTime fecha))
+            {
+                if (TimeSpan.TryParse(horaStr, out TimeSpan hora))
+                {
+                    var dt = fecha.Date + hora;
+                    return dt.ToString("yyyyMMdd HHmmss");
+                }
+                return fecha.ToString("yyyyMMdd") + " 000000";
+            }
+            return DateTime.Now.ToString("yyyyMMdd HHmmss");
+        }
+
+        private static string SanitizarNombre(string nombre)
+        {
+            foreach (char c in Path.GetInvalidFileNameChars())
+                nombre = nombre.Replace(c, '_');
+            return nombre;
+        }
+
+        // ─── Auto-numeración si el archivo ya existe ──────────────────────────
+        private static string ResolverRutaUnica(string directorio, string nombreBase)
+        {
+            string ruta = Path.Combine(directorio, $"{nombreBase}.xlsx");
+            if (!File.Exists(ruta)) return ruta;
+
+            int n = 1;
+            while (true)
+            {
+                ruta = Path.Combine(directorio, $"{nombreBase} ({n}).xlsx");
+                if (!File.Exists(ruta)) return ruta;
+                n++;
+            }
+        }
+
+        // ─── Handlers de cambio ───────────────────────────────────────────────
+        private void TxtNombre_TextChanged(object sender, TextChangedEventArgs e)
+            => ActualizarNombreArchivo();
+
+        private void TxtFechaHora_TextChanged(object sender, TextChangedEventArgs e)
+            => ActualizarNombreArchivo();
+
+        // ─── Botón Crear ──────────────────────────────────────────────────────
         private void BtnCrearInforme_Click(object sender, RoutedEventArgs e)
         {
-            // ── Validar nombre ────────────────────────────────────────────
             string nombre = TxtNombre.Text.Trim();
-            if (string.IsNullOrEmpty(nombre))
-            {
-                MessageBox.Show("Ingrese un nombre para el informe.", "Consola",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                TxtNombre.Focus();
-                return;
-            }
 
             // ── Validar fecha ─────────────────────────────────────────────
             if (!DateTime.TryParseExact(TxtFecha.Text.Trim(),
                     new[] { "dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "d-M-yyyy", "yyyy-MM-dd" },
                     System.Globalization.CultureInfo.InvariantCulture,
                     System.Globalization.DateTimeStyles.None,
-                    out DateTime fechaCorte))
+                    out DateTime fechaBase))
             {
                 MessageBox.Show("Fecha inválida. Use el formato dd/mm/aaaa.", "Consola",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -43,17 +101,23 @@ namespace WpfAppVba
                 return;
             }
 
-            // ── Nombre de archivo sugerido ────────────────────────────────
-            string ahora = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            string nombreArchivo = $"informe{nombre}{ahora}";
-            foreach (char c in Path.GetInvalidFileNameChars())
-                nombreArchivo = nombreArchivo.Replace(c, '_');
+            // ── Combinar fecha + hora de corte ────────────────────────────
+            DateTime fechaCorte = fechaBase.Date;
+            if (TimeSpan.TryParse(TxtHora.Text.Trim(), out TimeSpan hora))
+                fechaCorte = fechaBase.Date + hora;
+
+            // ── Construir nombre base del archivo ─────────────────────────
+            string prefijoFecha = ObtenerPrefijoFecha();
+            string nombreBase   = string.IsNullOrEmpty(nombre)
+                ? $"{prefijoFecha} informe"
+                : $"{prefijoFecha} informe {nombre}";
+            nombreBase = SanitizarNombre(nombreBase);
 
             // ── Explorador de guardado ────────────────────────────────────
             var dlg = new SaveFileDialog
             {
                 Title            = "Guardar informe Excel",
-                FileName         = nombreArchivo,
+                FileName         = nombreBase,
                 DefaultExt       = ".xlsx",
                 Filter           = "Excel (*.xlsx)|*.xlsx",
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
@@ -61,14 +125,19 @@ namespace WpfAppVba
 
             if (dlg.ShowDialog(this) != true) return;
 
+            // ── Auto-numeración si el archivo ya existe ───────────────────
+            string directorio   = Path.GetDirectoryName(dlg.FileName) ?? "";
+            string sinExt       = Path.GetFileNameWithoutExtension(dlg.FileName);
+            string rutaFinal    = ResolverRutaUnica(directorio, sinExt);
+
             try
             {
                 BtnCrearInforme.IsEnabled = false;
                 BtnCrearInforme.Content   = "Generando…";
 
-                GenerarExcel(dlg.FileName, fechaCorte);
+                GenerarExcel(rutaFinal, fechaCorte);
 
-                MessageBox.Show($"Informe generado correctamente:\n{dlg.FileName}", "Consola",
+                MessageBox.Show($"Informe generado correctamente:\n{rutaFinal}", "Consola",
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 Close();
             }
@@ -90,12 +159,13 @@ namespace WpfAppVba
             using var wb = new XLWorkbook();
             var ws = wb.Worksheets.Add("Artículos");
 
-            // ── Encabezados (solo texto, sin estilos) ─────────────────────
-            ws.Cell(1, 1).Value = "Id";
-            ws.Cell(1, 2).Value = "Categoría";
-            ws.Cell(1, 3).Value = "Familia";
-            ws.Cell(1, 4).Value = "Descripción Completa";
-            ws.Cell(1, 5).Value = "Stock";
+            // ── Encabezados ───────────────────────────────────────────────
+            ws.Cell(1, 1).Value = "Productos";
+            ws.Cell(1, 2).Value = "id";
+            ws.Cell(1, 3).Value = "Categoría";
+            ws.Cell(1, 4).Value = "Familia";
+            ws.Cell(1, 5).Value = "Descripción Completa";
+            ws.Cell(1, 6).Value = "Stock";
 
             // ── Recolectar datos ──────────────────────────────────────────
             int uf = Sql.ArticulosObj.ContarFilas;
@@ -107,10 +177,10 @@ namespace WpfAppVba
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
 
-                string desc  = Sql.ArticulosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
-                string modelo = Sql.ArticulosObj.ObtenerItem("modelo",     id)?.ToString() ?? "";
-                string famId = Sql.ArticulosObj.ObtenerItem("familia",     id)?.ToString() ?? "";
-                string catId = Sql.ArticulosObj.ObtenerItem("Categoria",   id)?.ToString() ?? "";
+                string desc   = Sql.ArticulosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                string modelo = Sql.ArticulosObj.ObtenerItem("modelo",      id)?.ToString() ?? "";
+                string famId  = Sql.ArticulosObj.ObtenerItem("familia",     id)?.ToString() ?? "";
+                string catId  = Sql.ArticulosObj.ObtenerItem("Categoria",   id)?.ToString() ?? "";
 
                 string famDesc  = Sql.FamiliasObj.ObtenerItem("descripcion",   famId)?.ToString() ?? "";
                 string prodId   = Sql.FamiliasObj.ObtenerItem("producto",      famId)?.ToString() ?? "";
@@ -133,24 +203,16 @@ namespace WpfAppVba
                 return string.Compare(a.id, b.id, StringComparison.OrdinalIgnoreCase);
             });
 
-            // ── Escribir datos agrupados por Producto ─────────────────────
+            // ── Escribir datos (una fila por artículo) ────────────────────
             int row = 2;
-            string currentProduct = null!;
-
             foreach (var item in datos)
             {
-                if (item.prodDesc != currentProduct)
-                {
-                    currentProduct = item.prodDesc;
-                    ws.Cell(row, 1).Value = item.prodDesc;
-                    row++;
-                }
-
-                ws.Cell(row, 1).Value = item.id;
-                ws.Cell(row, 2).Value = item.catDesc;
-                ws.Cell(row, 3).Value = item.famDesc;
-                ws.Cell(row, 4).Value = item.descCompleta;
-                ws.Cell(row, 5).Value = item.stock;
+                ws.Cell(row, 1).Value = item.prodDesc;
+                ws.Cell(row, 2).Value = item.id;
+                ws.Cell(row, 3).Value = item.catDesc;
+                ws.Cell(row, 4).Value = item.famDesc;
+                ws.Cell(row, 5).Value = item.descCompleta;
+                ws.Cell(row, 6).Value = item.stock;
                 row++;
             }
 

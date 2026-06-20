@@ -88,9 +88,11 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Badge ID -->
+                <!-- ID interno (oculto): no se muestra al usuario, pero Box_Identificador
+                     se conserva porque el code-behind lo usa para guardar el GUID. -->
                 <Border Grid.Column="1" CornerRadius="6" Background="{DynamicResource ThemeBgReadOnly}"
-                        Padding="10,4" VerticalAlignment="Center">
+                        Padding="10,4" VerticalAlignment="Center"
+                        Visibility="Collapsed">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="ID" FontSize="10" Foreground="{DynamicResource ThemeTextoMuted}"
                                    VerticalAlignment="Center" Margin="0,0,6,0" FontWeight="SemiBold"/>

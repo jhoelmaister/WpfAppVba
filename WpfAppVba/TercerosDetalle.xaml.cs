@@ -51,7 +51,7 @@ namespace WpfAppVba
         private void CargarParaEditar()
         {
             string id = _idEditar;
-            Box_Codigo.Text      = id;
+            Box_Codigo.Text      = Sql.TercerosObj.ObtenerItem("codigo",      id)?.ToString() ?? "";
             Box_Nit.Text         = Sql.TercerosObj.ObtenerItem("nit",         id)?.ToString() ?? "";
             Box_Descripcion.Text = Sql.TercerosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
             Box_Contacto.Text    = Sql.TercerosObj.ObtenerItem("contacto",    id)?.ToString() ?? "";
@@ -64,8 +64,7 @@ namespace WpfAppVba
 
         private void CargarParaNuevo()
         {
-            long siguiente = Convert.ToInt64(Sql.TercerosObj.Maximo("id") ?? 0) + 1;
-            Box_Codigo.Text = siguiente.ToString();
+            Box_Codigo.Text = Sql.TercerosObj.SiguienteCodigoInt().ToString();
         }
 
         // ─── Detectar cambios en cualquier campo ──────────────────────────────
@@ -77,6 +76,8 @@ namespace WpfAppVba
         // ─── Guardar (equivalente a guardarCambios) ───────────────────────────
         private bool Guardar()
         {
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+
             return AppState.EventoFormularioL == "modificar"
                 ? GuardarEditar()
                 : GuardarNuevo();
@@ -84,21 +85,21 @@ namespace WpfAppVba
 
         private bool GuardarEditar()
         {
-            string codigo = Box_Codigo.Text.Trim();
+            string id = _idEditar;
             try
             {
-                Sql.TercerosObj.EstablecerItem("nit",         codigo, Box_Nit.Text);
-                Sql.TercerosObj.EstablecerItem("descripcion", codigo, Box_Descripcion.Text);
-                Sql.TercerosObj.EstablecerItem("contacto",    codigo, Box_Contacto.Text);
-                Sql.TercerosObj.EstablecerItem("telefono",    codigo, Box_Telefono.Text);
-                Sql.TercerosObj.EstablecerItem("direccion",   codigo, Box_Direccion.Text);
-                Sql.TercerosObj.EstablecerItem("contacto2",   codigo, Box_Contacto2.Text);
-                Sql.TercerosObj.EstablecerItem("telefono2",   codigo, Box_Telefono2.Text);
-                Sql.TercerosObj.EstablecerItem("observacion", codigo, Box_Observacion.Text);
-                Sql.TercerosObj.EstablecerItem("edicion",     codigo, DateTime.Now);
-                Sql.TercerosObj.EstablecerItem("usuarioE",    codigo, AppState.UsuarioActivo);
+                Sql.TercerosObj.EstablecerItem("nit",         id, Box_Nit.Text);
+                Sql.TercerosObj.EstablecerItem("descripcion", id, Box_Descripcion.Text);
+                Sql.TercerosObj.EstablecerItem("contacto",    id, Box_Contacto.Text);
+                Sql.TercerosObj.EstablecerItem("telefono",    id, Box_Telefono.Text);
+                Sql.TercerosObj.EstablecerItem("direccion",   id, Box_Direccion.Text);
+                Sql.TercerosObj.EstablecerItem("contacto2",   id, Box_Contacto2.Text);
+                Sql.TercerosObj.EstablecerItem("telefono2",   id, Box_Telefono2.Text);
+                Sql.TercerosObj.EstablecerItem("observacion", id, Box_Observacion.Text);
+                Sql.TercerosObj.EstablecerItem("edicion",     id, DateTime.Now);
+                Sql.TercerosObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
 
-                Sql.TercerosObj.OrdenarData(("id", false));
+                Sql.TercerosObj.OrdenarData(("codigo", false));
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
             }
@@ -114,29 +115,33 @@ namespace WpfAppVba
             string codigo = Box_Codigo.Text.Trim();
             try
             {
-                if (!Sql.TercerosObj.VerificarId(codigo, "id"))
+                if (Sql.TercerosObj.CodigoExiste(codigo))
                 {
-                    MessageBox.Show("El número de documento ya existe", "Consola",
+                    MessageBox.Show("El código ya existe", "Consola",
                         MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Box_Codigo.Text = Sql.TercerosObj.SiguienteCodigoInt().ToString();
                     return false;
                 }
 
-                Sql.TercerosObj.Nuevo(codigo);
-                Sql.TercerosObj.EstablecerItem("nit",         codigo, Box_Nit.Text);
-                Sql.TercerosObj.EstablecerItem("descripcion", codigo, Box_Descripcion.Text);
-                Sql.TercerosObj.EstablecerItem("contacto",    codigo, Box_Contacto.Text);
-                Sql.TercerosObj.EstablecerItem("telefono",    codigo, Box_Telefono.Text);
-                Sql.TercerosObj.EstablecerItem("direccion",   codigo, Box_Direccion.Text);
-                Sql.TercerosObj.EstablecerItem("contacto2",   codigo, Box_Contacto2.Text);
-                Sql.TercerosObj.EstablecerItem("telefono2",   codigo, Box_Telefono2.Text);
-                Sql.TercerosObj.EstablecerItem("observacion", codigo, Box_Observacion.Text);
-                Sql.TercerosObj.EstablecerItem("emision",     codigo, DateTime.Now);
-                Sql.TercerosObj.EstablecerItem("edicion",     codigo, DateTime.Now);
-                Sql.TercerosObj.EstablecerItem("usuario",     codigo, AppState.UsuarioActivo);
-                Sql.TercerosObj.EstablecerItem("usuarioE",    codigo, AppState.UsuarioActivo);
+                string id = Guid.NewGuid().ToString();
+                Sql.TercerosObj.Nuevo(id);
+                Sql.TercerosObj.EstablecerItem("codigo",      id, codigo);
+                Sql.TercerosObj.EstablecerItem("nit",         id, Box_Nit.Text);
+                Sql.TercerosObj.EstablecerItem("descripcion", id, Box_Descripcion.Text);
+                Sql.TercerosObj.EstablecerItem("contacto",    id, Box_Contacto.Text);
+                Sql.TercerosObj.EstablecerItem("telefono",    id, Box_Telefono.Text);
+                Sql.TercerosObj.EstablecerItem("direccion",   id, Box_Direccion.Text);
+                Sql.TercerosObj.EstablecerItem("contacto2",   id, Box_Contacto2.Text);
+                Sql.TercerosObj.EstablecerItem("telefono2",   id, Box_Telefono2.Text);
+                Sql.TercerosObj.EstablecerItem("observacion", id, Box_Observacion.Text);
+                Sql.TercerosObj.EstablecerItem("emision",     id, DateTime.Now);
+                Sql.TercerosObj.EstablecerItem("edicion",     id, DateTime.Now);
+                Sql.TercerosObj.EstablecerItem("usuario",     id, AppState.UsuarioActivo);
+                Sql.TercerosObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
+                Sql.TercerosObj.EstablecerItem("empresa",     id, AppState.EmpresaActiva);
 
-                Sql.TercerosObj.OrdenarData(("id", false));
-                ItemCreadoId = codigo;
+                Sql.TercerosObj.OrdenarData(("codigo", false));
+                ItemCreadoId = id;
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
             }

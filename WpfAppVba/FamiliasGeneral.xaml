@@ -10,6 +10,50 @@
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SearchInput" TargetType="TextBox">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeInputBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </UserControl.Resources>
 
@@ -31,8 +75,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBox x:Name="TxtBuscar" Grid.Column="0" Height="28" FontSize="12"
-                     Padding="6,4" BorderBrush="{DynamicResource ThemeBordeInput}" Margin="0,0,6,0"
+            <TextBox x:Name="TxtBuscar" Grid.Column="0" Style="{StaticResource SearchInput}" Margin="0,0,6,0"
                      TextChanged="TxtBuscar_TextChanged"/>
             <Button Content="Buscar" Grid.Column="1"
                     Style="{StaticResource Btn}" Background="{DynamicResource ThemeBtnSecBg}" Foreground="{DynamicResource ThemeTexto}"
@@ -40,23 +83,27 @@
         </Grid>
 
         <!-- Lista -->
-        <DataGrid x:Name="Grid1" Grid.Row="2"
+        <Border Grid.Row="2" CornerRadius="6" ClipToBounds="True"
+                BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
+                Background="{DynamicResource ThemeBgSurface}">
+        <DataGrid x:Name="Grid1"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   SelectionMode="Single"
                   HeadersVisibility="Column"
                   GridLinesVisibility="Horizontal"
-                  BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
+                  BorderThickness="0"
                   FontSize="12"
                   MouseDoubleClick="Grid1_MouseDoubleClick"
                   PreviewKeyDown="Grid1_PreviewKeyDown">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Línea"       Binding="{Binding Linea}"       Width="60"/>
-                <DataGridTextColumn Header="Código"      Binding="{Binding Id}"          Width="80"/>
+                <DataGridTextColumn Header="Código"      Binding="{Binding Codigo}"      Width="80"/>
                 <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
                 <DataGridTextColumn Header="Producto"    Binding="{Binding Producto}"    Width="150"/>
             </DataGrid.Columns>
         </DataGrid>
+        </Border>
 
         <!-- Botones: Seleccionar (modo selector, abajo izquierda) + gestión (modo normal, derecha) -->
         <Grid Grid.Row="3" Margin="0,8,0,0">

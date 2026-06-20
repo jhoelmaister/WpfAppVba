@@ -1,6 +1,7 @@
 using System;
 using Microsoft.Data.SqlClient;
 
+#pragma warning disable IDE0130
 namespace WpfAppVba.Data
 {
     public static class DatabaseConnection
@@ -14,7 +15,10 @@ namespace WpfAppVba.Data
 
         private static string ConnectionString =>
             $"Server={_server};Database={_database};User Id={_user};Password={_password};" +
-            $"Application Name=edber;Connect Timeout=10;Command Timeout=10;TrustServerCertificate=True;";
+            $"Application Name=edber;Connect Timeout=10;Command Timeout=10;TrustServerCertificate=True;" +
+            // Resiliencia ante red inestable: reconecta de forma transparente una
+            // conexión idle que se rompió por un microcorte (idle connection resiliency).
+            $"Connect Retry Count=3;Connect Retry Interval=10;Pooling=true;";
 
         // ─── Configurar credenciales ──────────────────────────────────────────
         public static void Configurar(string server, string database, string user, string password)
@@ -58,6 +62,28 @@ namespace WpfAppVba.Data
             }
 
             return _connection;
+        }
+
+        // ─── Sonda rápida de conexión (no toca la conexión compartida) ───────
+        // Usa una conexión propia y desechable con timeout corto, para verificar el
+        // estado de la red sin congelar la app los 10 s del timeout normal ni romper
+        // la conexión global en uso. La usa el timer de ConexionEstado.
+        public static bool Sondear(int timeoutSeg = 2)
+        {
+            if (string.IsNullOrEmpty(_server)) return false;
+
+            string cs = $"Server={_server};Database={_database};User Id={_user};Password={_password};" +
+                        $"Application Name=edber;Connect Timeout={timeoutSeg};Command Timeout={timeoutSeg};" +
+                        $"TrustServerCertificate=True;";
+            try
+            {
+                using var conn = new SqlConnection(cs);
+                conn.Open();
+                using var cmd = new SqlCommand("SELECT 1", conn);
+                cmd.ExecuteScalar();
+                return true;
+            }
+            catch { return false; }
         }
 
         // ─── Verificar si la conexión está activa (SELECT 1) ─────────────────

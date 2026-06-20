@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 using Microsoft.Data.SqlClient;
 using WpfAppVba.Data;
 
@@ -9,6 +10,7 @@ namespace WpfAppVba
     public partial class ConfiguracionDbWindow : Window
     {
         private readonly ServidorConexion? _original;
+        private bool _pruebaExitosa = false;
 
         /// <summary>Servidor resultante tras guardar (null si se canceló).</summary>
         public ServidorConexion? Resultado { get; private set; }
@@ -23,13 +25,29 @@ namespace WpfAppVba
             if (editar != null)
             {
                 // Modo edición: NO se exponen las credenciales (usuario / contraseña).
-                LblTitulo.Text   = "Editar Servidor";
-                LblHint.Text     = "Deja Usuario y Contraseña en blanco para conservar los actuales.";
-                TxtNombre.Text   = editar.Nombre;
-                TxtServidor.Text = editar.Servidor;
-                TxtBaseDatos.Text= editar.BaseDatos;
+                LblTitulo.Text    = "Editar Servidor";
+                LblHint.Text      = "Deja Usuario y Contraseña en blanco para conservar los actuales.";
+                TxtNombre.Text    = editar.Nombre;
+                TxtServidor.Text  = editar.Servidor;
+                TxtBaseDatos.Text = editar.BaseDatos;
                 // TxtUsuario y PwdContrasena quedan vacíos a propósito.
             }
+
+            // Guardar deshabilitado hasta que la prueba sea exitosa.
+            // Se suscribe DESPUÉS de poblar los campos para no disparar el reset en la carga inicial.
+            BtnGuardar.IsEnabled = false;
+            TxtServidor.TextChanged          += (_, _) => ResetearPrueba();
+            TxtBaseDatos.TextChanged         += (_, _) => ResetearPrueba();
+            TxtUsuario.TextChanged           += (_, _) => ResetearPrueba();
+            PwdContrasena.PasswordChanged    += (_, _) => ResetearPrueba();
+            TxtContrasenaVisible.TextChanged += (_, _) => ResetearPrueba();
+        }
+
+        private void ResetearPrueba()
+        {
+            _pruebaExitosa            = false;
+            BtnGuardar.IsEnabled      = false;
+            LblEstadoConexion.Text    = "";
         }
 
         // ─── Credenciales efectivas (en edición, vacío = conservar) ──────────
@@ -88,6 +106,7 @@ namespace WpfAppVba
 
             BtnProbarConexion.IsEnabled = false;
             BtnGuardar.IsEnabled        = false;
+            LblEstadoConexion.Text      = "";
             try
             {
                 string cs = $"Server={servidor};Database={baseDatos};User Id={usuario};Password={contrasena};" +
@@ -99,24 +118,32 @@ namespace WpfAppVba
                     using var cmd = new SqlCommand("SELECT 1", conn);
                     cmd.ExecuteScalar();
                 });
-                MessageBox.Show("Conexión exitosa.", "Probar conexión",
-                                MessageBoxButton.OK, MessageBoxImage.Information);
+                _pruebaExitosa                = true;
+                LblEstadoConexion.Text        = "Conexión exitosa";
+                LblEstadoConexion.Foreground  = new SolidColorBrush(Color.FromRgb(16, 185, 129));
             }
-            catch (Exception ex)
+            catch
             {
-                MessageBox.Show($"Error al conectar:\n{ex.Message}", "Probar conexión",
-                                MessageBoxButton.OK, MessageBoxImage.Error);
+                LblEstadoConexion.Text       = "No se pudo conectar";
+                LblEstadoConexion.Foreground = new SolidColorBrush(Color.FromRgb(220, 38, 38));
             }
             finally
             {
                 BtnProbarConexion.IsEnabled = true;
-                BtnGuardar.IsEnabled        = true;
+                BtnGuardar.IsEnabled        = _pruebaExitosa;
             }
         }
 
         // ─── Guardar ─────────────────────────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
+            if (!_pruebaExitosa)
+            {
+                MessageBox.Show("Debes probar la conexión exitosamente antes de guardar.",
+                                "Guardar conexión", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             string servidor  = TxtServidor.Text.Trim();
             string baseDatos = TxtBaseDatos.Text.Trim();
 
@@ -139,11 +166,20 @@ namespace WpfAppVba
                     Contrasena = ContrasenaEfectiva()
                 };
 
-                if (_original != null) ConexionConfig.Actualizar(s);
-                else                   ConexionConfig.Agregar(s);
+                if (_original != null)
+                {
+                    ConexionConfig.Actualizar(s);
+                }
+                else
+                {
+                    // Solo se registra. Agregar() marca activo automáticamente
+                    // únicamente cuando aún no hay ningún servidor activo (primer registro).
+                    ConexionConfig.Agregar(s);
+                }
 
-                // Si el servidor guardado es el activo, reconfigurar la conexión global.
-                if (ConexionConfig.ObtenerActivoId() == s.Id)
+                // Reconfigurar la conexión global SOLO si el servidor guardado es el activo;
+                // así, agregar o editar un servidor distinto al conectado solo lo registra.
+                if (s.Id == ConexionConfig.ObtenerActivoId())
                     DatabaseConnection.Configurar(s.Servidor, s.BaseDatos, s.Usuario, s.Contrasena);
 
                 Resultado    = s;

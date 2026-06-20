@@ -56,15 +56,17 @@ namespace WpfAppVba
         private void CargarParaEditar()
         {
             string id = _idEditar;
-            Box_Codigo.Text      = id;
+            Box_Codigo.Text      = Sql.SucursalesObj.ObtenerItem("codigo",      id)?.ToString() ?? "";
             Box_Nit.Text         = Sql.SucursalesObj.ObtenerItem("nit",         id)?.ToString() ?? "";
             Box_Descripcion.Text = Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+            Box_Signo.Text       = Sql.SucursalesObj.ObtenerItem("signo",       id)?.ToString() ?? "";
+            SeleccionarTipo(Sql.SucursalesObj.ObtenerItem("tipo", id)?.ToString() ?? "");
             Box_Telefono.Text    = Sql.SucursalesObj.ObtenerItem("telefono",    id)?.ToString() ?? "";
             Box_Direccion.Text   = Sql.SucursalesObj.ObtenerItem("direccion",   id)?.ToString() ?? "";
             Box_Observacion.Text = Sql.SucursalesObj.ObtenerItem("observacion", id)?.ToString() ?? "";
 
             string regionId = Sql.SucursalesObj.ObtenerItem("region", id)?.ToString() ?? "";
-            Box_Referido_Codigo.Text = regionId;
+            Box_Referido_Codigo.Text = Sql.RegionesObj.ObtenerItem("codigo", regionId)?.ToString() ?? "";
             Box_Referido_Descripcion.Text = Sql.RegionesObj.ObtenerItem("descripcion", regionId)?.ToString() ?? "";
 
             var fechaObj = Sql.SucursalesObj.ObtenerItem("fecha", id);
@@ -82,11 +84,37 @@ namespace WpfAppVba
 
         private void CargarParaNuevo()
         {
-            long siguiente = Convert.ToInt64(Sql.SucursalesObj.Maximo("id") ?? 0) + 1;
-            Box_Codigo.Text        = siguiente.ToString();
+            Box_Codigo.Text        = Sql.SucursalesObj.SiguienteCodigoInt().ToString();
+            SeleccionarTipo("sucursal"); // valor por defecto
             var ahora = DateTime.Now;
             Box_Fecha.SelectedDate = ahora.Date;
             Box_Hora.Text          = ahora.ToString("HH:mm:ss");
+        }
+
+        // ─── Selecciona el ítem del combo TIPO según el valor guardado ─────────
+        private void SeleccionarTipo(string tipo)
+        {
+            tipo = tipo.Trim().ToLower();
+            if (tipo == "") tipo = "sucursal"; // por defecto si la fila no tiene tipo aún
+            foreach (var obj in Cmb_Tipo.Items)
+                if (obj is ComboBoxItem cbi &&
+                    string.Equals(cbi.Content?.ToString(), tipo, StringComparison.OrdinalIgnoreCase))
+                {
+                    Cmb_Tipo.SelectedItem = cbi;
+                    return;
+                }
+            Cmb_Tipo.SelectedIndex = 1; // "sucursal"
+        }
+
+        // ─── Tipo seleccionado en el combo (siempre "central" o "sucursal") ────
+        private string TipoSeleccionado()
+            => (Cmb_Tipo.SelectedItem as ComboBoxItem)?.Content?.ToString()?.Trim().ToLower() ?? "sucursal";
+
+        // ─── Resolver el id (UUID) de la región a partir del código digitado ──
+        private string ResolverRegionId()
+        {
+            string cod = Box_Referido_Codigo.Text.Trim();
+            return cod == "" ? "" : Sql.RegionesObj.BuscarIdentificador("codigo", cod);
         }
 
         // ─── Combina la fecha (DatePicker) con la hora (TextBox) ───────────────
@@ -103,7 +131,7 @@ namespace WpfAppVba
         {
             if (_cargando) return;
             _hayCambios = true;
-            string regionId = Box_Referido_Codigo.Text.Trim();
+            string regionId = ResolverRegionId();
             Box_Referido_Descripcion.Text = regionId == ""
                 ? ""
                 : Sql.RegionesObj.ObtenerItem("descripcion", regionId)?.ToString() ?? "";
@@ -128,9 +156,16 @@ namespace WpfAppVba
             if (!_cargando) _hayCambios = true;
         }
 
+        private void Cmb_Tipo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_cargando) _hayCambios = true;
+        }
+
         // ─── Guardar ──────────────────────────────────────────────────────────
         private bool Guardar()
         {
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+
             return AppState.EventoFormularioI == "modificar"
                 ? GuardarEditar()
                 : GuardarNuevo();
@@ -138,20 +173,22 @@ namespace WpfAppVba
 
         private bool GuardarEditar()
         {
-            string codigo = Box_Codigo.Text.Trim();
+            string id = _idEditar;
             try
             {
-                Sql.SucursalesObj.EstablecerItem("nit",         codigo, Box_Nit.Text);
-                Sql.SucursalesObj.EstablecerItem("descripcion", codigo, Box_Descripcion.Text);
-                Sql.SucursalesObj.EstablecerItem("telefono",    codigo, Box_Telefono.Text);
-                Sql.SucursalesObj.EstablecerItem("region",      codigo, Box_Referido_Codigo.Text);
-                Sql.SucursalesObj.EstablecerItem("direccion",   codigo, Box_Direccion.Text);
-                Sql.SucursalesObj.EstablecerItem("observacion", codigo, Box_Observacion.Text);
-                Sql.SucursalesObj.EstablecerItem("fecha",       codigo, ObtenerFechaHora());
-                Sql.SucursalesObj.EstablecerItem("edicion",     codigo, DateTime.Now);
-                Sql.SucursalesObj.EstablecerItem("usuarioE",    codigo, AppState.UsuarioActivo);
+                Sql.SucursalesObj.EstablecerItem("nit",         id, Box_Nit.Text);
+                Sql.SucursalesObj.EstablecerItem("descripcion", id, Box_Descripcion.Text);
+                Sql.SucursalesObj.EstablecerItem("signo",       id, Box_Signo.Text.Trim().ToUpper());
+                Sql.SucursalesObj.EstablecerItem("tipo",        id, TipoSeleccionado());
+                Sql.SucursalesObj.EstablecerItem("telefono",    id, Box_Telefono.Text);
+                Sql.SucursalesObj.EstablecerItem("region",      id, ResolverRegionId());
+                Sql.SucursalesObj.EstablecerItem("direccion",   id, Box_Direccion.Text);
+                Sql.SucursalesObj.EstablecerItem("observacion", id, Box_Observacion.Text);
+                Sql.SucursalesObj.EstablecerItem("fecha",       id, ObtenerFechaHora());
+                Sql.SucursalesObj.EstablecerItem("edicion",     id, DateTime.Now);
+                Sql.SucursalesObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
 
-                Sql.SucursalesObj.OrdenarData(("id", false));
+                Sql.SucursalesObj.OrdenarData(("codigo", false));
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
             }
@@ -167,29 +204,35 @@ namespace WpfAppVba
             string codigo = Box_Codigo.Text.Trim();
             try
             {
-                if (!Sql.SucursalesObj.VerificarId(codigo, "id"))
+                if (Sql.SucursalesObj.CodigoExiste(codigo))
                 {
                     MessageBox.Show("El código ya existe", "Consola",
                         MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Box_Codigo.Text = Sql.SucursalesObj.SiguienteCodigoInt().ToString();
                     return false;
                 }
 
-                Sql.SucursalesObj.Nuevo(codigo);
-                Sql.SucursalesObj.EstablecerItem("nit",         codigo, Box_Nit.Text);
-                Sql.SucursalesObj.EstablecerItem("descripcion", codigo, Box_Descripcion.Text);
-                Sql.SucursalesObj.EstablecerItem("telefono",    codigo, Box_Telefono.Text);
-                Sql.SucursalesObj.EstablecerItem("region",      codigo, Box_Referido_Codigo.Text);
-                Sql.SucursalesObj.EstablecerItem("direccion",   codigo, Box_Direccion.Text);
-                Sql.SucursalesObj.EstablecerItem("observacion", codigo, Box_Observacion.Text);
-                Sql.SucursalesObj.EstablecerItem("fecha",       codigo, ObtenerFechaHora());
-                Sql.SucursalesObj.EstablecerItem("emision",     codigo, DateTime.Now);
-                Sql.SucursalesObj.EstablecerItem("edicion",     codigo, DateTime.Now);
-                Sql.SucursalesObj.EstablecerItem("usuario",     codigo, AppState.UsuarioActivo);
-                Sql.SucursalesObj.EstablecerItem("usuarioE",    codigo, AppState.UsuarioActivo);
+                string id = Guid.NewGuid().ToString();
+                Sql.SucursalesObj.Nuevo(id);
+                Sql.SucursalesObj.EstablecerItem("codigo",      id, codigo);
+                Sql.SucursalesObj.EstablecerItem("nit",         id, Box_Nit.Text);
+                Sql.SucursalesObj.EstablecerItem("descripcion", id, Box_Descripcion.Text);
+                Sql.SucursalesObj.EstablecerItem("signo",       id, Box_Signo.Text.Trim().ToUpper());
+                Sql.SucursalesObj.EstablecerItem("tipo",        id, TipoSeleccionado());
+                Sql.SucursalesObj.EstablecerItem("telefono",    id, Box_Telefono.Text);
+                Sql.SucursalesObj.EstablecerItem("region",      id, ResolverRegionId());
+                Sql.SucursalesObj.EstablecerItem("direccion",   id, Box_Direccion.Text);
+                Sql.SucursalesObj.EstablecerItem("observacion", id, Box_Observacion.Text);
+                Sql.SucursalesObj.EstablecerItem("fecha",       id, ObtenerFechaHora());
+                Sql.SucursalesObj.EstablecerItem("emision",     id, DateTime.Now);
+                Sql.SucursalesObj.EstablecerItem("edicion",     id, DateTime.Now);
+                Sql.SucursalesObj.EstablecerItem("usuario",     id, AppState.UsuarioActivo);
+                Sql.SucursalesObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
+                Sql.SucursalesObj.EstablecerItem("empresa",     id, AppState.EmpresaActiva);
 
-                Sql.SucursalesObj.OrdenarData(("id", false));
+                Sql.SucursalesObj.OrdenarData(("codigo", false));
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
-                ItemCreadoId = codigo;
+                ItemCreadoId = id;
                 return true;
             }
             catch (Exception ex)

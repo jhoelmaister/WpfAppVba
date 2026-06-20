@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -12,20 +15,29 @@ namespace WpfAppVba
     {
         private Button? _btnActivo;
 
-        private readonly ArticulosGeneral    _panelArticulos    = new();
-        private readonly PedidosGeneral      _panelPedidos      = new();
-        private readonly TraspasosGeneral    _panelTraspasos    = new();
-        private readonly CorreccionesGeneral _panelCorrecciones = new();
-        private readonly TercerosGeneral     _panelTerceros     = new();
-        private readonly SucursalesGeneral   _panelSucursales   = new();
-        private readonly FamiliasGeneral     _panelFamilias     = new();
-        private readonly ProductosGeneral    _panelProductos    = new();
-        private readonly IndustriasGeneral   _panelIndustrias   = new();
-        private readonly CategoriasGeneral   _panelCategorias   = new();
-        private readonly InventariosGeneral  _panelInventarios  = new();
-        private readonly PreciosGeneral      _panelPrecios      = new();
-        private readonly RegionesGeneral     _panelRegiones     = new();
+        // Auto-actualización (Velopack). Flujo manual: aviso → descarga → reiniciar.
+        private readonly ActualizadorApp _actualizador = new();
+
+        // Paneles "General": mutables para poder recrearlos tras un cambio de contexto
+        // (empresa/sucursal/periodo) y que relean los cachés recién cargados.
+        private ArticulosGeneral    _panelArticulos    = new();
+        private PedidosGeneral      _panelPedidos      = new();
+        private TraspasosGeneral    _panelTraspasos    = new();
+        private CorreccionesGeneral _panelCorrecciones = new();
+        private TercerosGeneral     _panelTerceros     = new();
+        private SucursalesGeneral   _panelSucursales   = new();
+        private FamiliasGeneral     _panelFamilias     = new();
+        private ProductosGeneral    _panelProductos    = new();
+        private IndustriasGeneral   _panelIndustrias   = new();
+        private CategoriasGeneral   _panelCategorias   = new();
+        private InventariosGeneral  _panelInventarios  = new();
+        private PreciosGeneral      _panelPrecios      = new();
+        private RegionesGeneral     _panelRegiones     = new();
+        private EmpresasGeneral     _panelEmpresas     = new();
         private readonly Configuracion       _panelConfiguracion= new();
+        private UsuariosGeneral     _panelUsuarios     = new();
+        private MovimientosGeneral  _panelMovimientos  = new();
+        private DashboardGeneral    _panelDashboard    = new();
 
         // Cada sección del menú lateral conserva su propio juego de pestañas dinámicas.
         private string _seccionActiva = "articulos";
@@ -44,7 +56,11 @@ namespace WpfAppVba
             ["inventarios"]  = new List<TabItem>(),
             ["precios"]      = new List<TabItem>(),
             ["regiones"]     = new List<TabItem>(),
+            ["empresas"]     = new List<TabItem>(),
             ["configuracion"]= new List<TabItem>(),
+            ["usuarios"]     = new List<TabItem>(),
+            ["movimientos"]  = new List<TabItem>(),
+            ["dashboard"]    = new List<TabItem>(),
         };
         private readonly Dictionary<string, TabItem?> _pestañaSeleccionadaPorSeccion = new()
         {
@@ -61,21 +77,180 @@ namespace WpfAppVba
             ["inventarios"]  = null,
             ["precios"]      = null,
             ["regiones"]     = null,
+            ["empresas"]     = null,
             ["configuracion"]= null,
+            ["usuarios"]     = null,
+            ["movimientos"]  = null,
+            ["dashboard"]    = null,
         };
 
         public ConsolaMovimientos()
         {
             InitializeComponent();
             TabFijoContenido.Content = _panelArticulos;
+            MostrarVersion();
             ActualizarInfoUsuario();
             MarcarActivo(BtnNav_Articulos);
+            if (AppState.EsAdmin) BtnNav_Usuarios.Visibility = Visibility.Visible;
+
+            // Estado de conexión: pintar el estado actual y escuchar cambios.
+            ActualizarLabelConexion(ConexionEstado.EnLinea);
+            ConexionEstado.Cambio += OnConexionCambio;
+            ConexionEstado.Iniciar(Dispatcher);
+
+            // Buscar actualizaciones en segundo plano (no bloquea el arranque).
+            // Si hay una nueva versión, aparece el botón "🔄 Actualizar" en la top bar.
+            _ = BuscarActualizacionesAsync();
+        }
+
+        // ─── Versión de la app (barra de título de la ventana) ────────────────
+        private void MostrarVersion()
+        {
+            var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            // Title de la ventana → lo muestra Windows en la barra de título del SO.
+            Title = v == null
+                ? "Sistema de Gestión"
+                : $"Sistema de Gestión  v{v.Major}.{v.Minor}.{v.Build}";
+        }
+
+        // ─── Auto-actualización (Velopack) ────────────────────────────────────
+        private async Task BuscarActualizacionesAsync()
+        {
+            try
+            {
+                if (await _actualizador.HayActualizacionAsync())
+                {
+                    AppState.VersionPendiente   = _actualizador.VersionNueva;
+                    BloqueActualizar.Visibility = Visibility.Visible;
+                    BtnActualizar.Visibility    = Visibility.Visible;
+                    BtnActualizar.ToolTip       = $"Nueva versión disponible: {_actualizador.VersionNueva}";
+                }
+            }
+            catch
+            {
+                // Sin red o sin feed accesible: silencioso. Se reintenta al próximo arranque.
+            }
+        }
+
+        // Estado A → B: el usuario pulsa "Actualizar". Descarga en segundo plano con barra.
+        private async void BtnActualizar_Click(object sender, RoutedEventArgs e)
+        {
+            BtnActualizar.Visibility = Visibility.Collapsed;
+            PanelDescarga.Visibility = Visibility.Visible;
+            LblDescarga.Text         = "Descargando…";
+            BarraDescarga.Value      = 0;
+
+            double totalMB = _actualizador.TamañoDescargaMB;
+
+            var progreso = new Progress<int>(p =>
+            {
+                BarraDescarga.Value = p;
+                double bajadoMB = totalMB * p / 100.0;
+                LblDescarga.Text = totalMB > 0
+                    ? $"Descargando… {bajadoMB:0.0} / {totalMB:0.0} MB ({p}%)"
+                    : $"Descargando… {p}%";
+            });
+
+            try
+            {
+                await _actualizador.DescargarAsync(progreso);
+                // Estado B → C: lista. El usuario decide cuándo reiniciar.
+                PanelDescarga.Visibility = Visibility.Collapsed;
+                BtnReiniciar.Visibility  = Visibility.Visible;
+            }
+            catch
+            {
+                // Falló la descarga: volver al estado A para poder reintentar.
+                PanelDescarga.Visibility = Visibility.Collapsed;
+                BtnActualizar.Visibility = Visibility.Visible;
+                MessageBox.Show(
+                    "No se pudo descargar la actualización. Revisa tu conexión e inténtalo de nuevo.",
+                    "Actualización", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        // Estado C: aplica lo descargado y reinicia la app ya actualizada.
+        private void BtnReiniciar_Click(object sender, RoutedEventArgs e)
+        {
+            _actualizador.AplicarYReiniciar();
+        }
+
+        // ─── Estado de conexión (top bar) ─────────────────────────────────────
+        private void OnConexionCambio(bool enLinea) => ActualizarLabelConexion(enLinea);
+
+        private void ActualizarLabelConexion(bool enLinea)
+        {
+            if (enLinea)
+            {
+                LblConexion.Text = "●  En línea";
+                PillConexion.Background = new SolidColorBrush(Color.FromRgb(0x2E, 0x7D, 0x32)); // verde
+            }
+            else
+            {
+                LblConexion.Text = "●  Sin conexión";
+                PillConexion.Background = new SolidColorBrush(Color.FromRgb(0xC6, 0x28, 0x28)); // rojo
+            }
         }
 
         // ─── Info usuario ─────────────────────────────────────────────────────
         public void ActualizarInfoUsuario()
         {
-            LblUsuario.Text = $"Usuario: {AppState.UsuarioActivo}  |  Período: {AppState.PeriodoActivo}";
+            var sql = SqlData.Instance;
+            string nombres = sql.UsuariosObj.ObtenerItem("nombres", AppState.UsuarioActivo)?.ToString() ?? "";
+            if (string.IsNullOrWhiteSpace(nombres)) nombres = AppState.UsuarioActivo;
+            string sucursalDesc = sql.SucursalesObj.ObtenerItem("descripcion", AppState.SucursalActiva)?.ToString() ?? "";
+            string empresaDesc  = sql.EmpresasObj.ObtenerItem("descripcion", AppState.EmpresaActiva)?.ToString() ?? "";
+
+            LblUsuario.Text  = $"Usuario: {nombres}  |  Período: {AppState.PeriodoActivo}";
+            LblSucursal.Text = $"Sucursal: {sucursalDesc}";
+            LblEmpresa.Text  = $"Empresa: {empresaDesc}";
+        }
+
+        /// <summary>
+        /// Refresca toda la consola tras un cambio de contexto (empresa/sucursal/periodo)
+        /// hecho desde Configuración, sin cerrar sesión y manteniendo el enfoque en
+        /// Configuración. Recrea los paneles "General" para que relean los cachés
+        /// recién cargados (como si recién se hubiera iniciado sesión).
+        /// </summary>
+        public void RecargarContexto()
+        {
+            // 1. Cerrar todas las pestañas dinámicas (estado "recién iniciado")
+            for (int i = TabContenido.Items.Count - 1; i >= 0; i--)
+                if (TabContenido.Items[i] is TabItem t && t != TabFijo)
+                    TabContenido.Items.RemoveAt(i);
+            foreach (var clave in _pestañasPorSeccion.Keys.ToList())
+                _pestañasPorSeccion[clave].Clear();
+            foreach (var clave in _pestañaSeleccionadaPorSeccion.Keys.ToList())
+                _pestañaSeleccionadaPorSeccion[clave] = null;
+
+            // 2. Recrear los paneles "General" (no Configuración: se mantiene el enfoque)
+            _panelArticulos    = new();
+            _panelPedidos      = new();
+            _panelTraspasos    = new();
+            _panelCorrecciones = new();
+            _panelTerceros     = new();
+            _panelSucursales   = new();
+            _panelFamilias     = new();
+            _panelProductos    = new();
+            _panelIndustrias   = new();
+            _panelCategorias   = new();
+            _panelInventarios  = new();
+            _panelPrecios      = new();
+            _panelRegiones     = new();
+            _panelEmpresas     = new();
+            _panelMovimientos  = new();
+            _panelDashboard    = new();
+            _panelUsuarios     = new();
+
+            // 3. Mantener Configuración como panel fijo enfocado
+            _seccionActiva = "configuracion";
+            TabFijoContenido.Content = _panelConfiguracion;
+            TabFijoTitulo.Text = "Configuración";
+            TabContenido.SelectedItem = TabFijo;
+            MarcarActivo(BtnNav_Configuracion);
+
+            // 4. Refrescar la barra superior
+            ActualizarInfoUsuario();
         }
 
         // ─── Navegación por pestañas ──────────────────────────────────────────
@@ -116,7 +291,11 @@ namespace WpfAppVba
                 case "inventarios":  TabFijoContenido.Content = _panelInventarios;  TabFijoTitulo.Text = "Inventarios";  break;
                 case "precios":      TabFijoContenido.Content = _panelPrecios;      TabFijoTitulo.Text = "Precios";      break;
                 case "regiones":     TabFijoContenido.Content = _panelRegiones;     TabFijoTitulo.Text = "Regiones";     break;
+                case "empresas":     TabFijoContenido.Content = _panelEmpresas;     TabFijoTitulo.Text = "Empresas";     break;
                 case "configuracion":TabFijoContenido.Content = _panelConfiguracion;TabFijoTitulo.Text = "Configuración";break;
+                case "usuarios":     TabFijoContenido.Content = _panelUsuarios;     TabFijoTitulo.Text = "Usuarios";     break;
+                case "movimientos":  TabFijoContenido.Content = _panelMovimientos;  TabFijoTitulo.Text = "Movimientos";  break;
+                case "dashboard":    TabFijoContenido.Content = _panelDashboard;    TabFijoTitulo.Text = "Dashboard";    break;
             }
 
             // 3. Restaurar las pestañas propias de la nueva sección
@@ -213,12 +392,15 @@ namespace WpfAppVba
             {
                 _btnActivo.Background  = Brushes.Transparent;
                 _btnActivo.BorderBrush = Brushes.Transparent;
-                _btnActivo.Foreground  = new SolidColorBrush(Color.FromRgb(0x9A, 0xA3, 0xB8));
+                _btnActivo.SetResourceReference(Control.ForegroundProperty, "ThemeTextoSec");
             }
-            _btnActivo      = btn;
-            btn.Background  = new SolidColorBrush(Color.FromRgb(0x25, 0x2A, 0x40));
+            _btnActivo = btn;
+            // SetResourceReference (en vez de asignar un Brush fijo) para que el
+            // resaltado del ítem activo siga el tema actual incluso si el usuario
+            // cambia de tema sin volver a hacer clic en el ítem.
+            btn.SetResourceReference(Control.BackgroundProperty, "ThemeNavActivoBg");
             btn.BorderBrush = new SolidColorBrush(Color.FromRgb(0x4A, 0x6F, 0xE3));
-            btn.Foreground  = Brushes.White;
+            btn.SetResourceReference(Control.ForegroundProperty, "ThemeNavActivoFg");
         }
 
         // ─── Navegación lateral ───────────────────────────────────────────────
@@ -301,18 +483,185 @@ namespace WpfAppVba
             MarcarActivo(BtnNav_Precios);
         }
 
+        private void BtnNav_Empresas_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("empresas");
+            MarcarActivo(BtnNav_Empresas);
+        }
+
         private void BtnNav_Configuracion_Click(object sender, RoutedEventArgs e)
         {
             MostrarPanel("configuracion");
             MarcarActivo(BtnNav_Configuracion);
         }
 
+        private void BtnNav_Usuarios_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("usuarios");
+            MarcarActivo(BtnNav_Usuarios);
+        }
+
         // ─── Cerrar sesión ────────────────────────────────────────────────────
+
+        private void BtnNav_Movimientos_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("movimientos");
+            MarcarActivo(BtnNav_Movimientos);
+        }
+
+        private void BtnNav_Dashboard_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("dashboard");
+            MarcarActivo(BtnNav_Dashboard);
+        }
+
+        // ─── Accesos rápidos del top bar ──────────────────────────────────────
+        private PedidosDetalle? BuscarTabPedidoRapido()
+        {
+            foreach (TabItem t in TabContenido.Items)
+                if (t.Tag as string == "nuevo-pedido" && t.Content is PedidosDetalle pd) return pd;
+            return null;
+        }
+
+        private TraspasosDetalle? BuscarTabTraspasoRapido()
+        {
+            foreach (TabItem t in TabContenido.Items)
+                if (t.Tag as string == "nuevo-traspaso" && t.Content is TraspasosDetalle td) return td;
+            return null;
+        }
+
+        private void BtnQuick_Venta_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("pedidos");
+            MarcarActivo(BtnNav_Pedidos);
+            var existing = BuscarTabPedidoRapido();
+            if (existing != null) { existing.CambiarTipoMovimiento("venta"); foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
+            else _panelPedidos.AbrirNuevoPedido("rapido", "venta");
+        }
+
+        private void BtnQuick_Compra_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("pedidos");
+            MarcarActivo(BtnNav_Pedidos);
+            var existing = BuscarTabPedidoRapido();
+            if (existing != null) { existing.CambiarTipoMovimiento("compra"); foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
+            else _panelPedidos.AbrirNuevoPedido("rapido", "compra");
+        }
+
+        private void BtnQuick_Salida_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("traspasos");
+            MarcarActivo(BtnNav_Traspasos);
+            var existing = BuscarTabTraspasoRapido();
+            if (existing != null) { existing.CambiarTipoMovimiento("salida"); foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
+            else _panelTraspasos.AbrirNuevoTraspaso("salida");
+        }
+
+        private void BtnQuick_Entrada_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("traspasos");
+            MarcarActivo(BtnNav_Traspasos);
+            var existing = BuscarTabTraspasoRapido();
+            if (existing != null) { existing.CambiarTipoMovimiento("entrada"); foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
+            else _panelTraspasos.AbrirNuevoTraspaso("entrada");
+        }
+
+        private void MarcarInactivo()
+        {
+            if (string.IsNullOrEmpty(AppState.UsuarioActivo)) return;
+            try
+            {
+                var sql = SqlData.Instance;
+                sql.UsuariosObj.EstablecerItem("estadoU", AppState.UsuarioActivo, "inactivo");
+                sql.UsuariosObj.ExportarItems();
+            }
+            catch { }
+        }
+
+        // Marcado cuando el cierre ya fue confirmado (p. ej. desde Cerrar sesión) para
+        // que el evento Closing no vuelva a preguntar.
+        private bool _cierreConfirmado = false;
+
+        // Devuelve los títulos de las pestañas (nuevo/editar) con cambios sin guardar,
+        // tanto en la sección actual como en las demás secciones.
+        private List<string> PestañasConCambios()
+        {
+            var res = new List<string>();
+            foreach (TabItem t in TabContenido.Items)
+                if (t != TabFijo && TieneCambiosSinGuardar(t.Content)) res.Add(TituloPestaña(t));
+            foreach (var lista in _pestañasPorSeccion.Values)
+                foreach (var t in lista)
+                    if (TieneCambiosSinGuardar(t.Content)) res.Add(TituloPestaña(t));
+            return res;
+        }
+
+        // Extrae el texto del título de una pestaña (el Header es un StackPanel con un
+        // TextBlock de título seguido del botón de cierre).
+        private static string TituloPestaña(TabItem t)
+        {
+            if (t.Header is System.Windows.Controls.StackPanel sp)
+                foreach (var hijo in sp.Children)
+                    if (hijo is System.Windows.Controls.TextBlock tb) return tb.Text;
+            return t.Header?.ToString() ?? "(pestaña)";
+        }
+
+        // Lee por reflexión el estado de cambios del detalle: la propiedad "HayCambios"
+        // (PedidosDetalle) o el campo "_hayCambios" (resto de detalles). Los paneles que
+        // no tengan ninguno (General/selectores) cuentan como "sin cambios".
+        private static bool TieneCambiosSinGuardar(object? content)
+        {
+            if (content == null) return false;
+            var tipo = content.GetType();
+
+            var prop = tipo.GetProperty("HayCambios",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (prop != null && prop.PropertyType == typeof(bool))
+                return prop.GetValue(content) is bool pb && pb;
+
+            var field = tipo.GetField("_hayCambios",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            if (field != null && field.FieldType == typeof(bool))
+                return field.GetValue(content) is bool fb && fb;
+
+            return false;
+        }
+
+        // Pide confirmación si hay cambios sin guardar, indicando EXACTAMENTE en qué
+        // pestañas. Devuelve true si se puede cerrar (no hay cambios o el usuario aceptó
+        // perderlos).
+        private bool ConfirmarPerderCambios()
+        {
+            var conCambios = PestañasConCambios();
+            if (conCambios.Count == 0) return true;
+
+            string detalle = string.Join("\n", conCambios.ConvertAll(t => "   •  " + t));
+            var res = MessageBox.Show(
+                "Hay cambios sin guardar en:\n\n" + detalle +
+                "\n\nSi cierras se perderán esos cambios.\n¿Seguro que deseas cerrar?",
+                "Cerrar", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            return res == MessageBoxResult.Yes;
+        }
+
+        private void ConsolaMovimientos_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (!_cierreConfirmado && !ConfirmarPerderCambios())
+            {
+                e.Cancel = true;   // el usuario decidió no cerrar
+                return;
+            }
+            ConexionEstado.Cambio -= OnConexionCambio;
+            MarcarInactivo();
+        }
 
         private void BtnCerrarSesion_Click(object sender, RoutedEventArgs e)
         {
+            if (!ConfirmarPerderCambios()) return;
+            _cierreConfirmado = true;   // ya confirmado: Closing no vuelve a preguntar
+
+            MarcarInactivo();
             AppState.SesionActiva  = false;
-            AppState.UsuarioActivo = 0;
+            AppState.UsuarioActivo = "";
+            AppState.EmpresaActiva = "";
             DatabaseConnection.CerrarConexion();
 
             var login = new LoginWindow();

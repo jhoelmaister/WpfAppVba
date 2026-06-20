@@ -50,10 +50,11 @@ namespace WpfAppVba
         // ─── Configurar modo (selector vs normal) ─────────────────────────────
         private void ConfigurarModo()
         {
-            BtnSeleccionar.Visibility = ModoSelector ? Visibility.Visible   : Visibility.Collapsed;
-            BtnNuevo.Visibility       = ModoSelector ? Visibility.Collapsed : Visibility.Visible;
-            BtnEditar.Visibility      = ModoSelector ? Visibility.Collapsed : Visibility.Visible;
-            BtnEliminar.Visibility    = ModoSelector ? Visibility.Collapsed : Visibility.Visible;
+            bool ocultarCrud = ModoSelector || !AppState.EsAdmin;
+            BtnSeleccionar.Visibility = ModoSelector   ? Visibility.Visible   : Visibility.Collapsed;
+            BtnNuevo.Visibility       = ocultarCrud    ? Visibility.Collapsed : Visibility.Visible;
+            BtnEditar.Visibility      = ocultarCrud    ? Visibility.Collapsed : Visibility.Visible;
+            BtnEliminar.Visibility    = ocultarCrud    ? Visibility.Collapsed : Visibility.Visible;
         }
 
         // ─── Carga la lista ────────────────────────────────────────────────────
@@ -73,15 +74,17 @@ namespace WpfAppVba
                 string id = idObj.ToString()!;
 
                 string desc = Sql.CategoriasObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                string codigo = Sql.CategoriasObj.ObtenerItem("codigo", id)?.ToString() ?? "";
 
                 if (busqueda == "" ||
                     desc.ToLower().Contains(busqueda) ||
-                    id.ToLower().Contains(busqueda))
+                    codigo.ToLower().Contains(busqueda))
                 {
                     filas.Add(new CategoriaFila
                     {
                         Linea       = linea++,
                         Id          = id,
+                        Codigo      = codigo,
                         Descripcion = desc
                     });
                 }
@@ -100,6 +103,7 @@ namespace WpfAppVba
             {
                 Linea       = linea,
                 Id          = id,
+                Codigo      = Sql.CategoriasObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 Descripcion = Sql.CategoriasObj.ObtenerItem("descripcion", id)?.ToString() ?? ""
             };
         }
@@ -142,7 +146,7 @@ namespace WpfAppVba
         private void Seleccionar()
         {
             if (Grid1.SelectedItem is not CategoriaFila fila) return;
-            _callbackSeleccion?.Invoke(fila.Id);
+            _callbackSeleccion?.Invoke(fila.Codigo);
             Cerrando?.Invoke();
         }
 
@@ -173,6 +177,9 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not CategoriaFila fila) return;
 
+            // Verificación de conexión en 2 capas antes de persistir el borrado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             var res = MessageBox.Show("¿Eliminar esta categoría?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
 
@@ -199,18 +206,22 @@ namespace WpfAppVba
 
         private void BtnActualizar_Click(object sender, RoutedEventArgs e)
         {
+            // Sin conexión no se puede refrescar desde SQL: avisar y no congelar.
+            if (!FuncionesComunes.VerificarConexionParaActualizar(Window.GetWindow(this))) return;
+
             Sql.CategoriasObj.Actualizar();
             CargarCategorias();
         }
 
         private void AbrirEditar()
         {
+            if (!AppState.EsAdmin) return;
             if (Grid1.SelectedItem is not CategoriaFila fila) return;
             string idSel = fila.Id;
             int    linea = fila.Linea;
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            string titulo = $"Categoría {idSel}";
+            string titulo = $"Categoría {fila.Codigo}";
             var dlg = new CategoriasDetalle(idSel, tituloTab: titulo);
             dlg.Cerrando += () =>
             {
@@ -235,6 +246,7 @@ namespace WpfAppVba
     {
         public int    Linea       { get; set; }
         public string Id          { get; set; } = "";
+        public string Codigo      { get; set; } = "";
         public string Descripcion { get; set; } = "";
     }
 }

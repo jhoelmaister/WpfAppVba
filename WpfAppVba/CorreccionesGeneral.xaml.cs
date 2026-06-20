@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -25,7 +26,12 @@ namespace WpfAppVba
         public CorreccionesGeneral()
         {
             InitializeComponent();
-            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarMeses(); CargarCorrecciones(); };
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarMeses(); CargarCorrecciones(); };
+        }
+
+        private void ConfigurarModo()
+        {
+            if (!AppState.EsAdmin) BtnEliminar.Visibility = Visibility.Collapsed;
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
@@ -77,7 +83,7 @@ namespace WpfAppVba
 
                 // Filtrar por sucursal activa
                 string suc = Sql.DocumentosCObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
-                if (suc != AppState.SucursalActiva.ToString()) continue;
+                if (suc != AppState.SucursalActiva) continue;
 
                 // Filtrar por tipo de movimiento (ingreso / egreso)
                 string movimiento = Sql.DocumentosCObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
@@ -107,6 +113,7 @@ namespace WpfAppVba
                 {
                     Linea         = linea++,
                     Id            = id,
+                    Codigo        = Sql.DocumentosCObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                     Fecha         = fechaDoc,
                     FechaStr      = fechaDoc != default ? $"{fechaDoc:d} {fechaDoc:HH:mm:ss}" : "",
                     Movimiento    = movimiento,
@@ -116,14 +123,23 @@ namespace WpfAppVba
                 totalCant += cant;
             }
 
-            Grid1.ItemsSource = lista;
-            TxtTotalCantidad.Text = totalCant.ToString("N0");
+            Grid1.ItemsSource       = lista;
+            TxtTotalCantidad.Text   = totalCant.ToString("N0");
+            TxtTotalDocumentos.Text = lista.Count.ToString("N0");
+            TxtTotalIngresos.Text   = lista.Count(f => f.Movimiento == "ingreso").ToString();
+            TxtTotalEgresos.Text    = lista.Count(f => f.Movimiento == "egreso").ToString();
             LblTipoMovimiento.Text = tipoMov switch
             {
                 "egreso"  => "Egresos de Stock (pérdida, merma, hurto, consumo interno)",
                 "ingreso" => "Ingresos de Stock (error de registro, registros omitidos)",
                 _         => "Correcciones de Stock (Ingresos y Egresos)"
             };
+            int año = AppState.DataFechaFinal.Year > 2000
+                ? AppState.DataFechaFinal.Year
+                : DateTime.Now.Year;
+            LblSubtitulo.Text = string.IsNullOrEmpty(_mesActivo)
+                ? año.ToString()
+                : $"{_mesActivo} {año}";
 
             OcultarDetalle();
         }
@@ -158,6 +174,7 @@ namespace WpfAppVba
             {
                 Linea         = linea,
                 Id            = id,
+                Codigo        = Sql.DocumentosCObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 Fecha         = fecha,
                 FechaStr      = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                 Movimiento    = Sql.DocumentosCObj.ObtenerItem("movimiento", id)?.ToString() ?? "",
@@ -176,7 +193,10 @@ namespace WpfAppVba
                 f.Linea    = n++;
                 totalCant += f.CantidadTotal;
             }
-            TxtTotalCantidad.Text = totalCant.ToString("N0");
+            TxtTotalCantidad.Text   = totalCant.ToString("N0");
+            TxtTotalDocumentos.Text = lista.Count.ToString("N0");
+            TxtTotalIngresos.Text   = lista.Count(f => f.Movimiento == "ingreso").ToString();
+            TxtTotalEgresos.Text    = lista.Count(f => f.Movimiento == "egreso").ToString();
             Grid1.Items.Refresh();
         }
 
@@ -199,6 +219,8 @@ namespace WpfAppVba
         // ─── Panel de detalle artículos (Lista2) ─────────────────────────────
         private void MostrarDetalle(string documentoC)
         {
+            string codigoDoc = Sql.DocumentosCObj.ObtenerItem("codigo", documentoC)?.ToString() ?? documentoC;
+            LblDetalleHeader.Text = $"Artículos del documento {codigoDoc}";
             var detalles = new List<CorreccionDetalleFila>();
             int linea = 1;
 
@@ -231,13 +253,12 @@ namespace WpfAppVba
             }
 
             Lista2.ItemsSource = detalles;
-            PanelDetalle.Visibility = detalles.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void OcultarDetalle()
         {
-            PanelDetalle.Visibility = Visibility.Collapsed;
-            Lista2.ItemsSource = null;
+            LblDetalleHeader.Text = "Artículos del documento";
+            Lista2.ItemsSource    = null;
         }
 
         // ─── Selección en Grid1 → mostrar detalle ────────────────────────────
@@ -334,6 +355,9 @@ namespace WpfAppVba
         {
             if (Grid1.SelectedItem is not CorreccionFila fila) return;
 
+            // Verificación de conexión en 2 capas antes de persistir el borrado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
             var res = MessageBox.Show("¿Eliminar esta corrección y todas sus líneas?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (res != MessageBoxResult.Yes) return;
@@ -383,6 +407,9 @@ namespace WpfAppVba
 
         private void BtnActualizar_Click(object sender, RoutedEventArgs e)
         {
+            // Sin conexión no se puede refrescar desde SQL: avisar y no congelar.
+            if (!FuncionesComunes.VerificarConexionParaActualizar(Window.GetWindow(this))) return;
+
             Sql.DocumentosCObj.Actualizar();
             Sql.CorreccionesObj.Actualizar();
             CargarCorrecciones();
@@ -400,7 +427,7 @@ namespace WpfAppVba
 
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            string titulo = $"Corrección {idSel}";
+            string titulo = $"Corrección {fila.Codigo}";
             var dlg = new CorreccionesDetalle(this, idSel, tituloTab: titulo);
             dlg.Cerrando += () =>
             {
@@ -425,6 +452,7 @@ namespace WpfAppVba
     {
         public int      Linea         { get; set; }
         public string   Id            { get; set; } = "";
+        public string   Codigo        { get; set; } = "";
         public DateTime Fecha         { get; set; }
         public string   FechaStr      { get; set; } = "";
         public string   Movimiento    { get; set; } = "";
