@@ -171,6 +171,26 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 
 ## Historial de Cambios por Sesión
 
+### Sesión 2026-06-19/20 — PreciosGeneral: columna Precio + Hora y CRUD inline en GridPrecios (implementado y luego revertido a pedido del usuario); análisis de eliminar PreciosDetalle (rama `claude/wizardly-faraday-bdvna8`)
+
+> Contexto: continuación de un reordenamiento de layout y PDF de lista de precios de `PreciosGeneral` ya cerrado en una sesión previa (commit `17e9a0b`, en `master`). Esta sesión agregó columnas y CRUD inline en `GridPrecios`, pero el usuario revirtió ese cambio al final — queda documentado en detalle para no repetir el mismo intento sin releer esto primero.
+
+#### Implementado y luego revertido: columna Precio (Grid1), columna Hora (GridPrecios) y menú contextual CRUD
+- **Grid1**: nueva columna "Precio" a la derecha de "Estado"; mostraba el último precio vigente del artículo en la región activa (`ObtenerPrecioVigente(articuloId, regionId)`, 0 si no había registro).
+- **GridPrecios**: nueva columna "Hora" a la derecha de "Fecha" (`HoraStr`, formato `HH:mm:ss`, separada de `FechaStr`).
+- **GridPrecios**: `DataGrid.ContextMenu` (clic derecho) con "Nuevo Precio"/"Editar Precio"/"Eliminar Precio" — primer uso de `ContextMenu`/`MenuItem` sobre un DataGrid en todo el proyecto. Wiring nuevo: `GridPrecios_PreviewMouseRightButtonDown` selecciona la fila bajo el cursor antes de abrir el menú (mismo patrón `VisualTreeHelper.GetParent` que ya usaba `Tree1_PreviewMouseLeftButtonDown`).
+- Se quitó el botón `BtnEditarPrecio` de la barra inferior (a pedido del usuario); el método `BtnEditarPrecio_Click` se conservó porque seguía siendo invocado por doble clic, Enter y el ítem de menú contextual.
+- `ConfigurarModo()`: para no-admin, además de ocultar Nuevo/Eliminar, también ponía `GridPrecios.ContextMenu = null`.
+- **Commit `e8660f7`** (pusheado a `master`) → **revertido en `74408b9`** (también pusheado a `master`) a pedido explícito del usuario. Se usó `git revert` (no reset/force-push) porque el commit ya estaba en `master` compartido. Estado final: `master` quedó byte-a-byte igual que `17e9a0b` en `PreciosGeneral.xaml`/`.xaml.cs` — es decir, **sin** columna Precio en Grid1, **sin** columna Hora ni menú contextual en GridPrecios, y **con** el botón `BtnEditarPrecio` de vuelta.
+
+#### Análisis (NO implementado): eliminar `PreciosDetalle` y reemplazar por edición inline real en `GridPrecios`
+> El usuario planteó esto con `/critico` (modo crítico adversarial), antes de revertir el punto anterior. Veredicto entregado: **No aceptable** tal como estaba planteado. Se deja documentado para no repetir la misma investigación si se retoma la idea más adelante.
+- **Precedente arquitectónico**: hay 15 clases `*Detalle` (Articulos, Categorias, Correcciones, Empresas, Familias, Industrias, Inventarios, Pedidos, Productos, Regiones, Sucursales, Terceros, Traspasos, Usuarios, Precios) — todas siguen el mismo patrón formulario-en-pestaña (`ConsolaMovimientos.AbrirPestaña`/`IntentarCerrar`). Confirmado por grep: **cero** DataGrids con `IsReadOnly="False"` o edición inline real en todo el proyecto. Eliminar `PreciosDetalle` para hacer edición inline solo ahí convertiría a Precios en la única pantalla de 16 con un patrón de edición distinto.
+- **Riesgo concreto de pérdida de datos**: `GridPrecios.ItemsSource` se reemplaza completo al cambiar de artículo, cambiar de región (`CmbRegion_SelectionChanged`) o clickear "Actualizar". Hoy es inofensivo porque la grilla es de solo lectura, pero destruiría sin aviso cualquier edición de celda sin confirmar si la grilla fuera editable.
+- **`PreciosDetalle` no es trivial de replicar en una celda de grilla**: genera código correlativo por región (`SiguienteNumeroDoc`) solo al guardar con éxito (para no quemar números si se cancela); parsea decimales multi-cultura; restringe input con `PreviewTextInput`; formatea precio a 2 decimales en `LostFocus`; persiste 9 campos al crear vs. 5 al editar. Reconstruir todo eso en un DataGrid no tiene ningún precedente en el codebase.
+- **Modelo de fila incompleto para región**: `PrecioHistFila.Region` es un string descriptivo, no guarda el `regionId` (UUID). Hoy no importa porque la región del precio viene fija desde `CmbRegion` (ni siquiera se edita dentro de `PreciosDetalle`, que la muestra deshabilitada) — dato a favor de la propuesta, pero confirma que la región nunca sería editable por fila si se hiciera inline.
+- El usuario, después de leer el veredicto, optó por revertir el cambio de columnas/menú contextual (ver arriba) en vez de seguir con la edición inline. Quedó esbozada (sin implementar ni confirmar) la idea de "fila en blanco al final (`CanUserAddRows`) + Fecha vía `DatePicker` inline + guardado automático al desenfocar, sin botón Guardar"; preguntas abiertas si se retoma: UX exacta de "Agregar" (fila en blanco vs. botón que inserta fila editable) y si "Hora" también sería editable inline.
+
 ### Sesión 2026-06-18 (parte 3) — ConsolaMovimientos: resaltado de Ítems de navegación, login limpia/enfoca contraseña al fallar; TimePicker probado y revertido (rama `claude/quirky-bardeen-al3g9g`)
 
 #### Resaltado de Ítems de navegación en `ConsolaMovimientos` (tema claro)
