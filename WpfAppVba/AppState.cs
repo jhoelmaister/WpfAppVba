@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -216,10 +215,7 @@ namespace WpfAppVba.Data
                 final = new DateTime(periodo, 1, 1, 0, 0, 0);
                 AppLoader.ConectarDocumentos(inicio, final); // primera carga (trae también precios/documentosL)
 
-                var aperturaNueva        = new AperturaItem[ufArticulos + 1];
-                // Segunda consulta evitada: se escanea el caché de precios/documentosL que
-                // dejó la carga de arriba, en vez de volver a consultar la base.
-                var preciosAperturaFinal = ObtenerPreciosAperturaDesdeCache();
+                var aperturaNueva = new AperturaItem[ufArticulos + 1];
 
                 for (int ciclo = 1; ciclo <= ufArticulos; ciclo++)
                 {
@@ -231,8 +227,10 @@ namespace WpfAppVba.Data
                     {
                         ArticuloId = id,
                         Fecha      = final,
+                        // Mismo patrón que ContarStock: por cada artículo, una función
+                        // dedicada que recorre el caché y devuelve su valor puntual.
                         Cantidad   = StockCalculator.ContarStock(id, final),
-                        Precio     = preciosAperturaFinal.TryGetValue(id, out var precioApertura) ? precioApertura : 0
+                        Precio     = ObtenerPrecioMaximoApertura(id)
                     };
                 }
 
@@ -256,35 +254,37 @@ namespace WpfAppVba.Data
         /// <summary>
         /// Completa AperturaActiva[].Precio cuando quedó pendiente (rama sin puente de
         /// ActualizarBase). Debe llamarse después de que el llamador cargue
-        /// AppLoader.ConectarDocumentos(DataFechaInicio, DataFechaFinal), escaneando ese
-        /// caché en vez de consultar la base directamente. No hace nada si no quedó
-        /// pendiente (rama con puente, que ya completa el precio internamente).
+        /// AppLoader.ConectarDocumentos(DataFechaInicio, DataFechaFinal): por cada
+        /// artículo ya cargado en AperturaActiva, busca su precio con
+        /// <see cref="ObtenerPrecioMaximoApertura"/>. No hace nada si no quedó pendiente
+        /// (rama con puente, que ya completa el precio internamente).
         /// </summary>
         public static void CompletarPreciosApertura()
         {
             if (!_preciosAperturaPendiente) return;
             _preciosAperturaPendiente = false;
 
-            var precios = ObtenerPreciosAperturaDesdeCache();
             foreach (var item in AperturaActiva)
             {
                 if (item == null) continue;
-                if (precios.TryGetValue(item.ArticuloId, out var precio)) item.Precio = precio;
+                item.Precio = ObtenerPrecioMaximoApertura(item.ArticuloId);
             }
         }
 
         /// <summary>
-        /// Precio de apertura por artículo: el de mayor documentosL.fecha por artículo,
-        /// escaneando el caché de Sql.PreciosObj / Sql.DocumentosLObj que ya dejó cargado
-        /// AppLoader.ConectarDocumentos — sin consultar la base directamente. Usado tanto
-        /// por <see cref="CompletarPreciosApertura"/> (rama sin puente, después de que el
-        /// llamador carga el caché) como por el puente de ActualizarBase (que carga el
-        /// caché él mismo, dentro de la misma pasada).
+        /// Precio de apertura de UN artículo: el de mayor documentosL.fecha, recorriendo
+        /// Sql.PreciosObj / Sql.DocumentosLObj (caché que ya dejó cargado
+        /// AppLoader.ConectarDocumentos) — sin consultar la base directamente. Mismo
+        /// patrón que <see cref="StockCalculator.ContarStock"/>: una función dedicada por
+        /// artículo en vez de precalcular un diccionario único. Usada tanto por
+        /// <see cref="CompletarPreciosApertura"/> (rama sin puente) como por el puente de
+        /// ActualizarBase (que carga el caché él mismo, dentro de la misma pasada).
         /// </summary>
-        private static Dictionary<string, double> ObtenerPreciosAperturaDesdeCache()
+        private static double ObtenerPrecioMaximoApertura(string articuloId)
         {
-            var resultado  = new Dictionary<string, double>();
-            var mejorFecha = new Dictionary<string, DateTime>();
+            double precio = 0;
+            DateTime mejorFecha = default;
+            bool encontrado = false;
 
             int ufPrecios = Sql.PreciosObj.ContarFilas;
             for (int ciclo = 1; ciclo <= ufPrecios; ciclo++)
@@ -293,8 +293,8 @@ namespace WpfAppVba.Data
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
 
-                string articuloId = Sql.PreciosObj.ObtenerItem("articulo", id)?.ToString() ?? "";
-                if (articuloId == "") continue;
+                if (Sql.PreciosObj.ObtenerItem("articulo", id)?.ToString() != articuloId)
+                    continue;
 
                 string documentoL = Sql.PreciosObj.ObtenerItem("documentoL", id)?.ToString() ?? "";
                 if (documentoL == "") continue;
@@ -303,13 +303,14 @@ namespace WpfAppVba.Data
                 if (fechaObj == null) continue;
                 DateTime fecha = Convert.ToDateTime(fechaObj);
 
-                if (mejorFecha.TryGetValue(articuloId, out var actual) && fecha <= actual) continue;
+                if (encontrado && fecha <= mejorFecha) continue;
 
-                mejorFecha[articuloId] = fecha;
-                resultado[articuloId]  = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0);
+                mejorFecha = fecha;
+                encontrado = true;
+                precio     = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0);
             }
 
-            return resultado;
+            return precio;
         }
     }
 
