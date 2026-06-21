@@ -12,6 +12,7 @@ namespace WpfAppVba
     public partial class PreciosGeneral : System.Windows.Controls.UserControl
     {
         private static SqlData Sql => SqlData.Instance;
+        private int    _añoActivo  = 0;
         private string _mesActivo  = "";
         private string _modoFiltro = "filtros"; // "filtros" = Tree1 | "busquedas" = TxtBuscar
 
@@ -58,7 +59,13 @@ namespace WpfAppVba
             CboRegion.SelectedIndex     = 0;
         }
 
-        // ─── Carga el árbol de meses ──────────────────────────────────────────
+        // ─── Carga el árbol de años/meses con listas registradas ─────────────
+        // documentosL/precios se cargan sin límite de fecha (toda la empresa, ver
+        // AppLoader.ConectarProductos): a diferencia de Traspasos/Pedidos no hay un
+        // único período activo, así que el árbol se arma con los años y meses que
+        // realmente tienen documentos, no una lista fija de 12 meses de un año. Si
+        // no hay ningún documento registrado, "General" (sin filtro) queda como
+        // único nodo.
         private void CargarMeses()
         {
             Tree1.Items.Clear();
@@ -68,20 +75,39 @@ namespace WpfAppVba
             var nodoGeneral = new TreeViewItem
             {
                 Header     = "General",
-                Tag        = "",
+                Tag        = (Anio: 0, Mes: ""),
                 IsExpanded = true
             };
-            foreach (var mes in meses)
-                nodoGeneral.Items.Add(new TreeViewItem { Header = mes, Tag = mes });
-
             Tree1.Items.Add(nodoGeneral);
 
-            int mesActual = DateTime.Now.Month - 1;
-            if (nodoGeneral.Items[mesActual] is TreeViewItem ti)
+            var mesesPorAño = new Dictionary<int, SortedSet<int>>();
+            int uf = Sql.DocumentosLObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
             {
-                ti.IsSelected = true;
-                _mesActivo = meses[mesActual];
+                var idObj = Sql.DocumentosLObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+
+                var fechaObj = Sql.DocumentosLObj.ObtenerItem("fecha", id);
+                if (fechaObj == null) continue;
+                DateTime fecha = Convert.ToDateTime(fechaObj);
+
+                if (!mesesPorAño.TryGetValue(fecha.Year, out var mesesAño))
+                    mesesPorAño[fecha.Year] = mesesAño = new SortedSet<int>();
+                mesesAño.Add(fecha.Month);
             }
+
+            foreach (int año in mesesPorAño.Keys.OrderByDescending(a => a))
+            {
+                var nodoAño = new TreeViewItem { Header = año.ToString(), Tag = (Anio: año, Mes: "") };
+                foreach (int mes in mesesPorAño[año])
+                    nodoAño.Items.Add(new TreeViewItem { Header = meses[mes - 1], Tag = (Anio: año, Mes: meses[mes - 1]) });
+                Tree1.Items.Add(nodoAño);
+            }
+
+            nodoGeneral.IsSelected = true;
+            _añoActivo = 0;
+            _mesActivo = "";
         }
 
         // ─── Carga la lista de documentos de precios (documentosL) ───────────
@@ -93,6 +119,7 @@ namespace WpfAppVba
             int linea = 1;
             string busqueda  = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
             string mesFiltro = _modoFiltro == "filtros"   ? _mesActivo : "";
+            int    añoFiltro = _modoFiltro == "filtros"   ? _añoActivo : 0;
             string regionId  = CboRegion?.SelectedValue?.ToString() ?? "";
 
             int uf = Sql.DocumentosLObj.ContarFilas;
@@ -107,6 +134,9 @@ namespace WpfAppVba
 
                 var fechaDocObj = Sql.DocumentosLObj.ObtenerItem("fecha", id);
                 DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
+
+                if (añoFiltro > 0 && (fechaDocObj == null || fechaDoc.Year != añoFiltro)) continue;
+
                 if (!string.IsNullOrEmpty(mesFiltro))
                 {
                     if (fechaDocObj == null) continue;
@@ -128,12 +158,9 @@ namespace WpfAppVba
             TxtTotalDocumentos.Text = lista.Count.ToString("N0");
             TxtTotalLineas.Text     = lista.Sum(f => f.Lineas).ToString("N0");
 
-            int año = AppState.DataFechaFinal.Year > 2000
-                ? AppState.DataFechaFinal.Year
-                : DateTime.Now.Year;
-            LblSubtitulo.Text = string.IsNullOrEmpty(_mesActivo)
-                ? año.ToString()
-                : $"{_mesActivo} {año}";
+            LblSubtitulo.Text = _añoActivo == 0
+                ? "Todas las listas"
+                : string.IsNullOrEmpty(_mesActivo) ? _añoActivo.ToString() : $"{_mesActivo} {_añoActivo}";
 
             OcultarDetalle();
         }
@@ -254,8 +281,11 @@ namespace WpfAppVba
         // ─── Eventos de árbol ─────────────────────────────────────────────────
         private void Tree1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            if (Tree1.SelectedItem is TreeViewItem ti)
-                _mesActivo = ti.Tag?.ToString() ?? "";
+            if (Tree1.SelectedItem is TreeViewItem ti && ti.Tag is (int anio, string mes))
+            {
+                _añoActivo = anio;
+                _mesActivo = mes;
+            }
             _modoFiltro = "filtros";
             CargarListas();
         }
