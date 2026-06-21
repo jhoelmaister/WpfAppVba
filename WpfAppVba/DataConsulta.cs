@@ -186,6 +186,38 @@ namespace WpfAppVba.Data
         }
 
         /// <summary>
+        /// Siguiente número correlativo para documentos cuyo codigo = signo + número,
+        /// agrupado por EMPRESA. La empresa se obtiene por la cascada
+        /// region → regiones.empresa. Pensado para documentosL (listas de precios),
+        /// que no tiene columna empresa ni sucursal directa.
+        /// </summary>
+        public int SiguienteNumeroDocPorRegion(string signo, string empresaId)
+        {
+            if (string.IsNullOrEmpty(empresaId)) return 1;
+
+            return SqlRetry.Ejecutar(() =>
+            {
+                var conn = DatabaseConnection.ObtenerConexion();
+                using var cmd = new SqlCommand(
+                    $"SELECT d.codigo FROM {_nombreTabla} AS d " +
+                    $"INNER JOIN regiones AS r ON r.id = d.region " +
+                    $"WHERE d.estadof = 'normal' AND r.empresa = @emp", conn);
+                cmd.Parameters.AddWithValue("@emp", empresaId);
+
+                int max = 0;
+                using var rd = cmd.ExecuteReader();
+                while (rd.Read())
+                {
+                    string c = rd[0]?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(signo) && c.StartsWith(signo, StringComparison.OrdinalIgnoreCase))
+                        c = c.Substring(signo.Length);
+                    if (int.TryParse(c, out int n) && n > max) max = n;
+                }
+                return max + 1;
+            });
+        }
+
+        /// <summary>
         /// Índices ya ocupados por filas eliminadas/ocultas (estadof &lt;&gt; 'normal') del
         /// documento cuyo <paramref name="filtroColumna"/> = <paramref name="filtroValor"/>.
         /// Consulta directa a SQL Server (esas filas no están en el caché). Sirve para
