@@ -424,7 +424,6 @@ namespace WpfAppVba
 
                 if (empresaCambio || sucursalCambio || periodoCambio)
                     AppLoader.ConectarDocumentos(AppState.DataFechaInicio, AppState.DataFechaFinal);
-                AppState.CompletarPreciosApertura();
 
                 MessageBox.Show("Guardado exitoso", "Configuración",
                                 MessageBoxButton.OK, MessageBoxImage.Information);

@@ -131,7 +131,7 @@ namespace WpfAppVba
         {
             Box_DocumentoL.IsEnabled = false;
             string signo  = Sql.EmpresasObj.ObtenerItem("signo", AppState.EmpresaActiva)?.ToString() ?? "";
-            int    numero = Sql.DocumentosLObj.SiguienteNumeroDocPorRegion(signo, AppState.EmpresaActiva);
+            int    numero = Sql.DocumentosLObj.SiguienteNumeroDoc(signo, "empresa", AppState.EmpresaActiva);
             _codigoDocL          = $"{signo.ToUpper()}{numero}";
             Box_DocumentoL.Text  = _codigoDocL;
             Box_Fecha.SelectedDate = DateTime.Today;
