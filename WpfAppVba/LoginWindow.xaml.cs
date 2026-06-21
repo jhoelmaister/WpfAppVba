@@ -322,6 +322,7 @@ namespace WpfAppVba
                     MostrarEstado("Cargando documentos...", Colors.Green);
                     await Task.Run(() => AppLoader.ConectarDocumentos(
                         AppState.DataFechaInicio, AppState.DataFechaFinal));
+                    AppState.CompletarPreciosApertura();
 
                     MostrarEstado("¡Conexión exitosa!", Colors.Green);
 

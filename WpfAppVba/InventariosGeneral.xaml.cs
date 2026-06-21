@@ -195,6 +195,7 @@ namespace WpfAppVba
                     : int.Parse(AppState.PeriodoActivo);
                 AppState.ActualizarBase(periodo);
                 AppLoader.ConectarDocumentos(AppState.DataFechaInicio, AppState.DataFechaFinal);
+                AppState.CompletarPreciosApertura();
 
                 var lista = FilasGrid;
                 int idx   = lista.IndexOf(fila);

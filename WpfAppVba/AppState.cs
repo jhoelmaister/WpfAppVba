@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
-using Microsoft.Data.SqlClient;
 
 namespace WpfAppVba.Data
 {
@@ -146,18 +145,21 @@ namespace WpfAppVba.Data
 
             AperturaFecha = inicio;
 
-            // Si hay puente de período (rama de abajo), los precios de ESTA pasada se
-            // descartan apenas se recalculan con el corte final → no consultarlos todavía
-            // evita una consulta a precios/documentosL que terminaría desperdiciada.
+            // El precio de apertura de ESTA pasada nunca se calcula con una consulta
+            // propia: si hay puente, se descarta y se recalcula después con el corte
+            // final (rama de abajo, escaneando el caché que deja ConectarDocumentos).
+            // Si NO hay puente, todavía no hay caché de precios/documentosL cargado acá
+            // (lo carga el llamador recién después de ActualizarBase) → queda pendiente
+            // y se completa con CompletarPreciosApertura(), una vez cargado ese caché.
             // La cantidad SÍ hay que calcularla igual: ContarStock (rama del puente) lee
             // AppState.AperturaActiva como base, así que esta pasada debe quedar asignada
             // antes de que se ejecute.
             bool periodoPuente = inicio.Year != periodo;
+            _preciosAperturaPendiente = !periodoPuente;
 
-            int ufArticulos     = Sql.ArticulosObj.ContarFilas;
-            int ufInventarios   = encontrado ? Sql.InventariosObj.ContarFilas : 0;
-            var apertura        = new AperturaItem[ufArticulos + 1]; // base-1 como VBA
-            var preciosApertura = periodoPuente ? new Dictionary<string, double>() : ObtenerPreciosApertura(inicio);
+            int ufArticulos   = Sql.ArticulosObj.ContarFilas;
+            int ufInventarios = encontrado ? Sql.InventariosObj.ContarFilas : 0;
+            var apertura      = new AperturaItem[ufArticulos + 1]; // base-1 como VBA
 
             for (int ciclo = 1; ciclo <= ufArticulos; ciclo++)
             {
@@ -193,7 +195,7 @@ namespace WpfAppVba.Data
                     ArticuloId = id,
                     Fecha      = inicio,
                     Cantidad   = cantidad,
-                    Precio     = preciosApertura.TryGetValue(id, out var precioApertura) ? precioApertura : 0
+                    Precio     = 0 // se completa después: CompletarPreciosApertura(), o lo descarta el puente
                 };
             }
 
@@ -244,44 +246,40 @@ namespace WpfAppVba.Data
         }
 
         /// <summary>
-        /// Precio de apertura por artículo cuando NO hay puente de período: el de la
-        /// documentoL más reciente con fecha &lt;= fechaCorte. Consulta directa a SQL
-        /// Server porque en este caso el caché de precios/documentosL todavía no se
-        /// cargó (recién se carga después, filtrado por período, desde el llamador).
-        /// Cuando SÍ hay puente, ese caché ya lo carga ConectarDocumentos dentro de
-        /// ActualizarBase → ver <see cref="ObtenerPreciosAperturaDesdeCache"/>.
+        /// true cuando ActualizarBase dejó pendiente de completar el precio de
+        /// AperturaActiva (rama sin puente: ahí todavía no hay caché de
+        /// precios/documentosL cargado). Lo consume y apaga
+        /// <see cref="CompletarPreciosApertura"/>.
         /// </summary>
-        private static Dictionary<string, double> ObtenerPreciosApertura(DateTime fechaCorte)
+        private static bool _preciosAperturaPendiente;
+
+        /// <summary>
+        /// Completa AperturaActiva[].Precio cuando quedó pendiente (rama sin puente de
+        /// ActualizarBase). Debe llamarse después de que el llamador cargue
+        /// AppLoader.ConectarDocumentos(DataFechaInicio, DataFechaFinal), escaneando ese
+        /// caché en vez de consultar la base directamente. No hace nada si no quedó
+        /// pendiente (rama con puente, que ya completa el precio internamente).
+        /// </summary>
+        public static void CompletarPreciosApertura()
         {
-            var resultado = new Dictionary<string, double>();
-            var conn = DatabaseConnection.ObtenerConexion();
-            using var cmd = new SqlCommand(
-                "SELECT p.articulo, p.precio FROM precios AS p " +
-                "INNER JOIN documentosL AS dl ON p.documentoL = dl.id " +
-                "INNER JOIN ( " +
-                "    SELECT p2.articulo, MAX(dl2.fecha) AS maxFecha " +
-                "    FROM precios AS p2 " +
-                "    INNER JOIN documentosL AS dl2 ON p2.documentoL = dl2.id " +
-                "    WHERE p2.estadof = 'normal' AND dl2.estadof = 'normal' AND dl2.fecha <= @fecha " +
-                "    GROUP BY p2.articulo " +
-                ") AS ult ON ult.articulo = p.articulo AND dl.fecha = ult.maxFecha " +
-                "WHERE p.estadof = 'normal' AND dl.estadof = 'normal'", conn);
-            cmd.Parameters.AddWithValue("@fecha", fechaCorte);
-            using var reader = cmd.ExecuteReader();
-            while (reader.Read())
+            if (!_preciosAperturaPendiente) return;
+            _preciosAperturaPendiente = false;
+
+            var precios = ObtenerPreciosAperturaDesdeCache();
+            foreach (var item in AperturaActiva)
             {
-                string articuloId = reader["articulo"].ToString() ?? "";
-                if (articuloId == "" || resultado.ContainsKey(articuloId)) continue;
-                resultado[articuloId] = Convert.ToDouble(reader["precio"]);
+                if (item == null) continue;
+                if (precios.TryGetValue(item.ArticuloId, out var precio)) item.Precio = precio;
             }
-            return resultado;
         }
 
         /// <summary>
-        /// Precio de apertura por artículo cuando SÍ hay puente de período: el de mayor
-        /// documentosL.fecha por artículo, escaneando el caché de Sql.PreciosObj /
-        /// Sql.DocumentosLObj que ya dejó cargado AppLoader.ConectarDocumentos (llamado
-        /// justo antes, dentro del mismo puente) — sin volver a consultar la base.
+        /// Precio de apertura por artículo: el de mayor documentosL.fecha por artículo,
+        /// escaneando el caché de Sql.PreciosObj / Sql.DocumentosLObj que ya dejó cargado
+        /// AppLoader.ConectarDocumentos — sin consultar la base directamente. Usado tanto
+        /// por <see cref="CompletarPreciosApertura"/> (rama sin puente, después de que el
+        /// llamador carga el caché) como por el puente de ActualizarBase (que carga el
+        /// caché él mismo, dentro de la misma pasada).
         /// </summary>
         private static Dictionary<string, double> ObtenerPreciosAperturaDesdeCache()
         {

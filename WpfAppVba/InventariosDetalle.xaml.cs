@@ -473,6 +473,7 @@ namespace WpfAppVba
                     : int.Parse(AppState.PeriodoActivo);
                 AppState.ActualizarBase(periodo);
                 AppLoader.ConectarDocumentos(AppState.DataFechaInicio, AppState.DataFechaFinal);
+                AppState.CompletarPreciosApertura();
 
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
@@ -511,6 +512,7 @@ namespace WpfAppVba
                     : int.Parse(AppState.PeriodoActivo);
                 AppState.ActualizarBase(periodo);
                 AppLoader.ConectarDocumentos(AppState.DataFechaInicio, AppState.DataFechaFinal);
+                AppState.CompletarPreciosApertura();
 
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 ItemCreadoId = docId;
