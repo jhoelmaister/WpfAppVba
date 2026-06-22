@@ -119,7 +119,7 @@ namespace WpfAppVba
                 var nodoAño = BuscarNodoAño(año);
                 if (nodoAño == null)
                 {
-                    nodoAño = new TreeViewItem { Header = año.ToString(), Tag = (Anio: año, Mes: 0) };
+                    nodoAño = new TreeViewItem { Header = año.ToString(), Tag = (Anio: año, Mes: 0), IsExpanded = true };
                     InsertarNodoAñoOrdenado(nodoAño, año);
                 }
 
