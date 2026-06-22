@@ -13,7 +13,7 @@ namespace WpfAppVba
     {
         private static SqlData Sql => SqlData.Instance;
         private int    _añoActivo  = 0;
-        private string _mesActivo  = "";
+        private int    _mesActivo  = 0;
         private string _modoFiltro = "filtros"; // "filtros" = Tree1 | "busquedas" = TxtBuscar
 
         private bool _iniciado = false;
@@ -24,7 +24,7 @@ namespace WpfAppVba
         public PreciosGeneral()
         {
             InitializeComponent();
-            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarRegiones(); CargarMeses(); CargarListas(); };
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarRegiones(); SincronizarArbolFechas(); CargarListas(); };
         }
 
         private void ConfigurarModo()
@@ -59,27 +59,17 @@ namespace WpfAppVba
             CboRegion.SelectedIndex     = 0;
         }
 
-        // ─── Carga el árbol de años/meses con listas registradas ─────────────
+        // ─── Sincroniza el árbol de años/meses con los documentos registrados ─
         // documentosL/precios se cargan sin límite de fecha (toda la empresa, ver
         // AppLoader.ConectarProductos): a diferencia de Traspasos/Pedidos no hay un
-        // único período activo, así que el árbol se arma con los años y meses que
-        // realmente tienen documentos, no una lista fija de 12 meses de un año. Si
-        // no hay ningún documento registrado, "General" (sin filtro) queda como
-        // único nodo.
-        private void CargarMeses()
+        // único período activo, así que el árbol muestra solo los años y meses que
+        // realmente tienen documentos (sin nodo "General"); sin ninguno registrado
+        // queda vacío y CargarListas() muestra todas las listas.
+        // Sincronización incremental: agrega/quita nodos puntuales sin Clear(), para
+        // conservar el estado expandido/seleccionado de los nodos no afectados. Se
+        // llama al iniciar y luego de Nuevo/Editar/Eliminar/Actualizar.
+        private void SincronizarArbolFechas()
         {
-            Tree1.Items.Clear();
-            string[] meses = { "Enero","Febrero","Marzo","Abril","Mayo","Junio",
-                                "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre" };
-
-            var nodoGeneral = new TreeViewItem
-            {
-                Header     = "General",
-                Tag        = (Anio: 0, Mes: ""),
-                IsExpanded = true
-            };
-            Tree1.Items.Add(nodoGeneral);
-
             var mesesPorAño = new Dictionary<int, SortedSet<int>>();
             int uf = Sql.DocumentosLObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -97,17 +87,101 @@ namespace WpfAppVba
                 mesesAño.Add(fecha.Month);
             }
 
-            foreach (int año in mesesPorAño.Keys.OrderByDescending(a => a))
+            bool seleccionEliminada = false;
+
+            // Quitar años (y sus meses) que ya no tienen documentos; dentro de los
+            // años que quedan, quitar los meses puntuales sin documentos.
+            for (int i = Tree1.Items.Count - 1; i >= 0; i--)
             {
-                var nodoAño = new TreeViewItem { Header = año.ToString(), Tag = (Anio: año, Mes: "") };
-                foreach (int mes in mesesPorAño[año])
-                    nodoAño.Items.Add(new TreeViewItem { Header = meses[mes - 1], Tag = (Anio: año, Mes: meses[mes - 1]) });
-                Tree1.Items.Add(nodoAño);
+                if (Tree1.Items[i] is not TreeViewItem nodoAño || nodoAño.Tag is not (int anioNodo, _))
+                    continue;
+
+                if (!mesesPorAño.TryGetValue(anioNodo, out var mesesAño))
+                {
+                    if (NodoOHijoSeleccionado(nodoAño)) seleccionEliminada = true;
+                    Tree1.Items.RemoveAt(i);
+                    continue;
+                }
+
+                for (int j = nodoAño.Items.Count - 1; j >= 0; j--)
+                {
+                    if (nodoAño.Items[j] is not TreeViewItem nodoMes || nodoMes.Tag is not (_, int mesNodo))
+                        continue;
+                    if (mesesAño.Contains(mesNodo)) continue;
+                    if (nodoMes.IsSelected) seleccionEliminada = true;
+                    nodoAño.Items.RemoveAt(j);
+                }
             }
 
-            nodoGeneral.IsSelected = true;
-            _añoActivo = 0;
-            _mesActivo = "";
+            // Agregar años/meses con documentos que todavía no están en el árbol.
+            foreach (int año in mesesPorAño.Keys.OrderByDescending(a => a))
+            {
+                var nodoAño = BuscarNodoAño(año);
+                if (nodoAño == null)
+                {
+                    nodoAño = new TreeViewItem { Header = año.ToString(), Tag = (Anio: año, Mes: 0) };
+                    InsertarNodoAñoOrdenado(nodoAño, año);
+                }
+
+                foreach (int mes in mesesPorAño[año])
+                {
+                    if (BuscarNodoMes(nodoAño, mes) != null) continue;
+                    var nodoMes = new TreeViewItem { Header = ObtenerNombreMes(mes), Tag = (Anio: año, Mes: mes) };
+                    InsertarNodoMesOrdenado(nodoAño, nodoMes, mes);
+                }
+            }
+
+            if (seleccionEliminada)
+            {
+                _añoActivo = 0;
+                _mesActivo = 0;
+            }
+        }
+
+        private TreeViewItem? BuscarNodoAño(int año)
+        {
+            foreach (var item in Tree1.Items)
+                if (item is TreeViewItem nodo && nodo.Tag is (int anio, _) && anio == año) return nodo;
+            return null;
+        }
+
+        private static TreeViewItem? BuscarNodoMes(TreeViewItem nodoAño, int mes)
+        {
+            foreach (var item in nodoAño.Items)
+                if (item is TreeViewItem nodo && nodo.Tag is (_, int m) && m == mes) return nodo;
+            return null;
+        }
+
+        // Inserta manteniendo el orden descendente de años.
+        private void InsertarNodoAñoOrdenado(TreeViewItem nodoNuevo, int año)
+        {
+            int idx = 0;
+            while (idx < Tree1.Items.Count
+                   && Tree1.Items[idx] is TreeViewItem existente
+                   && existente.Tag is (int anioExistente, _)
+                   && anioExistente > año)
+                idx++;
+            Tree1.Items.Insert(idx, nodoNuevo);
+        }
+
+        // Inserta manteniendo el orden ascendente de meses dentro de un año.
+        private static void InsertarNodoMesOrdenado(TreeViewItem nodoAño, TreeViewItem nodoNuevo, int mes)
+        {
+            int idx = 0;
+            while (idx < nodoAño.Items.Count
+                   && nodoAño.Items[idx] is TreeViewItem existente
+                   && existente.Tag is (_, int mesExistente)
+                   && mesExistente < mes)
+                idx++;
+            nodoAño.Items.Insert(idx, nodoNuevo);
+        }
+
+        private static bool NodoOHijoSeleccionado(TreeViewItem nodo)
+        {
+            if (nodo.IsSelected) return true;
+            foreach (var item in nodo.Items)
+                if (item is TreeViewItem hijo && hijo.IsSelected) return true;
+            return false;
         }
 
         // ─── Carga la lista de documentos de precios (documentosL) ───────────
@@ -118,7 +192,7 @@ namespace WpfAppVba
             var lista = new List<PrecioListaFila>();
             int linea = 1;
             string busqueda  = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
-            string mesFiltro = _modoFiltro == "filtros"   ? _mesActivo : "";
+            int    mesFiltro = _modoFiltro == "filtros"   ? _mesActivo : 0;
             int    añoFiltro = _modoFiltro == "filtros"   ? _añoActivo : 0;
             string regionId  = CboRegion?.SelectedValue?.ToString() ?? "";
 
@@ -137,12 +211,7 @@ namespace WpfAppVba
 
                 if (añoFiltro > 0 && (fechaDocObj == null || fechaDoc.Year != añoFiltro)) continue;
 
-                if (!string.IsNullOrEmpty(mesFiltro))
-                {
-                    if (fechaDocObj == null) continue;
-                    string mesDoc = ObtenerNombreMes(fechaDoc.Month);
-                    if (!string.Equals(mesDoc, mesFiltro, StringComparison.OrdinalIgnoreCase)) continue;
-                }
+                if (mesFiltro > 0 && (fechaDocObj == null || fechaDoc.Month != mesFiltro)) continue;
 
                 string codigo      = Sql.DocumentosLObj.ObtenerItem("codigo",      id)?.ToString() ?? "";
                 string observacion = Sql.DocumentosLObj.ObtenerItem("observacion", id)?.ToString() ?? "";
@@ -160,7 +229,7 @@ namespace WpfAppVba
 
             LblSubtitulo.Text = _añoActivo == 0
                 ? "Todas las listas"
-                : string.IsNullOrEmpty(_mesActivo) ? _añoActivo.ToString() : $"{_mesActivo} {_añoActivo}";
+                : _mesActivo == 0 ? _añoActivo.ToString() : $"{ObtenerNombreMes(_mesActivo)} {_añoActivo}";
 
             OcultarDetalle();
         }
@@ -281,7 +350,7 @@ namespace WpfAppVba
         // ─── Eventos de árbol ─────────────────────────────────────────────────
         private void Tree1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            if (Tree1.SelectedItem is TreeViewItem ti && ti.Tag is (int anio, string mes))
+            if (Tree1.SelectedItem is TreeViewItem ti && ti.Tag is (int anio, int mes))
             {
                 _añoActivo = anio;
                 _mesActivo = mes;
@@ -349,6 +418,7 @@ namespace WpfAppVba
             {
                 consola.CerrarPestaña(dlg);
                 if (dlg.ItemCreadoId == null) return;
+                SincronizarArbolFechas();
                 var nueva = ConstruirFila(dlg.ItemCreadoId, 0);
                 FilasGrid.Add(nueva);
                 RenumerarYTotales();
@@ -397,6 +467,8 @@ namespace WpfAppVba
                 Sql.PreciosObj.OrdenarData(("documentoL", false), ("indice", false));
                 Sql.DocumentosLObj.OrdenarData(("fecha", false));
 
+                SincronizarArbolFechas();
+
                 var lista = FilasGrid;
                 int idx   = lista.IndexOf(fila);
                 if (idx >= 0) lista.RemoveAt(idx);
@@ -423,6 +495,7 @@ namespace WpfAppVba
             Sql.DocumentosLObj.Actualizar();
             Sql.PreciosObj.Actualizar();
             CargarRegiones();
+            SincronizarArbolFechas();
             CargarListas();
         }
 
@@ -442,6 +515,7 @@ namespace WpfAppVba
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);
+                SincronizarArbolFechas();
                 var lista = FilasGrid;
                 int idx   = lista.IndexOf(fila);
                 if (idx >= 0)
