@@ -45,6 +45,21 @@ namespace WpfAppVba
                 ? AppState.DataFechaFinal.Year
                 : DateTime.Now.Year;
 
+            // Solo los meses que tienen documentos cargados (igual que PreciosGeneral).
+            var mesesConDatos = new SortedSet<int>();
+            int uf = Sql.DocumentosCObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.DocumentosCObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                string suc = Sql.DocumentosCObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
+                if (suc != AppState.SucursalActiva) continue;
+                var fechaObj = Sql.DocumentosCObj.ObtenerItem("fecha", id);
+                if (fechaObj == null) continue;
+                mesesConDatos.Add(Convert.ToDateTime(fechaObj).Month);
+            }
+
             // Nodo padre con el año/período activo → muestra todos los meses (Tag vacío = sin filtro)
             var nodoGeneral = new TreeViewItem
             {
@@ -52,17 +67,22 @@ namespace WpfAppVba
                 Tag        = "",
                 IsExpanded = true
             };
-            foreach (var mes in meses)
-                nodoGeneral.Items.Add(new TreeViewItem { Header = mes, Tag = mes });
+            foreach (int mes in mesesConDatos)
+                nodoGeneral.Items.Add(new TreeViewItem { Header = meses[mes - 1], Tag = meses[mes - 1] });
 
             Tree1.Items.Add(nodoGeneral);
 
-            // Selección por defecto: mes actual
-            int mesActual = DateTime.Now.Month - 1;
-            if (nodoGeneral.Items[mesActual] is TreeViewItem ti)
+            // Selección por defecto: mes actual (si tiene documentos)
+            int mesActual = DateTime.Now.Month;
+            if (mesesConDatos.Contains(mesActual))
             {
-                ti.IsSelected = true;
-                _mesActivo = meses[mesActual];
+                foreach (var item in nodoGeneral.Items)
+                {
+                    if (item is not TreeViewItem ti || (string)ti.Tag != meses[mesActual - 1]) continue;
+                    ti.IsSelected = true;
+                    _mesActivo = meses[mesActual - 1];
+                    break;
+                }
             }
         }
 
