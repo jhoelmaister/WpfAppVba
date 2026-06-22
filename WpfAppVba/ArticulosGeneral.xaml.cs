@@ -18,7 +18,7 @@ namespace WpfAppVba
         // Modo exportar: cuando se abre desde Traspasos/Inventarios/Pedidos (multi)
         private readonly Action<List<ArticuloExportado>>? _callbackExportar;
         // Modo single: buscar un solo artículo con doble clic (sin checkbox ni #)
-        private readonly Action<ArticuloExportado>? _callbackSingle;
+        private readonly Func<ArticuloExportado, bool>? _callbackSingle;
         // List en lugar de HashSet para conservar el orden de selección
         private readonly List<string> _seleccionados = new();
 
@@ -37,8 +37,8 @@ namespace WpfAppVba
         /// <summary>Constructor sin parámetros requerido por el compilador XAML.</summary>
         public ArticulosGeneral() : this(null, null) { }
 
-        public ArticulosGeneral(Action<List<ArticuloExportado>>? callbackExportar = null,
-                                 Action<ArticuloExportado>?       callbackSingle   = null)
+        public ArticulosGeneral(Action<List<ArticuloExportado>>?    callbackExportar = null,
+                                 Func<ArticuloExportado, bool>?      callbackSingle   = null)
         {
             InitializeComponent();
             _callbackExportar = callbackExportar;
@@ -48,8 +48,8 @@ namespace WpfAppVba
 
         /// <summary>Abre ArticulosGeneral como pestaña dentro de ConsolaMovimientos.</summary>
         public static void OpenAsTab(Window owner,
-                                     Action<List<ArticuloExportado>>? callbackExportar = null,
-                                     Action<ArticuloExportado>?        callbackSingle   = null,
+                                     Action<List<ArticuloExportado>>?  callbackExportar = null,
+                                     Func<ArticuloExportado, bool>?    callbackSingle   = null,
                                      string                            contexto         = "",
                                      UIElement?                        llamador         = null)
         {
@@ -74,8 +74,8 @@ namespace WpfAppVba
         /// <summary>Abre ArticulosGeneral como diálogo modal dentro de una ventana temporal.
         /// Usado por formularios que aún se muestran como ventana (Traspasos, Correcciones, Inventarios).</summary>
         public static void OpenAsDialog(Window owner,
-                                        Action<List<ArticuloExportado>>? callbackExportar = null,
-                                        Action<ArticuloExportado>?        callbackSingle   = null)
+                                        Action<List<ArticuloExportado>>?  callbackExportar = null,
+                                        Func<ArticuloExportado, bool>?    callbackSingle   = null)
         {
             var ctrl = new ArticulosGeneral(callbackExportar, callbackSingle);
             var win  = new Window
@@ -476,13 +476,13 @@ namespace WpfAppVba
             if (ModoSingle)
             {
                 if (Grid1.SelectedItem is not ArticuloFila fila) return;
-                _callbackSingle!(new ArticuloExportado
+                bool aceptado = _callbackSingle!(new ArticuloExportado
                 {
                     Id          = fila.Id,
                     Codigo      = fila.Codigo,
                     Descripcion = fila.Descripcion
                 });
-                CerrarDialogo();
+                if (aceptado) CerrarDialogo();
             }
             else if (ModoExportar)
                 ToggleSeleccion();

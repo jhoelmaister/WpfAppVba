@@ -280,6 +280,7 @@ namespace WpfAppVba
             {
                 TxtCodigo.Text = art.Codigo;
                 BuscarArticulo();
+                return true;
             }, contexto: "movimientos-buscar", llamador: this);
         }
 

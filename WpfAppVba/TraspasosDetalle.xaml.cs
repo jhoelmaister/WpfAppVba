@@ -507,6 +507,7 @@ namespace WpfAppVba
                 RefrescarGrid();
                 NotificarStockInsuficiente();
                 EnfocarColumnaCantidad(filaEnfocar);
+                return true;
             }, contexto: _tituloTab, llamador: this);
         }
 

@@ -381,6 +381,7 @@ namespace WpfAppVba
                 _hayCambios = true;
                 RefrescarGrid();
                 EnfocarColumnaCantidad(filaEnfocar);
+                return true;
             }, contexto: _tituloTab, llamador: this);
         }
 

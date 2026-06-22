@@ -879,6 +879,7 @@ namespace WpfAppVba
 
                 // Enfocar columna Cantidad de la fila e iniciar edición
                 EnfocarColumnaCantidad(filaEnfocar);
+                return true;
             }, contexto: _tituloTab, llamador: this);
         }
 
@@ -1223,6 +1224,7 @@ namespace WpfAppVba
                         GridEntregas.Focus();
                         GridEntregas.BeginEdit();
                     }), System.Windows.Threading.DispatcherPriority.Background);
+                return true;
             }, contexto: _tituloTab, llamador: this);
         }
 

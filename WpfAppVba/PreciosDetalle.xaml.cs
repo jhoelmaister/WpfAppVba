@@ -269,9 +269,9 @@ namespace WpfAppVba
             {
                 if (_items.Any(x => x.ArticuloId == art.Id && x != filaActual))
                 {
-                    MessageBox.Show("Este artículo ya fue agregado.", "Consola",
+                    MessageBox.Show("Este artículo ya fue agregado. Seleccione otro.", "Consola",
                         MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
+                    return false;
                 }
 
                 PrecioItemFila filaEnfocar;
@@ -299,6 +299,7 @@ namespace WpfAppVba
                 _hayCambios = true;
                 RefrescarGrid();
                 EnfocarColumnaPrecio(filaEnfocar);
+                return true;
             }, contexto: _tituloTab, llamador: this);
         }
 
@@ -370,6 +371,7 @@ namespace WpfAppVba
         private void GridItems_CellEditEnding(object? sender, DataGridCellEditEndingEventArgs e)
         {
             _hayCambios = true;
+            PrecioItemFila? filaDuplicada = null;
 
             // Cuando se confirma la edición de la columna Código → buscar artículo
             if (e.EditAction == DataGridEditAction.Commit &&
@@ -381,11 +383,12 @@ namespace WpfAppVba
                 string artId  = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
                 if (!string.IsNullOrEmpty(artId) && _items.Any(x => x.ArticuloId == artId && x != fila))
                 {
-                    MessageBox.Show("Este artículo ya fue agregado.", "Consola",
+                    MessageBox.Show("Este artículo ya fue agregado. Seleccione otro.", "Consola",
                         MessageBoxButton.OK, MessageBoxImage.Warning);
                     fila.ArticuloId  = "";
                     fila.Codigo      = codigo;
-                    fila.Descripcion = "⚠ Artículo ya agregado";
+                    fila.Descripcion = "";
+                    filaDuplicada    = fila;
                 }
                 else if (!string.IsNullOrEmpty(artId))
                 {
@@ -404,7 +407,27 @@ namespace WpfAppVba
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 RefrescarGrid();
-                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
+                if (filaDuplicada != null)
+                    EnfocarColumnaCodigo(filaDuplicada);
+                else
+                    GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
+            }), System.Windows.Threading.DispatcherPriority.Background);
+        }
+
+        // Posiciona el cursor en la celda Código de la fila indicada e inicia edición
+        private void EnfocarColumnaCodigo(PrecioItemFila fila)
+        {
+            var colCodigo = GridItems.Columns
+                .FirstOrDefault(c => c.Header?.ToString() == "Código");
+            if (colCodigo == null) return;
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                GridItems.SelectedItem = fila;
+                GridItems.CurrentCell  = new DataGridCellInfo(fila, colCodigo);
+                GridItems.ScrollIntoView(fila, colCodigo);
+                GridItems.Focus();
+                GridItems.BeginEdit();
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
