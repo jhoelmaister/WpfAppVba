@@ -476,7 +476,7 @@ namespace WpfAppVba
 
                 if (lista.Count > 0)
                 {
-                    var sel = lista[Math.Min(idx, lista.Count - 1)];
+                    var sel = lista[idx >= 0 ? Math.Min(idx, lista.Count - 1) : 0];
                     Grid1.SelectedItem = sel; Grid1.ScrollIntoView(sel);
                 }
                 else OcultarDetalle();
