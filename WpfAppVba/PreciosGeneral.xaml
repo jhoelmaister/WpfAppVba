@@ -228,6 +228,11 @@
                                 Style="{StaticResource BtnPrimario}"
                                 Margin="0,0,6,0"
                                 Click="BtnNuevo_Click"/>
+                        <Button x:Name="BtnCopiar"
+                                Content="Copiar a Nueva Lista"
+                                Style="{StaticResource BtnSecundario}"
+                                Margin="0,0,6,0"
+                                Click="BtnCopiar_Click"/>
                         <Rectangle Width="1" Fill="{DynamicResource ThemeBorde}"
                                    VerticalAlignment="Stretch" Margin="2,4,8,4"/>
                         <Button x:Name="BtnEditar"
@@ -316,6 +321,17 @@
                                         Binding="{Binding ValorTotal, StringFormat=#\,##0.##}"
                                         Width="110"
                                         ElementStyle="{StaticResource CeldaNumero}"/>
+
+                    <DataGridTemplateColumn Header="Acciones" Width="70">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="PDF"
+                                        Style="{StaticResource BtnSecundario}"
+                                        Height="24" Padding="8,0" FontSize="11"
+                                        Click="BtnPdfFila_Click"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
 

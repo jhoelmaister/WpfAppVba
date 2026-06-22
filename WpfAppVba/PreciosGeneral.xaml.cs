@@ -5,6 +5,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using Microsoft.Win32;
+using PdfSharp;
+using PdfSharp.Drawing;
+using PdfSharp.Fonts;
+using PdfSharp.Pdf;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
@@ -32,6 +37,7 @@ namespace WpfAppVba
             if (!AppState.EsAdmin)
             {
                 BtnNuevo.Visibility    = Visibility.Collapsed;
+                BtnCopiar.Visibility   = Visibility.Collapsed;
                 BtnEditar.Visibility   = Visibility.Collapsed;
                 BtnEliminar.Visibility = Visibility.Collapsed;
             }
@@ -428,6 +434,31 @@ namespace WpfAppVba
             consola.AbrirPestaña(titulo, dlg, clave);
         }
 
+        // ─── Copiar el documento seleccionado como base de una lista nueva ────
+        private void BtnCopiar_Click(object sender, RoutedEventArgs e)
+        {
+            if (!AppState.EsAdmin) return;
+            if (Grid1.SelectedItem is not PrecioListaFila fila) return;
+            AppState.EventoFormularioL = "nuevo";
+
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            string titulo = $"Copia de {fila.Codigo}";
+            var dlg = new PreciosDetalle(this, tituloTab: titulo, idCopiarDe: fila.Id);
+            dlg.Cerrando += () =>
+            {
+                consola.CerrarPestaña(dlg);
+                if (dlg.ItemCreadoId == null) return;
+                SincronizarArbolFechas();
+                var nueva = ConstruirFila(dlg.ItemCreadoId, 0);
+                FilasGrid.Add(nueva);
+                RenumerarYTotales();
+                Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
+                GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
+            };
+            consola.AbrirPestaña(titulo, dlg, $"copiar-lista-precios-{fila.Id}");
+        }
+
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
         {
             if (!AppState.EsAdmin) return;
@@ -497,6 +528,127 @@ namespace WpfAppVba
             CargarRegiones();
             SincronizarArbolFechas();
             CargarListas();
+        }
+
+        // ─── PDF de la lista de precios (botón "Acciones" por fila) ──────────
+        private void BtnPdfFila_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.DataContext is not PrecioListaFila fila) return;
+
+            var dlg = new SaveFileDialog
+            {
+                Title            = "Guardar lista de precios",
+                FileName         = $"{DateTime.Now:yyyyMMdd HHmmss} lista de precios {fila.Codigo}.pdf",
+                DefaultExt       = ".pdf",
+                Filter           = "PDF (*.pdf)|*.pdf",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            };
+            if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
+
+            var btn = sender as Button;
+            try
+            {
+                if (btn != null) btn.IsEnabled = false;
+                Mouse.OverrideCursor = Cursors.Wait;
+
+                GenerarPdfListaPrecios(dlg.FileName, fila);
+
+                MessageBox.Show("Lista de precios generada correctamente.", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al generar el PDF:\n{ex.Message}", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+                if (btn != null) btn.IsEnabled = true;
+            }
+        }
+
+        // Agrupa las líneas del documento por familia (encabezado "Producto & Familia").
+        private void GenerarPdfListaPrecios(string filePath, PrecioListaFila fila)
+        {
+            GlobalFontSettings.UseWindowsFontsUnderWindows = true;
+
+            var fontTitulo = new XFont("Arial", 14, XFontStyleEx.Bold);
+            var fontGrupo  = new XFont("Arial", 11, XFontStyleEx.Bold);
+            var fontCuerpo = new XFont("Arial", 10, XFontStyleEx.Regular);
+
+            const double margen = 40;
+            var document = new PdfDocument();
+            PdfPage page = document.AddPage();
+            page.Size = PageSize.A4;
+            XGraphics gfx = XGraphics.FromPdfPage(page);
+            double y = margen;
+
+            void NuevaPagina()
+            {
+                page = document.AddPage();
+                page.Size = PageSize.A4;
+                gfx = XGraphics.FromPdfPage(page);
+                y = margen;
+            }
+
+            void AsegurarEspacio(double alto)
+            {
+                if (y + alto > page.Height - margen) NuevaPagina();
+            }
+
+            gfx.DrawString($"Lista de Precios — {fila.Codigo}", fontTitulo, XBrushes.Black, new XPoint(margen, y));
+            y += 22;
+
+            var lineas = new List<(string prodDesc, string famDesc, string codigo, string desc, double precio)>();
+
+            int uf = Sql.PreciosObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.PreciosObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                if (Sql.PreciosObj.ObtenerItem("documentoL", id)?.ToString() != fila.Id) continue;
+
+                string artId  = Sql.PreciosObj.ObtenerItem("articulo", id)?.ToString() ?? "";
+                string famId  = Sql.ArticulosObj.ObtenerItem("familia", artId)?.ToString() ?? "";
+                string prodId = Sql.FamiliasObj.ObtenerItem("producto", famId)?.ToString() ?? "";
+
+                string prodDesc = Sql.ProductosObj.ObtenerItem("descripcion", prodId)?.ToString() ?? "";
+                string famDesc  = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString()  ?? "";
+                string codigo   = Sql.ArticulosObj.ObtenerItem("codigo",      artId)?.ToString()  ?? "";
+                string descArt  = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString()  ?? "";
+                double precio   = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0);
+
+                lineas.Add((prodDesc, famDesc, codigo, descArt, precio));
+            }
+
+            var grupos = lineas
+                .GroupBy(l => (l.prodDesc, l.famDesc))
+                .OrderBy(g => g.Key.prodDesc, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(g => g.Key.famDesc, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var grupo in grupos)
+            {
+                AsegurarEspacio(18 + 14);
+                gfx.DrawString($"{grupo.Key.prodDesc} & {grupo.Key.famDesc}", fontGrupo, XBrushes.Black, new XPoint(margen, y));
+                y += 18;
+
+                foreach (var l in grupo)
+                {
+                    AsegurarEspacio(14);
+                    gfx.DrawString($"{l.codigo}  {l.desc}", fontCuerpo, XBrushes.Black, new XPoint(margen + 12, y));
+                    string precioStr = l.precio.ToString("#,##0.##");
+                    XSize sz = gfx.MeasureString(precioStr, fontCuerpo);
+                    gfx.DrawString(precioStr, fontCuerpo, XBrushes.Black,
+                        new XPoint(page.Width - margen - sz.Width, y));
+                    y += 14;
+                }
+
+                y += 10;
+            }
+
+            document.Save(filePath);
         }
 
         // ─── Helper ───────────────────────────────────────────────────────────

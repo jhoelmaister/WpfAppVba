@@ -16,6 +16,7 @@ namespace WpfAppVba
 
         private readonly PreciosGeneral? _padre;
         private readonly string _idEditar;
+        private readonly string _idCopiarDe;
         private bool _hayCambios = false;
         private bool _cargando   = true;
         private List<PrecioItemFila> _items = new();
@@ -29,13 +30,14 @@ namespace WpfAppVba
         /// <summary>ID de la lista de precios recién creada.</summary>
         public string? ItemCreadoId { get; private set; }
 
-        public PreciosDetalle(PreciosGeneral? padre = null, string idEditar = "", string tituloTab = "")
+        public PreciosDetalle(PreciosGeneral? padre = null, string idEditar = "", string tituloTab = "", string idCopiarDe = "")
         {
             InitializeComponent();
-            _padre     = padre;
-            _idEditar  = idEditar;
-            _tituloTab = tituloTab;
-            Loaded    += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
+            _padre      = padre;
+            _idEditar   = idEditar;
+            _tituloTab  = tituloTab;
+            _idCopiarDe = idCopiarDe;
+            Loaded     += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
@@ -51,13 +53,15 @@ namespace WpfAppVba
             }
             else
             {
-                LblTitulo.Text = "Nueva Lista de Precios";
+                LblTitulo.Text = string.IsNullOrEmpty(_idCopiarDe)
+                    ? "Nueva Lista de Precios"
+                    : "Nueva Lista de Precios (copia)";
                 CargarParaNuevo();
             }
 
             LblDocNum.Text = Box_DocumentoL.Text;
             _cargando   = false;
-            _hayCambios = false;
+            _hayCambios = !string.IsNullOrEmpty(_idCopiarDe);
         }
 
         private void CargarRegiones()
@@ -137,13 +141,46 @@ namespace WpfAppVba
             Box_Fecha.SelectedDate = DateTime.Today;
             Box_Hora.Text          = DateTime.Now.ToString("HH:mm:ss");
 
-            if (!string.IsNullOrEmpty(AppState.RegionActiva))
-                CboRegion.SelectedValue = AppState.RegionActiva;
+            string regionPreferida = !string.IsNullOrEmpty(_idCopiarDe)
+                ? Sql.DocumentosLObj.ObtenerItem("region", _idCopiarDe)?.ToString() ?? ""
+                : AppState.RegionActiva;
+
+            if (!string.IsNullOrEmpty(regionPreferida))
+                CboRegion.SelectedValue = regionPreferida;
             else if (CboRegion.Items.Count > 0)
                 CboRegion.SelectedIndex = 0;
 
             _items.Clear();
             _itemsOrig.Clear();
+
+            // Copiar líneas (artículo + precio) del documento de origen, como base
+            // editable de la lista nueva (quedan sin PrecioId → se insertan al guardar).
+            if (!string.IsNullOrEmpty(_idCopiarDe))
+            {
+                int linea = 1;
+                int uf = Sql.PreciosObj.ContarFilas;
+                for (int i = 1; i <= uf; i++)
+                {
+                    var idObj = Sql.PreciosObj.Mover(i);
+                    if (idObj == null) continue;
+                    string id = idObj.ToString()!;
+                    if (Sql.PreciosObj.ObtenerItem("documentoL", id)?.ToString() != _idCopiarDe) continue;
+
+                    string articuloId = Sql.PreciosObj.ObtenerItem("articulo", id)?.ToString() ?? "";
+                    double precio     = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0);
+
+                    _items.Add(new PrecioItemFila
+                    {
+                        PrecioId    = "",
+                        Linea       = linea++,
+                        ArticuloId  = articuloId,
+                        Codigo      = Sql.ArticulosObj.ObtenerItem("codigo", articuloId)?.ToString() ?? "",
+                        Descripcion = ObtenerDescripcionArticulo(articuloId),
+                        Precio      = precio
+                    });
+                }
+            }
+
             RefrescarGrid();
         }
 
