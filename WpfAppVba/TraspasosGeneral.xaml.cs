@@ -53,10 +53,14 @@ namespace WpfAppVba
             string[] meses = { "Enero","Febrero","Marzo","Abril","Mayo","Junio",
                                 "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre" };
 
-            // Nodo padre "Periodo Activo" → muestra todos los meses (Tag vacío = sin filtro)
+            int año = AppState.DataFechaFinal.Year > 2000
+                ? AppState.DataFechaFinal.Year
+                : DateTime.Now.Year;
+
+            // Nodo padre con el año/período activo → muestra todos los meses (Tag vacío = sin filtro)
             var nodoGeneral = new TreeViewItem
             {
-                Header     = "Periodo Activo",
+                Header     = año.ToString(),
                 Tag        = "",
                 IsExpanded = true
             };
