@@ -234,9 +234,9 @@
 
                 <Border Grid.Column="2" Style="{StaticResource MetricCard}">
                     <StackPanel>
-                        <TextBlock Text="Líneas"
+                        <TextBlock Text="Pendientes"
                                    FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
-                        <TextBlock x:Name="TxtTotalLineas"
+                        <TextBlock x:Name="TxtTotalPendientes"
                                    FontSize="20" FontWeight="SemiBold"
                                    Foreground="{DynamicResource ThemeTexto}"
                                    Margin="0,2,0,0"/>
@@ -382,11 +382,6 @@
 
                     <DataGridTemplateColumn Header="Estado" Width="90"
                                              CellTemplate="{StaticResource BadgeEstadoPrecio}"/>
-
-                    <DataGridTextColumn Header="Líneas"
-                                        Binding="{Binding Lineas}"
-                                        Width="70"
-                                        ElementStyle="{StaticResource CeldaNumero}"/>
 
                     <DataGridTextColumn Header="Valor"
                                         Binding="{Binding ValorTotal, StringFormat=#\,##0.##}"

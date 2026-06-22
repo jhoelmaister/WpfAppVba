@@ -240,7 +240,7 @@ namespace WpfAppVba
 
             Grid1.ItemsSource       = lista;
             TxtTotalDocumentos.Text = lista.Count.ToString("N0");
-            TxtTotalLineas.Text     = lista.Sum(f => f.Lineas).ToString("N0");
+            TxtTotalPendientes.Text = lista.Count(f => f.Estado == "pendiente").ToString("N0");
 
             LblSubtitulo.Text = _añoActivo == 0
                 ? "Todas las listas"
@@ -298,7 +298,7 @@ namespace WpfAppVba
             int n = 1;
             foreach (var f in lista) f.Linea = n++;
             TxtTotalDocumentos.Text = lista.Count.ToString("N0");
-            TxtTotalLineas.Text     = lista.Sum(f => f.Lineas).ToString("N0");
+            TxtTotalPendientes.Text = lista.Count(f => f.Estado == "pendiente").ToString("N0");
             Grid1.Items.Refresh();
         }
 
