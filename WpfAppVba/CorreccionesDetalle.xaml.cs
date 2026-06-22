@@ -347,6 +347,7 @@ namespace WpfAppVba
                     GridItems.ScrollIntoView(ultimo);
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
+                return true;
             }, null, contexto: _tituloTab, llamador: this);
         }
 

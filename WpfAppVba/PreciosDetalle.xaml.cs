@@ -98,7 +98,7 @@ namespace WpfAppVba
 
             Box_Referencia.Text  = Sql.DocumentosLObj.ObtenerItem("referencia",  _idEditar)?.ToString() ?? "";
             Box_Observacion.Text = Sql.DocumentosLObj.ObtenerItem("observacion", _idEditar)?.ToString() ?? "";
-            ChkValido.IsChecked  = Sql.DocumentosLObj.ObtenerItem("estado", _idEditar)?.ToString() != "pendiente";
+            CboEstado.SelectedIndex = Sql.DocumentosLObj.ObtenerItem("estado", _idEditar)?.ToString() == "pendiente" ? 0 : 1;
 
             // Cargar líneas de la lista de precios
             _items.Clear();
@@ -141,7 +141,7 @@ namespace WpfAppVba
             Box_DocumentoL.Text  = _codigoDocL;
             Box_Fecha.SelectedDate = DateTime.Today;
             Box_Hora.Text          = DateTime.Now.ToString("HH:mm:ss");
-            ChkValido.IsChecked    = false;
+            CboEstado.SelectedIndex = 0;
 
             string regionPreferida = !string.IsNullOrEmpty(_idCopiarDe)
                 ? Sql.DocumentosLObj.ObtenerItem("region", _idCopiarDe)?.ToString() ?? ""
@@ -227,7 +227,7 @@ namespace WpfAppVba
             if (!_cargando) _hayCambios = true;
         }
 
-        private void ChkValido_Changed(object sender, RoutedEventArgs e)
+        private void CboEstado_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!_cargando) _hayCambios = true;
         }
@@ -242,10 +242,18 @@ namespace WpfAppVba
         {
             ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, arts =>
             {
+                var duplicados = arts.Where(art => _items.Any(x => x.ArticuloId == art.Id)).ToList();
+                if (duplicados.Count > 0)
+                {
+                    string detalle = string.Join("\n", duplicados.Select(d => $"• {d.Codigo} - {d.Descripcion}"));
+                    MessageBox.Show(
+                        $"Los siguientes artículos ya están en la lista y no se pueden agregar de nuevo:\n\n{detalle}\n\nQuite la selección de estos artículos para poder exportar.",
+                        "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
+
                 foreach (var art in arts)
                 {
-                    if (_items.Any(x => x.ArticuloId == art.Id)) continue;
-
                     _items.Add(new PrecioItemFila
                     {
                         PrecioId    = "",
@@ -265,6 +273,7 @@ namespace WpfAppVba
                     GridItems.ScrollIntoView(ultimo);
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
+                return true;
             }, null, contexto: _tituloTab, llamador: this);
         }
 
@@ -538,7 +547,7 @@ namespace WpfAppVba
                 Sql.DocumentosLObj.EstablecerItem("region",      docId, CboRegion.SelectedValue?.ToString() ?? "");
                 Sql.DocumentosLObj.EstablecerItem("referencia",  docId, Box_Referencia.Text.Trim());
                 Sql.DocumentosLObj.EstablecerItem("observacion", docId, Box_Observacion.Text.Trim());
-                Sql.DocumentosLObj.EstablecerItem("estado",      docId, ChkValido.IsChecked == true ? "valido" : "pendiente");
+                Sql.DocumentosLObj.EstablecerItem("estado",      docId, CboEstado.SelectedIndex == 0 ? "pendiente" : "valido");
                 Sql.DocumentosLObj.EstablecerItem("emision",     docId, DateTime.Now);
                 Sql.DocumentosLObj.EstablecerItem("edicion",     docId, DateTime.Now);
                 Sql.DocumentosLObj.EstablecerItem("usuario",     docId, AppState.UsuarioActivo);
@@ -573,7 +582,7 @@ namespace WpfAppVba
                 Sql.DocumentosLObj.EstablecerItem("region",      docId, CboRegion.SelectedValue?.ToString() ?? "");
                 Sql.DocumentosLObj.EstablecerItem("referencia",  docId, Box_Referencia.Text.Trim());
                 Sql.DocumentosLObj.EstablecerItem("observacion", docId, Box_Observacion.Text.Trim());
-                Sql.DocumentosLObj.EstablecerItem("estado",      docId, ChkValido.IsChecked == true ? "valido" : "pendiente");
+                Sql.DocumentosLObj.EstablecerItem("estado",      docId, CboEstado.SelectedIndex == 0 ? "pendiente" : "valido");
                 Sql.DocumentosLObj.EstablecerItem("edicion",     docId, DateTime.Now);
                 Sql.DocumentosLObj.EstablecerItem("usuarioE",    docId, AppState.UsuarioActivo);
 

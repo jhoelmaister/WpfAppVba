@@ -197,10 +197,11 @@ namespace WpfAppVba
 
             var lista = new List<PrecioListaFila>();
             int linea = 1;
-            string busqueda  = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
-            int    mesFiltro = _modoFiltro == "filtros"   ? _mesActivo : 0;
-            int    añoFiltro = _modoFiltro == "filtros"   ? _añoActivo : 0;
-            string regionId  = CboRegion?.SelectedValue?.ToString() ?? "";
+            string busqueda     = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
+            int    mesFiltro    = _modoFiltro == "filtros"   ? _mesActivo : 0;
+            int    añoFiltro    = _modoFiltro == "filtros"   ? _añoActivo : 0;
+            string regionId     = CboRegion?.SelectedValue?.ToString() ?? "";
+            string filtroEstado = ObtenerFiltroEstado();
 
             int uf = Sql.DocumentosLObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -218,6 +219,14 @@ namespace WpfAppVba
                 if (añoFiltro > 0 && (fechaDocObj == null || fechaDoc.Year != añoFiltro)) continue;
 
                 if (mesFiltro > 0 && (fechaDocObj == null || fechaDoc.Month != mesFiltro)) continue;
+
+                if (!string.IsNullOrEmpty(filtroEstado))
+                {
+                    string estadoDoc = (Sql.DocumentosLObj.ObtenerItem("estado", id)?.ToString() ?? "").ToLower();
+                    bool esPendienteDoc = estadoDoc == "pendiente";
+                    string estadoNormalizado = esPendienteDoc ? "pendiente" : "valido";
+                    if (estadoNormalizado != filtroEstado) continue;
+                }
 
                 string codigo      = Sql.DocumentosLObj.ObtenerItem("codigo",      id)?.ToString() ?? "";
                 string observacion = Sql.DocumentosLObj.ObtenerItem("observacion", id)?.ToString() ?? "";
@@ -238,6 +247,14 @@ namespace WpfAppVba
                 : _mesActivo == 0 ? _añoActivo.ToString() : $"{ObtenerNombreMes(_mesActivo)} {_añoActivo}";
 
             OcultarDetalle();
+        }
+
+        // ─── Filtros ──────────────────────────────────────────────────────────
+        private string ObtenerFiltroEstado()
+        {
+            if (BtnFiltroPendiente?.IsChecked == true) return "pendiente";
+            if (BtnFiltroValido?.IsChecked    == true) return "valido";
+            return "";
         }
 
         // ─── Nombre de mes ────────────────────────────────────────────────────
@@ -383,6 +400,9 @@ namespace WpfAppVba
         }
 
         private void CboRegion_SelectionChanged(object sender, SelectionChangedEventArgs e)
+            => CargarListas();
+
+        private void FiltroEstado_Checked(object sender, RoutedEventArgs e)
             => CargarListas();
 
         // ─── Búsqueda (independiente del Tree1) ──────────────────────────────

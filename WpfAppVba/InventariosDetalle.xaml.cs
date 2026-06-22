@@ -234,11 +234,18 @@ namespace WpfAppVba
         {
             ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, callbackExportar: arts =>
             {
+                var duplicados = arts.Where(art => _items.Any(x => x.ArticuloId == art.Id)).ToList();
+                if (duplicados.Count > 0)
+                {
+                    string detalle = string.Join("\n", duplicados.Select(d => $"• {d.Codigo} - {d.Descripcion}"));
+                    MessageBox.Show(
+                        $"Los siguientes artículos ya están en el inventario y no se pueden agregar de nuevo:\n\n{detalle}\n\nQuite la selección de estos artículos para poder exportar.",
+                        "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
+
                 foreach (var art in arts)
                 {
-                    // No agregar duplicados
-                    if (_items.Any(x => x.ArticuloId == art.Id)) continue;
-
                     _items.Add(new InventarioItemFila
                     {
                         InventarioId = "",
@@ -258,6 +265,7 @@ namespace WpfAppVba
                     GridItems.ScrollIntoView(ultimo);
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
+                return true;
             }, contexto: _tituloTab, llamador: this);
         }
 

@@ -214,10 +214,11 @@
                     <!-- Estado -->
                     <StackPanel Grid.Column="10">
                         <TextBlock Text="Estado" Style="{StaticResource LblMuted}"/>
-                        <CheckBox x:Name="ChkValido" Content="Válido"
-                                  Height="28" VerticalContentAlignment="Center"
-                                  Checked="ChkValido_Changed"
-                                  Unchecked="ChkValido_Changed"/>
+                        <ComboBox x:Name="CboEstado" Height="28" FontSize="12"
+                                  SelectionChanged="CboEstado_SelectionChanged">
+                            <ComboBoxItem Content="Pendiente"/>
+                            <ComboBoxItem Content="Válido"/>
+                        </ComboBox>
                     </StackPanel>
                 </Grid>
             </StackPanel>

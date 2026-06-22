@@ -51,6 +51,14 @@
             <Setter Property="Foreground" Value="White"/>
         </Style>
 
+        <!-- ── Filtro radio pill ── -->
+        <Style x:Key="FilterRadio" TargetType="RadioButton">
+            <Setter Property="FontSize"                Value="11"/>
+            <Setter Property="Margin"                  Value="0,1"/>
+            <Setter Property="Foreground"              Value="{DynamicResource ThemeTextoSec}"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
         <!-- ── Tarjeta métrica ── -->
         <Style x:Key="MetricCard" TargetType="Border">
             <Setter Property="Background"    Value="{DynamicResource ThemeBgSurface}"/>
@@ -127,6 +135,32 @@
                                   PreviewMouseLeftButtonDown="Tree1_PreviewMouseLeftButtonDown"
                                   FontSize="12"/>
                     </Border>
+
+                    <!-- Separador -->
+                    <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="8,10"/>
+
+                    <!-- Filtro Estado -->
+                    <TextBlock Text="ESTADO"
+                               FontSize="10" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeTextoSec}"
+                               Margin="12,0,0,6"/>
+                    <StackPanel Margin="12,0">
+                        <RadioButton x:Name="BtnFiltroTodos"
+                                     Content="Todos" IsChecked="True"
+                                     GroupName="EstadoL"
+                                     Style="{StaticResource FilterRadio}"
+                                     Checked="FiltroEstado_Checked"/>
+                        <RadioButton x:Name="BtnFiltroPendiente"
+                                     Content="Pendiente"
+                                     GroupName="EstadoL"
+                                     Style="{StaticResource FilterRadio}"
+                                     Checked="FiltroEstado_Checked"/>
+                        <RadioButton x:Name="BtnFiltroValido"
+                                     Content="Válido"
+                                     GroupName="EstadoL"
+                                     Style="{StaticResource FilterRadio}"
+                                     Checked="FiltroEstado_Checked"/>
+                    </StackPanel>
 
                 </StackPanel>
             </ScrollViewer>

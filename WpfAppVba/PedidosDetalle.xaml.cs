@@ -835,6 +835,7 @@ namespace WpfAppVba
                     GridItems.ScrollIntoView(ultimo);
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
+                return true;
             }, null, contexto: _tituloTab, llamador: this);
         }
 
@@ -1177,6 +1178,7 @@ namespace WpfAppVba
                     GridEntregas.ScrollIntoView(ultimo);
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(GridEntregas);
+                return true;
             }, null, contexto: _tituloTab, llamador: this);
         }
 
