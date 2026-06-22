@@ -266,6 +266,9 @@
                     <Button Content="Nueva línea" Margin="0,0,5,0"
                             Style="{StaticResource BtnSecundario}"
                             Click="BtnNuevaLinea_Click"/>
+                    <Button Content="Duplicar" Margin="0,0,5,0"
+                            Style="{StaticResource BtnSecundario}"
+                            Click="BtnDuplicarLinea_Click"/>
                     <Button Content="Eliminar línea"
                             Style="{StaticResource BtnPeligro}"
                             Click="BtnEliminarLinea_Click"/>

@@ -918,6 +918,27 @@ namespace WpfAppVba
             GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
         }
 
+        private void BtnDuplicarLinea_Click(object sender, RoutedEventArgs e)
+        {
+            if (GridItems.SelectedItem is not PedidoItemFila fila) return;
+
+            var copia = new PedidoItemFila
+            {
+                PedidoId = "", ArticuloId = fila.ArticuloId, Codigo = fila.Codigo,
+                Descripcion = fila.Descripcion, Cantidad = fila.Cantidad,
+                Forma = fila.Forma, Contable = fila.Contable,
+                Precio = fila.Precio, Importe = fila.Importe, Tipo = fila.Tipo
+            };
+            _pedidos.Add(copia);
+            _cambioPedido = true;
+            RefrescarGridPedidos();
+            ActualizarTotales();
+            VerificarStockVenta();
+            GridItems.SelectedItem = copia;
+            GridItems.ScrollIntoView(copia);
+            GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
+        }
+
         private void BtnInsertar_Click(object sender, RoutedEventArgs e)
         {
             int idx = GridItems.SelectedItem is PedidoItemFila sel

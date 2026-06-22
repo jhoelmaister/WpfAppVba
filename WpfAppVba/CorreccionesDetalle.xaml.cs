@@ -424,6 +424,24 @@ namespace WpfAppVba
             GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
         }
 
+        // ─── Duplicar línea seleccionada ──────────────────────────────────────
+        private void BtnDuplicarLinea_Click(object sender, RoutedEventArgs e)
+        {
+            if (GridItems.SelectedItem is not CorreccionItemFila fila) return;
+
+            var copia = new CorreccionItemFila
+            {
+                CorreccionId = "", ArticuloId = fila.ArticuloId, Codigo = fila.Codigo,
+                Descripcion = fila.Descripcion, Cantidad = fila.Cantidad
+            };
+            _items.Add(copia);
+            _hayCambios = true;
+            RefrescarGrid();
+            GridItems.SelectedItem = copia;
+            GridItems.ScrollIntoView(copia);
+            GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
+        }
+
         // ─── Eliminar línea seleccionada ──────────────────────────────────────
         private void BtnEliminarLinea_Click(object sender, RoutedEventArgs e)
         {

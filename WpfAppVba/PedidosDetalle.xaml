@@ -353,6 +353,10 @@
                                     Style="{StaticResource BtnSecundario}"
                                     Margin="0,0,5,0"
                                     Click="BtnNuevaLinea_Click"/>
+                            <Button Content="Duplicar"
+                                    Style="{StaticResource BtnSecundario}"
+                                    Margin="0,0,5,0"
+                                    Click="BtnDuplicarLinea_Click"/>
                             <Button Content="Eliminar línea"
                                     Style="{StaticResource BtnPeligro}"
                                     Margin="0,0,5,0"

@@ -579,6 +579,26 @@ namespace WpfAppVba
             GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
         }
 
+        // ─── Duplicar línea seleccionada ──────────────────────────────────────
+        private void BtnDuplicarLinea_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_editarFormulario) return;
+            if (GridItems.SelectedItem is not TraspasoItemFila fila) return;
+
+            var copia = new TraspasoItemFila
+            {
+                TraspasoId = "", ArticuloId = fila.ArticuloId, Codigo = fila.Codigo,
+                Descripcion = fila.Descripcion, Cantidad = fila.Cantidad
+            };
+            _items.Add(copia);
+            _hayCambios = true;
+            RefrescarGrid();
+            NotificarStockInsuficiente();
+            GridItems.SelectedItem = copia;
+            GridItems.ScrollIntoView(copia);
+            GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
+        }
+
         // ─── Eliminar línea seleccionada ──────────────────────────────────────
         private void BtnEliminarLinea_Click(object sender, RoutedEventArgs e)
         {
