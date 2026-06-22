@@ -960,18 +960,25 @@ namespace WpfAppVba
         private void BtnEliminarLinea_Click(object sender, RoutedEventArgs e)
         {
             if (GridItems.SelectedItem is not PedidoItemFila fila) return;
-            int idx = _pedidos.IndexOf(fila);
-            _pedidos.Remove(fila);
-            _cambioPedido = true;
-            RefrescarGridPedidos();
-            ActualizarTotales();
-            if (_pedidos.Count > 0)
+
+            var res = MessageBox.Show("¿Eliminar esta línea?", "Consola",
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (res == MessageBoxResult.Yes)
             {
-                var siguiente = _pedidos[Math.Min(idx, _pedidos.Count - 1)];
-                GridItems.SelectedItem = siguiente;
-                GridItems.ScrollIntoView(siguiente);
+                int idx = _pedidos.IndexOf(fila);
+                _pedidos.Remove(fila);
+                _cambioPedido = true;
+                RefrescarGridPedidos();
+                ActualizarTotales();
+                if (_pedidos.Count > 0)
+                {
+                    var siguiente = _pedidos[Math.Min(idx, _pedidos.Count - 1)];
+                    GridItems.SelectedItem = siguiente;
+                    GridItems.ScrollIntoView(siguiente);
+                }
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
             }
-            GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
         }
 
         private void BtnActualizarPrecios_Click(object sender, RoutedEventArgs e)

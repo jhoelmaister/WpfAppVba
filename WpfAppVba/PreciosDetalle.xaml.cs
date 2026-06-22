@@ -267,6 +267,13 @@ namespace WpfAppVba
             var filaActual = GridItems.SelectedItem as PrecioItemFila;
             ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, null, art =>
             {
+                if (_items.Any(x => x.ArticuloId == art.Id && x != filaActual))
+                {
+                    MessageBox.Show("Este artículo ya fue agregado.", "Consola",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
                 PrecioItemFila filaEnfocar;
 
                 if (filaActual != null && _items.Contains(filaActual))
@@ -372,7 +379,15 @@ namespace WpfAppVba
             {
                 string codigo = tb.Text.Trim();
                 string artId  = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
-                if (!string.IsNullOrEmpty(artId))
+                if (!string.IsNullOrEmpty(artId) && _items.Any(x => x.ArticuloId == artId && x != fila))
+                {
+                    MessageBox.Show("Este artículo ya fue agregado.", "Consola",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    fila.ArticuloId  = "";
+                    fila.Codigo      = codigo;
+                    fila.Descripcion = "⚠ Artículo ya agregado";
+                }
+                else if (!string.IsNullOrEmpty(artId))
                 {
                     fila.ArticuloId  = artId;
                     fila.Codigo      = codigo;

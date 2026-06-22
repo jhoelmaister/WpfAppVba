@@ -604,17 +604,24 @@ namespace WpfAppVba
         {
             if (!_editarFormulario) return;
             if (GridItems.SelectedItem is not TraspasoItemFila fila) return;
-            int idx = _items.IndexOf(fila);
-            _items.Remove(fila);
-            _hayCambios = true;
-            RefrescarGrid();
-            if (_items.Count > 0)
+
+            var res = MessageBox.Show("¿Eliminar esta línea?", "Consola",
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (res == MessageBoxResult.Yes)
             {
-                var siguiente = _items[Math.Min(idx, _items.Count - 1)];
-                GridItems.SelectedItem = siguiente;
-                GridItems.ScrollIntoView(siguiente);
+                int idx = _items.IndexOf(fila);
+                _items.Remove(fila);
+                _hayCambios = true;
+                RefrescarGrid();
+                if (_items.Count > 0)
+                {
+                    var siguiente = _items[Math.Min(idx, _items.Count - 1)];
+                    GridItems.SelectedItem = siguiente;
+                    GridItems.ScrollIntoView(siguiente);
+                }
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
             }
-            GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
         }
 
         // ─── Edición de celda ─────────────────────────────────────────────────

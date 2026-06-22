@@ -70,6 +70,9 @@ namespace WpfAppVba
                 mesesConDatos.Add(Convert.ToDateTime(fechaObj).Month);
             }
 
+            // Si no hay documentos en el período, el árbol queda vacío (no se muestra el año).
+            if (mesesConDatos.Count == 0) return;
+
             // Nodo padre con el año/período activo → muestra todos los meses (Tag vacío = sin filtro)
             var nodoGeneral = new TreeViewItem
             {
