@@ -98,6 +98,7 @@ namespace WpfAppVba
 
             Box_Referencia.Text  = Sql.DocumentosLObj.ObtenerItem("referencia",  _idEditar)?.ToString() ?? "";
             Box_Observacion.Text = Sql.DocumentosLObj.ObtenerItem("observacion", _idEditar)?.ToString() ?? "";
+            ChkValido.IsChecked  = Sql.DocumentosLObj.ObtenerItem("estado", _idEditar)?.ToString() != "pendiente";
 
             // Cargar líneas de la lista de precios
             _items.Clear();
@@ -140,6 +141,7 @@ namespace WpfAppVba
             Box_DocumentoL.Text  = _codigoDocL;
             Box_Fecha.SelectedDate = DateTime.Today;
             Box_Hora.Text          = DateTime.Now.ToString("HH:mm:ss");
+            ChkValido.IsChecked    = false;
 
             string regionPreferida = !string.IsNullOrEmpty(_idCopiarDe)
                 ? Sql.DocumentosLObj.ObtenerItem("region", _idCopiarDe)?.ToString() ?? ""
@@ -221,6 +223,11 @@ namespace WpfAppVba
         }
 
         private void Campo_DateChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (!_cargando) _hayCambios = true;
+        }
+
+        private void ChkValido_Changed(object sender, RoutedEventArgs e)
         {
             if (!_cargando) _hayCambios = true;
         }
@@ -531,6 +538,7 @@ namespace WpfAppVba
                 Sql.DocumentosLObj.EstablecerItem("region",      docId, CboRegion.SelectedValue?.ToString() ?? "");
                 Sql.DocumentosLObj.EstablecerItem("referencia",  docId, Box_Referencia.Text.Trim());
                 Sql.DocumentosLObj.EstablecerItem("observacion", docId, Box_Observacion.Text.Trim());
+                Sql.DocumentosLObj.EstablecerItem("estado",      docId, ChkValido.IsChecked == true ? "valido" : "pendiente");
                 Sql.DocumentosLObj.EstablecerItem("emision",     docId, DateTime.Now);
                 Sql.DocumentosLObj.EstablecerItem("edicion",     docId, DateTime.Now);
                 Sql.DocumentosLObj.EstablecerItem("usuario",     docId, AppState.UsuarioActivo);
@@ -565,6 +573,7 @@ namespace WpfAppVba
                 Sql.DocumentosLObj.EstablecerItem("region",      docId, CboRegion.SelectedValue?.ToString() ?? "");
                 Sql.DocumentosLObj.EstablecerItem("referencia",  docId, Box_Referencia.Text.Trim());
                 Sql.DocumentosLObj.EstablecerItem("observacion", docId, Box_Observacion.Text.Trim());
+                Sql.DocumentosLObj.EstablecerItem("estado",      docId, ChkValido.IsChecked == true ? "valido" : "pendiente");
                 Sql.DocumentosLObj.EstablecerItem("edicion",     docId, DateTime.Now);
                 Sql.DocumentosLObj.EstablecerItem("usuarioE",    docId, AppState.UsuarioActivo);
 

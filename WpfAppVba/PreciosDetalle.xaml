@@ -172,6 +172,8 @@
                         <ColumnDefinition Width="220"/>
                         <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="100"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Doc. Lista -->
@@ -207,6 +209,15 @@
                         <TextBlock Text="Referencia" Style="{StaticResource LblMuted}"/>
                         <TextBox x:Name="Box_Referencia" Style="{StaticResource ModernInput}"
                                  TextChanged="Campo_TextChanged"/>
+                    </StackPanel>
+
+                    <!-- Estado -->
+                    <StackPanel Grid.Column="10">
+                        <TextBlock Text="Estado" Style="{StaticResource LblMuted}"/>
+                        <CheckBox x:Name="ChkValido" Content="Válido"
+                                  Height="28" VerticalContentAlignment="Center"
+                                  Checked="ChkValido_Changed"
+                                  Unchecked="ChkValido_Changed"/>
                     </StackPanel>
                 </Grid>
             </StackPanel>

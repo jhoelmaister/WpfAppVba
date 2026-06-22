@@ -60,6 +60,40 @@
             <Setter Property="Padding"       Value="12,10"/>
         </Style>
 
+        <!-- ── Badge de estado (pendiente / válido) ── -->
+        <DataTemplate x:Key="BadgeEstadoPrecio">
+            <Border Padding="6,2" CornerRadius="10" HorizontalAlignment="Left">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Estado}" Value="valido">
+                                <Setter Property="Background" Value="#D1FAE5"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Estado}" Value="pendiente">
+                                <Setter Property="Background" Value="#FEE2E2"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                        <Setter Property="Background" Value="{DynamicResource ThemeBgReadOnly}"/>
+                    </Style>
+                </Border.Style>
+                <TextBlock Text="{Binding EstadoTexto}" FontSize="11" FontWeight="SemiBold">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Estado}" Value="valido">
+                                    <Setter Property="Foreground" Value="#065F46"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Estado}" Value="pendiente">
+                                    <Setter Property="Foreground" Value="#991B1B"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Border>
+        </DataTemplate>
+
     </UserControl.Resources>
 
     <Grid>
@@ -311,6 +345,9 @@
                     <DataGridTextColumn Header="Región"
                                         Binding="{Binding RegionDesc}"
                                         Width="*"/>
+
+                    <DataGridTemplateColumn Header="Estado" Width="90"
+                                             CellTemplate="{StaticResource BadgeEstadoPrecio}"/>
 
                     <DataGridTextColumn Header="Líneas"
                                         Binding="{Binding Lineas}"

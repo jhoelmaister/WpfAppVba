@@ -202,6 +202,13 @@
                         <TextBox x:Name="Box_Hora" Style="{StaticResource ModernInput}"
                                  TextChanged="Campo_TextChanged"/>
                     </StackPanel>
+
+                    <!-- Referencia -->
+                    <StackPanel Grid.Column="5">
+                        <TextBlock Text="Referencia" Style="{StaticResource LblMuted}"/>
+                        <TextBox x:Name="Box_Referencia" Style="{StaticResource ModernInput}"
+                                 TextChanged="Campo_TextChanged"/>
+                    </StackPanel>
                 </Grid>
             </StackPanel>
         </Border>

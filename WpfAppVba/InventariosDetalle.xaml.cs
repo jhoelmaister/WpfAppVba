@@ -84,6 +84,7 @@ namespace WpfAppVba
             Box_Fecha.SelectedDate = fecha;
             Box_Hora.Text          = fecha.ToString("HH:mm:ss");
             Box_Observacion.Text   = Sql.DocumentosIObj.ObtenerItem("observacion", _idEditar)?.ToString() ?? "";
+            Box_Referencia.Text    = Sql.DocumentosIObj.ObtenerItem("referencia",  _idEditar)?.ToString() ?? "";
 
             // Cargar ítems del inventario
             _items.Clear();
@@ -496,6 +497,7 @@ namespace WpfAppVba
                 // Actualizar documento
                 Sql.DocumentosIObj.EstablecerItem("fecha",       docId, fecha);
                 Sql.DocumentosIObj.EstablecerItem("observacion", docId, Box_Observacion.Text);
+                Sql.DocumentosIObj.EstablecerItem("referencia",  docId, Box_Referencia.Text.Trim());
                 Sql.DocumentosIObj.EstablecerItem("edicion",     docId, DateTime.Now);
                 Sql.DocumentosIObj.EstablecerItem("usuario",     docId, AppState.UsuarioActivo);
                 Sql.DocumentosIObj.EstablecerItem("usuarioE",    docId, AppState.UsuarioActivo);
@@ -533,6 +535,7 @@ namespace WpfAppVba
                 Sql.DocumentosIObj.EstablecerItem("codigo",      docId, _codigoDocI);
                 Sql.DocumentosIObj.EstablecerItem("fecha",       docId, fecha);
                 Sql.DocumentosIObj.EstablecerItem("observacion", docId, Box_Observacion.Text);
+                Sql.DocumentosIObj.EstablecerItem("referencia",  docId, Box_Referencia.Text.Trim());
                 Sql.DocumentosIObj.EstablecerItem("sucursal",    docId, AppState.SucursalActiva);
                 Sql.DocumentosIObj.EstablecerItem("emision",     docId, DateTime.Now);
                 Sql.DocumentosIObj.EstablecerItem("edicion",     docId, DateTime.Now);

@@ -310,6 +310,7 @@ namespace WpfAppVba
                 if (Sql.PreciosObj.ObtenerItem("articulo", pid)?.ToString() != artId) continue;
                 string docLId = Sql.PreciosObj.ObtenerItem("documentoL", pid)?.ToString() ?? "";
                 if (docLId == "") continue;
+                if (Sql.DocumentosLObj.ObtenerItem("estado", docLId)?.ToString() == "pendiente") continue;
                 var fp = Sql.DocumentosLObj.ObtenerItem("fecha", docLId);
                 if (fp == null) continue;
                 DateTime fecha = Convert.ToDateTime(fp);

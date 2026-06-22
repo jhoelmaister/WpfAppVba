@@ -257,6 +257,8 @@ namespace WpfAppVba
             var fechaObj = Sql.DocumentosLObj.ObtenerItem("fecha", id);
             DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : default;
             string region  = Sql.DocumentosLObj.ObtenerItem("region", id)?.ToString() ?? "";
+            string estado  = Sql.DocumentosLObj.ObtenerItem("estado", id)?.ToString() ?? "";
+            bool esPendiente = estado == "pendiente";
             var (cantLineas, valor) = CalcularTotales(id);
             return new PrecioListaFila
             {
@@ -266,6 +268,8 @@ namespace WpfAppVba
                 Fecha      = fecha,
                 FechaStr   = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                 RegionDesc = Sql.RegionesObj.ObtenerItem("descripcion", region)?.ToString() ?? "",
+                Estado      = esPendiente ? "pendiente" : "valido",
+                EstadoTexto = esPendiente ? "Pendiente"  : "Válido",
                 Lineas     = cantLineas,
                 ValorTotal = valor
             };
@@ -692,6 +696,8 @@ namespace WpfAppVba
         public DateTime Fecha      { get; set; }
         public string   FechaStr   { get; set; } = "";
         public string   RegionDesc { get; set; } = "";
+        public string   Estado     { get; set; } = "";
+        public string   EstadoTexto { get; set; } = "";
         public int      Lineas     { get; set; }
         public double   ValorTotal { get; set; }
     }
