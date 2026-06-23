@@ -22,6 +22,11 @@ namespace WpfAppVba
         private bool _cargando   = true;
         private List<PrecioItemFila> _items = new();
 
+        // Stock/Disponible por artículo y sucursal, calculado para TODA la empresa
+        // (no solo la sucursal activa). Se recalcula en carga inicial y en
+        // BtnActualizar_Click; RefrescarGrid solo lee/suma estos valores.
+        private Dictionary<string, Dictionary<string, (double Disponible, double Stock)>> _stockEmpresa = new();
+
         // Modo de filtro activo: "todos" (carga inicial) | "busqueda" (TxtBuscar) | "familia" (Tree1)
         private string _modoFiltro = "todos";
 
@@ -105,6 +110,7 @@ namespace WpfAppVba
             // Catálogo completo de artículos, con el precio existente (si lo hay) de esta lista.
             CargarItems(_idEditar, esCopia: false);
             CargarArbol();
+            CalcularStockEmpresa();
             RefrescarGrid();
         }
 
@@ -134,6 +140,7 @@ namespace WpfAppVba
             string? docOrigen = string.IsNullOrEmpty(_idCopiarDe) ? null : _idCopiarDe;
             CargarItems(docOrigen, esCopia: true);
             CargarArbol();
+            CalcularStockEmpresa();
             RefrescarGrid();
         }
 
@@ -174,6 +181,68 @@ namespace WpfAppVba
                     Descripcion = ObtenerDescripcionArticulo(artId),
                     Precio      = ex.Precio
                 });
+            }
+        }
+
+        // ─── Stock/Disponible de TODA la empresa (todas las sucursales) ───────
+        // Las listas de precios se manejan a nivel de empresa, no de sucursal:
+        // Disponible/Stock deben salir de la suma de todas las sucursales, pero
+        // en memoria solo está cargada la sucursal activa (AppLoader.ConectarBases/
+        // ConectarDocumentos filtran por AppState.SucursalActiva). Se recorre cada
+        // sucursal de la empresa reutilizando la misma secuencia de recarga que ya
+        // usa Configuracion.xaml.cs al cambiar de sucursal, y se restaura el
+        // contexto original al terminar para no afectar al resto de la app.
+        private void CalcularStockEmpresa()
+        {
+            string sucursalOriginal  = AppState.SucursalActiva;
+            var    aperturaOriginal  = AppState.AperturaActiva;
+            DateTime inicioOriginal  = AppState.DataFechaInicio;
+            DateTime finalOriginal   = AppState.DataFechaFinal;
+
+            var resultado = new Dictionary<string, Dictionary<string, (double Disponible, double Stock)>>();
+
+            try
+            {
+                Mouse.OverrideCursor = Cursors.Wait;
+
+                int ufSuc = Sql.SucursalesObj.ContarFilas;
+                for (int i = 1; i <= ufSuc; i++)
+                {
+                    var sucIdObj = Sql.SucursalesObj.Mover(i);
+                    if (sucIdObj == null) continue;
+                    string sucId = sucIdObj.ToString()!;
+
+                    AppState.SucursalActiva = sucId;
+                    AppLoader.ConectarBases();
+                    AppState.ActualizarBase(DateTime.Now.Year);
+                    AppLoader.ConectarDocumentos(AppState.DataFechaInicio, AppState.DataFechaFinal);
+
+                    foreach (var item in _items)
+                    {
+                        double stock      = StockCalculator.ContarStock(item.ArticuloId,  DateTime.Now);
+                        double disponible = StockCalculator.ContarStock2(item.ArticuloId, DateTime.Now);
+
+                        if (!resultado.TryGetValue(item.ArticuloId, out var porSucursal))
+                        {
+                            porSucursal = new Dictionary<string, (double Disponible, double Stock)>();
+                            resultado[item.ArticuloId] = porSucursal;
+                        }
+                        porSucursal[sucId] = (disponible, stock);
+                    }
+                }
+
+                _stockEmpresa = resultado;
+            }
+            finally
+            {
+                AppState.SucursalActiva  = sucursalOriginal;
+                AppState.AperturaActiva  = aperturaOriginal;
+                AppState.DataFechaInicio = inicioOriginal;
+                AppState.DataFechaFinal  = finalOriginal;
+                AppLoader.ConectarBases();
+                AppLoader.ConectarDocumentos(AppState.DataFechaInicio, AppState.DataFechaFinal);
+
+                Mouse.OverrideCursor = null;
             }
         }
 
@@ -268,8 +337,16 @@ namespace WpfAppVba
                     !item.Descripcion.ToLower().Contains(busqueda))
                     continue;
 
-                item.Stock      = StockCalculator.ContarStock(item.ArticuloId,  DateTime.Now);
-                item.Disponible = StockCalculator.ContarStock2(item.ArticuloId, DateTime.Now);
+                if (_stockEmpresa.TryGetValue(item.ArticuloId, out var porSucursal))
+                {
+                    item.Stock      = porSucursal.Values.Sum(v => v.Stock);
+                    item.Disponible = porSucursal.Values.Sum(v => v.Disponible);
+                }
+                else
+                {
+                    item.Stock      = 0;
+                    item.Disponible = 0;
+                }
                 visibles.Add(item);
             }
 
@@ -281,6 +358,7 @@ namespace WpfAppVba
                 Grid1.SelectedItem = seleccionado;
 
             ActualizarTotales();
+            ActualizarGridSucursales();
         }
 
         // Recalcula los totales sobre TODO el catálogo (no solo lo visible tras el
@@ -290,6 +368,37 @@ namespace WpfAppVba
             var conPrecio = _items.Where(x => x.Precio > 0).ToList();
             TxtTotalArticulos.Text = conPrecio.Count.ToString("N0");
             TxtValorTotal.Text     = conPrecio.Sum(x => x.Precio).ToString("N2");
+        }
+
+        // ─── Desglose por sucursal del artículo seleccionado en Grid1 ─────────
+        private void Grid1_SelectionChanged(object sender, SelectionChangedEventArgs e)
+            => ActualizarGridSucursales();
+
+        private void ActualizarGridSucursales()
+        {
+            var fila  = Grid1.SelectedItem as PrecioItemFila;
+            var lista = new List<SucursalStockFila>();
+
+            if (fila != null && _stockEmpresa.TryGetValue(fila.ArticuloId, out var porSucursal))
+            {
+                int ufSuc = Sql.SucursalesObj.ContarFilas;
+                for (int i = 1; i <= ufSuc; i++)
+                {
+                    var sucIdObj = Sql.SucursalesObj.Mover(i);
+                    if (sucIdObj == null) continue;
+                    string sucId = sucIdObj.ToString()!;
+                    if (!porSucursal.TryGetValue(sucId, out var valores)) continue;
+
+                    lista.Add(new SucursalStockFila
+                    {
+                        Sucursal   = Sql.SucursalesObj.ObtenerItem("descripcion", sucId)?.ToString() ?? "",
+                        Disponible = valores.Disponible,
+                        Stock      = valores.Stock
+                    });
+                }
+            }
+
+            GridSucursales.ItemsSource = lista;
         }
 
         // ─── Eventos árbol y búsqueda (mismo patrón que ArticulosGeneral) ─────
@@ -404,6 +513,7 @@ namespace WpfAppVba
             _items = actualizados;
 
             CargarArbol();
+            CalcularStockEmpresa();
             RefrescarGrid();
 
             if (!string.IsNullOrEmpty(artSelId))
@@ -583,5 +693,13 @@ namespace WpfAppVba
         public double Stock       { get; set; }
         public double Disponible  { get; set; }
         public double Precio      { get; set; }
+    }
+
+    // ─── Fila del desglose por sucursal (panel lateral) ────────────────────────
+    public class SucursalStockFila
+    {
+        public string Sucursal   { get; set; } = "";
+        public double Disponible { get; set; }
+        public double Stock      { get; set; }
     }
 }
