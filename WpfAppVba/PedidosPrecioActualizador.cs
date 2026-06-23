@@ -11,8 +11,7 @@ namespace WpfAppVba.Data
     /// con estado distinto de "pendiente" y fecha más reciente que no supere la
     /// fecha del documento — mismo criterio que ObtenerPrecioArticulo en
     /// PedidosDetalle. Los pedidos de tipo "manual" no se tocan. Si un pedido no
-    /// tiene ninguna lista de precios aplicable (ninguna lista con fecha anterior
-    /// o igual a la del documento), su importe queda sin modificar.
+    /// tiene ninguna lista de precios aplicable, su importe queda en 0.
     /// Trabaja directamente sobre SQL Server, en una única transacción.
     /// </summary>
     public static class PedidosPrecioActualizador
@@ -31,7 +30,7 @@ namespace WpfAppVba.Data
 
                 var resumen = new StringBuilder();
                 resumen.AppendLine($"Pedidos actualizados: {actualizados}");
-                resumen.AppendLine($"Pedidos sin lista de precios aplicable (sin cambios): {sinPrecio}");
+                resumen.AppendLine($"Pedidos sin lista de precios aplicable (importe puesto en 0): {sinPrecio}");
                 return resumen.ToString().TrimEnd();
             }
             catch
@@ -41,15 +40,15 @@ namespace WpfAppVba.Data
             }
         }
 
-        // ─── UPDATE: importe = precio vigente × cantidad ─────────────────────
+        // ─── UPDATE: importe = precio vigente × cantidad (0 si no hay precio) ─
         private static int ActualizarImportes(SqlConnection conn, SqlTransaction tx)
         {
             string sql =
                 "UPDATE p " +
-                "SET p.importe = ap.precio * p.cantidad " +
+                "SET p.importe = ISNULL(ap.precio, 0) * p.cantidad " +
                 "FROM pedidos AS p " +
                 "INNER JOIN documentosP AS dp ON dp.id = p.documentoP " +
-                "CROSS APPLY (" +
+                "OUTER APPLY (" +
                 "    SELECT TOP 1 pr.precio " +
                 "    FROM precios AS pr " +
                 "    INNER JOIN documentosL AS dl ON dl.id = pr.documentoL " +

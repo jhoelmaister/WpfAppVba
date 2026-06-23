@@ -292,7 +292,8 @@ namespace WpfAppVba
             var r = MessageBox.Show(
                 "Se recalculará el importe de TODOS los pedidos de tipo automático (toda la tabla, " +
                 "todas las sucursales), según la lista de precios vigente a la fecha de cada documento. " +
-                "Los pedidos de tipo manual no se modifican.\n\n" +
+                "Los pedidos de tipo manual no se modifican. Si un pedido no tiene ninguna lista de " +
+                "precios aplicable, su importe quedará en 0.\n\n" +
                 "Esta acción SOBRESCRIBE los importes existentes en el servidor activo. ¿Continuar?",
                 "Recalcular precios", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (r != MessageBoxResult.Yes) return;
