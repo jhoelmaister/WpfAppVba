@@ -90,26 +90,22 @@ namespace WpfAppVba.Data
 
             string emp = AppState.EmpresaActiva;
             // Filtro directo por empresa (solo cuando hay empresa activa). Aplica a
-            // productos, industrias, terceros, regiones, sucursales y categorías.
+            // productos, industrias, terceros, regiones, sucursales, categorías y
+            // documentosL (columna empresa propia, sin cascada por región).
             string fEmp = string.IsNullOrEmpty(emp) ? "" : $" AND empresa = '{emp}'";
 
             // Cascada de la empresa por relaciones (igual que documentosT→traspasos), en
             // vez de confiar en la columna 'empresa' de las tablas hijas:
             //   productos (empresa) → familias (familias.producto) → articulos (articulos.familia)
-            //   regiones  (empresa) → documentosL (documentosL.region) → precios (precios.documentoL)
             string fFamilias = string.IsNullOrEmpty(emp) ? ""
                 : $" AND producto IN (SELECT id FROM productos WHERE estadof = 'normal' AND empresa = '{emp}')";
             string fArticulos = string.IsNullOrEmpty(emp) ? ""
                 : $" AND a.familia IN (SELECT id FROM familias WHERE estadof = 'normal'" +
                   $" AND producto IN (SELECT id FROM productos WHERE estadof = 'normal' AND empresa = '{emp}'))";
-            // documentosL no tiene columna empresa → cascada por las regiones de la empresa.
-            string fDocumentosL = string.IsNullOrEmpty(emp)
-                ? ""
-                : $" AND region IN (SELECT id FROM regiones WHERE estadof = 'normal' AND empresa = '{emp}')";
             // precios no tiene columna empresa → cascada por los documentosL de la empresa.
             string fPrecios = string.IsNullOrEmpty(emp)
                 ? ""
-                : $" AND documentoL IN (SELECT id FROM documentosL WHERE estadof = 'normal'{fDocumentosL})";
+                : $" AND documentoL IN (SELECT id FROM documentosL WHERE estadof = 'normal'{fEmp})";
 
 
 
@@ -149,9 +145,10 @@ namespace WpfAppVba.Data
             Sql.RegionesObj.Conectar("regiones",
                 $"SELECT * FROM regiones WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
 
-            // documentosL (cabecera de listas de precios) + precios (líneas).
+            // documentosL (cabecera de listas de precios) + precios (líneas). Filtro
+            // directo por empresa (columna propia, ya no se cascada por región).
             Sql.DocumentosLObj.Conectar("documentosL",
-                $"SELECT * FROM documentosL WHERE estadof = 'normal'{fDocumentosL} ORDER BY fecha ASC");
+                $"SELECT * FROM documentosL WHERE estadof = 'normal'{fEmp} ORDER BY fecha ASC");
 
             Sql.PreciosObj.Conectar("precios",
                 $"SELECT * FROM precios WHERE estadof = 'normal'{fPrecios} ORDER BY documentoL ASC, indice ASC");

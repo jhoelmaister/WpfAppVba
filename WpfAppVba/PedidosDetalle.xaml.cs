@@ -588,8 +588,10 @@ namespace WpfAppVba
                 if (pid == null) continue;
                 if (Sql.PreciosObj.ObtenerItem("articulo", pid)?.ToString() != fila.ArticuloId) continue;
                 string docLId = Sql.PreciosObj.ObtenerItem("documentoL", pid)?.ToString() ?? "";
-                if (docLId != "" && Sql.DocumentosLObj.ObtenerItem("estado", docLId)?.ToString() == "pendiente") continue;
-                var fp = docLId != "" ? Sql.DocumentosLObj.ObtenerItem("fecha", docLId) : null;
+                if (docLId == "") continue;
+                if (Sql.DocumentosLObj.ObtenerItem("region", docLId)?.ToString() != AppState.RegionActiva) continue;
+                if (Sql.DocumentosLObj.ObtenerItem("estado", docLId)?.ToString() == "pendiente") continue;
+                var fp = Sql.DocumentosLObj.ObtenerItem("fecha", docLId);
                 precios.Add(new PrecioFila
                 {
                     Codigo = fila.Codigo,
