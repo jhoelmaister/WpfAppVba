@@ -519,7 +519,7 @@ namespace WpfAppVba
                 Sql.DocumentosLObj.EstablecerItem("usuarioE", fila.Id, AppState.UsuarioActivo);
                 Sql.DocumentosLObj.Ocultar(fila.Id);
 
-                Sql.PreciosObj.OrdenarData(("documentoL", false), ("indice", false));
+                Sql.PreciosObj.OrdenarData(("documentoL", false));
                 Sql.DocumentosLObj.OrdenarData(("fecha", false));
 
                 SincronizarArbolFechas();
@@ -643,6 +643,7 @@ namespace WpfAppVba
                 string codigo   = Sql.ArticulosObj.ObtenerItem("codigo",      artId)?.ToString()  ?? "";
                 string descArt  = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString()  ?? "";
                 double precio   = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0);
+                if (precio <= 0) continue;
 
                 lineas.Add((prodDesc, famDesc, codigo, descArt, precio));
             }

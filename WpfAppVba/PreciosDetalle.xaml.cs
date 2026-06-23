@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
@@ -20,8 +21,9 @@ namespace WpfAppVba
         private bool _hayCambios = false;
         private bool _cargando   = true;
         private List<PrecioItemFila> _items = new();
-        // IDs de las líneas existentes al abrir para editar (para el guardado diferencial).
-        private HashSet<string> _itemsOrig = new();
+
+        // Modo de filtro activo: "todos" (carga inicial) | "busqueda" (TxtBuscar) | "familia" (Tree1)
+        private string _modoFiltro = "todos";
 
         private bool _iniciado = false;
         private readonly string _tituloTab;
@@ -100,35 +102,9 @@ namespace WpfAppVba
             Box_Observacion.Text = Sql.DocumentosLObj.ObtenerItem("observacion", _idEditar)?.ToString() ?? "";
             CboEstado.SelectedIndex = Sql.DocumentosLObj.ObtenerItem("estado", _idEditar)?.ToString() == "pendiente" ? 0 : 1;
 
-            // Cargar líneas de la lista de precios
-            _items.Clear();
-            int linea = 1;
-            int uf    = Sql.PreciosObj.ContarFilas;
-            for (int i = 1; i <= uf; i++)
-            {
-                var idObj = Sql.PreciosObj.Mover(i);
-                if (idObj == null) continue;
-                string id = idObj.ToString()!;
-
-                if (Sql.PreciosObj.ObtenerItem("documentoL", id)?.ToString() != _idEditar) continue;
-
-                string articuloId = Sql.PreciosObj.ObtenerItem("articulo", id)?.ToString() ?? "";
-                string codigo     = Sql.ArticulosObj.ObtenerItem("codigo", articuloId)?.ToString() ?? "";
-                string desc       = ObtenerDescripcionArticulo(articuloId);
-                double precio     = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0);
-
-                _items.Add(new PrecioItemFila
-                {
-                    PrecioId    = id,
-                    Linea       = linea++,
-                    ArticuloId  = articuloId,
-                    Codigo      = codigo,
-                    Descripcion = desc,
-                    Precio      = precio
-                });
-            }
-
-            _itemsOrig = new HashSet<string>(_items.Select(x => x.PrecioId));
+            // Catálogo completo de artículos, con el precio existente (si lo hay) de esta lista.
+            CargarItems(_idEditar, esCopia: false);
+            CargarArbol();
             RefrescarGrid();
         }
 
@@ -152,38 +128,53 @@ namespace WpfAppVba
             else if (CboRegion.Items.Count > 0)
                 CboRegion.SelectedIndex = 0;
 
-            _items.Clear();
-            _itemsOrig.Clear();
+            // Catálogo completo de artículos. Si viene de "copiar", los precios del
+            // documento de origen quedan como base editable (PrecioId vacío → se
+            // insertan como líneas nuevas al guardar, sin tocar el documento copiado).
+            string? docOrigen = string.IsNullOrEmpty(_idCopiarDe) ? null : _idCopiarDe;
+            CargarItems(docOrigen, esCopia: true);
+            CargarArbol();
+            RefrescarGrid();
+        }
 
-            // Copiar líneas (artículo + precio) del documento de origen, como base
-            // editable de la lista nueva (quedan sin PrecioId → se insertan al guardar).
-            if (!string.IsNullOrEmpty(_idCopiarDe))
+        // ─── Carga unificada del catálogo de artículos + precios existentes ───
+        private void CargarItems(string? docIdOrigen, bool esCopia)
+        {
+            var existentes = new Dictionary<string, (string PrecioId, double Precio)>();
+            if (!string.IsNullOrEmpty(docIdOrigen))
             {
-                int linea = 1;
                 int uf = Sql.PreciosObj.ContarFilas;
                 for (int i = 1; i <= uf; i++)
                 {
                     var idObj = Sql.PreciosObj.Mover(i);
                     if (idObj == null) continue;
                     string id = idObj.ToString()!;
-                    if (Sql.PreciosObj.ObtenerItem("documentoL", id)?.ToString() != _idCopiarDe) continue;
+                    if (Sql.PreciosObj.ObtenerItem("documentoL", id)?.ToString() != docIdOrigen) continue;
 
-                    string articuloId = Sql.PreciosObj.ObtenerItem("articulo", id)?.ToString() ?? "";
-                    double precio     = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0);
-
-                    _items.Add(new PrecioItemFila
-                    {
-                        PrecioId    = "",
-                        Linea       = linea++,
-                        ArticuloId  = articuloId,
-                        Codigo      = Sql.ArticulosObj.ObtenerItem("codigo", articuloId)?.ToString() ?? "",
-                        Descripcion = ObtenerDescripcionArticulo(articuloId),
-                        Precio      = precio
-                    });
+                    string artId  = Sql.PreciosObj.ObtenerItem("articulo", id)?.ToString() ?? "";
+                    double precio = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0);
+                    existentes[artId] = (esCopia ? "" : id, precio);
                 }
             }
 
-            RefrescarGrid();
+            _items = new List<PrecioItemFila>();
+            int ufA = Sql.ArticulosObj.ContarFilas;
+            for (int i = 1; i <= ufA; i++)
+            {
+                var idObj = Sql.ArticulosObj.Mover(i);
+                if (idObj == null) continue;
+                string artId = idObj.ToString()!;
+
+                existentes.TryGetValue(artId, out var ex);
+                _items.Add(new PrecioItemFila
+                {
+                    PrecioId    = ex.PrecioId ?? "",
+                    ArticuloId  = artId,
+                    Codigo      = Sql.ArticulosObj.ObtenerItem("codigo", artId)?.ToString() ?? "",
+                    Descripcion = ObtenerDescripcionArticulo(artId),
+                    Precio      = ex.Precio
+                });
+            }
         }
 
         // ─── Descripción de artículo ──────────────────────────────────────────
@@ -197,22 +188,137 @@ namespace WpfAppVba
             return FuncionesComunes.UnirVariables(desc, famDesc, modelo);
         }
 
-        // ─── Refrescar grid ───────────────────────────────────────────────────
+        // ─── Árbol de productos/familias (mismo patrón que ArticulosGeneral) ──
+        private void CargarArbol()
+        {
+            Tree1.Items.Clear();
+            var nodoTodos = new TreeViewItem { Header = "Todos", Tag = "todos" };
+
+            int ufProd = Sql.ProductosObj.ContarFilas;
+            for (int i = 1; i <= ufProd; i++)
+            {
+                var idObj = Sql.ProductosObj.Mover(i);
+                if (idObj == null) continue;
+                string prodId   = idObj.ToString()!;
+                string prodDesc = Sql.ProductosObj.ObtenerItem("descripcion", prodId)?.ToString() ?? prodId;
+
+                var nodoProd = new TreeViewItem { Header = prodDesc, Tag = $"producto:{prodId}" };
+
+                int ufFam = Sql.FamiliasObj.ContarFilas;
+                for (int j = 1; j <= ufFam; j++)
+                {
+                    var famIdObj = Sql.FamiliasObj.Mover(j);
+                    if (famIdObj == null) continue;
+                    string famId = famIdObj.ToString()!;
+                    if ((Sql.FamiliasObj.ObtenerItem("producto", famId)?.ToString() ?? "") != prodId) continue;
+
+                    string famDesc = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? famId;
+                    nodoProd.Items.Add(new TreeViewItem { Header = famDesc, Tag = $"familia:{famId}" });
+                }
+
+                if (nodoProd.Items.Count > 0) nodoProd.IsExpanded = true;
+                nodoTodos.Items.Add(nodoProd);
+            }
+
+            Tree1.Items.Add(nodoTodos);
+            nodoTodos.IsExpanded = true;
+            nodoTodos.IsSelected = true;
+        }
+
+        private string ObtenerTagFiltro()
+        {
+            if (Tree1.SelectedItem is TreeViewItem item)
+                return item.Tag?.ToString() ?? "todos";
+            return "todos";
+        }
+
+        // ─── Refrescar grid (aplica filtro de árbol/búsqueda + calcula stock) ─
         private void RefrescarGrid()
         {
-            for (int i = 0; i < _items.Count; i++)
-                _items[i].Linea = i + 1;
+            string busqueda  = _modoFiltro == "busqueda" ? TxtBuscar.Text.Trim().ToLower() : "";
+            string tagFiltro = _modoFiltro == "familia"  ? ObtenerTagFiltro()              : "";
 
-            var seleccionado = GridItems.SelectedItem as PrecioItemFila;
+            var visibles = new List<PrecioItemFila>();
+            foreach (var item in _items)
+            {
+                string famId = Sql.ArticulosObj.ObtenerItem("familia", item.ArticuloId)?.ToString() ?? "";
 
-            GridItems.ItemsSource = null;
-            GridItems.ItemsSource = _items;
+                if (!string.IsNullOrEmpty(tagFiltro))
+                {
+                    if (tagFiltro.StartsWith("familia:"))
+                    {
+                        if (famId != tagFiltro.Substring("familia:".Length)) continue;
+                    }
+                    else if (tagFiltro.StartsWith("producto:"))
+                    {
+                        string prodFiltro = tagFiltro.Substring("producto:".Length);
+                        string famProd    = Sql.FamiliasObj.ObtenerItem("producto", famId)?.ToString() ?? "";
+                        if (famProd != prodFiltro) continue;
+                    }
+                    // "todos" o vacío → sin filtro
+                }
 
-            if (seleccionado != null && _items.Contains(seleccionado))
-                GridItems.SelectedItem = seleccionado;
+                if (!string.IsNullOrEmpty(busqueda) &&
+                    !item.Codigo.ToLower().Contains(busqueda) &&
+                    !item.Descripcion.ToLower().Contains(busqueda))
+                    continue;
 
-            TxtTotalArticulos.Text = _items.Count.ToString("N0");
-            TxtValorTotal.Text     = _items.Sum(x => x.Precio).ToString("N2");
+                item.Stock      = StockCalculator.ContarStock(item.ArticuloId,  DateTime.Now);
+                item.Disponible = StockCalculator.ContarStock2(item.ArticuloId, DateTime.Now);
+                visibles.Add(item);
+            }
+
+            var seleccionado = Grid1.SelectedItem as PrecioItemFila;
+
+            Grid1.ItemsSource = visibles;
+
+            if (seleccionado != null && visibles.Contains(seleccionado))
+                Grid1.SelectedItem = seleccionado;
+
+            ActualizarTotales();
+        }
+
+        // Recalcula los totales sobre TODO el catálogo (no solo lo visible tras el
+        // filtro): representan el contenido real de la lista de precios, no la vista.
+        private void ActualizarTotales()
+        {
+            var conPrecio = _items.Where(x => x.Precio > 0).ToList();
+            TxtTotalArticulos.Text = conPrecio.Count.ToString("N0");
+            TxtValorTotal.Text     = conPrecio.Sum(x => x.Precio).ToString("N2");
+            Grid1.Items.Refresh();
+        }
+
+        // ─── Eventos árbol y búsqueda (mismo patrón que ArticulosGeneral) ─────
+        private void Tree1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            _modoFiltro = "familia";
+            RefrescarGrid();
+        }
+
+        private void Tree1_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            DependencyObject? source = e.OriginalSource as DependencyObject;
+            while (source != null && source is not TreeViewItem)
+                source = VisualTreeHelper.GetParent(source);
+
+            if (source is TreeViewItem tvi && tvi.IsSelected)
+            {
+                _modoFiltro = "familia";
+                RefrescarGrid();
+            }
+        }
+
+        private void TxtBuscar_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+            _modoFiltro = "busqueda";
+            RefrescarGrid();
+        }
+
+        private void BtnBuscar_Click(object sender, RoutedEventArgs e)
+        {
+            _modoFiltro = "busqueda";
+            RefrescarGrid();
         }
 
         // ─── Detectar cambios ─────────────────────────────────────────────────
@@ -237,254 +343,76 @@ namespace WpfAppVba
             if (!_cargando) _hayCambios = true;
         }
 
-        // ─── Buscar artículos (multi-select) ──────────────────────────────────
-        private void BtnBuscarArticulos_Click(object sender, RoutedEventArgs e)
+        // ─── Celda Precio editada ─────────────────────────────────────────────
+        private void Grid1_CellEditEnding(object? sender, DataGridCellEditEndingEventArgs e)
         {
-            ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, arts =>
-            {
-                var duplicados = arts.Where(art => _items.Any(x => x.ArticuloId == art.Id)).ToList();
-                if (duplicados.Count > 0)
-                {
-                    string detalle = string.Join("\n", duplicados.Select(d => $"• {d.Codigo} - {d.Descripcion}"));
-                    MessageBox.Show(
-                        $"Los siguientes artículos ya están en la lista y no se pueden agregar de nuevo:\n\n{detalle}\n\nQuite la selección de estos artículos para poder exportar.",
-                        "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return false;
-                }
+            if (e.EditAction != DataGridEditAction.Commit) return;
+            _hayCambios = true;
+            Dispatcher.BeginInvoke(new Action(ActualizarTotales),
+                System.Windows.Threading.DispatcherPriority.Background);
+        }
 
-                foreach (var art in arts)
+        // ─── Seleccionar todo al entrar a la celda Precio ─────────────────────
+        private void Grid1_PreparingCellForEdit(object? sender, DataGridPreparingCellForEditEventArgs e)
+        {
+            if (e.Column.Header?.ToString() != "Precio") return;
+            GridFocusHelper.SeleccionarTodoEnEdicion(e.EditingElement);
+            if (e.EditingElement is TextBox tb) FuncionesComunes.RestringirACantidad(tb);
+        }
+
+        // ─── Actualizar (recarga catálogo desde SQL conservando precios editados) ─
+        private void BtnActualizar_Click(object sender, RoutedEventArgs e)
+        {
+            if (!FuncionesComunes.VerificarConexionParaActualizar(Window.GetWindow(this))) return;
+
+            string artSelId = (Grid1.SelectedItem as PrecioItemFila)?.ArticuloId ?? "";
+
+            AppState.ActualizarProductos();
+
+            var porArticulo = _items.ToDictionary(x => x.ArticuloId, x => x);
+
+            var actualizados = new List<PrecioItemFila>();
+            int uf = Sql.ArticulosObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.ArticulosObj.Mover(i);
+                if (idObj == null) continue;
+                string artId = idObj.ToString()!;
+
+                if (porArticulo.TryGetValue(artId, out var existente))
                 {
-                    _items.Add(new PrecioItemFila
+                    existente.Codigo      = Sql.ArticulosObj.ObtenerItem("codigo", artId)?.ToString() ?? "";
+                    existente.Descripcion = ObtenerDescripcionArticulo(artId);
+                    actualizados.Add(existente);
+                }
+                else
+                {
+                    actualizados.Add(new PrecioItemFila
                     {
                         PrecioId    = "",
-                        Linea       = _items.Count + 1,
-                        ArticuloId  = art.Id,
-                        Codigo      = art.Codigo,
-                        Descripcion = art.Descripcion,
+                        ArticuloId  = artId,
+                        Codigo      = Sql.ArticulosObj.ObtenerItem("codigo", artId)?.ToString() ?? "",
+                        Descripcion = ObtenerDescripcionArticulo(artId),
                         Precio      = 0
                     });
                 }
-                _hayCambios = true;
-                RefrescarGrid();
-                if (_items.Count > 0)
-                {
-                    var ultimo = _items[_items.Count - 1];
-                    GridItems.SelectedItem = ultimo;
-                    GridItems.ScrollIntoView(ultimo);
-                }
-                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
-                return true;
-            }, null, contexto: _tituloTab, llamador: this);
-        }
+            }
+            _items = actualizados;
 
-        // ─── Buscar artículo (single-select) ─────────────────────────────────
-        private void BtnBuscarArticulo_Click(object sender, RoutedEventArgs e)
-        {
-            var filaActual = GridItems.SelectedItem as PrecioItemFila;
-            ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, null, art =>
-            {
-                if (_items.Any(x => x.ArticuloId == art.Id && x != filaActual))
-                {
-                    MessageBox.Show("Este artículo ya fue agregado. Seleccione otro.", "Consola",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return false;
-                }
-
-                PrecioItemFila filaEnfocar;
-
-                if (filaActual != null && _items.Contains(filaActual))
-                {
-                    filaActual.ArticuloId  = art.Id;
-                    filaActual.Codigo      = art.Codigo;
-                    filaActual.Descripcion = art.Descripcion;
-                    filaEnfocar = filaActual;
-                }
-                else
-                {
-                    var nueva = new PrecioItemFila
-                    {
-                        PrecioId    = "",
-                        ArticuloId  = art.Id,
-                        Codigo      = art.Codigo,
-                        Descripcion = art.Descripcion,
-                        Precio      = 0
-                    };
-                    _items.Add(nueva);
-                    filaEnfocar = nueva;
-                }
-                _hayCambios = true;
-                RefrescarGrid();
-                EnfocarColumnaPrecio(filaEnfocar);
-                return true;
-            }, contexto: _tituloTab, llamador: this);
-        }
-
-        // Posiciona el cursor en la celda Precio de la fila indicada e inicia edición
-        private void EnfocarColumnaPrecio(PrecioItemFila fila)
-        {
-            var colPrecio = GridItems.Columns
-                .FirstOrDefault(c => c.Header?.ToString() == "Precio");
-            if (colPrecio == null) return;
-
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                GridItems.SelectedItem = fila;
-                GridItems.CurrentCell  = new DataGridCellInfo(fila, colPrecio);
-                GridItems.ScrollIntoView(fila, colPrecio);
-                GridItems.Focus();
-                GridItems.BeginEdit();
-            }), System.Windows.Threading.DispatcherPriority.Background);
-        }
-
-        // ─── Nueva línea vacía ────────────────────────────────────────────────
-        private void BtnNuevaLinea_Click(object sender, RoutedEventArgs e)
-        {
-            _items.Add(new PrecioItemFila
-            {
-                PrecioId    = "",
-                Linea       = _items.Count + 1,
-                ArticuloId  = "",
-                Codigo      = "",
-                Descripcion = "",
-                Precio      = 0
-            });
-            _hayCambios = true;
+            CargarArbol();
             RefrescarGrid();
-            int lastIdx = GridItems.Items.Count - 1;
-            if (lastIdx >= 0)
+
+            if (!string.IsNullOrEmpty(artSelId))
             {
-                GridItems.SelectedIndex = lastIdx;
-                GridItems.ScrollIntoView(GridItems.SelectedItem);
+                var fila = (Grid1.ItemsSource as List<PrecioItemFila>)?.Find(x => x.ArticuloId == artSelId);
+                if (fila != null) { Grid1.SelectedItem = fila; Grid1.ScrollIntoView(fila); }
             }
-            GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
-        }
-
-        // ─── Eliminar línea seleccionada ──────────────────────────────────────
-        private void BtnEliminarLinea_Click(object sender, RoutedEventArgs e)
-        {
-            if (GridItems.SelectedItem is not PrecioItemFila fila) return;
-
-            var res = MessageBox.Show("¿Eliminar esta línea?", "Consola",
-                MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-            if (res == MessageBoxResult.Yes)
-            {
-                int idx = _items.IndexOf(fila);
-                _items.Remove(fila);
-                _hayCambios = true;
-                RefrescarGrid();
-                if (_items.Count > 0)
-                {
-                    var siguiente = _items[Math.Min(idx, _items.Count - 1)];
-                    GridItems.SelectedItem = siguiente;
-                    GridItems.ScrollIntoView(siguiente);
-                }
-                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
-            }
-        }
-
-        // ─── Celda editada ────────────────────────────────────────────────────
-        private void GridItems_CellEditEnding(object? sender, DataGridCellEditEndingEventArgs e)
-        {
-            _hayCambios = true;
-            PrecioItemFila? filaDuplicada = null;
-
-            // Cuando se confirma la edición de la columna Código → buscar artículo
-            if (e.EditAction == DataGridEditAction.Commit &&
-                e.Column.Header?.ToString() == "Código" &&
-                e.Row.Item is PrecioItemFila fila &&
-                e.EditingElement is TextBox tb)
-            {
-                string codigo = tb.Text.Trim();
-                string artId  = Sql.ArticulosObj.BuscarIdentificador("codigo", codigo);
-                if (!string.IsNullOrEmpty(artId) && _items.Any(x => x.ArticuloId == artId && x != fila))
-                {
-                    MessageBox.Show("Este artículo ya fue agregado. Seleccione otro.", "Consola",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                    fila.ArticuloId  = "";
-                    fila.Codigo      = codigo;
-                    fila.Descripcion = "";
-                    filaDuplicada    = fila;
-                }
-                else if (!string.IsNullOrEmpty(artId))
-                {
-                    fila.ArticuloId  = artId;
-                    fila.Codigo      = codigo;
-                    fila.Descripcion = ObtenerDescripcionArticulo(artId);
-                }
-                else
-                {
-                    fila.ArticuloId  = "";
-                    fila.Codigo      = codigo;
-                    fila.Descripcion = string.IsNullOrEmpty(codigo) ? "" : "⚠ Artículo no encontrado";
-                }
-            }
-
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                RefrescarGrid();
-                if (filaDuplicada != null)
-                    EnfocarColumnaCodigo(filaDuplicada);
-                else
-                    GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
-            }), System.Windows.Threading.DispatcherPriority.Background);
-        }
-
-        // Posiciona el cursor en la celda Código de la fila indicada e inicia edición
-        private void EnfocarColumnaCodigo(PrecioItemFila fila)
-        {
-            var colCodigo = GridItems.Columns
-                .FirstOrDefault(c => c.Header?.ToString() == "Código");
-            if (colCodigo == null) return;
-
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                GridItems.SelectedItem = fila;
-                GridItems.CurrentCell  = new DataGridCellInfo(fila, colCodigo);
-                GridItems.ScrollIntoView(fila, colCodigo);
-                GridItems.Focus();
-                GridItems.BeginEdit();
-            }), System.Windows.Threading.DispatcherPriority.Background);
-        }
-
-        // ─── Seleccionar todo al entrar al campo Código / Precio ──────────────
-        private void GridItems_PreparingCellForEdit(object? sender, DataGridPreparingCellForEditEventArgs e)
-        {
-            string col = e.Column.Header?.ToString() ?? "";
-            if (col is "Código" or "Precio")
-                GridFocusHelper.SeleccionarTodoEnEdicion(e.EditingElement);
-            if (col == "Precio" && e.EditingElement is TextBox tb)
-                FuncionesComunes.RestringirACantidad(tb);
-        }
-
-        // ─── Insertar línea en la posición seleccionada ───────────────────────
-        private void BtnInsertar_Click(object sender, RoutedEventArgs e)
-        {
-            int idx = GridItems.SelectedItem is PrecioItemFila sel
-                      ? _items.IndexOf(sel)
-                      : _items.Count;
-            if (idx < 0) idx = _items.Count;
-
-            var nueva = new PrecioItemFila
-            {
-                PrecioId = "", ArticuloId = "", Codigo = "",
-                Descripcion = "", Precio = 0
-            };
-            _items.Insert(idx, nueva);
-            _hayCambios = true;
-            RefrescarGrid();
-            if (idx < GridItems.Items.Count)
-            {
-                GridItems.SelectedIndex = idx;
-                GridItems.ScrollIntoView(GridItems.SelectedItem);
-            }
-            GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
         }
 
         // ─── Botones Guardar / Cancelar ───────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            GridItems.CommitEdit(DataGridEditingUnit.Row, true);
+            Grid1.CommitEdit(DataGridEditingUnit.Row, true);
             bool ok = Guardar();
             if (ok) { _hayCambios = false; Cerrando?.Invoke(); }
         }
@@ -494,7 +422,7 @@ namespace WpfAppVba
 
         public void IntentarCerrar()
         {
-            GridItems.CommitEdit(DataGridEditingUnit.Row, true);
+            Grid1.CommitEdit(DataGridEditingUnit.Row, true);
             if (!_hayCambios) { Cerrando?.Invoke(); return; }
 
             var res = MessageBox.Show("¿Guardar cambios?", "Consola",
@@ -522,9 +450,9 @@ namespace WpfAppVba
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return false;
             }
-            if (_items.Count == 0)
+            if (_items.All(x => x.Precio <= 0))
             {
-                MessageBox.Show("Agregue al menos un artículo.", "Consola",
+                MessageBox.Show("Edite al menos un precio mayor a cero.", "Consola",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return false;
             }
@@ -555,7 +483,7 @@ namespace WpfAppVba
 
                 CrearLineas(docId);
 
-                Sql.PreciosObj.OrdenarData(("documentoL", false), ("indice", false));
+                Sql.PreciosObj.OrdenarData(("documentoL", false));
                 Sql.DocumentosLObj.OrdenarData(("fecha", false));
 
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -586,10 +514,9 @@ namespace WpfAppVba
                 Sql.DocumentosLObj.EstablecerItem("edicion",     docId, DateTime.Now);
                 Sql.DocumentosLObj.EstablecerItem("usuarioE",    docId, AppState.UsuarioActivo);
 
-                // Guardado diferencial de líneas (inserta/actualiza/oculta)
                 CrearLineas(docId);
 
-                Sql.PreciosObj.OrdenarData(("documentoL", false), ("indice", false));
+                Sql.PreciosObj.OrdenarData(("documentoL", false));
                 Sql.DocumentosLObj.OrdenarData(("fecha", false));
 
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -602,26 +529,20 @@ namespace WpfAppVba
             }
         }
 
-        // ─── Guardado diferencial de líneas (inserta/actualiza/oculta) ──
+        // ─── Persistencia de líneas ────────────────────────────────────────────
+        // Solo se registra en SQL un artículo SIN registro previo si su precio editado
+        // es mayor a cero (nueva línea). Un artículo CON registro previo se actualiza
+        // siempre, incluso si su precio se editó a cero (permanece "normal", solo deja
+        // de mostrarse en PDF/PedidosDetalle). Nunca se elimina/oculta un registro aquí.
         private void CrearLineas(string docId)
         {
-            var vigentes = new HashSet<string>(
-                _items.Where(x => !string.IsNullOrEmpty(x.PrecioId)).Select(x => x.PrecioId));
-
-            var reservados = Sql.PreciosObj.IndicesNoNormales("documentoL", docId);
-            foreach (var idOrig in _itemsOrig)
-                if (!vigentes.Contains(idOrig))
-                {
-                    var ix = Sql.PreciosObj.ObtenerItem("indice", idOrig);
-                    if (ix != null && int.TryParse(ix.ToString(), out int n)) reservados.Add(n);
-                    Sql.PreciosObj.Eliminar(idOrig);
-                }
-
-            int next = 1;
             foreach (var item in _items)
             {
+                bool tieneRegistro = !string.IsNullOrEmpty(item.PrecioId);
+                if (!tieneRegistro && item.Precio <= 0) continue;
+
                 string id;
-                if (string.IsNullOrEmpty(item.PrecioId))
+                if (!tieneRegistro)
                 {
                     id = Guid.NewGuid().ToString();
                     Sql.PreciosObj.Nuevo(id);
@@ -630,13 +551,9 @@ namespace WpfAppVba
                 }
                 else id = item.PrecioId;
 
-                while (reservados.Contains(next)) next++;
-                Sql.PreciosObj.EstablecerItem("indice",   id, next);
-                next++;
                 Sql.PreciosObj.EstablecerItem("articulo", id, item.ArticuloId);
                 Sql.PreciosObj.EstablecerItem("precio",   id, item.Precio);
             }
-            _itemsOrig = new HashSet<string>(_items.Select(x => x.PrecioId));
         }
 
         // ─── Helper: combinar fecha del DatePicker y hora del TextBox ─────────
@@ -655,11 +572,12 @@ namespace WpfAppVba
     // ─── Modelo de ítem ───────────────────────────────────────────────────────
     public class PrecioItemFila
     {
-        public string PrecioId    { get; set; } = ""; // vacío = nuevo sin guardar
-        public int    Linea       { get; set; }
+        public string PrecioId    { get; set; } = ""; // vacío = sin registro en SQL
         public string ArticuloId  { get; set; } = "";
         public string Codigo      { get; set; } = "";
         public string Descripcion { get; set; } = "";
+        public double Stock       { get; set; }
+        public double Disponible  { get; set; }
         public double Precio      { get; set; }
     }
 }

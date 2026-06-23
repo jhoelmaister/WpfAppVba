@@ -591,12 +591,14 @@ namespace WpfAppVba
                 if (docLId == "") continue;
                 if (Sql.DocumentosLObj.ObtenerItem("region", docLId)?.ToString() != AppState.RegionActiva) continue;
                 if (Sql.DocumentosLObj.ObtenerItem("estado", docLId)?.ToString() == "pendiente") continue;
+                double precioVal = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", pid) ?? 0);
+                if (precioVal <= 0) continue;
                 var fp = Sql.DocumentosLObj.ObtenerItem("fecha", docLId);
                 precios.Add(new PrecioFila
                 {
                     Codigo = fila.Codigo,
                     Fecha  = fp != null ? Convert.ToDateTime(fp).ToString("d") : "",
-                    Precio = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", pid) ?? 0).ToString("N2")
+                    Precio = precioVal.ToString("N2")
                 });
             }
             GridPrecios.ItemsSource = precios;

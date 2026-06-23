@@ -151,7 +151,7 @@ namespace WpfAppVba.Data
                 $"SELECT * FROM documentosL WHERE estadof = 'normal'{fEmp} ORDER BY fecha ASC");
 
             Sql.PreciosObj.Conectar("precios",
-                $"SELECT * FROM precios WHERE estadof = 'normal'{fPrecios} ORDER BY documentoL ASC, indice ASC");
+                $"SELECT * FROM precios WHERE estadof = 'normal'{fPrecios} ORDER BY documentoL ASC");
 
             var tiempo = DateTime.Now - inicio;
             System.Diagnostics.Debug.WriteLine($"ConectarProductos: {tiempo.TotalSeconds:F2}s");
