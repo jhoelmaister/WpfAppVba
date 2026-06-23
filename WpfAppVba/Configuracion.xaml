@@ -248,6 +248,11 @@
                         Background="#6A1B9A" Foreground="White"
                         BorderThickness="0" Cursor="Hand" Margin="0,0,10,0"
                         Click="BtnRegenerarCodigos_Click"/>
+                <Button x:Name="BtnRecalcularPrecios" Content="💲 Recalcular precios"
+                        Height="36" FontSize="13" FontWeight="SemiBold" Padding="18,0"
+                        Background="#EF6C00" Foreground="White"
+                        BorderThickness="0" Cursor="Hand" Margin="0,0,10,0"
+                        Click="BtnRecalcularPrecios_Click"/>
                 <Button x:Name="BtnSincronizarAppsheets" Content="🧾 Sincronizar AppSheets"
                         Height="36" FontSize="13" FontWeight="SemiBold" Padding="18,0"
                         Background="#2E7D32" Foreground="White"

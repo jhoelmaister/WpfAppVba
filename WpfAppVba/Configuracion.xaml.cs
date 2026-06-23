@@ -57,9 +57,10 @@ namespace WpfAppVba
                 TxtTipo.Text      = tipo;
 
                 bool esAdmin = AppState.EsAdmin;
-                CmbEmpresa.IsEnabled          = esAdmin;
-                CmbSucursal.IsEnabled         = esAdmin;
-                BtnRegenerarCodigos.IsEnabled = esAdmin;
+                CmbEmpresa.IsEnabled           = esAdmin;
+                CmbSucursal.IsEnabled          = esAdmin;
+                BtnRegenerarCodigos.IsEnabled  = esAdmin;
+                BtnRecalcularPrecios.IsEnabled = esAdmin;
 
                 // Tema: si el valor de BD no es válido, usar el tema activo o "claro"
                 string temaInicial = temaDb.Trim().ToLowerInvariant() == ThemeManager.TemaOscuro
@@ -275,6 +276,42 @@ namespace WpfAppVba
             {
                 MessageBox.Show($"Error al regenerar códigos:\n{ex.Message}",
                                 "Regenerar códigos", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+                if (btn != null) btn.IsEnabled = true;
+            }
+        }
+
+        // ─── Recalcular precios automáticos (solo admin) ───────────────────────
+        private async void BtnRecalcularPrecios_Click(object sender, RoutedEventArgs e)
+        {
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
+            var r = MessageBox.Show(
+                "Se recalculará el importe de TODOS los pedidos de tipo automático (toda la tabla, " +
+                "todas las sucursales), según la lista de precios vigente a la fecha de cada documento. " +
+                "Los pedidos de tipo manual no se modifican.\n\n" +
+                "Esta acción SOBRESCRIBE los importes existentes en el servidor activo. ¿Continuar?",
+                "Recalcular precios", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (r != MessageBoxResult.Yes) return;
+
+            var btn = sender as Button;
+            try
+            {
+                if (btn != null) btn.IsEnabled = false;
+                Mouse.OverrideCursor = Cursors.Wait;
+
+                string resumen = await Task.Run(PedidosPrecioActualizador.ActualizarImportesAutomaticos);
+
+                MessageBox.Show($"Recálculo finalizado:\n\n{resumen}",
+                                "Recalcular precios", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al recalcular precios:\n{ex.Message}",
+                                "Recalcular precios", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
