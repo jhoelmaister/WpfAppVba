@@ -338,6 +338,7 @@
 
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Código"      Binding="{Binding Codigo}"      Width="100" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Categoría"   Binding="{Binding Categoria}"   Width="120" IsReadOnly="True"/>
                         <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"   IsReadOnly="True"/>
                         <DataGridTextColumn Header="Cantidad"
                                             Binding="{Binding Cantidad, StringFormat=#\,##0.##}"

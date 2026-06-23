@@ -143,6 +143,7 @@ namespace WpfAppVba
                     InventarioId = ex.InventarioId ?? "",
                     ArticuloId   = artId,
                     Codigo       = Sql.ArticulosObj.ObtenerItem("codigo", artId)?.ToString() ?? "",
+                    Categoria    = ObtenerCategoriaArticulo(artId),
                     Descripcion  = ObtenerDescripcionArticulo(artId),
                     Cantidad     = ex.Cantidad
                 });
@@ -158,6 +159,15 @@ namespace WpfAppVba
             string famDesc = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString() ?? "";
             string modelo  = Sql.ArticulosObj.ObtenerItem("modelo",      artId)?.ToString() ?? "";
             return FuncionesComunes.UnirVariables(desc, famDesc, modelo);
+        }
+
+        // ─── Categoría de artículo ─────────────────────────────────────────────
+        private static string ObtenerCategoriaArticulo(string artId)
+        {
+            if (string.IsNullOrEmpty(artId)) return "";
+            string catId = Sql.ArticulosObj.ObtenerItem("categoria", artId)?.ToString() ?? "";
+            if (string.IsNullOrEmpty(catId)) return "";
+            return Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "";
         }
 
         // ─── Árbol de productos/familias (mismo patrón que ArticulosGeneral) ──
@@ -566,6 +576,7 @@ namespace WpfAppVba
         public string InventarioId { get; set; } = ""; // vacío = sin registro en SQL
         public string ArticuloId   { get; set; } = "";
         public string Codigo       { get; set; } = "";
+        public string Categoria    { get; set; } = "";
         public string Descripcion  { get; set; } = "";
         public double Cantidad     { get; set; }
     }
