@@ -285,7 +285,6 @@ namespace WpfAppVba
             var conPrecio = _items.Where(x => x.Precio > 0).ToList();
             TxtTotalArticulos.Text = conPrecio.Count.ToString("N0");
             TxtValorTotal.Text     = conPrecio.Sum(x => x.Precio).ToString("N2");
-            Grid1.Items.Refresh();
         }
 
         // ─── Eventos árbol y búsqueda (mismo patrón que ArticulosGeneral) ─────
