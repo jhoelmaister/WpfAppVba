@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using Microsoft.Data.SqlClient;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
@@ -22,10 +24,14 @@ namespace WpfAppVba
         private bool _cargando   = true;
         private List<PrecioItemFila> _items = new();
 
-        // Stock/Disponible por artículo y sucursal, calculado para TODA la empresa
-        // (no solo la sucursal activa). Se recalcula en carga inicial y en
-        // BtnActualizar_Click; RefrescarGrid solo lee/suma estos valores.
-        private Dictionary<string, Dictionary<string, (double Disponible, double Stock)>> _stockEmpresa = new();
+        // Stock/Disponible por artículo, TOTAL de la empresa (todas las sucursales).
+        // Se recalcula en carga inicial y en BtnActualizar_Click; RefrescarGrid solo
+        // lee estos valores.
+        private Dictionary<string, (double Disponible, double Stock)> _stockEmpresa = new();
+
+        // Detalle por sucursal (clave "sucursal|articulo"), para el panel lateral
+        // GridSucursales. Se llena junto con _stockEmpresa en CalcularStockEmpresa().
+        private Dictionary<string, StockAcumulado> _stockPorSucursal = new();
 
         // Modo de filtro activo: "todos" (carga inicial) | "busqueda" (TxtBuscar) | "familia" (Tree1)
         private string _modoFiltro = "todos";
@@ -186,65 +192,220 @@ namespace WpfAppVba
 
         // ─── Stock/Disponible de TODA la empresa (todas las sucursales) ───────
         // Las listas de precios se manejan a nivel de empresa, no de sucursal:
-        // Disponible/Stock deben salir de la suma de todas las sucursales, pero
-        // en memoria solo está cargada la sucursal activa (AppLoader.ConectarBases/
-        // ConectarDocumentos filtran por AppState.SucursalActiva). Se recorre cada
-        // sucursal de la empresa reutilizando la misma secuencia de recarga que ya
-        // usa Configuracion.xaml.cs al cambiar de sucursal, y se restaura el
-        // contexto original al terminar para no afectar al resto de la app.
+        // Disponible/Stock deben salir de la suma de todas las sucursales. En vez
+        // de recargar las cachés globales por cada sucursal (N sucursales × ~8
+        // consultas cada una — lento), se ejecutan 5 consultas SQL agregadas a
+        // nivel de empresa y se acumula en memoria reproduciendo la misma fórmula
+        // que StockCalculator.ContarStock/ContarStock2 (que sigue siendo la
+        // referencia para el resto de la app, p.ej. la sucursal activa).
+        //
+        // La apertura de cada sucursal es la de su documentoI más reciente (o la
+        // fecha de creación de la sucursal si no tiene ninguno) — igual que
+        // AppState.ActualizarBase. El "roll-forward" a 1-enero que hace
+        // ActualizarBase para periodos distintos al de apertura no cambia el total
+        // (los movimientos son aditivos), así que aquí se omite: se acumula directo
+        // desde la apertura real de cada sucursal hasta "ahora".
         private void CalcularStockEmpresa()
         {
-            string sucursalOriginal  = AppState.SucursalActiva;
-            var    aperturaOriginal  = AppState.AperturaActiva;
-            DateTime inicioOriginal  = AppState.DataFechaInicio;
-            DateTime finalOriginal   = AppState.DataFechaFinal;
-
-            var resultado = new Dictionary<string, Dictionary<string, (double Disponible, double Stock)>>();
+            string   emp   = AppState.EmpresaActiva;
+            DateTime ahora = DateTime.Now;
 
             try
             {
                 Mouse.OverrideCursor = Cursors.Wait;
 
-                int ufSuc = Sql.SucursalesObj.ContarFilas;
-                for (int i = 1; i <= ufSuc; i++)
+                var aperturaFecha = new Dictionary<string, DateTime>();
+                var porSucursal   = new Dictionary<string, StockAcumulado>();
+
+                // ── Fecha de apertura por sucursal ──────────────────────────────
+                var tSucursales = EjecutarConsulta(
+                    "SELECT s.id AS sucursal, s.fecha AS fechaCreacion, " +
+                    "(SELECT MAX(di.fecha) FROM documentosI di " +
+                    " WHERE di.estadof = 'normal' AND di.sucursal = s.id) AS fechaApertura " +
+                    "FROM sucursales s WHERE s.estadof = 'normal' AND s.empresa = @emp",
+                    ("@emp", emp));
+
+                foreach (DataRow fila in tSucursales.Rows)
                 {
-                    var sucIdObj = Sql.SucursalesObj.Mover(i);
-                    if (sucIdObj == null) continue;
-                    string sucId = sucIdObj.ToString()!;
+                    string sucId = Texto(fila, "sucursal");
+                    DateTime fecha = fila["fechaApertura"] is DBNull
+                        ? (fila["fechaCreacion"] is DBNull ? DateTime.Today : Fecha(fila, "fechaCreacion"))
+                        : Fecha(fila, "fechaApertura");
+                    aperturaFecha[sucId] = fecha;
+                }
 
-                    AppState.SucursalActiva = sucId;
-                    AppLoader.ConectarBases();
-                    AppState.ActualizarBase(DateTime.Now.Year);
-                    AppLoader.ConectarDocumentos(AppState.DataFechaInicio, AppState.DataFechaFinal);
+                // ── Cantidades de apertura (inventario del documentoI más reciente
+                //    de cada sucursal) ───────────────────────────────────────────
+                var tApertura = EjecutarConsulta(
+                    "WITH UltimaApertura AS (" +
+                    "  SELECT di.id AS documentoI, di.sucursal, " +
+                    "         ROW_NUMBER() OVER (PARTITION BY di.sucursal ORDER BY di.fecha DESC) AS rn " +
+                    "  FROM documentosI di " +
+                    "  INNER JOIN sucursales s ON s.id = di.sucursal " +
+                    "  WHERE di.estadof = 'normal' AND s.estadof = 'normal' AND s.empresa = @emp" +
+                    ") " +
+                    "SELECT ua.sucursal, inv.articulo, inv.cantidad " +
+                    "FROM UltimaApertura ua " +
+                    "INNER JOIN inventarios inv ON inv.documentoI = ua.documentoI " +
+                    "WHERE ua.rn = 1",
+                    ("@emp", emp));
 
-                    foreach (var item in _items)
+                foreach (DataRow fila in tApertura.Rows)
+                {
+                    Obtener(porSucursal, Texto(fila, "sucursal"), Texto(fila, "articulo")).Apertura
+                        += Numero(fila, "cantidad");
+                }
+
+                // ── Pedidos (ventas/compras) ─────────────────────────────────────
+                var tPedidos = EjecutarConsulta(
+                    "SELECT vg.sucursal, vd.articulo, vd.cantidad, vg.movimiento, vg.estado, vg.fecha " +
+                    "FROM pedidos AS vd " +
+                    "INNER JOIN documentosP AS vg ON vd.documentoP = vg.id " +
+                    "INNER JOIN sucursales AS s ON s.id = vg.sucursal " +
+                    "WHERE vg.estadof = 'normal' AND s.estadof = 'normal' AND s.empresa = @emp " +
+                    "AND vg.fecha <= @ahora",
+                    ("@emp", emp), ("@ahora", ahora));
+
+                foreach (DataRow fila in tPedidos.Rows)
+                {
+                    string sucId = Texto(fila, "sucursal");
+                    if (!aperturaFecha.TryGetValue(sucId, out var apertura) || Fecha(fila, "fecha") < apertura)
+                        continue;
+
+                    string movimiento = Texto(fila, "movimiento").ToLower();
+                    string estado     = Texto(fila, "estado");
+                    double cantidad   = Numero(fila, "cantidad");
+                    var acumulado     = Obtener(porSucursal, sucId, Texto(fila, "articulo"));
+
+                    if (movimiento == "venta")
                     {
-                        double stock      = StockCalculator.ContarStock(item.ArticuloId,  DateTime.Now);
-                        double disponible = StockCalculator.ContarStock2(item.ArticuloId, DateTime.Now);
-
-                        if (!resultado.TryGetValue(item.ArticuloId, out var porSucursal))
-                        {
-                            porSucursal = new Dictionary<string, (double Disponible, double Stock)>();
-                            resultado[item.ArticuloId] = porSucursal;
-                        }
-                        porSucursal[sucId] = (disponible, stock);
+                        acumulado.VentasTodas += cantidad;
+                        if (estado == "entregado") acumulado.VentasEnt += cantidad;
+                    }
+                    if (movimiento == "compra")
+                    {
+                        acumulado.ComprasTodas += cantidad;
+                        if (estado == "entregado") acumulado.ComprasEnt += cantidad;
                     }
                 }
 
-                _stockEmpresa = resultado;
+                // ── Traspasos (entradas/salidas; cada lado se gatea con la apertura
+                //    propia de SU sucursal, que puede diferir entre origen y destino) ─
+                var tTraspasos = EjecutarConsulta(
+                    "SELECT vg.origen, vg.destino, vd.articulo, vd.cantidad, vg.fecha " +
+                    "FROM traspasos AS vd " +
+                    "INNER JOIN documentosT AS vg ON vd.documentoT = vg.id " +
+                    "WHERE vg.estadof = 'normal' AND vg.fecha <= @ahora " +
+                    "AND (EXISTS (SELECT 1 FROM sucursales so WHERE so.id = vg.origen  AND so.estadof = 'normal' AND so.empresa = @emp) " +
+                    "  OR EXISTS (SELECT 1 FROM sucursales sd WHERE sd.id = vg.destino AND sd.estadof = 'normal' AND sd.empresa = @emp))",
+                    ("@emp", emp), ("@ahora", ahora));
+
+                foreach (DataRow fila in tTraspasos.Rows)
+                {
+                    string origen   = Texto(fila, "origen");
+                    string destino  = Texto(fila, "destino");
+                    string articulo = Texto(fila, "articulo");
+                    double cantidad = Numero(fila, "cantidad");
+                    DateTime fecha  = Fecha(fila, "fecha");
+
+                    if (origen == destino) continue;
+
+                    if (aperturaFecha.TryGetValue(origen, out var apOrigen) && fecha >= apOrigen)
+                        Obtener(porSucursal, origen, articulo).Salidas += cantidad;
+
+                    if (aperturaFecha.TryGetValue(destino, out var apDestino) && fecha >= apDestino)
+                        Obtener(porSucursal, destino, articulo).Entradas += cantidad;
+                }
+
+                // ── Correcciones (ingreso suma, egreso resta) ────────────────────
+                var tCorrecciones = EjecutarConsulta(
+                    "SELECT vg.sucursal, vd.articulo, vd.cantidad, vg.movimiento, vg.fecha " +
+                    "FROM correcciones AS vd " +
+                    "INNER JOIN documentosC AS vg ON vd.documentoC = vg.id " +
+                    "INNER JOIN sucursales AS s ON s.id = vg.sucursal " +
+                    "WHERE vg.estadof = 'normal' AND s.estadof = 'normal' AND s.empresa = @emp " +
+                    "AND vg.fecha <= @ahora",
+                    ("@emp", emp), ("@ahora", ahora));
+
+                foreach (DataRow fila in tCorrecciones.Rows)
+                {
+                    string sucId = Texto(fila, "sucursal");
+                    if (!aperturaFecha.TryGetValue(sucId, out var apertura) || Fecha(fila, "fecha") < apertura)
+                        continue;
+
+                    string movimiento = Texto(fila, "movimiento").ToLower();
+                    double cantidad   = Numero(fila, "cantidad");
+                    var acumulado     = Obtener(porSucursal, sucId, Texto(fila, "articulo"));
+
+                    if (movimiento == "ingreso") acumulado.Ingresos   += cantidad;
+                    if (movimiento == "egreso")  acumulado.Descuentos += cantidad;
+                }
+
+                // ── Totales por artículo (suma de todas las sucursales) ──────────
+                var totales = new Dictionary<string, (double Disponible, double Stock)>();
+                foreach (var (clave, acumulado) in porSucursal)
+                {
+                    string articulo = clave.Substring(clave.IndexOf('|') + 1);
+                    totales.TryGetValue(articulo, out var actual);
+                    totales[articulo] = (actual.Disponible + acumulado.Disponible, actual.Stock + acumulado.Stock);
+                }
+
+                _stockPorSucursal = porSucursal;
+                _stockEmpresa     = totales;
             }
             finally
             {
-                AppState.SucursalActiva  = sucursalOriginal;
-                AppState.AperturaActiva  = aperturaOriginal;
-                AppState.DataFechaInicio = inicioOriginal;
-                AppState.DataFechaFinal  = finalOriginal;
-                AppLoader.ConectarBases();
-                AppLoader.ConectarDocumentos(AppState.DataFechaInicio, AppState.DataFechaFinal);
-
                 Mouse.OverrideCursor = null;
             }
         }
+
+        // ─── Helpers de acceso a datos (consultas SQL agregadas a nivel empresa) ─
+
+        private class StockAcumulado
+        {
+            public double Apertura, Entradas, Salidas, VentasTodas, ComprasTodas, VentasEnt, ComprasEnt, Ingresos, Descuentos;
+
+            // Equivalente a StockCalculator.ContarStock (solo movimientos "entregado").
+            public double Stock      => (Apertura + Entradas + ComprasEnt   + Ingresos) - (Salidas + VentasEnt   + Descuentos);
+            // Equivalente a StockCalculator.ContarStock2 (todos los movimientos).
+            public double Disponible => (Apertura + Entradas + ComprasTodas + Ingresos) - (Salidas + VentasTodas + Descuentos);
+        }
+
+        private static StockAcumulado Obtener(Dictionary<string, StockAcumulado> dict, string sucursal, string articulo)
+        {
+            string clave = sucursal + "|" + articulo;
+            if (!dict.TryGetValue(clave, out var acumulado))
+            {
+                acumulado = new StockAcumulado();
+                dict[clave] = acumulado;
+            }
+            return acumulado;
+        }
+
+        private static DataTable EjecutarConsulta(string sql, params (string Nombre, object Valor)[] parametros)
+        {
+            var tabla = new DataTable();
+            SqlRetry.Ejecutar(() =>
+            {
+                tabla.Clear();
+                var conn = DatabaseConnection.ObtenerConexion();
+                using var cmd = new SqlCommand(sql, conn);
+                foreach (var (nombre, valor) in parametros)
+                    cmd.Parameters.AddWithValue(nombre, valor);
+                using var adapter = new SqlDataAdapter(cmd);
+                adapter.Fill(tabla);
+            });
+            return tabla;
+        }
+
+        private static string Texto(DataRow fila, string columna)
+            => fila[columna] is DBNull ? "" : fila[columna].ToString() ?? "";
+
+        private static double Numero(DataRow fila, string columna)
+            => fila[columna] is DBNull ? 0 : Convert.ToDouble(fila[columna]);
+
+        private static DateTime Fecha(DataRow fila, string columna)
+            => fila[columna] is DBNull ? DateTime.MinValue : Convert.ToDateTime(fila[columna]);
 
         // ─── Descripción de artículo ──────────────────────────────────────────
         private static string ObtenerDescripcionArticulo(string artId)
@@ -337,10 +498,10 @@ namespace WpfAppVba
                     !item.Descripcion.ToLower().Contains(busqueda))
                     continue;
 
-                if (_stockEmpresa.TryGetValue(item.ArticuloId, out var porSucursal))
+                if (_stockEmpresa.TryGetValue(item.ArticuloId, out var totales))
                 {
-                    item.Stock      = porSucursal.Values.Sum(v => v.Stock);
-                    item.Disponible = porSucursal.Values.Sum(v => v.Disponible);
+                    item.Stock      = totales.Stock;
+                    item.Disponible = totales.Disponible;
                 }
                 else
                 {
@@ -379,7 +540,7 @@ namespace WpfAppVba
             var fila  = Grid1.SelectedItem as PrecioItemFila;
             var lista = new List<SucursalStockFila>();
 
-            if (fila != null && _stockEmpresa.TryGetValue(fila.ArticuloId, out var porSucursal))
+            if (fila != null)
             {
                 int ufSuc = Sql.SucursalesObj.ContarFilas;
                 for (int i = 1; i <= ufSuc; i++)
@@ -387,13 +548,14 @@ namespace WpfAppVba
                     var sucIdObj = Sql.SucursalesObj.Mover(i);
                     if (sucIdObj == null) continue;
                     string sucId = sucIdObj.ToString()!;
-                    if (!porSucursal.TryGetValue(sucId, out var valores)) continue;
+
+                    _stockPorSucursal.TryGetValue(sucId + "|" + fila.ArticuloId, out var acumulado);
 
                     lista.Add(new SucursalStockFila
                     {
                         Sucursal   = Sql.SucursalesObj.ObtenerItem("descripcion", sucId)?.ToString() ?? "",
-                        Disponible = valores.Disponible,
-                        Stock      = valores.Stock
+                        Disponible = acumulado?.Disponible ?? 0,
+                        Stock      = acumulado?.Stock ?? 0
                     });
                 }
             }
