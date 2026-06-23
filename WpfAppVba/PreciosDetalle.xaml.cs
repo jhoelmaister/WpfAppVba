@@ -235,6 +235,11 @@ namespace WpfAppVba
         // ─── Refrescar grid (aplica filtro de árbol/búsqueda + calcula stock) ─
         private void RefrescarGrid()
         {
+            // Confirma cualquier edición de Precio en curso antes de reemplazar el
+            // ItemsSource: hacerlo a mitad de una transacción AddNew/EditItem dispara
+            // InvalidOperationException ("'Refresh' no permitido...") al recrear la vista.
+            Grid1.CommitEdit(DataGridEditingUnit.Row, true);
+
             string busqueda  = _modoFiltro == "busqueda" ? TxtBuscar.Text.Trim().ToLower() : "";
             string tagFiltro = _modoFiltro == "familia"  ? ObtenerTagFiltro()              : "";
 
