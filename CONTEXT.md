@@ -171,6 +171,43 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 
 ## Historial de Cambios por Sesión
 
+### Sesión 2026-06-23 — PreciosDetalle: árbol de familias + buscador + catálogo completo; exclusión de precios en cero; columna `indice` eliminada de `precios` (rama `claude/stoic-einstein-0wqg94`)
+
+> Contexto: a diferencia del análisis de la sesión anterior (`claude/wizardly-faraday-bdvna8`, ver abajo) — que evaluó eliminar `PreciosDetalle` por completo y mover todo a edición inline en `GridPrecios`, y concluyó que NO era viable — esta sesión tomó un camino distinto: **conservar** `PreciosDetalle` como pantalla en pestaña, pero rediseñar su contenido para que liste **todo el catálogo de artículos** (no solo líneas ya agregadas a la lista de precios) con precio editable por fila, igual que `ArticulosGeneral`.
+
+#### Rediseño de `PreciosDetalle`: de `GridItems`+toolbar a Tree1+buscador+Grid1
+- Se **eliminó** `GridItems` y la "TOOLBAR ARTÍCULOS" (Importar artículos, Buscar artículo, Insertar, Nueva línea, Eliminar línea) — los métodos `BtnBuscarArticulos_Click`, `BtnBuscarArticulo_Click`, `BtnNuevaLinea_Click`, `BtnEliminarLinea_Click`, `BtnInsertar_Click` se borraron por completo.
+- En su lugar, mismo patrón visual que `ArticulosGeneral`: sidebar con `Tree1` (árbol Producto→Familia, `Tag` = `"todos"`/`"producto:{id}"`/`"familia:{id}"`), buscador (`TxtBuscar`+`BtnBuscar`) y `Grid1`, que ahora carga **todos** los artículos de `Sql.ArticulosObj` (antes solo mostraba líneas ya creadas en `precios`).
+- **Simplificación deliberada vs. `ArticulosGeneral`**: `CargarArbol()` reconstruye el árbol desde cero cada vez (sin la reconciliación incremental por `Tag`/`NodoDeseado` que tiene `ArticulosGeneral.BtnActualizar_Click`) — la estructura de familias rara vez cambia en medio de una edición de lista de precios, y evita ~80 líneas de infraestructura no pedida.
+- Nuevo botón **"Actualizar"** (reemplaza la lógica de la toolbar eliminada): recarga el catálogo desde SQL (`AppState.ActualizarProductos()`) conservando los precios ya editados en memoria por artículo (no se pierde edición en curso al refrescar).
+- Columnas de `Grid1`: Código, Descripción (read-only), Disponible, Stock (read-only, vía `StockCalculator.ContarStock`/`ContarStock2`), Precio (editable, **0.00 por defecto** para todo artículo sin precio registrado en esta lista). Se quitó la columna "Línea" (no pedida; sin sentido ahora que `Grid1` no son líneas de documento sino el catálogo completo).
+- Modelo `PrecioItemFila`: `PrecioId` (vacío = artículo sin registro en `precios` para este documento), `ArticuloId`, `Codigo`, `Descripcion`, `Stock`, `Disponible`, `Precio`.
+
+#### Reglas de persistencia nuevas (`CrearLineas`, reemplaza la lógica diferencial anterior)
+- Artículo **sin** registro previo en `precios`: solo se inserta una fila nueva si el precio editado es **mayor a cero**. Si quedó en 0.00 (sin editar), no genera fila.
+- Artículo **con** registro previo: se actualiza siempre, **incluso si el precio se edita a 0** — el registro permanece `estadof = "normal"` (nunca se oculta/elimina); solo deja de **mostrarse** en el PDF y en `PedidosDetalle`.
+- Esto reemplaza el guardado diferencial anterior (que comparaba `_items` contra `_itemsOrig` para detectar altas/bajas de líneas) — ya no aplica el concepto de "línea eliminada" en `precios`, porque ahora todo el catálogo está siempre presente en pantalla.
+
+#### Exclusión de precios en cero (PDF + GridPrecios)
+- **`PreciosGeneral.GenerarPdfListaPrecios`**: `if (precio <= 0) continue;` antes de agregar la línea — un artículo con precio 0 en una lista no aparece en el PDF generado.
+- **`PedidosDetalle.CargarStockYPrecios`** (`GridPrecios`, historial de precios de un artículo): mismo guard — un precio en 0 no aparece en el historial mostrado al usuario.
+
+#### Columna `indice` eliminada de `precios`
+- A pedido explícito del usuario ("ya no la necesitaré"), se quitó **toda referencia en código** a `precios.indice`: `AppLoader.ConectarProductos` (ya no ordena por `indice`, solo por `documentoL`), `PreciosGeneral.BtnEliminar_Click` y `PreciosDetalle.GuardarNuevo`/`GuardarEditar` (`OrdenarData` sin el segundo criterio `indice`). `PreciosDetalle.CrearLineas` ya no reserva ni asigna índices (no usa `IndicesNoNormales` en esta tabla).
+- **Pendiente del lado del usuario**: ejecutar manualmente en SQL Server (Claude no ejecuta DDL contra la base en vivo):
+  ```sql
+  ALTER TABLE precios DROP COLUMN indice;
+  ```
+
+#### Bug post-deploy corregido en la misma sesión: crash al editar precio
+- El usuario reportó en producción: `System.InvalidOperationException: No se permite 'Refresh' durante una transacción AddNew o EditItem` en `ActualizarTotales()` línea 288, al editar una celda de Precio.
+- Causa: `Grid1.Items.Refresh()` se llamaba (via `Dispatcher.BeginInvoke` disparado desde `Grid1_CellEditEnding`) mientras la fila del DataGrid seguía en transacción `EditItem` (WPF no libera esa transacción solo porque una celda terminó de editarse; sigue abierta a nivel de fila hasta que se navega a otra fila o se hace `CommitEdit` de fila).
+- Fix: se **eliminó** la llamada a `Grid1.Items.Refresh()` en `ActualizarTotales()` — no hacía falta: la celda Precio ya se refresca sola por su binding, y `RefrescarGrid()` (el otro llamador de `ActualizarTotales`) ya reemplaza `Grid1.ItemsSource` por completo, lo cual refresca la grilla igual.
+
+#### Notas / pendientes de esta sesión
+- **Sin build en el entorno cloud**: se verificó manualmente balance de llaves/paréntesis (script Python) en los `.cs` tocados y buena formación XML en el `.xaml`, pero no hubo compilación real — el crash de `Items.Refresh()` reportado por el usuario es evidencia de que esta verificación manual no sustituye una prueba en ejecución real. Verificar en la app real (no solo sintaxis) antes de futuros cambios similares.
+- Workflow de git usado (como en sesiones anteriores): commit en `claude/stoic-einstein-0wqg94` → checkout `master` → pull → cherry-pick → push `master` → checkout de vuelta. Dos rondas en esta sesión: el rediseño completo (`ffc6c1c`/`d31993e`) y el fix del crash (`642c428`/`4ffe5e4`).
+
 ### Sesión 2026-06-19/20 — PreciosGeneral: columna Precio + Hora y CRUD inline en GridPrecios (implementado y luego revertido a pedido del usuario); análisis de eliminar PreciosDetalle (rama `claude/wizardly-faraday-bdvna8`)
 
 > Contexto: continuación de un reordenamiento de layout y PDF de lista de precios de `PreciosGeneral` ya cerrado en una sesión previa (commit `17e9a0b`, en `master`). Esta sesión agregó columnas y CRUD inline en `GridPrecios`, pero el usuario revirtió ese cambio al final — queda documentado en detalle para no repetir el mismo intento sin releer esto primero.
