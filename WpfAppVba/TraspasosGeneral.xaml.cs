@@ -32,18 +32,6 @@ namespace WpfAppVba
         private void ConfigurarModo()
         {
             if (!AppState.EsAdmin) BtnEliminar.Visibility = Visibility.Collapsed;
-
-            // "Entregar todos" solo para sucursales de tipo 'central'.
-            BtnEntregarTodos.Visibility = EsSucursalCentral()
-                ? Visibility.Visible
-                : Visibility.Collapsed;
-        }
-
-        // ─── La sucursal activa es de tipo 'central' ──────────────────────────
-        private static bool EsSucursalCentral()
-        {
-            string tipo = Sql.SucursalesObj.ObtenerItem("tipo", AppState.SucursalActiva)?.ToString() ?? "";
-            return string.Equals(tipo.Trim(), "central", StringComparison.OrdinalIgnoreCase);
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
@@ -524,14 +512,11 @@ namespace WpfAppVba
             CargarTraspasos();
         }
 
-        // ─── Entregar todos (solo sucursal central) ───────────────────────────
+        // ─── Entregar todos ────────────────────────────────────────────────────
         // Cambia el estado de todos los documentosT cargados (sucursal activa + período)
         // que estén en "pendiente" a "entregado". Con verificadores de conexión.
         private void BtnEntregarTodos_Click(object sender, RoutedEventArgs e)
         {
-            // Defensa: solo sucursal central (el botón ya está oculto en otros casos).
-            if (!EsSucursalCentral()) return;
-
             // Verificación de conexión en 2 capas antes de persistir el cambio de estado.
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
 
