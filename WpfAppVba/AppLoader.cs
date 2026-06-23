@@ -179,7 +179,7 @@ namespace WpfAppVba.Data
                 $"SELECT ctb2.* FROM inventarios AS ctb2 " +
                 $"INNER JOIN documentosI AS ctb ON ctb2.documentoI = ctb.id " +
                 $"WHERE ctb.estadof = 'normal' AND ctb.sucursal = '{suc}' " +
-                $"ORDER BY documentoI ASC, indice ASC");
+                $"ORDER BY documentoI ASC");
         }
 
         // ─── ConectarDocumentos ───────────────────────────────────────────────

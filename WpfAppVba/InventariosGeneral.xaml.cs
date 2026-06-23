@@ -187,7 +187,7 @@ namespace WpfAppVba
                 Sql.DocumentosIObj.EstablecerItem("usuarioE", fila.Id, AppState.UsuarioActivo);
                 Sql.DocumentosIObj.Ocultar(fila.Id);
 
-                Sql.InventariosObj.OrdenarData(("documentoI", false), ("indice", false));
+                Sql.InventariosObj.OrdenarData(("documentoI", false));
                 Sql.DocumentosIObj.OrdenarData(("id", false));
 
                 int periodo = string.IsNullOrEmpty(AppState.PeriodoActivo)
