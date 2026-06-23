@@ -161,7 +161,7 @@
                 <StackPanel Margin="0,8,0,12">
 
                     <!-- Árbol de meses -->
-                    <TextBlock Text="MESES"
+                    <TextBlock Text="PERIODO"
                                FontSize="10" FontWeight="SemiBold"
                                Foreground="{DynamicResource ThemeTextoSec}"
                                Margin="12,0,0,6"/>

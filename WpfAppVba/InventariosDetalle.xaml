@@ -178,6 +178,7 @@
                         <ColumnDefinition Width="134"/>
                         <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="90"/>
+                        <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
@@ -204,7 +205,7 @@
                     </StackPanel>
 
                     <!-- Referencia -->
-                    <StackPanel Grid.Column="5">
+                    <StackPanel Grid.Column="6">
                         <TextBlock Text="Referencia" Style="{StaticResource LblMuted}"/>
                         <TextBox x:Name="Box_Referencia" Style="{StaticResource ModernInput}"
                                  TextChanged="Campo_TextChanged"/>
