@@ -276,7 +276,7 @@ namespace WpfAppVba
             string region  = Sql.DocumentosLObj.ObtenerItem("region", id)?.ToString() ?? "";
             string estado  = Sql.DocumentosLObj.ObtenerItem("estado", id)?.ToString() ?? "";
             bool esPendiente = estado == "pendiente";
-            var (cantLineas, valor) = CalcularTotales(id);
+            int cantLineas = CalcularTotales(id);
             return new PrecioListaFila
             {
                 Linea      = linea,
@@ -287,8 +287,7 @@ namespace WpfAppVba
                 RegionDesc = Sql.RegionesObj.ObtenerItem("descripcion", region)?.ToString() ?? "",
                 Estado      = esPendiente ? "pendiente" : "valido",
                 EstadoTexto = esPendiente ? "Pendiente"  : "Válido",
-                Lineas     = cantLineas,
-                ValorTotal = valor
+                Lineas     = cantLineas
             };
         }
 
@@ -302,11 +301,10 @@ namespace WpfAppVba
             Grid1.Items.Refresh();
         }
 
-        // ─── Cuenta líneas y suma el valor de un documentoL ───────────────────
-        private static (int lineas, double valor) CalcularTotales(string documentoL)
+        // ─── Cuenta líneas de un documentoL ───────────────────────────────────
+        private static int CalcularTotales(string documentoL)
         {
             int lineas = 0;
-            double valor = 0;
             int uf = Sql.PreciosObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
             {
@@ -315,9 +313,8 @@ namespace WpfAppVba
                 string id = idObj.ToString()!;
                 if (Sql.PreciosObj.ObtenerItem("documentoL", id)?.ToString() != documentoL) continue;
                 lineas++;
-                valor += Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0);
             }
-            return (lineas, valor);
+            return lineas;
         }
 
         // ─── Panel de detalle artículos (Lista2) ─────────────────────────────
@@ -593,20 +590,84 @@ namespace WpfAppVba
         }
 
         // Agrupa las líneas del documento por familia (encabezado "Producto & Familia").
+        // Se dibuja como una tabla real: columnas con líneas separadoras, encabezado de
+        // columnas repetido en cada página, y los subtítulos de agrupación resaltados
+        // con una banda celeste.
         private void GenerarPdfListaPrecios(string filePath, PrecioListaFila fila)
         {
             GlobalFontSettings.UseWindowsFontsUnderWindows = true;
 
             var fontTitulo = new XFont("Arial", 14, XFontStyleEx.Bold);
-            var fontGrupo  = new XFont("Arial", 11, XFontStyleEx.Bold);
-            var fontCuerpo = new XFont("Arial", 10, XFontStyleEx.Regular);
+            var fontHeader = new XFont("Arial", 9,  XFontStyleEx.Bold);
+            var fontGrupo  = new XFont("Arial", 10, XFontStyleEx.Bold);
+            var fontCuerpo = new XFont("Arial", 9,  XFontStyleEx.Regular);
 
-            const double margen = 40;
+            var brushCeleste = new XSolidBrush(XColor.FromArgb(191, 219, 254));
+            var brushHeader  = new XSolidBrush(XColor.FromArgb(241, 245, 249));
+            var penLinea     = new XPen(XColors.Black, 0.6);
+
+            const double margen      = 40;
+            const double altoHeader  = 20;
+            const double altoGrupo   = 18;
+            const double altoFila    = 16;
+            const double anchoN      = 28;
+            const double anchoCodigo = 65;
+            const double anchoPrecio = 75;
+
             var document = new PdfDocument();
             PdfPage page = document.AddPage();
             page.Size = PageSize.A4;
             XGraphics gfx = XGraphics.FromPdfPage(page);
+
+            double anchoTabla       = page.Width - margen * 2;
+            double anchoDescripcion = anchoTabla - anchoN - anchoCodigo - anchoPrecio;
+            double xN      = margen;
+            double xCodigo = xN + anchoN;
+            double xDesc   = xCodigo + anchoCodigo;
+            double xPrecio = xDesc + anchoDescripcion;
+
             double y = margen;
+
+            // Fila de datos: 4 columnas independientes, cada una con su línea separadora.
+            void DibujarFilaDatos(string n, string codigo, string desc, string precio)
+            {
+                gfx.DrawRectangle(penLinea, xN, y, anchoTabla, altoFila);
+                gfx.DrawLine(penLinea, xCodigo, y, xCodigo, y + altoFila);
+                gfx.DrawLine(penLinea, xDesc,   y, xDesc,   y + altoFila);
+                gfx.DrawLine(penLinea, xPrecio, y, xPrecio, y + altoFila);
+
+                gfx.DrawString(n,      fontCuerpo, XBrushes.Black, new XRect(xN,          y, anchoN,               altoFila), XStringFormats.Center);
+                gfx.DrawString(codigo, fontCuerpo, XBrushes.Black, new XRect(xCodigo + 4, y, anchoCodigo - 8,      altoFila), XStringFormats.CenterLeft);
+                gfx.DrawString(desc,   fontCuerpo, XBrushes.Black, new XRect(xDesc + 4,   y, anchoDescripcion - 8, altoFila), XStringFormats.CenterLeft);
+                gfx.DrawString(precio, fontCuerpo, XBrushes.Black, new XRect(xPrecio + 4, y, anchoPrecio - 8,      altoFila), XStringFormats.CenterRight);
+
+                y += altoFila;
+            }
+
+            // Encabezado de columnas: igual estructura que una fila de datos, con fondo gris claro.
+            void DibujarEncabezadoColumnas()
+            {
+                gfx.DrawRectangle(penLinea, brushHeader, xN, y, anchoTabla, altoHeader);
+                gfx.DrawLine(penLinea, xCodigo, y, xCodigo, y + altoHeader);
+                gfx.DrawLine(penLinea, xDesc,   y, xDesc,   y + altoHeader);
+                gfx.DrawLine(penLinea, xPrecio, y, xPrecio, y + altoHeader);
+
+                gfx.DrawString("N°",          fontHeader, XBrushes.Black, new XRect(xN,          y, anchoN,               altoHeader), XStringFormats.Center);
+                gfx.DrawString("Código",      fontHeader, XBrushes.Black, new XRect(xCodigo + 4, y, anchoCodigo - 8,      altoHeader), XStringFormats.CenterLeft);
+                gfx.DrawString("Descripción", fontHeader, XBrushes.Black, new XRect(xDesc + 4,   y, anchoDescripcion - 8, altoHeader), XStringFormats.CenterLeft);
+                gfx.DrawString("Precio",      fontHeader, XBrushes.Black, new XRect(xPrecio + 4, y, anchoPrecio - 8,      altoHeader), XStringFormats.CenterRight);
+
+                y += altoHeader;
+            }
+
+            // Banda de agrupación: una sola celda celeste de ancho completo (sin separadores
+            // internos), para que el subtítulo resalte como una franja y no como otra fila de la tabla.
+            void DibujarBandaGrupo(string texto)
+            {
+                gfx.DrawRectangle(penLinea, brushCeleste, xN, y, anchoTabla, altoGrupo);
+                gfx.DrawString(texto, fontGrupo, XBrushes.Black, new XRect(xN + 6, y, anchoTabla - 12, altoGrupo), XStringFormats.CenterLeft);
+                y += altoGrupo;
+            }
 
             void NuevaPagina()
             {
@@ -614,6 +675,7 @@ namespace WpfAppVba
                 page.Size = PageSize.A4;
                 gfx = XGraphics.FromPdfPage(page);
                 y = margen;
+                DibujarEncabezadoColumnas();
             }
 
             void AsegurarEspacio(double alto)
@@ -621,8 +683,14 @@ namespace WpfAppVba
                 if (y + alto > page.Height - margen) NuevaPagina();
             }
 
-            gfx.DrawString($"Lista de Precios — {fila.Codigo}", fontTitulo, XBrushes.Black, new XPoint(margen, y));
-            y += 22;
+            string fechaHora = fila.FechaStr;
+            string tituloPrincipal = string.IsNullOrEmpty(fechaHora)
+                ? $"Lista de Precios — {fila.Codigo}"
+                : $"Lista de Precios — {fila.Codigo}   ({fechaHora})";
+            gfx.DrawString(tituloPrincipal, fontTitulo, XBrushes.Black, new XPoint(margen, y + 12));
+            y += 28;
+
+            DibujarEncabezadoColumnas();
 
             var lineas = new List<(string prodDesc, string famDesc, string codigo, string desc, double precio)>();
 
@@ -653,24 +721,18 @@ namespace WpfAppVba
                 .OrderBy(g => g.Key.prodDesc, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(g => g.Key.famDesc, StringComparer.OrdinalIgnoreCase);
 
+            int n = 0;
             foreach (var grupo in grupos)
             {
-                AsegurarEspacio(18 + 14);
-                gfx.DrawString($"{grupo.Key.prodDesc} & {grupo.Key.famDesc}", fontGrupo, XBrushes.Black, new XPoint(margen, y));
-                y += 18;
+                AsegurarEspacio(altoGrupo + altoFila);
+                DibujarBandaGrupo($"{grupo.Key.prodDesc} & {grupo.Key.famDesc}");
 
                 foreach (var l in grupo)
                 {
-                    AsegurarEspacio(14);
-                    gfx.DrawString($"{l.codigo}  {l.desc}", fontCuerpo, XBrushes.Black, new XPoint(margen + 12, y));
-                    string precioStr = l.precio.ToString("#,##0.##");
-                    XSize sz = gfx.MeasureString(precioStr, fontCuerpo);
-                    gfx.DrawString(precioStr, fontCuerpo, XBrushes.Black,
-                        new XPoint(page.Width - margen - sz.Width, y));
-                    y += 14;
+                    AsegurarEspacio(altoFila);
+                    n++;
+                    DibujarFilaDatos(n.ToString(), l.codigo, l.desc, l.precio.ToString("#,##0.##"));
                 }
-
-                y += 10;
             }
 
             document.Save(filePath);
@@ -720,7 +782,6 @@ namespace WpfAppVba
         public string   Estado     { get; set; } = "";
         public string   EstadoTexto { get; set; } = "";
         public int      Lineas     { get; set; }
-        public double   ValorTotal { get; set; }
     }
 
     public class PrecioDetalleFila

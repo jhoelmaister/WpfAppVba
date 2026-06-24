@@ -383,11 +383,6 @@
                     <DataGridTemplateColumn Header="Estado" Width="90"
                                              CellTemplate="{StaticResource BadgeEstadoPrecio}"/>
 
-                    <DataGridTextColumn Header="Valor"
-                                        Binding="{Binding ValorTotal, StringFormat=#\,##0.##}"
-                                        Width="110"
-                                        ElementStyle="{StaticResource CeldaNumero}"/>
-
                     <DataGridTemplateColumn Header="Acciones" Width="70">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
