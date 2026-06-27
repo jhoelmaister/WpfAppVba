@@ -59,7 +59,7 @@ namespace WpfAppVba
             _cargando = true;
             CargarRegiones();
 
-            if (AppState.EventoFormularioL == "editar")
+            if (!string.IsNullOrEmpty(_idEditar))
             {
                 LblTitulo.Text = "Editar Lista de Precios";
                 CargarParaEditar();
@@ -713,7 +713,7 @@ namespace WpfAppVba
         {
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
 
-            return AppState.EventoFormularioL == "editar"
+            return !string.IsNullOrEmpty(_idEditar)
                 ? GuardarEditar()
                 : GuardarNuevo();
         }

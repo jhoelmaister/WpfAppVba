@@ -434,7 +434,6 @@ namespace WpfAppVba
         private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
             if (!AppState.EsAdmin) return;
-            AppState.EventoFormularioL = "nuevo";
 
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
@@ -460,7 +459,6 @@ namespace WpfAppVba
         {
             if (!AppState.EsAdmin) return;
             if (Grid1.SelectedItem is not PrecioListaFila fila) return;
-            AppState.EventoFormularioL = "nuevo";
 
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
@@ -745,7 +743,6 @@ namespace WpfAppVba
 
             string idSel = fila.Id;
             int    linea = fila.Linea;
-            AppState.EventoFormularioL = "editar";
 
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
