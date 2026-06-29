@@ -57,10 +57,13 @@ namespace WpfAppVba
                 TxtTipo.Text      = tipo;
 
                 bool esAdmin = AppState.EsAdmin;
-                CmbEmpresa.IsEnabled           = esAdmin;
-                CmbSucursal.IsEnabled          = esAdmin;
-                BtnRegenerarCodigos.IsEnabled  = esAdmin;
-                BtnRecalcularPrecios.IsEnabled = esAdmin;
+                CmbEmpresa.IsEnabled  = esAdmin;
+                CmbSucursal.IsEnabled = esAdmin;
+
+                Visibility visAdmin = esAdmin ? Visibility.Visible : Visibility.Collapsed;
+                BtnRegenerarCodigos.Visibility     = visAdmin;
+                BtnRecalcularPrecios.Visibility    = visAdmin;
+                BtnSincronizarAppsheets.Visibility = visAdmin;
 
                 // Tema: si el valor de BD no es válido, usar el tema activo o "claro"
                 string temaInicial = temaDb.Trim().ToLowerInvariant() == ThemeManager.TemaOscuro

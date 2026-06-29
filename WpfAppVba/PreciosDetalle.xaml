@@ -359,7 +359,7 @@
                                             Width="90" IsReadOnly="True"
                                             ElementStyle="{StaticResource CeldaNumero}"/>
                         <DataGridTextColumn Header="Precio"
-                                            Binding="{Binding Precio, StringFormat=#\,##0.00}"
+                                            Binding="{Binding Precio, StringFormat=#\,##0.##}"
                                             Width="100"
                                             ElementStyle="{StaticResource CeldaNumero}"
                                             EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
@@ -438,18 +438,6 @@
                         <TextBlock x:Name="TxtTotalArticulos"
                                    FontSize="17" FontWeight="SemiBold"
                                    HorizontalAlignment="Right" Text="0"
-                                   Foreground="{DynamicResource ThemeTexto}"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Valor total -->
-                <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0" VerticalAlignment="Top">
-                    <StackPanel>
-                        <TextBlock Text="Valor total" FontSize="10"
-                                   Foreground="{DynamicResource ThemeTextoSec}"/>
-                        <TextBlock x:Name="TxtValorTotal"
-                                   FontSize="17" FontWeight="SemiBold"
-                                   HorizontalAlignment="Right" Text="0.00"
                                    Foreground="{DynamicResource ThemeTexto}"/>
                     </StackPanel>
                 </Border>

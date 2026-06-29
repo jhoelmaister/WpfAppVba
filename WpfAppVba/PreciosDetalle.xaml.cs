@@ -526,9 +526,7 @@ namespace WpfAppVba
         // filtro): representan el contenido real de la lista de precios, no la vista.
         private void ActualizarTotales()
         {
-            var conPrecio = _items.Where(x => x.Precio > 0).ToList();
-            TxtTotalArticulos.Text = conPrecio.Count.ToString("N0");
-            TxtValorTotal.Text     = conPrecio.Sum(x => x.Precio).ToString("N2");
+            TxtTotalArticulos.Text = _items.Count(x => x.Precio > 0).ToString("N0");
         }
 
         // ─── Desglose por sucursal del artículo seleccionado en Grid1 ─────────

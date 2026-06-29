@@ -91,7 +91,17 @@ namespace WpfAppVba
             MostrarVersion();
             ActualizarInfoUsuario();
             MarcarActivo(BtnNav_Articulos);
-            if (AppState.EsAdmin) BtnNav_Usuarios.Visibility = Visibility.Visible;
+            if (AppState.EsAdmin)
+            {
+                BtnNav_Usuarios.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                BtnNav_Regiones.Visibility   = Visibility.Collapsed;
+                BtnNav_Precios.Visibility    = Visibility.Collapsed;
+                BtnNav_Sucursales.Visibility = Visibility.Collapsed;
+                BtnNav_Empresas.Visibility   = Visibility.Collapsed;
+            }
 
             // Estado de conexión: pintar el estado actual y escuchar cambios.
             ActualizarLabelConexion(ConexionEstado.EnLinea);
