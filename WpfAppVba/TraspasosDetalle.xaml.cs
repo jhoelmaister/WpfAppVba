@@ -108,8 +108,11 @@ namespace WpfAppVba
             {
                 if (estadoDB.ToLower() == "entregado")
                 {
-                    // Solo lectura total: no se puede editar nada
+                    // Solo lectura total: no se puede editar nada, ni siquiera tipo de
+                    // movimiento, duplicar línea o guardar.
                     DeshabilitarControlesCabecera();
+                    CboMovimiento.IsEnabled = false;
+                    BtnGuardar.IsEnabled    = false;
                     _editarFormulario = false;
                     GridItems.IsEnabled = false;
                     ActualizarBotonesGrid();
@@ -124,7 +127,9 @@ namespace WpfAppVba
             }
             else
             {
-                // De otra sucursal: solo se puede cambiar estado y ver artículos
+                // De otra sucursal: no se puede editar nada excepto el estado (se permite
+                // guardar para poder persistir ese cambio). Los artículos solo se ven, no
+                // se modifican, y el tipo de movimiento tampoco se puede cambiar.
                 DeshabilitarControlesCabecera();
 
                 if (estadoDB.ToLower() == "pendiente")
@@ -134,9 +139,10 @@ namespace WpfAppVba
                 Box_Estado.Items.Add(new ComboBoxItem { Content = "pendiente revisar" });
                 Box_Estado.Items.Add(new ComboBoxItem { Content = "entregado" });
                 Box_Estado.IsEnabled = true;
-                Box_Referencia.IsEnabled    = true;
-                Box_Observaciones.IsEnabled = true;
-                _editarFormulario = true;
+                CboMovimiento.IsEnabled = false;
+                _editarFormulario = false;
+                GridItems.IsEnabled = false;
+                ActualizarBotonesGrid();
                 SeleccionarEstado(estadoDB);
             }
 
@@ -280,6 +286,7 @@ namespace WpfAppVba
             BtnInsertar.IsEnabled          = _editarFormulario;
             BtnNuevaLinea.IsEnabled        = _editarFormulario;
             BtnEliminarLinea.IsEnabled     = _editarFormulario;
+            BtnDuplicarLinea.IsEnabled     = _editarFormulario;
         }
 
         // ─── Refrescar grid y totales ─────────────────────────────────────────

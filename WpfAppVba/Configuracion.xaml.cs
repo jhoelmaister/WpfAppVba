@@ -411,33 +411,42 @@ namespace WpfAppVba
             {
                 string usuId = AppState.UsuarioActivo.ToString();
 
+                // Calcular de antemano si va a haber cambio de contexto (empresa/sucursal/
+                // periodo): si lo hay, más abajo se llama a cm.RecargarContexto(), que cierra
+                // TODAS las pestañas dinámicas como si recién se hubiera iniciado sesión. Hay
+                // que avisar ANTES de tocar nada, igual que al cerrar sesión.
+                string empActualBD = Sql.UsuariosObj.ObtenerItem("empresa", usuId)?.ToString() ?? "";
+                string sucActualBD = Sql.UsuariosObj.ObtenerItem("sucursal", usuId)?.ToString() ?? "";
+                string periodoStr  = CmbPeriodo.SelectedItem?.ToString() ?? DateTime.Now.Year.ToString();
+
+                bool empresaCambio  = CmbEmpresa.SelectedItem is EmpresaItem empChk && empChk.Id != empActualBD;
+                bool sucursalCambio = CmbSucursal.SelectedItem is SucursalItem sucChk && sucChk.Id != sucActualBD;
+                bool periodoCambio  = periodoStr != AppState.PeriodoActivo;
+
+                if ((empresaCambio || sucursalCambio || periodoCambio) &&
+                    Window.GetWindow(this) is ConsolaMovimientos cmAvisar &&
+                    !cmAvisar.ConfirmarPerderCambios())
+                {
+                    return; // el usuario decidió no perder el trabajo sin guardar
+                }
+
                 // Actualizar nombres y apellidos en memoria / SQL
                 Sql.UsuariosObj.EstablecerItem("nombres",   usuId, TxtNombres.Text.Trim());
                 Sql.UsuariosObj.EstablecerItem("apellidos", usuId, TxtApellidos.Text.Trim());
 
                 // Actualizar empresa activa
-                bool empresaCambio = false;
                 if (CmbEmpresa.SelectedItem is EmpresaItem empItem)
                 {
-                    string empActualBD = Sql.UsuariosObj.ObtenerItem("empresa", usuId)?.ToString() ?? "";
-                    if (empItem.Id != empActualBD)
-                    {
+                    if (empresaCambio)
                         Sql.UsuariosObj.EstablecerItem("empresa", usuId, empItem.Id);
-                        empresaCambio = true;
-                    }
                     AppState.EmpresaActiva = empItem.Id;
                 }
 
                 // Actualizar sucursal activa
-                bool sucursalCambio = false;
                 if (CmbSucursal.SelectedItem is SucursalItem sucItem)
                 {
-                    string sucActualBD = Sql.UsuariosObj.ObtenerItem("sucursal", usuId)?.ToString() ?? "";
-                    if (sucItem.Id != sucActualBD)
-                    {
+                    if (sucursalCambio)
                         Sql.UsuariosObj.EstablecerItem("sucursal", usuId, sucItem.Id);
-                        sucursalCambio = true;
-                    }
                     AppState.SucursalActiva = sucItem.Id;
                     AppState.RegionActiva   = _sucursalesEmpresa?.ObtenerItem("region", sucItem.Id)?.ToString()
                                               ?? Sql.SucursalesObj.ObtenerItem("region", sucItem.Id)?.ToString() ?? "";
@@ -455,9 +464,8 @@ namespace WpfAppVba
                 if (empresaCambio || sucursalCambio)
                     AppLoader.ConectarBases();
 
-                // Actualizar periodo activo y recalcular apertura
-                string periodoStr = CmbPeriodo.SelectedItem?.ToString() ?? DateTime.Now.Year.ToString();
-                bool periodoCambio = periodoStr != AppState.PeriodoActivo;
+                // Actualizar periodo activo y recalcular apertura (periodoStr/periodoCambio
+                // ya se calcularon arriba, antes del aviso de pérdida de cambios)
                 AppState.PeriodoActivo = periodoStr;
 
                 if (int.TryParse(periodoStr, out int periodo))

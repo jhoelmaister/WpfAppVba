@@ -515,12 +515,16 @@ namespace WpfAppVba
         // ─── Entregar todos ────────────────────────────────────────────────────
         // Cambia el estado de todos los documentosT cargados (sucursal activa + período)
         // que estén en "pendiente" a "entregado". Con verificadores de conexión.
+        // Solo puede afectar documentos emitidos por OTRA sucursal (emitido != activa):
+        // un documento emitido por la sucursal activa lo entrega la sucursal receptora,
+        // no quien lo emitió.
         private void BtnEntregarTodos_Click(object sender, RoutedEventArgs e)
         {
             // Verificación de conexión en 2 capas antes de persistir el cambio de estado.
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
 
-            // Recolectar los documentosT cargados cuyo estado almacenado es "pendiente".
+            // Recolectar los documentosT cargados cuyo estado almacenado es "pendiente"
+            // y que fueron emitidos por otra sucursal (no por la activa).
             var idsPendientes = new List<string>();
             int uf = Sql.DocumentosTObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -528,8 +532,10 @@ namespace WpfAppVba
                 var idObj = Sql.DocumentosTObj.Mover(i);
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
-                string estado = Sql.DocumentosTObj.ObtenerItem("estado", id)?.ToString() ?? "";
-                if (string.Equals(estado, "pendiente", StringComparison.OrdinalIgnoreCase))
+                string estado  = Sql.DocumentosTObj.ObtenerItem("estado",  id)?.ToString() ?? "";
+                string emitido = Sql.DocumentosTObj.ObtenerItem("emitido", id)?.ToString() ?? "";
+                if (string.Equals(estado, "pendiente", StringComparison.OrdinalIgnoreCase) &&
+                    emitido != AppState.SucursalActiva)
                     idsPendientes.Add(id);
             }
 

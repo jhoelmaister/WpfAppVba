@@ -638,8 +638,10 @@ namespace WpfAppVba
 
         // Pide confirmación si hay cambios sin guardar, indicando EXACTAMENTE en qué
         // pestañas. Devuelve true si se puede cerrar (no hay cambios o el usuario aceptó
-        // perderlos).
-        private bool ConfirmarPerderCambios()
+        // perderlos). Pública: la usa también Configuración antes de refrescar el
+        // contexto (cambio de empresa/sucursal/periodo), que cierra todas las pestañas
+        // igual que cerrar sesión.
+        public bool ConfirmarPerderCambios()
         {
             var conCambios = PestañasConCambios();
             if (conCambios.Count == 0) return true;
