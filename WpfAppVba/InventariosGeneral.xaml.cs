@@ -374,6 +374,7 @@ namespace WpfAppVba
 
             void NuevaPagina()
             {
+                gfx.Dispose();
                 page = document.AddPage();
                 page.Size = PageSize.A4;
                 gfx = XGraphics.FromPdfPage(page);
@@ -440,6 +441,11 @@ namespace WpfAppVba
                 }
             }
 
+            // El último gfx de la generación de contenido sigue abierto: hay que
+            // cerrarlo antes de poder volver a abrir un XGraphics sobre esa misma
+            // página en la segunda pasada de abajo.
+            gfx.Dispose();
+
             // ── Encabezado (empresa / fecha de emisión) y pie de página (páginas), en
             // todas las páginas. Se hace en una segunda pasada porque el total de
             // páginas recién se conoce una vez generado todo el contenido.
@@ -451,7 +457,7 @@ namespace WpfAppVba
             for (int p = 0; p < totalPaginas; p++)
             {
                 var paginaActual = document.Pages[p];
-                var gfxPagina     = XGraphics.FromPdfPage(paginaActual);
+                using var gfxPagina = XGraphics.FromPdfPage(paginaActual);
                 double anchoMedio = (paginaActual.Width - margen * 2) / 2;
 
                 gfxPagina.DrawString(empresaDesc, fontCuerpo, XBrushes.Black,
