@@ -257,7 +257,8 @@
                                   BorderThickness="0"
                                   SelectedItemChanged="Tree1_SelectedItemChanged"
                                   PreviewMouseLeftButtonDown="Tree1_PreviewMouseLeftButtonDown"
-                                  FontSize="12"/>
+                                  FontSize="12"
+                                  ScrollViewer.PanningMode="VerticalOnly"/>
                     </Border>
                 </Grid>
             </Border>
@@ -333,7 +334,8 @@
                           RowHeight="32"
                           CellEditEnding="Grid1_CellEditEnding"
                           PreparingCellForEdit="Grid1_PreparingCellForEdit"
-                          SelectionChanged="Grid1_SelectionChanged">
+                          SelectionChanged="Grid1_SelectionChanged"
+                          ScrollViewer.PanningMode="VerticalOnly">
 
                     <DataGrid.ColumnHeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
@@ -383,7 +385,8 @@
                               HeadersVisibility="Column"
                               GridLinesVisibility="Horizontal"
                               BorderThickness="0"
-                              FontSize="10">
+                              FontSize="10"
+                              ScrollViewer.PanningMode="VerticalOnly">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Sucursal" Binding="{Binding Sucursal}" Width="*"/>
                             <DataGridTextColumn Header="Disp."

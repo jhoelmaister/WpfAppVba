@@ -98,11 +98,12 @@
 
     </UserControl.Resources>
 
+    <ScrollViewer VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>  <!-- 0  Encabezado -->
             <RowDefinition Height="Auto"/>  <!-- 1  Toolbar artículos -->
-            <RowDefinition Height="*"/>     <!-- 2  GridItems -->
+            <RowDefinition Height="Auto"/>  <!-- 2  GridItems -->
             <RowDefinition Height="140"/>   <!-- 3  Stock + Observaciones -->
             <RowDefinition Height="Auto"/>  <!-- 4  Totales -->
         </Grid.RowDefinitions>
@@ -337,7 +338,7 @@
         <!-- ════════════════════════════════════════════════════════ -->
         <!-- 2 · GRID ARTÍCULOS  +  CATEGORÍAS (derecha)            -->
         <!-- ════════════════════════════════════════════════════════ -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="2" MinHeight="200" MaxHeight="450">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="220"/>
@@ -356,7 +357,8 @@
                       RowHeight="32"
                       SelectionChanged="GridItems_SelectionChanged"
                       CellEditEnding="GridItems_CellEditEnding"
-                      PreparingCellForEdit="GridItems_PreparingCellForEdit">
+                      PreparingCellForEdit="GridItems_PreparingCellForEdit"
+                      ScrollViewer.PanningMode="VerticalOnly">
 
                 <DataGrid.ColumnHeaderStyle>
                     <Style TargetType="DataGridColumnHeader">
@@ -525,4 +527,5 @@
         </Border>
 
     </Grid>
+    </ScrollViewer>
 </UserControl>

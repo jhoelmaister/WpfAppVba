@@ -387,7 +387,8 @@
                               CellEditEnding="GridItems_CellEditEnding"
                               PreparingCellForEdit="GridItems_PreparingCellForEdit"
                               BeginningEdit="GridItems_BeginningEdit"
-                              SelectionChanged="GridItems_SelectionChanged">
+                              SelectionChanged="GridItems_SelectionChanged"
+                              ScrollViewer.PanningMode="VerticalOnly">
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">
                                 <Setter Property="Background"      Value="{DynamicResource ThemeBgSurface}"/>
@@ -478,7 +479,8 @@
                                           HeadersVisibility="Column"
                                           GridLinesVisibility="Horizontal"
                                           BorderThickness="0"
-                                          FontSize="10">
+                                          FontSize="10"
+                                          ScrollViewer.PanningMode="VerticalOnly">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Categoría" Binding="{Binding Categoria}" Width="*"/>
                                         <DataGridTextColumn Header="Cant."     Binding="{Binding Cantidad}"  Width="50"
@@ -513,7 +515,8 @@
                                       BorderBrush="{DynamicResource ThemeBorde}"
                                       BorderThickness="1"
                                       FontSize="11"
-                                      MouseDoubleClick="GridPrecios_MouseDoubleClick">
+                                      MouseDoubleClick="GridPrecios_MouseDoubleClick"
+                                      ScrollViewer.PanningMode="VerticalOnly">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Código"
                                                         Binding="{Binding Codigo}" Width="70"/>
@@ -542,7 +545,8 @@
                                       GridLinesVisibility="Horizontal"
                                       BorderBrush="{DynamicResource ThemeBorde}"
                                       BorderThickness="1"
-                                      FontSize="11">
+                                      FontSize="11"
+                                      ScrollViewer.PanningMode="VerticalOnly">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Código"
                                                         Binding="{Binding Codigo}"    Width="*"/>
@@ -624,7 +628,8 @@
                               BorderThickness="0"
                               FontSize="12"
                               RowHeight="32"
-                              CellEditEnding="GridTrasacciones_CellEditEnding">
+                              CellEditEnding="GridTrasacciones_CellEditEnding"
+                              ScrollViewer.PanningMode="VerticalOnly">
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">
                                 <Setter Property="Background"      Value="{DynamicResource ThemeBgSurface}"/>
@@ -744,7 +749,8 @@
                               FontSize="12"
                               RowHeight="32"
                               CellEditEnding="GridEntregas_CellEditEnding"
-                              PreparingCellForEdit="GridEntregas_PreparingCellForEdit">
+                              PreparingCellForEdit="GridEntregas_PreparingCellForEdit"
+                              ScrollViewer.PanningMode="VerticalOnly">
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">
                                 <Setter Property="Background"      Value="{DynamicResource ThemeBgSurface}"/>
@@ -804,7 +810,8 @@
                                           HeadersVisibility="Column"
                                           GridLinesVisibility="Horizontal"
                                           BorderThickness="0"
-                                          FontSize="10">
+                                          FontSize="10"
+                                          ScrollViewer.PanningMode="VerticalOnly">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Categoría" Binding="{Binding Categoria}" Width="*"/>
                                         <DataGridTextColumn Header="Cant."     Binding="{Binding Cantidad}"  Width="50"

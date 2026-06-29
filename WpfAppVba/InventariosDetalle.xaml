@@ -247,7 +247,8 @@
                                   BorderThickness="0"
                                   SelectedItemChanged="Tree1_SelectedItemChanged"
                                   PreviewMouseLeftButtonDown="Tree1_PreviewMouseLeftButtonDown"
-                                  FontSize="12"/>
+                                  FontSize="12"
+                                  ScrollViewer.PanningMode="VerticalOnly"/>
                     </Border>
                 </Grid>
             </Border>
@@ -322,7 +323,8 @@
                           FontSize="12"
                           RowHeight="32"
                           CellEditEnding="Grid1_CellEditEnding"
-                          PreparingCellForEdit="Grid1_PreparingCellForEdit">
+                          PreparingCellForEdit="Grid1_PreparingCellForEdit"
+                          ScrollViewer.PanningMode="VerticalOnly">
 
                     <DataGrid.ColumnHeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
@@ -365,7 +367,8 @@
                               HeadersVisibility="Column"
                               GridLinesVisibility="Horizontal"
                               BorderThickness="0"
-                              FontSize="10">
+                              FontSize="10"
+                              ScrollViewer.PanningMode="VerticalOnly">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Categoría" Binding="{Binding Categoria}" Width="*"/>
                             <DataGridTextColumn Header="Cant."     Binding="{Binding Cantidad}"  Width="50"
