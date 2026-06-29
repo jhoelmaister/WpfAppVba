@@ -107,8 +107,6 @@ namespace WpfAppVba.Data
                 ? ""
                 : $" AND documentoL IN (SELECT id FROM documentosL WHERE estadof = 'normal'{fEmp})";
 
-
-
             // usuarios: NO se filtra por empresa (necesario para el login).
             Sql.UsuariosObj.Conectar("usuarios",
                 "SELECT * FROM usuarios WHERE estadof = 'normal' ORDER BY secuencia ASC");
@@ -117,33 +115,32 @@ namespace WpfAppVba.Data
             // familias. Se hace JOIN para ordenar por la 'secuencia' de la familia.
             // LEFT JOIN para no perder artículos sin familia (quedan al inicio). SELECT a.*
             // conserva el esquema de la caché idéntico al de la tabla articulos.
+            // Filtro en cascada: solo familias cuyo producto pertenece a la empresa activa.
+            Sql.FamiliasObj.Conectar("familias",
+                $"SELECT * FROM familias WHERE estadof = 'normal'{fFamilias} ORDER BY descripcion ASC");
             // Filtro en cascada: solo artículos cuya familia pertenece a la empresa activa.
             Sql.ArticulosObj.Conectar("articulos",
                 $"SELECT a.* FROM articulos AS a " +
                 $"LEFT JOIN familias AS f ON a.familia = f.id " +
-                $"WHERE a.estadof = 'normal'{fArticulos} ORDER BY f.secuencia ASC, a.indice ASC");
-
-            // Filtro en cascada: solo familias cuyo producto pertenece a la empresa activa.
-            Sql.FamiliasObj.Conectar("familias",
-                $"SELECT * FROM familias WHERE estadof = 'normal'{fFamilias} ORDER BY secuencia ASC");
+                $"WHERE a.estadof = 'normal'{fArticulos} ORDER BY f.descripcion ASC, a.indice ASC");
 
             Sql.ProductosObj.Conectar("productos",
-                $"SELECT * FROM productos WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
+                $"SELECT * FROM productos WHERE estadof = 'normal'{fEmp} ORDER BY descripcion ASC");
 
             Sql.CategoriasObj.Conectar("Categorias",
-                $"SELECT * FROM Categorias WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
+                $"SELECT * FROM Categorias WHERE estadof = 'normal'{fEmp} ORDER BY descripcion ASC");
 
             Sql.IndustriasObj.Conectar("industrias",
-                $"SELECT * FROM industrias WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
+                $"SELECT * FROM industrias WHERE estadof = 'normal'{fEmp} ORDER BY descripcion ASC");
 
             Sql.TercerosObj.Conectar("terceros",
-                $"SELECT * FROM terceros WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
+                $"SELECT * FROM terceros WHERE estadof = 'normal'{fEmp} ORDER BY descripcion ASC");
 
             Sql.SucursalesObj.Conectar("sucursales",
-                $"SELECT * FROM sucursales WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
+                $"SELECT * FROM sucursales WHERE estadof = 'normal'{fEmp} ORDER BY descripcion ASC");
 
             Sql.RegionesObj.Conectar("regiones",
-                $"SELECT * FROM regiones WHERE estadof = 'normal'{fEmp} ORDER BY secuencia ASC");
+                $"SELECT * FROM regiones WHERE estadof = 'normal'{fEmp} ORDER BY descripcion ASC");
 
             // documentosL (cabecera de listas de precios) + precios (líneas). Filtro
             // directo por empresa (columna propia, ya no se cascada por región).
@@ -151,7 +148,7 @@ namespace WpfAppVba.Data
                 $"SELECT * FROM documentosL WHERE estadof = 'normal'{fEmp} ORDER BY fecha ASC");
 
             Sql.PreciosObj.Conectar("precios",
-                $"SELECT * FROM precios WHERE estadof = 'normal'{fPrecios} ORDER BY documentoL ASC");
+                $"SELECT * FROM precios WHERE estadof = 'normal'{fPrecios} ORDER BY secuencia ASC");
 
             var tiempo = DateTime.Now - inicio;
             System.Diagnostics.Debug.WriteLine($"ConectarProductos: {tiempo.TotalSeconds:F2}s");
