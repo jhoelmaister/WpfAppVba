@@ -735,6 +735,29 @@ namespace WpfAppVba
                 }
             }
 
+            // ── Encabezado (empresa / fecha de emisión) y pie de página (páginas), en
+            // todas las páginas. Se hace en una segunda pasada porque el total de
+            // páginas recién se conoce una vez generado todo el contenido.
+            string empresaDesc     = Sql.EmpresasObj.ObtenerItem("descripcion", AppState.EmpresaActiva)?.ToString() ?? "";
+            DateTime fechaEmision  = DateTime.Now;
+            string fechaEmisionStr = $"{fechaEmision:d} {fechaEmision:HH:mm:ss}";
+            int totalPaginas       = document.PageCount;
+
+            for (int p = 0; p < totalPaginas; p++)
+            {
+                var paginaActual = document.Pages[p];
+                var gfxPagina     = XGraphics.FromPdfPage(paginaActual);
+                double anchoMedio = (paginaActual.Width - margen * 2) / 2;
+
+                gfxPagina.DrawString(empresaDesc, fontCuerpo, XBrushes.Black,
+                    new XRect(margen, 16, anchoMedio, 16), XStringFormats.CenterLeft);
+                gfxPagina.DrawString($"Fecha de emisión: {fechaEmisionStr}", fontCuerpo, XBrushes.Black,
+                    new XRect(margen + anchoMedio, 16, anchoMedio, 16), XStringFormats.CenterRight);
+
+                gfxPagina.DrawString($"Páginas {totalPaginas}-{p + 1}", fontCuerpo, XBrushes.Black,
+                    new XRect(margen, paginaActual.Height - margen + 10, paginaActual.Width - margen * 2, 16), XStringFormats.CenterRight);
+            }
+
             document.Save(filePath);
         }
 
