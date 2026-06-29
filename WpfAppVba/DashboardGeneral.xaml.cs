@@ -33,6 +33,7 @@ namespace WpfAppVba
 
         private double _alturaGrafico = 280;        // px de la zona de barras (meses); dinámico por resolución
         private const double AnchoBarra    = 300;   // px de la barra apilada de familia (fijo)
+        private const double ReservaEtiquetaY = 16; // px reservados arriba de la barra más alta para su etiqueta de valor
 
         // Cache del último cálculo del gráfico por mes (para re-render al cambiar el alto disponible).
         private double[]? _porMesCache;
@@ -273,7 +274,7 @@ namespace WpfAppVba
             ZonaMeses.Visibility     = Visibility.Visible;
 
             _niceMax = NiceCeil(max);
-            PanelEjeY.Height = _alturaGrafico;
+            PanelEjeY.Height = _alturaGrafico + ReservaEtiquetaY;
             RenderEjeY();
 
             // Orden estable de categorías (por total) para agrupar igual en cada mes.
@@ -292,8 +293,11 @@ namespace WpfAppVba
                     VerticalAlignment = VerticalAlignment.Top
                 };
 
-                // Zona de altura fija → barras alineadas al mismo eje base
-                var zona  = new Grid { Height = _alturaGrafico };
+                // Zona de altura fija → barras alineadas al mismo eje base. Se reserva
+                // espacio extra arriba (ReservaEtiquetaY) para que la etiqueta de valor
+                // de la barra más alta no quede recortada por el ScrollViewer horizontal
+                // (que tiene el scroll vertical deshabilitado).
+                var zona  = new Grid { Height = _alturaGrafico + ReservaEtiquetaY };
                 var grupo = new StackPanel
                 {
                     Orientation = Orientation.Horizontal,
@@ -372,7 +376,7 @@ namespace WpfAppVba
             for (int i = 0; i <= 4; i++)
             {
                 double frac = i / 4.0;
-                double y    = _alturaGrafico - frac * _alturaGrafico;
+                double y    = _alturaGrafico + ReservaEtiquetaY - frac * _alturaGrafico;
                 var lbl = new TextBlock
                 {
                     Text = Fmt(_niceMax * frac),
@@ -395,8 +399,9 @@ namespace WpfAppVba
             if (e.NewSize.Height <= 0) return;
 
             // Alto disponible para las barras (reservando ~46 px para el nombre del
-            // mes y su total debajo). Re-renderiza el gráfico por mes si cambió.
-            double nueva = Math.Max(120, e.NewSize.Height - 46);
+            // mes y su total debajo, más ReservaEtiquetaY para la etiqueta de valor
+            // arriba de la barra más alta). Re-renderiza el gráfico por mes si cambió.
+            double nueva = Math.Max(120, e.NewSize.Height - 46 - ReservaEtiquetaY);
             if (_porMesCache != null && Math.Abs(nueva - _alturaGrafico) > 1)
             {
                 _alturaGrafico = nueva;
@@ -418,7 +423,7 @@ namespace WpfAppVba
             var brush = Tema("ThemeBorde", Color.FromRgb(0xDD, 0xDD, 0xDD));
             for (int i = 0; i <= 4; i++)
             {
-                double y = _alturaGrafico - (i / 4.0) * _alturaGrafico;
+                double y = _alturaGrafico + ReservaEtiquetaY - (i / 4.0) * _alturaGrafico;
                 var linea = new System.Windows.Shapes.Rectangle
                 {
                     Width = w,
@@ -635,10 +640,16 @@ namespace WpfAppVba
                 Grid.SetColumn(lbl, 0);
                 fila.Children.Add(lbl);
 
-                // Zona de barra: col0 = valor (star), col1 = resto (star) → ancho ∝ valor/max
+                // Zona de barra: col0 = track proporcional (ancho ∝ valor/max dentro de
+                // ese track), col1 = etiqueta con ancho Auto SIEMPRE reservado, para que
+                // no se pierda aunque la barra ocupe el 100% del track (valor ≈ max).
                 var bz = new Grid();
-                bz.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(0.0001, val), GridUnitType.Star) });
-                bz.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(0.0001, max - val), GridUnitType.Star) });
+                bz.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                bz.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                var track = new Grid();
+                track.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(0.0001, val), GridUnitType.Star) });
+                track.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(0.0001, max - val), GridUnitType.Star) });
 
                 var bar = new Border
                 {
@@ -649,7 +660,9 @@ namespace WpfAppVba
                     VerticalAlignment = VerticalAlignment.Center
                 };
                 Grid.SetColumn(bar, 0);
-                bz.Children.Add(bar);
+                track.Children.Add(bar);
+                Grid.SetColumn(track, 0);
+                bz.Children.Add(track);
 
                 var v = new TextBlock
                 {
