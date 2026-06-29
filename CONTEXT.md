@@ -171,6 +171,60 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 
 ## Historial de Cambios por Sesión
 
+### Sesión 2026-06-23/29 — InventariosDetalle rediseñado, Stock/Disponible de PreciosDetalle a nivel de empresa, aviso de precio no vigente en Pedidos, recálculo masivo de importes, PDF de lista de precios como tabla, fix de duplicado al editar y control de acceso por tipo de usuario (rama `claude/blissful-mendel-vbilla`)
+
+> Sesión larga con varios sub-temas encadenados, todos en la misma rama. Se documenta de una sola vez (commits `868b57b`…`fab244f`).
+
+#### PreciosDetalle — refuerzo del fix de crash al refrescar
+- El crash `CollectionView.Refresh()` durante transacción `AddNew`/`EditItem` ya se había corregido (sesión anterior) quitando `Grid1.Items.Refresh()` de `ActualizarTotales()`. Quedaba un riesgo análogo en `RefrescarGrid()`: reasignar `Grid1.ItemsSource` mientras una celda Precio seguía en edición (p. ej. al clickear el árbol o buscar sin confirmar la celda) podía disparar la misma excepción. Fix: `Grid1.CommitEdit(DataGridEditingUnit.Row, true)` al inicio de `RefrescarGrid()`, mismo patrón ya usado en `BtnGuardar_Click`/`IntentarCerrar`.
+
+#### InventariosDetalle — mismo rediseño que PreciosDetalle: árbol + buscador + catálogo completo
+- Reemplaza `GridItems` + "TOOLBAR ARTÍCULOS" por el patrón de `PreciosDetalle`/`ArticulosGeneral`: `Tree1` (productos/familias) + buscador + botón Actualizar + `Grid1` con el catálogo completo de artículos (no solo líneas ya registradas).
+- Columna **Cantidad** reemplaza a Stock/Disponible, valor por defecto 0.
+- Regla de persistencia (igual criterio que `PreciosDetalle.CrearLineas`): artículo sin registro previo en `inventarios` solo se guarda si la cantidad editada es mayor a cero; artículo con registro previo siempre se actualiza, incluso a cantidad cero (queda `normal`, nunca se oculta desde aquí).
+- Se limpiaron referencias a la columna `indice` de `inventarios` (ya eliminada en SQL) en `InventariosDetalle`, `InventariosGeneral` y `AppLoader.ConectarBases`.
+- **Columna Categoría** agregada en `Grid1`, entre Código y Descripción (`articulos.categoria` → `categorias.descripcion`, mismo patrón que `ObtenerDescripcionArticulo`).
+- **Fix de buscador angosto**: el `Border` de `TxtBuscar` tenía `MaxWidth="320"` + `HorizontalAlignment="Left"` heredados por error al adaptar el patrón de `ArticulosGeneral` (que no los tiene), en **PreciosDetalle e InventariosDetalle**. Se reemplazó por `Margin` para igualar el comportamiento original (estirado al ancho disponible).
+
+#### PreciosDetalle — Stock/Disponible a nivel de empresa (no de sucursal)
+- Las listas de precios se manejan por empresa, pero Stock/Disponible se calculaban solo con datos de la sucursal activa.
+- Primer paso: recorrer todas las sucursales de la empresa (reutilizando la secuencia de recarga de `Configuracion.xaml.cs`) acumulando totales por artículo; se agregó un panel lateral **"Sucursales"** con el desglose (descripción, disponible, stock) del artículo seleccionado.
+- Segundo paso (performance): ese recorrido recargaba la caché completa N veces (~8 consultas cada una). Se reemplazó por **5 consultas SQL fijas a nivel de empresa** que reproducen la fórmula de `StockCalculator.ContarStock`/`ContarStock2`, acumulando en memoria por sucursal+artículo — sin tocar `AppState` ni las cachés de `SqlData`. Reduce drásticamente el tiempo de carga.
+
+#### TraspasosGeneral — "Entregar todos" habilitado en cualquier sucursal
+- Se quitó el gating por tipo de sucursal `'central'` (visibilidad del botón y defensa interna del handler) y se eliminó `EsSucursalCentral()` (sin más usos).
+
+#### PedidosDetalle — aviso cuando el precio aplicado no es de la lista más reciente
+- `ObtenerPrecioArticulo` ahora expone la fecha del `documentoL` usado; nuevo `ObtenerFechaMaximaListaPrecios` calcula la fecha de la lista de precios vigente más reciente aplicable al documento.
+- Nuevo helper `ObtenerPreciosConAviso`: compara ambas fechas por artículo; si alguno no tiene precio en la lista más nueva, junta los casos en un solo aviso y pregunta si aplicar el precio anterior encontrado — si la respuesta es "No", el artículo queda con precio 0.
+- Conectado en los 4 puntos donde se fijaba el precio automáticamente: edición de Código en la grilla, importar artículos, buscar artículo y "Actualizar precios".
+
+#### Configuración — recálculo masivo de importes de pedidos automáticos
+- Nuevo botón **"Recalcular precios"** junto a "Regenerar códigos".
+- Nueva clase `PedidosPrecioActualizador.cs`: recorre toda la tabla `pedidos` (solo tipo `automatico`) y recalcula `importe = precio_vigente * cantidad` usando la lista de precios (`documentosL`/`precios`) con fecha más reciente que no supere la fecha del `documentoP` de cada pedido (mismo criterio que `ObtenerPrecioArticulo`). Los pedidos tipo `manual` no se tocan.
+- Ajuste posterior: los pedidos **sin ninguna lista de precios aplicable** ahora quedan con `importe = 0` (`OUTER APPLY` + `ISNULL`) en vez de no tocarse — mismo criterio que cuando el usuario rechaza aplicar un precio anterior en `PedidosDetalle`.
+
+#### PreciosGeneral — PDF de lista de precios como tabla real
+- Se quitó la columna **"Valor"** de `Grid1`.
+- `GenerarPdfListaPrecios` reescrito con funciones locales (`DibujarFilaDatos`/`DibujarEncabezadoColumnas`/`DibujarBandaGrupo`/`NuevaPagina`/`AsegurarEspacio`): genera una tabla real con bordes, bandas celestes por grupo, columnas N°/Código, y título con fecha+hora.
+
+#### PreciosDetalle — fix bug "editar y guardar crea una lista nueva"
+- Causa: `Guardar()`/`CargarUserform()` dependían del flag global `AppState.EventoFormularioL` (compartido con el módulo de Terceros, sin relación) — podía pisarse entre abrir "Editar" y clickear "Guardar", haciendo que corriera `GuardarNuevo()` en vez de `GuardarEditar()` y creando un documento duplicado.
+- Fix: se reemplazó por el campo `_idEditar` de instancia (`!string.IsNullOrEmpty(_idEditar)`), inmune a interferencia de otros formularios abiertos en paralelo.
+
+#### Formato de Precio unificado + eliminación de "Valor total" + control de acceso por tipo de usuario
+- **PreciosDetalle `Grid1`**: columna Precio usa el mismo `StringFormat` que `PedidosDetalle.GridItems` (`#\,##0.##`, recorta decimales en cero — antes `#\,##0.00`, forzaba siempre 2 decimales).
+- **PreciosDetalle**: se eliminó por completo el cálculo y la tarjeta de **"Valor total"** (`TxtValorTotal` y su lógica en `ActualizarTotales`) — a pedido explícito del usuario, que ya no lo necesita.
+- **ConsolaMovimientos**: usuarios de tipo `"user"` (`!AppState.EsAdmin`) ya no ven en el panel lateral las pestañas Regiones, Precios, Sucursales y Empresas (Usuarios ya estaba oculta por defecto).
+- **Configuración**: usuarios de tipo `"user"` ya no ven los botones Regenerar códigos, Recalcular precios y Sincronizar AppSheets (antes este último no tenía ningún gating por rol).
+
+#### Investigado y descartado: error MC3010 reportado por el usuario en `PedidosDetalle.xaml:377`
+- El usuario reportó en su Visual Studio local: `MC3010 — el valor de la propiedad Name '  ' no es válido` en la línea 377. Se revisó exhaustivamente el archivo de este repo (todo atributo `Name`/`x:Name`, `Setter Property="Name"`, atributos partidos en dos líneas, caracteres no-ASCII/invisibles, finales de línea) sin encontrar ningún `Name` vacío o inválido — la línea 377 actual (`<DataGrid x:Name="GridItems" ...>`) es válida. El usuario confirmó luego que ya se había resuelto de su lado (probablemente Error List desactualizado en VS); no se aplicó ningún cambio de código para esto.
+
+#### Notas / pendientes de esta sesión
+- **Sin build en el entorno cloud**: ninguno de estos cambios se compiló en este entorno (sin SDK de .NET disponible); verificar en máquina local antes de publicar, en especial el recálculo masivo de importes (`PedidosPrecioActualizador`) y las consultas agregadas de Stock/Disponible por empresa en `PreciosDetalle`.
+- **Firma de commits "Unverified"**: recordatorio recurrente del stop-hook por falta de firma GPG/SSH en este contenedor (el email/nombre de autor ya están correctos, `noreply@anthropic.com`/`Claude`; no hay clave de firma disponible). No se reescribió historia de `master` para "solucionarlo" — requiere autorización explícita cada vez por tratarse de un rewrite de historia ya publicada.
+
 ### Sesión 2026-06-23 — PreciosDetalle: árbol de familias + buscador + catálogo completo; exclusión de precios en cero; columna `indice` eliminada de `precios` (rama `claude/stoic-einstein-0wqg94`)
 
 > Contexto: a diferencia del análisis de la sesión anterior (`claude/wizardly-faraday-bdvna8`, ver abajo) — que evaluó eliminar `PreciosDetalle` por completo y mover todo a edición inline en `GridPrecios`, y concluyó que NO era viable — esta sesión tomó un camino distinto: **conservar** `PreciosDetalle` como pantalla en pestaña, pero rediseñar su contenido para que liste **todo el catálogo de artículos** (no solo líneas ya agregadas a la lista de precios) con precio editable por fila, igual que `ArticulosGeneral`.
