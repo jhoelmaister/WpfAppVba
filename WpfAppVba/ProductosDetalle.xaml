@@ -117,7 +117,8 @@
         </Border>
 
         <!-- ══ CONTENIDO ══════════════════════════════════════════════ -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16,20,0">
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16,20,0"
+                      PanningMode="VerticalOnly">
             <StackPanel>
 
                 <!-- ▸ CARD: INFORMACIÓN -->

@@ -263,7 +263,8 @@
                     <!-- Ítems de navegación -->
                     <ScrollViewer Grid.Row="0"
                                   VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollBarVisibility="Disabled">
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  PanningMode="VerticalOnly">
                         <StackPanel Margin="0,8,0,8">
 
                             <Button x:Name="BtnNav_Dashboard"
