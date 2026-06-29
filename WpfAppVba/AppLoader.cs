@@ -119,10 +119,14 @@ namespace WpfAppVba.Data
             Sql.FamiliasObj.Conectar("familias",
                 $"SELECT * FROM familias WHERE estadof = 'normal'{fFamilias} ORDER BY descripcion ASC");
             // Filtro en cascada: solo artículos cuya familia pertenece a la empresa activa.
+            // JOIN adicional a productos (vía familias.producto) para ordenar primero por
+            // producto, igual que la jerarquía producto → familia → artículo usada en el resto
+            // de la app (ver agrupación del PDF de listas de precios en PreciosGeneral).
             Sql.ArticulosObj.Conectar("articulos",
                 $"SELECT a.* FROM articulos AS a " +
                 $"LEFT JOIN familias AS f ON a.familia = f.id " +
-                $"WHERE a.estadof = 'normal'{fArticulos} ORDER BY f.descripcion ASC, a.indice ASC");
+                $"LEFT JOIN productos AS p ON f.producto = p.id " +
+                $"WHERE a.estadof = 'normal'{fArticulos} ORDER BY p.descripcion ASC, f.descripcion ASC, a.indice ASC");
 
             Sql.ProductosObj.Conectar("productos",
                 $"SELECT * FROM productos WHERE estadof = 'normal'{fEmp} ORDER BY descripcion ASC");

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -572,8 +573,7 @@ namespace WpfAppVba
 
                 GenerarPdfListaPrecios(dlg.FileName, fila);
 
-                MessageBox.Show("Lista de precios generada correctamente.", "Consola",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                Process.Start(new ProcessStartInfo(dlg.FileName) { UseShellExecute = true });
             }
             catch (Exception ex)
             {
@@ -708,10 +708,12 @@ namespace WpfAppVba
                 string famDesc  = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString()  ?? "";
                 string codigo   = Sql.ArticulosObj.ObtenerItem("codigo",      artId)?.ToString()  ?? "";
                 string descArt  = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString()  ?? "";
+                string modelo   = Sql.ArticulosObj.ObtenerItem("modelo",      artId)?.ToString()  ?? "";
+                string descCompleta = FuncionesComunes.UnirVariables(descArt, famDesc, modelo);
                 double precio   = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0);
                 if (precio <= 0) continue;
 
-                lineas.Add((prodDesc, famDesc, codigo, descArt, precio));
+                lineas.Add((prodDesc, famDesc, codigo, descCompleta, precio));
             }
 
             var grupos = lineas

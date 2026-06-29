@@ -30,6 +30,44 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- ── Botón secundario (mismo formato que PreciosGeneral, columna Acciones) ── -->
+        <Style x:Key="BtnBase" TargetType="Button">
+            <Setter Property="Height"          Value="30"/>
+            <Setter Property="Padding"         Value="11,0"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.70"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="BtnSecundario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background"    Value="{DynamicResource ThemeBtnSecBg}"/>
+            <Setter Property="Foreground"    Value="{DynamicResource ThemeBtnSecFg}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush"   Value="{DynamicResource ThemeBorde}"/>
+        </Style>
     </UserControl.Resources>
 
     <Grid Margin="12">
@@ -64,6 +102,17 @@
                 <DataGridTextColumn Header="Fecha"       Binding="{Binding FechaStr}"     Width="*"/>
                 <DataGridTextColumn Header="Cant. Total" Binding="{Binding CantidadTotal, StringFormat=#\,##0.##}" Width="100"
                                     ElementStyle="{StaticResource CeldaNumero}"/>
+
+                <DataGridTemplateColumn Header="Acciones" Width="70">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="PDF"
+                                    Style="{StaticResource BtnSecundario}"
+                                    Height="24" Padding="8,0" FontSize="11"
+                                    Click="BtnPdfFila_Click"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
         </Border>
