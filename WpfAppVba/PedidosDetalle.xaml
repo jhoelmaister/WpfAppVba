@@ -285,7 +285,7 @@
 
                     <!-- Tipo (ComboBox Venta/Compra) -->
                     <StackPanel Grid.Column="14">
-                        <TextBlock Text="Tipo" Style="{StaticResource LblMuted}"/>
+                        <TextBlock Text="Movimiento" Style="{StaticResource LblMuted}"/>
                         <ComboBox x:Name="CboMovimiento" Height="28" FontSize="12"
                                   SelectionChanged="CboMovimiento_SelectionChanged">
                             <ComboBoxItem Content="Venta"/>
