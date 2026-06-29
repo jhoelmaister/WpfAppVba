@@ -465,7 +465,7 @@ namespace WpfAppVba
                 gfxPagina.DrawString($"Fecha de emisión: {fechaEmisionStr}", fontCuerpo, XBrushes.Black,
                     new XRect(margen + anchoMedio, 16, anchoMedio, 16), XStringFormats.CenterRight);
 
-                gfxPagina.DrawString($"Páginas {totalPaginas}-{p + 1}", fontCuerpo, XBrushes.Black,
+                gfxPagina.DrawString($"Páginas {p + 1}-{totalPaginas}", fontCuerpo, XBrushes.Black,
                     new XRect(margen, paginaActual.Height - margen + 10, paginaActual.Width - margen * 2, 16), XStringFormats.CenterRight);
             }
 
