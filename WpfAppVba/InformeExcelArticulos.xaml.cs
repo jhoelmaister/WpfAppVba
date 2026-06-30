@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -137,9 +138,8 @@ namespace WpfAppVba
 
                 GenerarExcel(rutaFinal, fechaCorte);
 
-                MessageBox.Show($"Informe generado correctamente:\n{rutaFinal}", "Consola",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
                 Close();
+                Process.Start(new ProcessStartInfo(rutaFinal) { UseShellExecute = true });
             }
             catch (Exception ex)
             {
@@ -161,7 +161,7 @@ namespace WpfAppVba
 
             // ── Encabezados ───────────────────────────────────────────────
             ws.Cell(1, 1).Value = "Productos";
-            ws.Cell(1, 2).Value = "id";
+            ws.Cell(1, 2).Value = "Código";
             ws.Cell(1, 3).Value = "Categoría";
             ws.Cell(1, 4).Value = "Familia";
             ws.Cell(1, 5).Value = "Descripción Completa";
@@ -169,7 +169,7 @@ namespace WpfAppVba
 
             // ── Recolectar datos ──────────────────────────────────────────
             int uf = Sql.ArticulosObj.ContarFilas;
-            var datos = new List<(string id, string prodDesc, string catDesc, string famDesc, string descCompleta, double stock)>();
+            var datos = new List<(string id, string codigo, string prodDesc, string catDesc, string famDesc, string descCompleta, double stock)>();
 
             for (int i = 1; i <= uf; i++)
             {
@@ -177,6 +177,7 @@ namespace WpfAppVba
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
 
+                string codigo = Sql.ArticulosObj.ObtenerItem("codigo",      id)?.ToString() ?? "";
                 string desc   = Sql.ArticulosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
                 string modelo = Sql.ArticulosObj.ObtenerItem("modelo",      id)?.ToString() ?? "";
                 string famId  = Sql.ArticulosObj.ObtenerItem("familia",     id)?.ToString() ?? "";
@@ -190,7 +191,7 @@ namespace WpfAppVba
                 string descCompleta = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
                 double stock        = StockCalculator.ContarStock(id, fechaCorte);
 
-                datos.Add((id, prodDesc, catDesc, famDesc, descCompleta, stock));
+                datos.Add((id, codigo, prodDesc, catDesc, famDesc, descCompleta, stock));
             }
 
             // ── Ordenar por Producto → Familia → Id ──────────────────────
@@ -208,7 +209,7 @@ namespace WpfAppVba
             foreach (var item in datos)
             {
                 ws.Cell(row, 1).Value = item.prodDesc;
-                ws.Cell(row, 2).Value = item.id;
+                ws.Cell(row, 2).Value = item.codigo;
                 ws.Cell(row, 3).Value = item.catDesc;
                 ws.Cell(row, 4).Value = item.famDesc;
                 ws.Cell(row, 5).Value = item.descCompleta;
