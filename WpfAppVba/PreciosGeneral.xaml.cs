@@ -609,7 +609,7 @@ namespace WpfAppVba
             const double altoGrupo   = 18;
             const double altoFila    = 16;
             const double anchoN      = 28;
-            const double anchoCodigo = 65;
+            const double anchoCodigo = 90;
             const double anchoPrecio = 75;
 
             var document = new PdfDocument();
@@ -745,6 +745,8 @@ namespace WpfAppVba
             // todas las páginas. Se hace en una segunda pasada porque el total de
             // páginas recién se conoce una vez generado todo el contenido.
             string empresaDesc     = Sql.EmpresasObj.ObtenerItem("descripcion", AppState.EmpresaActiva)?.ToString() ?? "";
+            string sucursalDesc    = Sql.SucursalesObj.ObtenerItem("descripcion", AppState.SucursalActiva)?.ToString() ?? "";
+            string encabezadoIzq   = string.IsNullOrEmpty(sucursalDesc) ? empresaDesc : $"{empresaDesc} - {sucursalDesc}";
             DateTime fechaEmision  = DateTime.Now;
             string fechaEmisionStr = $"{fechaEmision:d} {fechaEmision:HH:mm:ss}";
             int totalPaginas       = document.PageCount;
@@ -755,7 +757,7 @@ namespace WpfAppVba
                 using var gfxPagina = XGraphics.FromPdfPage(paginaActual);
                 double anchoMedio = (paginaActual.Width - margen * 2) / 2;
 
-                gfxPagina.DrawString(empresaDesc, fontCuerpo, XBrushes.Black,
+                gfxPagina.DrawString(encabezadoIzq, fontCuerpo, XBrushes.Black,
                     new XRect(margen, 16, anchoMedio, 16), XStringFormats.CenterLeft);
                 gfxPagina.DrawString($"Fecha de emisión: {fechaEmisionStr}", fontCuerpo, XBrushes.Black,
                     new XRect(margen + anchoMedio, 16, anchoMedio, 16), XStringFormats.CenterRight);
@@ -765,6 +767,109 @@ namespace WpfAppVba
             }
 
             document.Save(filePath);
+        }
+
+        // ─── Excel de la lista de precios (botón "Excel" por fila) ───────────
+        private void BtnExcelFila_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.DataContext is not PrecioListaFila fila) return;
+
+            var dlg = new SaveFileDialog
+            {
+                Title            = "Guardar lista de precios",
+                FileName         = $"{DateTime.Now:yyyyMMdd HHmmss} lista de precios {fila.Codigo}.xlsx",
+                DefaultExt       = ".xlsx",
+                Filter           = "Excel (*.xlsx)|*.xlsx",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            };
+            if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
+
+            var btn = sender as Button;
+            try
+            {
+                if (btn != null) btn.IsEnabled = false;
+                Mouse.OverrideCursor = Cursors.Wait;
+
+                GenerarExcelListaPrecios(dlg.FileName, fila);
+
+                Process.Start(new ProcessStartInfo(dlg.FileName) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al generar el Excel:\n{ex.Message}", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+                if (btn != null) btn.IsEnabled = true;
+            }
+        }
+
+        private void GenerarExcelListaPrecios(string filePath, PrecioListaFila fila)
+        {
+            using var wb = new ClosedXML.Excel.XLWorkbook();
+            var ws = wb.Worksheets.Add("Lista de Precios");
+
+            ws.Cell(1, 1).Value = "N°";
+            ws.Cell(1, 2).Value = "Código";
+            ws.Cell(1, 3).Value = "Descripción";
+            ws.Cell(1, 4).Value = "Precio";
+
+            int uf = Sql.PreciosObj.ContarFilas;
+            var lineas = new List<(string prodDesc, string famDesc, string codigo, string desc, double precio)>();
+
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.PreciosObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                if (Sql.PreciosObj.ObtenerItem("documentoL", id)?.ToString() != fila.Id) continue;
+
+                string artId    = Sql.PreciosObj.ObtenerItem("articulo", id)?.ToString() ?? "";
+                string famId    = Sql.ArticulosObj.ObtenerItem("familia", artId)?.ToString() ?? "";
+                string prodId   = Sql.FamiliasObj.ObtenerItem("producto", famId)?.ToString() ?? "";
+                string prodDesc = Sql.ProductosObj.ObtenerItem("descripcion", prodId)?.ToString() ?? "";
+                string famDesc  = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString()  ?? "";
+                string codigo   = Sql.ArticulosObj.ObtenerItem("codigo",      artId)?.ToString()  ?? "";
+                string descArt  = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString()  ?? "";
+                string modelo   = Sql.ArticulosObj.ObtenerItem("modelo",      artId)?.ToString()  ?? "";
+                string descCompleta = FuncionesComunes.UnirVariables(descArt, famDesc, modelo);
+                double precio   = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0);
+                if (precio <= 0) continue;
+
+                lineas.Add((prodDesc, famDesc, codigo, descCompleta, precio));
+            }
+
+            var grupos = lineas
+                .GroupBy(l => (l.prodDesc, l.famDesc))
+                .OrderBy(g => g.Key.prodDesc, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(g => g.Key.famDesc, StringComparer.OrdinalIgnoreCase);
+
+            int row = 2;
+            int n = 0;
+            foreach (var grupo in grupos)
+            {
+                ws.Cell(row, 1).Value = $"{grupo.Key.prodDesc} & {grupo.Key.famDesc}";
+                ws.Range(row, 1, row, 4).Merge();
+                ws.Range(row, 1, row, 4).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromArgb(191, 219, 254);
+                ws.Range(row, 1, row, 4).Style.Font.Bold = true;
+                row++;
+
+                foreach (var l in grupo)
+                {
+                    n++;
+                    ws.Cell(row, 1).Value = n;
+                    ws.Cell(row, 2).Value = l.codigo;
+                    ws.Cell(row, 3).Value = l.desc;
+                    ws.Cell(row, 4).Value = l.precio;
+                    ws.Cell(row, 4).Style.NumberFormat.Format = "#,##0.00";
+                    row++;
+                }
+            }
+
+            ws.Columns().AdjustToContents();
+            wb.SaveAs(filePath);
         }
 
         // ─── Helper ───────────────────────────────────────────────────────────

@@ -640,16 +640,13 @@ namespace WpfAppVba
                 Grid.SetColumn(lbl, 0);
                 fila.Children.Add(lbl);
 
-                // Zona de barra: col0 = track proporcional (ancho ∝ valor/max dentro de
-                // ese track), col1 = etiqueta con ancho Auto SIEMPRE reservado, para que
-                // no se pierda aunque la barra ocupe el 100% del track (valor ≈ max).
+                // 3 columnas: col0=val Stars (barra), col1=Auto (etiqueta justo
+                // después), col2=(max-val) Stars (espacio restante). La etiqueta
+                // aparece pegada al borde derecho de su barra, no al del contenedor.
                 var bz = new Grid();
-                bz.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                bz.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(0.0001, val), GridUnitType.Star) });
                 bz.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-                var track = new Grid();
-                track.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(0.0001, val), GridUnitType.Star) });
-                track.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(0.0001, max - val), GridUnitType.Star) });
+                bz.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(0.0001, max - val), GridUnitType.Star) });
 
                 var bar = new Border
                 {
@@ -660,9 +657,7 @@ namespace WpfAppVba
                     VerticalAlignment = VerticalAlignment.Center
                 };
                 Grid.SetColumn(bar, 0);
-                track.Children.Add(bar);
-                Grid.SetColumn(track, 0);
-                bz.Children.Add(track);
+                bz.Children.Add(bar);
 
                 var v = new TextBlock
                 {

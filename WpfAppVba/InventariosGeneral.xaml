@@ -103,13 +103,20 @@
                 <DataGridTextColumn Header="Cant. Total" Binding="{Binding CantidadTotal, StringFormat=#\,##0.##}" Width="100"
                                     ElementStyle="{StaticResource CeldaNumero}"/>
 
-                <DataGridTemplateColumn Header="Acciones" Width="70">
+                <DataGridTemplateColumn Header="Acciones" Width="130">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <Button Content="PDF"
-                                    Style="{StaticResource BtnSecundario}"
-                                    Height="24" Padding="8,0" FontSize="11"
-                                    Click="BtnPdfFila_Click"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="PDF"
+                                        Style="{StaticResource BtnSecundario}"
+                                        Height="24" Padding="8,0" FontSize="11"
+                                        Margin="0,0,4,0"
+                                        Click="BtnPdfFila_Click"/>
+                                <Button Content="Excel"
+                                        Style="{StaticResource BtnSecundario}"
+                                        Height="24" Padding="8,0" FontSize="11"
+                                        Click="BtnExcelFila_Click"/>
+                            </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
