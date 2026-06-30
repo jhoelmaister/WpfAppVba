@@ -191,12 +191,24 @@
         </Border>
 
         <!-- ══ CONTENIDO ══════════════════════════════════════════════ -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16,20,0"
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16,20,16"
                       PanningMode="VerticalOnly">
-            <StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="12"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="12"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <!-- ▸ CARD: IDENTIFICACIÓN -->
-                <Border Style="{StaticResource CardBorder}">
+                <!-- ▸ CARD: IDENTIFICACIÓN  (col izq, fila 1) -->
+                <Border Grid.Column="0" Grid.Row="0" Style="{StaticResource CardBorder}" Margin="0">
                     <StackPanel>
                         <TextBlock Style="{StaticResource CardHeader}" Text="● IDENTIFICACIÓN"/>
 
@@ -204,7 +216,7 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="16"/>
-                                <ColumnDefinition Width="140"/>
+                                <ColumnDefinition Width="120"/>
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0">
@@ -223,8 +235,8 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ▸ CARD: CLASIFICACIÓN -->
-                <Border Style="{StaticResource CardBorder}">
+                <!-- ▸ CARD: CLASIFICACIÓN  (col der, filas 1-2) -->
+                <Border Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" Style="{StaticResource CardBorder}" Margin="0">
                     <StackPanel>
                         <TextBlock Style="{StaticResource CardHeader}" Text="● CLASIFICACIÓN"/>
 
@@ -233,10 +245,10 @@
                             <TextBlock Style="{StaticResource SectionLabel}" Text="FAMILIA"/>
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="80"/>
-                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="70"/>
+                                    <ColumnDefinition Width="10"/>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="10"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="Box_Identificador_Familia" Grid.Column="0"
@@ -245,7 +257,7 @@
                                          PreviewTextInput="Box_Numeros_PreviewTextInput"/>
                                 <Border Grid.Column="2" CornerRadius="6"
                                         Background="{DynamicResource ThemeBgReadOnly}"
-                                        Padding="10,0">
+                                        Padding="8,0">
                                     <TextBlock x:Name="Box_Familia_Descripcion"
                                                VerticalAlignment="Center" FontSize="12"
                                                Foreground="{DynamicResource ThemeTextoMuted}"
@@ -263,10 +275,10 @@
                             <TextBlock Style="{StaticResource SectionLabel}" Text="INDUSTRIA"/>
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="80"/>
-                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="70"/>
+                                    <ColumnDefinition Width="10"/>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="10"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="Box_Identificador_Industria" Grid.Column="0"
@@ -275,7 +287,7 @@
                                          PreviewTextInput="Box_Numeros_PreviewTextInput"/>
                                 <Border Grid.Column="2" CornerRadius="6"
                                         Background="{DynamicResource ThemeBgReadOnly}"
-                                        Padding="10,0">
+                                        Padding="8,0">
                                     <TextBlock x:Name="Box_Industria_Descripcion"
                                                VerticalAlignment="Center" FontSize="12"
                                                Foreground="{DynamicResource ThemeTextoMuted}"
@@ -293,10 +305,10 @@
                             <TextBlock Style="{StaticResource SectionLabel}" Text="CATEGORÍA"/>
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="80"/>
-                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="70"/>
+                                    <ColumnDefinition Width="10"/>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="10"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="Box_Identificador_Categoria" Grid.Column="0"
@@ -305,7 +317,7 @@
                                          PreviewTextInput="Box_Numeros_PreviewTextInput"/>
                                 <Border Grid.Column="2" CornerRadius="6"
                                         Background="{DynamicResource ThemeBgReadOnly}"
-                                        Padding="10,0">
+                                        Padding="8,0">
                                     <TextBlock x:Name="Box_Categoria_Descripcion"
                                                VerticalAlignment="Center" FontSize="12"
                                                Foreground="{DynamicResource ThemeTextoMuted}"
@@ -320,8 +332,8 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ▸ CARD: DETALLES DEL ARTÍCULO -->
-                <Border Style="{StaticResource CardBorder}">
+                <!-- ▸ CARD: DETALLES DEL ARTÍCULO  (col izq, fila 2) -->
+                <Border Grid.Column="0" Grid.Row="2" Style="{StaticResource CardBorder}" Margin="0">
                     <StackPanel>
                         <TextBlock Style="{StaticResource CardHeader}" Text="● DETALLES DEL ARTÍCULO"/>
 
@@ -339,8 +351,9 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ▸ CARD: OBSERVACIONES -->
-                <Border Style="{StaticResource CardBorder}" Margin="0,0,0,0">
+                <!-- ▸ CARD: OBSERVACIONES  (ancho completo, fila 3) -->
+                <Border Grid.Column="0" Grid.Row="4" Grid.ColumnSpan="3"
+                        Style="{StaticResource CardBorder}" Margin="0">
                     <StackPanel>
                         <TextBlock Style="{StaticResource CardHeader}" Text="● OBSERVACIONES"/>
                         <Border BorderBrush="{DynamicResource ThemeBordeInput}"
@@ -358,9 +371,7 @@
                     </StackPanel>
                 </Border>
 
-                <Rectangle Height="16"/>
-
-            </StackPanel>
+            </Grid>
         </ScrollViewer>
 
         <!-- ══ BARRA DE ACCIONES ══════════════════════════════════════ -->

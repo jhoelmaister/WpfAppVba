@@ -120,12 +120,24 @@
         </Border>
 
         <!-- ══ CONTENIDO ══════════════════════════════════════════════ -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16,20,0"
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16,20,16"
                       PanningMode="VerticalOnly">
-            <StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="12"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="12"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <!-- ▸ CARD: IDENTIFICACIÓN -->
-                <Border Style="{StaticResource CardBorder}">
+                <!-- ▸ CARD: IDENTIFICACIÓN  (col izq, fila 1) -->
+                <Border Grid.Column="0" Grid.Row="0" Style="{StaticResource CardBorder}" Margin="0">
                     <StackPanel>
                         <TextBlock Style="{StaticResource CardHeader}" Text="● IDENTIFICACIÓN"/>
 
@@ -152,36 +164,16 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ▸ CARD: INFORMACIÓN -->
-                <Border Style="{StaticResource CardBorder}">
-                    <StackPanel>
-                        <TextBlock Style="{StaticResource CardHeader}" Text="● INFORMACIÓN"/>
-
-                        <StackPanel Margin="0,0,0,12">
-                            <TextBlock Style="{StaticResource SectionLabel}" Text="DESCRIPCIÓN"/>
-                            <TextBox x:Name="Box_Descripcion" Style="{StaticResource ModernInput}"
-                                     TextChanged="Campo_TextChanged"/>
-                        </StackPanel>
-
-                        <StackPanel>
-                            <TextBlock Style="{StaticResource SectionLabel}" Text="DIRECCIÓN"/>
-                            <TextBox x:Name="Box_Direccion" Style="{StaticResource ModernInput}"
-                                     TextChanged="Campo_TextChanged"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <!-- ▸ CARD: CONTACTO -->
-                <Border Style="{StaticResource CardBorder}">
+                <!-- ▸ CARD: CONTACTO  (col der, filas 1-2) -->
+                <Border Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" Style="{StaticResource CardBorder}" Margin="0">
                     <StackPanel>
                         <TextBlock Style="{StaticResource CardHeader}" Text="● CONTACTO"/>
 
-                        <!-- Contacto principal + Teléfono -->
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="16"/>
-                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="160"/>
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0">
@@ -198,12 +190,11 @@
                             </StackPanel>
                         </Grid>
 
-                        <!-- Contacto 2 + Teléfono 2 -->
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="16"/>
-                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="160"/>
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0">
@@ -222,8 +213,28 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ▸ CARD: OBSERVACIONES -->
-                <Border Style="{StaticResource CardBorder}" Margin="0,0,0,0">
+                <!-- ▸ CARD: INFORMACIÓN  (col izq, fila 2) -->
+                <Border Grid.Column="0" Grid.Row="2" Style="{StaticResource CardBorder}" Margin="0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CardHeader}" Text="● INFORMACIÓN"/>
+
+                        <StackPanel Margin="0,0,0,12">
+                            <TextBlock Style="{StaticResource SectionLabel}" Text="DESCRIPCIÓN"/>
+                            <TextBox x:Name="Box_Descripcion" Style="{StaticResource ModernInput}"
+                                     TextChanged="Campo_TextChanged"/>
+                        </StackPanel>
+
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionLabel}" Text="DIRECCIÓN"/>
+                            <TextBox x:Name="Box_Direccion" Style="{StaticResource ModernInput}"
+                                     TextChanged="Campo_TextChanged"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ▸ CARD: OBSERVACIONES  (ancho completo, fila 3) -->
+                <Border Grid.Column="0" Grid.Row="4" Grid.ColumnSpan="3"
+                        Style="{StaticResource CardBorder}" Margin="0">
                     <StackPanel>
                         <TextBlock Style="{StaticResource CardHeader}" Text="● OBSERVACIONES"/>
                         <Border BorderBrush="{DynamicResource ThemeBordeInput}"
@@ -241,9 +252,7 @@
                     </StackPanel>
                 </Border>
 
-                <Rectangle Height="16"/>
-
-            </StackPanel>
+            </Grid>
         </ScrollViewer>
 
         <!-- ══ BARRA DE ACCIONES ══════════════════════════════════════ -->
