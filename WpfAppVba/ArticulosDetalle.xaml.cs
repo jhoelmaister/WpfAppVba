@@ -259,11 +259,16 @@ namespace WpfAppVba
         {
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
 
-            // Todo artículo debe tener una familia EXISTENTE (ya no existe "Sin
-            // Clasificar"). ResolverFamiliaId devuelve "" si está vacío o no existe.
             if (string.IsNullOrEmpty(ResolverFamiliaId()))
             {
                 MessageBox.Show("Debe asignar una familia existente al artículo.", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(ResolverCategoriaId()))
+            {
+                MessageBox.Show("Debe asignar una categoría existente al artículo.", "Consola",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return false;
             }
@@ -305,6 +310,12 @@ namespace WpfAppVba
         private bool GuardarNuevo()
         {
             string codigo = Box_Codigo.Text.Trim();
+            if (string.IsNullOrEmpty(codigo))
+            {
+                MessageBox.Show("Debe asignar un código al artículo.", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
             try
             {
                 if (Sql.ArticulosObj.CodigoExiste(codigo))
@@ -349,6 +360,12 @@ namespace WpfAppVba
         private bool GuardarInsertar()
         {
             string codigo = Box_Codigo.Text.Trim();
+            if (string.IsNullOrEmpty(codigo))
+            {
+                MessageBox.Show("Debe asignar un código al artículo.", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
             try
             {
                 if (Sql.ArticulosObj.CodigoExiste(codigo))

@@ -113,6 +113,12 @@ namespace WpfAppVba
         private bool GuardarNuevo()
         {
             string codigo = Box_Codigo.Text.Trim();
+            if (string.IsNullOrEmpty(codigo))
+            {
+                MessageBox.Show("Debe asignar un código a la región.", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
             try
             {
                 if (Sql.RegionesObj.CodigoExiste(codigo))

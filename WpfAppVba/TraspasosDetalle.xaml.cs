@@ -748,6 +748,13 @@ namespace WpfAppVba
 
                 string tipo      = AppState.TipoMovimiento.ToLower();
                 string otroUuid  = ResolverSucursalId();
+                if (string.IsNullOrEmpty(otroUuid))
+                {
+                    string campo = tipo == "salida" ? "sucursal destino" : "sucursal origen";
+                    MessageBox.Show($"Debe asignar una {campo} al documento.", "Consola",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
                 string origenId  = tipo == "salida"  ? AppState.SucursalActiva : otroUuid;
                 string destinoId = tipo == "entrada" ? AppState.SucursalActiva : otroUuid;
                 string estado    = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "pendiente";
@@ -803,6 +810,13 @@ namespace WpfAppVba
                 if (estado == "pendiente revisar") estado = "pendiente";
 
                 string otroUuidE = ResolverSucursalId();
+                if (_editarFormulario && string.IsNullOrEmpty(otroUuidE))
+                {
+                    string campo = tipo == "salida" ? "sucursal destino" : "sucursal origen";
+                    MessageBox.Show($"Debe asignar una {campo} al documento.", "Consola",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
 
                 Sql.DocumentosTObj.EstablecerItem("fecha",       docT, fechaFinal);
                 Sql.DocumentosTObj.EstablecerItem(campOtro,      docT, otroUuidE);
