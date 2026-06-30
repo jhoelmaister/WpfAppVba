@@ -222,6 +222,7 @@
                             <StackPanel Grid.Column="0">
                                 <TextBlock Style="{StaticResource SectionLabel}" Text="CÓDIGO"/>
                                 <TextBox x:Name="Box_Codigo" Style="{StaticResource ModernInput}"
+                                         MaxLength="20"
                                          TextChanged="Campo_TextChanged"/>
                             </StackPanel>
 

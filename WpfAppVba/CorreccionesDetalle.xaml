@@ -98,12 +98,11 @@
 
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>  <!-- 0  Encabezado -->
             <RowDefinition Height="Auto"/>  <!-- 1  Toolbar -->
-            <RowDefinition Height="Auto"/>  <!-- 2  GridItems -->
+            <RowDefinition Height="*"/>     <!-- 2  GridItems -->
             <RowDefinition Height="140"/>   <!-- 3  Stock + Observación -->
             <RowDefinition Height="Auto"/>  <!-- 4  Totales -->
         </Grid.RowDefinitions>
@@ -467,5 +466,4 @@
             </StackPanel>
         </Border>
     </Grid>
-    </ScrollViewer>
 </UserControl>
