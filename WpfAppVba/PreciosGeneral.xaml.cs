@@ -623,10 +623,10 @@ namespace WpfAppVba
             double anchoDesc  = anchoTabla - anchoN - anchoCodigo - anchoProd - anchoFam - anchoPrecio;
             double xN      = margen;
             double xCodigo = xN + anchoN;
-            double xDesc   = xCodigo + anchoCodigo;
-            double xProd   = xDesc + anchoDesc;
+            double xProd   = xCodigo + anchoCodigo;
             double xFam    = xProd + anchoProd;
-            double xPrecio = xFam + anchoFam;
+            double xDesc   = xFam + anchoFam;
+            double xPrecio = xDesc + anchoDesc;
 
             double y = margen;
 
@@ -823,9 +823,9 @@ namespace WpfAppVba
 
             ws.Cell(1, 1).Value = "N°";
             ws.Cell(1, 2).Value = "Código";
-            ws.Cell(1, 3).Value = "Descripción";
-            ws.Cell(1, 4).Value = "Producto";
-            ws.Cell(1, 5).Value = "Familia";
+            ws.Cell(1, 3).Value = "Producto";
+            ws.Cell(1, 4).Value = "Familia";
+            ws.Cell(1, 5).Value = "Descripción";
             ws.Cell(1, 6).Value = "Precio";
 
             int uf = Sql.PreciosObj.ContarFilas;
@@ -871,9 +871,9 @@ namespace WpfAppVba
                     n++;
                     ws.Cell(row, 1).Value = n;
                     ws.Cell(row, 2).Value = l.codigo;
-                    ws.Cell(row, 3).Value = l.desc;
-                    ws.Cell(row, 4).Value = l.prodDesc;
-                    ws.Cell(row, 5).Value = l.famDesc;
+                    ws.Cell(row, 3).Value = l.prodDesc;
+                    ws.Cell(row, 4).Value = l.famDesc;
+                    ws.Cell(row, 5).Value = l.desc;
                     ws.Cell(row, 6).Value = l.precio;
                     row++;
                 }

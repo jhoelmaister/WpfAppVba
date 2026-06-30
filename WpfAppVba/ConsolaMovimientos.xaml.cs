@@ -576,17 +576,7 @@ namespace WpfAppVba
             else _panelTraspasos.AbrirNuevoTraspaso("entrada");
         }
 
-        private void MarcarInactivo()
-        {
-            if (string.IsNullOrEmpty(AppState.UsuarioActivo)) return;
-            try
-            {
-                var sql = SqlData.Instance;
-                sql.UsuariosObj.EstablecerItem("estadoU", AppState.UsuarioActivo, "inactivo");
-                sql.UsuariosObj.ExportarItems();
-            }
-            catch { }
-        }
+        private void MarcarInactivo() { }
 
         // Marcado cuando el cierre ya fue confirmado (p. ej. desde Cerrar sesión) para
         // que el evento Closing no vuelva a preguntar.

@@ -107,7 +107,8 @@ namespace WpfAppVba
             TxtCuenta.IsEnabled            = habilitado;
             TxtContrasena.IsEnabled        = habilitado;
             TxtContrasenaVisible.IsEnabled = habilitado;
-            BtnVerContrasena.IsEnabled     = habilitado;
+            BtnVerContrasena.IsEnabled      = habilitado;
+            BtnConfigurarConexion.IsEnabled = habilitado;
         }
 
         // ─── Auto-reconexión: reintenta cada 4 s hasta que vuelva el internet ─────
@@ -295,9 +296,6 @@ namespace WpfAppVba
                     AppState.SucursalActiva = Sql.UsuariosObj.ObtenerItem("sucursal", idEncontrado)?.ToString() ?? "";
                     AppState.SesionActiva   = true;
                     AppState.PeriodoActivo  = DateTime.Now.Year.ToString();
-
-                    Sql.UsuariosObj.EstablecerItem("estadoU", idEncontrado, "activo");
-                    Sql.UsuariosObj.ExportarItems();
 
                     string temaUsuario = Sql.UsuariosObj.ObtenerItem("temaC", idEncontrado)?.ToString() ?? "";
                     AppState.TemaActivo = temaUsuario.Trim().ToLowerInvariant() == ThemeManager.TemaOscuro

@@ -509,13 +509,16 @@ namespace WpfAppVba
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
             string titulo = "Nuevo Artículo";
+            var filaAntes = Grid1.SelectedItem as ArticuloFila;
             var dlg = new ArticulosDetalle(this, tituloTab: titulo);
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);
                 if (dlg.ItemCreadoId == null) return;   // cancelado
+                var lista = FilasGrid;
                 var nueva = ConstruirFila(dlg.ItemCreadoId, 0);
-                FilasGrid.Add(nueva);
+                int idx = filaAntes != null ? lista.IndexOf(filaAntes) : -1;
+                if (idx >= 0) lista.Insert(idx, nueva); else lista.Add(nueva);
                 RenumerarYActualizarTotales();
                 EnfocarFila(nueva);
             };

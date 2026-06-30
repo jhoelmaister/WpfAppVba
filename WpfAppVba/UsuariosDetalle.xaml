@@ -189,14 +189,6 @@
                                     <ComboBoxItem Content="user"/>
                                 </ComboBox>
                             </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Style="{StaticResource SectionLabel}" Text="ESTADO"/>
-                                <Border Height="36" CornerRadius="6"
-                                        Background="{DynamicResource ThemeBgReadOnly}" Padding="10,0">
-                                    <TextBlock x:Name="TxtEstadoU" VerticalAlignment="Center" FontSize="13"
-                                               Foreground="{DynamicResource ThemeTextoMuted}"/>
-                                </Border>
-                            </StackPanel>
                         </Grid>
                     </StackPanel>
                 </Border>

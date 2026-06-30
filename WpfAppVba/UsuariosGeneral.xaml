@@ -83,7 +83,6 @@
                     <DataGridTextColumn Header="Nombres"   Binding="{Binding Nombres}"   Width="*"/>
                     <DataGridTextColumn Header="Apellidos" Binding="{Binding Apellidos}" Width="*"/>
                     <DataGridTextColumn Header="Tipo"      Binding="{Binding Tipo}"      Width="80"/>
-                    <DataGridTextColumn Header="Estado"    Binding="{Binding EstadoU}"   Width="80"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Border>

@@ -110,7 +110,6 @@ namespace WpfAppVba
 
             SeleccionarComboBoxItem(CmbTipo,
                 Sql.UsuariosObj.ObtenerItem("tipo",    id)?.ToString() ?? "user");
-            TxtEstadoU.Text = Sql.UsuariosObj.ObtenerItem("estadoU", id)?.ToString() ?? "";
 
             // Empresa → dispara PoblarSucursales
             string empId = Sql.UsuariosObj.ObtenerItem("empresa", id)?.ToString() ?? "";
@@ -131,7 +130,6 @@ namespace WpfAppVba
             Box_Codigo.Text = Sql.UsuariosObj.SiguienteCodigoInt().ToString();
 
             if (CmbTipo.Items.Count > 1) CmbTipo.SelectedIndex = 1; // "user"
-            TxtEstadoU.Text = "inactivo";
 
             var activeEmp = CmbEmpresa.Items.OfType<EmpresaItem>()
                             .FirstOrDefault(x => x.Id == AppState.EmpresaActiva);
@@ -233,7 +231,6 @@ namespace WpfAppVba
                 Sql.UsuariosObj.EstablecerItem("nombres",   id, Box_Nombres.Text.Trim());
                 Sql.UsuariosObj.EstablecerItem("apellidos", id, Box_Apellidos.Text.Trim());
                 Sql.UsuariosObj.EstablecerItem("tipo",     id, ObtenerComboValor(CmbTipo));
-                Sql.UsuariosObj.EstablecerItem("estadoU",  id, "inactivo");
                 Sql.UsuariosObj.EstablecerItem("empresa",  id, (CmbEmpresa.SelectedItem  as EmpresaItem)?.Id  ?? "");
                 Sql.UsuariosObj.EstablecerItem("sucursal", id, (CmbSucursal.SelectedItem as SucursalItem)?.Id ?? "");
                 Sql.UsuariosObj.EstablecerItem("estadof",  id, "normal");

@@ -36,7 +36,6 @@ namespace WpfAppVba
                 string nombres   = Sql.UsuariosObj.ObtenerItem("nombres",   id)?.ToString() ?? "";
                 string apellidos = Sql.UsuariosObj.ObtenerItem("apellidos", id)?.ToString() ?? "";
                 string tipo      = Sql.UsuariosObj.ObtenerItem("tipo",      id)?.ToString() ?? "";
-                string estadoU   = Sql.UsuariosObj.ObtenerItem("estadoU",   id)?.ToString() ?? "";
                 string codigo    = Sql.UsuariosObj.ObtenerItem("codigo",    id)?.ToString() ?? "";
 
                 if (busqueda != "" &&
@@ -54,7 +53,6 @@ namespace WpfAppVba
                     Nombres   = nombres,
                     Apellidos = apellidos,
                     Tipo      = tipo,
-                    EstadoU   = estadoU
                 });
             }
 
@@ -74,7 +72,6 @@ namespace WpfAppVba
             Nombres   = Sql.UsuariosObj.ObtenerItem("nombres",   id)?.ToString() ?? "",
             Apellidos = Sql.UsuariosObj.ObtenerItem("apellidos", id)?.ToString() ?? "",
             Tipo      = Sql.UsuariosObj.ObtenerItem("tipo",      id)?.ToString() ?? "",
-            EstadoU   = Sql.UsuariosObj.ObtenerItem("estadoU",   id)?.ToString() ?? ""
         };
 
         private void Renumerar()
@@ -218,6 +215,5 @@ namespace WpfAppVba
         public string Nombres   { get; set; } = "";
         public string Apellidos { get; set; } = "";
         public string Tipo      { get; set; } = "";
-        public string EstadoU   { get; set; } = "";
     }
 }
