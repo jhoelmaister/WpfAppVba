@@ -83,6 +83,11 @@ namespace WpfAppVba
             Box_Referencia.Text  = Sql.DocumentosCObj.ObtenerItem("referencia",  _idEditar)?.ToString() ?? "";
             Box_Observacion.Text = Sql.DocumentosCObj.ObtenerItem("observacion", _idEditar)?.ToString() ?? "";
 
+            var emisionObj = Sql.DocumentosCObj.ObtenerItem("emision", _idEditar);
+            var edicionObj = Sql.DocumentosCObj.ObtenerItem("edicion", _idEditar);
+            Box_Emision.Text = emisionObj != null ? $"{Convert.ToDateTime(emisionObj):d} {Convert.ToDateTime(emisionObj):HH:mm:ss}" : "";
+            Box_Edicion.Text = edicionObj != null ? $"{Convert.ToDateTime(edicionObj):d} {Convert.ToDateTime(edicionObj):HH:mm:ss}" : "";
+
             // Cargar líneas de la corrección
             _items.Clear();
             int linea = 1;
@@ -124,6 +129,9 @@ namespace WpfAppVba
             Box_DocumentoC.Text  = _codigoDocC;
             Box_Fecha.SelectedDate = DateTime.Today;
             Box_Hora.Text          = DateTime.Now.ToString("HH:mm:ss");
+            var ahora = DateTime.Now;
+            Box_Emision.Text = $"{ahora:d} {ahora:HH:mm:ss}";
+            Box_Edicion.Text = $"{ahora:d} {ahora:HH:mm:ss}";
 
             // Preseleccionar el movimiento según la sub-pestaña (Ingresos / Egresos)
             string tipo = string.IsNullOrEmpty(AppState.TipoCorreccion) ? "egreso" : AppState.TipoCorreccion;
