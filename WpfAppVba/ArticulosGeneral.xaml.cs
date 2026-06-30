@@ -540,7 +540,7 @@ namespace WpfAppVba
                 var lista = FilasGrid;
                 int idx   = lista.IndexOf(fila);
                 var nueva = ConstruirFila(dlg.ItemCreadoId, 0);
-                if (idx >= 0) lista.Insert(idx + 1, nueva); else lista.Add(nueva);
+                if (idx >= 0) lista.Insert(idx, nueva); else lista.Add(nueva);
                 RenumerarYActualizarTotales();
                 EnfocarFila(nueva);
             };
