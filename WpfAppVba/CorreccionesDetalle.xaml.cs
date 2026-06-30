@@ -577,12 +577,22 @@ namespace WpfAppVba
             if (ok) { _hayCambios = false; Cerrando?.Invoke(); }
         }
 
+        private bool SinPestañasRelacionadas()
+        {
+            var c = Window.GetWindow(this) as ConsolaMovimientos;
+            return c == null || c.ConfirmarCierrePestañasRelacionadas(_tituloTab);
+        }
+
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
-        { _hayCambios = false; Cerrando?.Invoke(); }
+        {
+            if (!SinPestañasRelacionadas()) return;
+            _hayCambios = false; Cerrando?.Invoke();
+        }
 
         public void IntentarCerrar()
         {
             GridItems.CommitEdit(DataGridEditingUnit.Row, true);
+            if (!SinPestañasRelacionadas()) return;
             if (!_hayCambios) { Cerrando?.Invoke(); return; }
 
             var res = MessageBox.Show("¿Guardar cambios?", "Consola",
@@ -595,6 +605,7 @@ namespace WpfAppVba
         // ─── Guardar ─────────────────────────────────────────────────────────
         private bool Guardar()
         {
+            if (!SinPestañasRelacionadas()) return false;
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
 
             return AppState.EventoFormularioC == "editar"

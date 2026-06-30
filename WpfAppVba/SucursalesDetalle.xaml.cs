@@ -161,9 +161,16 @@ namespace WpfAppVba
             if (!_cargando) _hayCambios = true;
         }
 
+        private bool SinPestañasRelacionadas()
+        {
+            var c = Window.GetWindow(this) as ConsolaMovimientos;
+            return c == null || c.ConfirmarCierrePestañasRelacionadas(_tituloTab);
+        }
+
         // ─── Guardar ──────────────────────────────────────────────────────────
         private bool Guardar()
         {
+            if (!SinPestañasRelacionadas()) return false;
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
 
             return AppState.EventoFormularioI == "modificar"
@@ -264,11 +271,15 @@ namespace WpfAppVba
         { if (Guardar()) { _hayCambios = false; Cerrando?.Invoke(); } }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
-        { _hayCambios = false; Cerrando?.Invoke(); }
+        {
+            if (!SinPestañasRelacionadas()) return;
+            _hayCambios = false; Cerrando?.Invoke();
+        }
 
         // ─── Al cerrar: preguntar si hay cambios ──────────────────────────────
         public void IntentarCerrar()
         {
+            if (!SinPestañasRelacionadas()) return;
             if (!_hayCambios) { Cerrando?.Invoke(); return; }
 
             var res = MessageBox.Show("¿Guardar Cambios?", "Consola",

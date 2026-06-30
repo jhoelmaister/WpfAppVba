@@ -395,6 +395,34 @@ namespace WpfAppVba
                 TabContenido.SelectedIndex = Math.Max(0, idx - 1);
         }
 
+        // ─── Verificar y cerrar pestañas vinculadas antes de guardar/cerrar ─────
+        // Devuelve true si se puede continuar (no hay pestañas o el usuario aceptó cerrarlas).
+        public bool ConfirmarCierrePestañasRelacionadas(string contexto)
+        {
+            if (string.IsNullOrEmpty(contexto)) return true;
+            var relacionadas = new List<TabItem>();
+            foreach (TabItem t in TabContenido.Items)
+                if (t.Tag is string clave && clave.EndsWith($"|{contexto}"))
+                    relacionadas.Add(t);
+            if (relacionadas.Count == 0) return true;
+
+            string lista = string.Join("\n• ", relacionadas.Select(t =>
+                t.Header is StackPanel sp
+                    ? sp.Children.OfType<TextBlock>().FirstOrDefault()?.Text ?? "pestaña"
+                    : t.Tag?.ToString() ?? "pestaña"));
+
+            var res = MessageBox.Show(
+                $"Tiene pestaña(s) vinculada(s) aún abierta(s):\n• {lista}\n\nAceptar: cerrarlas y continuar.\nCancelar: volver sin cerrar nada.",
+                "Pestañas relacionadas abiertas",
+                MessageBoxButton.OKCancel,
+                MessageBoxImage.Warning);
+
+            if (res != MessageBoxResult.OK) return false;
+            foreach (var t in relacionadas)
+                TabContenido.Items.Remove(t);
+            return true;
+        }
+
         // ─── Resaltar ítem activo en la barra lateral ─────────────────────────
         private void MarcarActivo(Button btn)
         {

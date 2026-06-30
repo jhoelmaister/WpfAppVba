@@ -732,9 +732,16 @@ namespace WpfAppVba
             GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
         }
 
+        private bool SinPestañasRelacionadas()
+        {
+            var c = Window.GetWindow(this) as ConsolaMovimientos;
+            return c == null || c.ConfirmarCierrePestañasRelacionadas(_tituloTab);
+        }
+
         // ─── Guardar ──────────────────────────────────────────────────────────
         private bool Guardar()
         {
+            if (!SinPestañasRelacionadas()) return false;
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
             return AppState.EventoFormularioM == "editar" ? GuardarEditar() : GuardarNuevo();
         }
@@ -896,14 +903,16 @@ namespace WpfAppVba
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
-        { _hayCambios = false; Cerrando?.Invoke(); }
+        {
+            if (!SinPestañasRelacionadas()) return;
+            _hayCambios = false; Cerrando?.Invoke();
+        }
 
         // ─── Al cerrar (llamado por el botón X de la pestaña) ──────────────────
         public void IntentarCerrar()
         {
-            // Confirma cualquier celda en edición antes de chequear cambios pendientes
             GridItems.CommitEdit(DataGridEditingUnit.Row, true);
-
+            if (!SinPestañasRelacionadas()) return;
             if (!_hayCambios) { Cerrando?.Invoke(); return; }
 
             var res = MessageBox.Show("¿Guardar cambios?", "Consola",

@@ -1412,8 +1412,15 @@ namespace WpfAppVba
         }
 
         // ─── Guardar ──────────────────────────────────────────────────────────
+        private bool SinPestañasRelacionadas()
+        {
+            var c = Window.GetWindow(this) as ConsolaMovimientos;
+            return c == null || c.ConfirmarCierrePestañasRelacionadas(_tituloTab);
+        }
+
         private bool Guardar()
         {
+            if (!SinPestañasRelacionadas()) return false;
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
 
             return AppState.EventoFormularioM == "editar"
@@ -1640,6 +1647,7 @@ namespace WpfAppVba
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
         {
+            if (!SinPestañasRelacionadas()) return;
             _cambioDocumento = _cambioPedido = _cambioTrasaccion = _cambioEntrega = false;
             Cerrando?.Invoke();
         }
@@ -1656,6 +1664,7 @@ namespace WpfAppVba
         public void IntentarCerrar()
         {
             CommitEdicionesPendientes();
+            if (!SinPestañasRelacionadas()) return;
             if (!HayCambios) { Cerrando?.Invoke(); return; }
 
             var res = MessageBox.Show("¿Guardar cambios?", "Consola",
