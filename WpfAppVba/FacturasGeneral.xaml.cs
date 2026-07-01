@@ -31,6 +31,10 @@ namespace WpfAppVba
         // ─── Carga el árbol de meses ──────────────────────────────────────────
         private void CargarMeses()
         {
+            // Qué estaba seleccionado ANTES de reconstruir el árbol: null = todavía no se
+            // seleccionó nada (primera carga); "" = nodo raíz "Todos"; nombre de mes = ese mes.
+            object? tagPrevio = (Tree1.SelectedItem as TreeViewItem)?.Tag;
+
             Tree1.Items.Clear();
             string[] meses = { "Enero","Febrero","Marzo","Abril","Mayo","Junio",
                                 "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre" };
@@ -55,7 +59,7 @@ namespace WpfAppVba
             }
 
             // Si no hay documentos en el período, el árbol queda vacío (no se muestra el año).
-            if (mesesConDatos.Count == 0) return;
+            if (mesesConDatos.Count == 0) { _mesActivo = ""; return; }
 
             // Nodo padre con el año/período activo → muestra todos los meses (Tag vacío = sin filtro)
             var nodoGeneral = new TreeViewItem
@@ -69,17 +73,40 @@ namespace WpfAppVba
 
             Tree1.Items.Add(nodoGeneral);
 
-            // Selección por defecto: mes actual (si tiene documentos)
-            int mesActual = DateTime.Now.Month;
-            if (mesesConDatos.Contains(mesActual))
+            bool SeleccionarMes(string nombreMes)
             {
                 foreach (var item in nodoGeneral.Items)
                 {
-                    if (item is not TreeViewItem ti || (string)ti.Tag != meses[mesActual - 1]) continue;
+                    if (item is not TreeViewItem ti || (string)ti.Tag != nombreMes) continue;
                     ti.IsSelected = true;
-                    _mesActivo = meses[mesActual - 1];
-                    break;
+                    _mesActivo = nombreMes;
+                    return true;
                 }
+                return false;
+            }
+
+            string? mesActualNombre = mesesConDatos.Contains(DateTime.Now.Month)
+                ? meses[DateTime.Now.Month - 1]
+                : null;
+
+            if (tagPrevio is string tagVacio && tagVacio == "")
+            {
+                // Se estaba viendo "Todos" (nodo raíz): conservarlo tal cual.
+                nodoGeneral.IsSelected = true;
+                _mesActivo = "";
+            }
+            else if (tagPrevio is string mesPrevio && SeleccionarMes(mesPrevio))
+            {
+                // Mes previamente activo conservado (p. ej. al volver de guardar/editar).
+            }
+            else if (mesActualNombre != null)
+            {
+                // Primera carga, o el mes previo ya no tiene documentos: usar el mes actual.
+                SeleccionarMes(mesActualNombre);
+            }
+            else
+            {
+                _mesActivo = "";
             }
         }
 
@@ -226,27 +253,6 @@ namespace WpfAppVba
         private List<FacturaFila> FilasGrid =>
             Grid1.ItemsSource as List<FacturaFila> ?? new List<FacturaFila>();
 
-        private FacturaFila ConstruirFila(string id, int linea)
-        {
-            var fechaObj = Sql.DocumentosFObj.ObtenerItem("fecha", id);
-            DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : default;
-            string terceroId = Sql.DocumentosFObj.ObtenerItem("tercero", id)?.ToString() ?? "";
-            return new FacturaFila
-            {
-                Linea        = linea,
-                Id           = id,
-                Codigo       = Sql.DocumentosFObj.ObtenerItem("codigo",     id)?.ToString() ?? "",
-                Fecha        = fecha,
-                FechaStr     = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
-                Referencia   = Sql.DocumentosFObj.ObtenerItem("referencia", id)?.ToString() ?? "",
-                TerceroDesc  = Sql.TercerosObj.ObtenerItem("descripcion", terceroId)?.ToString() ?? "",
-                Movimiento   = (Sql.DocumentosFObj.ObtenerItem("movimiento", id)?.ToString() ?? "venta").ToLower(),
-                ImporteTotal = CalcularImporte(id),
-                Estado       = Sql.DocumentosFObj.ObtenerItem("estado",  id)?.ToString() ?? "pendiente",
-                EstadoC      = Sql.DocumentosFObj.ObtenerItem("estadoC", id)?.ToString() ?? "pendiente"
-            };
-        }
-
         private void RenumerarYTotales()
         {
             var lista = FilasGrid;
@@ -390,10 +396,12 @@ namespace WpfAppVba
             {
                 consola.CerrarPestaña(dlg);
                 if (dlg.ItemCreadoId == null) return;
-                var nueva = ConstruirFila(dlg.ItemCreadoId, 0);
-                FilasGrid.Add(nueva);
-                RenumerarYTotales();
-                Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
+                // Recarga completa (no incremental): así el árbol de meses refleja el
+                // mes del documento recién creado y el listado respeta los filtros activos.
+                CargarMeses();
+                CargarFacturas();
+                var creada = FilasGrid.FirstOrDefault(f => f.Id == dlg.ItemCreadoId);
+                if (creada != null) { Grid1.SelectedItem = creada; Grid1.ScrollIntoView(creada); }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
             consola.AbrirPestaña(titulo, dlg, clave);
@@ -472,7 +480,6 @@ namespace WpfAppVba
             if (Grid1.SelectedItem is not FacturaFila fila) return;
 
             string idSel = fila.Id;
-            int    linea = fila.Linea;
 
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
@@ -481,15 +488,12 @@ namespace WpfAppVba
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);
-                var lista = FilasGrid;
-                int idx   = lista.IndexOf(fila);
-                if (idx >= 0)
-                {
-                    var actualizada = ConstruirFila(idSel, linea);
-                    lista[idx] = actualizada;
-                    RenumerarYTotales();
-                    Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
-                }
+                // Recarga completa (no incremental): la edición pudo cambiar el mes
+                // (fecha) del documento, así que el árbol y el listado deben rehacerse.
+                CargarMeses();
+                CargarFacturas();
+                var actualizada = FilasGrid.FirstOrDefault(f => f.Id == idSel);
+                if (actualizada != null) { Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada); }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
             consola.AbrirPestaña(titulo, dlg, $"factura-{idSel}");
