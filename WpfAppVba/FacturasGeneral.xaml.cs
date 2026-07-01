@@ -93,6 +93,8 @@ namespace WpfAppVba
             double totalImporte = 0;
             string busqueda  = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
             string mesFiltro = _modoFiltro == "filtros"   ? _mesActivo : "";
+            string filtroEstado = ObtenerFiltroEstado();
+            string filtroCuenta = ObtenerFiltroCuenta();
 
             int uf = Sql.DocumentosFObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -115,12 +117,28 @@ namespace WpfAppVba
                     if (!string.Equals(mesDoc, mesFiltro, StringComparison.OrdinalIgnoreCase)) continue;
                 }
 
-                string codigo     = Sql.DocumentosFObj.ObtenerItem("codigo", id)?.ToString() ?? "";
-                string referencia = Sql.DocumentosFObj.ObtenerItem("referencia", id)?.ToString() ?? "";
+                string estado  = (Sql.DocumentosFObj.ObtenerItem("estado",  id)?.ToString() ?? "pendiente").ToLower();
+                string estadoC = (Sql.DocumentosFObj.ObtenerItem("estadoC", id)?.ToString() ?? "pendiente").ToLower();
+
+                // Filtro por estado
+                if (!string.IsNullOrEmpty(filtroEstado) &&
+                    !string.Equals(estado, filtroEstado, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // Filtro por cuenta (estadoC)
+                if (!string.IsNullOrEmpty(filtroCuenta) &&
+                    !string.Equals(estadoC, filtroCuenta, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                string codigo      = Sql.DocumentosFObj.ObtenerItem("codigo", id)?.ToString() ?? "";
+                string referencia  = Sql.DocumentosFObj.ObtenerItem("referencia", id)?.ToString() ?? "";
+                string terceroId   = Sql.DocumentosFObj.ObtenerItem("tercero", id)?.ToString() ?? "";
+                string terceroDesc = Sql.TercerosObj.ObtenerItem("descripcion", terceroId)?.ToString() ?? "";
 
                 // Filtro por búsqueda
                 if (!string.IsNullOrEmpty(busqueda))
-                    if (!codigo.ToLower().Contains(busqueda) && !referencia.ToLower().Contains(busqueda))
+                    if (!codigo.ToLower().Contains(busqueda) && !referencia.ToLower().Contains(busqueda)
+                        && !terceroDesc.ToLower().Contains(busqueda))
                         continue;
 
                 double importe = CalcularImporte(id);
@@ -132,9 +150,10 @@ namespace WpfAppVba
                     Fecha        = fechaDoc,
                     FechaStr     = fechaDoc != default ? $"{fechaDoc:d} {fechaDoc:HH:mm:ss}" : "",
                     Referencia   = referencia,
+                    TerceroDesc  = terceroDesc,
                     ImporteTotal = importe,
-                    Estado       = Sql.DocumentosFObj.ObtenerItem("estado",  id)?.ToString() ?? "pendiente",
-                    EstadoC      = Sql.DocumentosFObj.ObtenerItem("estadoC", id)?.ToString() ?? "pendiente"
+                    Estado       = estado,
+                    EstadoC      = estadoC
                 });
                 totalImporte += importe;
             }
@@ -152,6 +171,28 @@ namespace WpfAppVba
             OcultarDetalle();
         }
 
+        // ─── Filtros ──────────────────────────────────────────────────────────
+        private string ObtenerFiltroEstado()
+        {
+            if (BtnFiltroPendiente?.IsChecked == true) return "pendiente";
+            if (BtnFiltroEntregado?.IsChecked == true) return "entregado";
+            return "";
+        }
+
+        private string ObtenerFiltroCuenta()
+        {
+            if (BtnCuentaPendiente?.IsChecked == true) return "pendiente";
+            if (BtnCuentaCancelado?.IsChecked == true) return "cancelado";
+            if (BtnCuentaParcial?.IsChecked   == true) return "pendiente parcial";
+            return "";
+        }
+
+        private void FiltroEstado_Checked(object sender, RoutedEventArgs e)
+            => CargarFacturas();
+
+        private void FiltroCuenta_Checked(object sender, RoutedEventArgs e)
+            => CargarFacturas();
+
         // ─── Nombre de mes ────────────────────────────────────────────────────
         private static string ObtenerNombreMes(int mes)
         {
@@ -168,6 +209,7 @@ namespace WpfAppVba
         {
             var fechaObj = Sql.DocumentosFObj.ObtenerItem("fecha", id);
             DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : default;
+            string terceroId = Sql.DocumentosFObj.ObtenerItem("tercero", id)?.ToString() ?? "";
             return new FacturaFila
             {
                 Linea        = linea,
@@ -176,6 +218,7 @@ namespace WpfAppVba
                 Fecha        = fecha,
                 FechaStr     = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                 Referencia   = Sql.DocumentosFObj.ObtenerItem("referencia", id)?.ToString() ?? "",
+                TerceroDesc  = Sql.TercerosObj.ObtenerItem("descripcion", terceroId)?.ToString() ?? "",
                 ImporteTotal = CalcularImporte(id),
                 Estado       = Sql.DocumentosFObj.ObtenerItem("estado",  id)?.ToString() ?? "pendiente",
                 EstadoC      = Sql.DocumentosFObj.ObtenerItem("estadoC", id)?.ToString() ?? "pendiente"
@@ -438,6 +481,7 @@ namespace WpfAppVba
         public DateTime Fecha        { get; set; }
         public string   FechaStr     { get; set; } = "";
         public string   Referencia   { get; set; } = "";
+        public string   TerceroDesc  { get; set; } = "";
         public double   ImporteTotal { get; set; }
         public string   Estado       { get; set; } = "pendiente";
         public string   EstadoC      { get; set; } = "pendiente";

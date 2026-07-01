@@ -186,8 +186,17 @@
                         <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="90"/>
                         <ColumnDefinition Width="8"/>
+                        <!-- Tercero: código + descripción + botón -->
+                        <ColumnDefinition Width="70"/>
+                        <ColumnDefinition Width="4"/>
+                        <ColumnDefinition Width="30"/>
+                        <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="8"/>
+                        <!-- Referencia -->
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="8"/>
+                        <!-- Estado -->
                         <ColumnDefinition Width="110"/>
                     </Grid.ColumnDefinitions>
 
@@ -213,15 +222,46 @@
                                  TextChanged="Campo_TextChanged"/>
                     </StackPanel>
 
-                    <!-- Referencia -->
+                    <!-- Tercero: código -->
                     <StackPanel Grid.Column="6">
+                        <TextBlock Text="Tercero" Style="{StaticResource LblMuted}"/>
+                        <TextBox x:Name="Box_Tercero_Identificador"
+                                 Style="{StaticResource ModernInput}"
+                                 PreviewTextInput="Box_Numeros_PreviewTextInput"
+                                 TextChanged="Box_Tercero_Identificador_TextChanged"/>
+                    </StackPanel>
+
+                    <!-- Botón buscar tercero -->
+                    <Button Grid.Column="8" Content="···"
+                            Height="28" Width="30" Padding="0"
+                            Style="{StaticResource BtnSecundario}"
+                            Margin="0,14,0,0"
+                            Click="BtnBuscarTercero_Click"/>
+
+                    <!-- Descripción tercero -->
+                    <StackPanel Grid.Column="10">
+                        <TextBlock Text=" " Style="{StaticResource LblMuted}"/>
+                        <Border Height="28" Background="{DynamicResource ThemeBgReadOnly}"
+                                BorderBrush="{DynamicResource ThemeBorde}"
+                                BorderThickness="1" CornerRadius="5"
+                                Padding="7,0">
+                            <TextBlock x:Name="Box_Tercero_Descripcion"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource ThemeTextoMuted}"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Referencia -->
+                    <StackPanel Grid.Column="12">
                         <TextBlock Text="Referencia" Style="{StaticResource LblMuted}"/>
                         <TextBox x:Name="Box_Referencia" Style="{StaticResource ModernInput}"
                                  TextChanged="Campo_TextChanged"/>
                     </StackPanel>
 
                     <!-- Estado (manual) -->
-                    <StackPanel Grid.Column="8">
+                    <StackPanel Grid.Column="14">
                         <TextBlock Text="Estado" Style="{StaticResource LblMuted}"/>
                         <ComboBox x:Name="Box_Estado" Height="28" FontSize="12"
                                   SelectionChanged="Box_Estado_SelectionChanged">
@@ -325,9 +365,23 @@
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
                             <DataGridTextColumn Header="Concepto" Binding="{Binding Concepto}" Width="*"/>
-                            <DataGridTextColumn Header="Categoría" Binding="{Binding CategoriaCodigo}" Width="90"/>
-                            <DataGridTextColumn Header="Descripción categoría" Binding="{Binding CategoriaDescripcion}"
-                                                Width="180" IsReadOnly="True"/>
+                            <DataGridTemplateColumn Header="Categoría" Width="220">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding CategoriaDescripcion}"
+                                                   Margin="6,0" VerticalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <ComboBox ItemsSource="{x:Static local:FacturasDetalle.CategoriasCombo}"
+                                                  DisplayMemberPath="Descripcion"
+                                                  SelectedValuePath="Id"
+                                                  SelectedValue="{Binding CategoriaId, UpdateSourceTrigger=PropertyChanged}"
+                                                  FontSize="12"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Importe"
                                                 Binding="{Binding Importe, StringFormat=#\,##0.00}"
                                                 Width="100"

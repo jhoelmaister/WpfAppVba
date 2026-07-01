@@ -60,6 +60,14 @@
             <Setter Property="Padding"       Value="12,10"/>
         </Style>
 
+        <!-- ── Radio de filtro (sidebar) ── -->
+        <Style x:Key="FilterRadio" TargetType="RadioButton">
+            <Setter Property="FontSize"                Value="11"/>
+            <Setter Property="Margin"                  Value="0,1"/>
+            <Setter Property="Foreground"              Value="{DynamicResource ThemeTextoSec}"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
         <!-- ── Badge de estado (entrega) en DataGrid ── -->
         <DataTemplate x:Key="BadgeEstado">
             <Border Padding="6,2" CornerRadius="10" HorizontalAlignment="Left">
@@ -167,6 +175,63 @@
                                   PreviewMouseLeftButtonDown="Tree1_PreviewMouseLeftButtonDown"
                                   FontSize="12"/>
                     </Border>
+
+                    <!-- Separador -->
+                    <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="8,10"/>
+
+                    <!-- Filtro Estado -->
+                    <TextBlock Text="ESTADO"
+                               FontSize="10" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeTextoSec}"
+                               Margin="12,0,0,6"/>
+                    <StackPanel Margin="12,0">
+                        <RadioButton x:Name="BtnFiltroTodos"
+                                     Content="Todos" IsChecked="True"
+                                     GroupName="EstadoF"
+                                     Style="{StaticResource FilterRadio}"
+                                     Checked="FiltroEstado_Checked"/>
+                        <RadioButton x:Name="BtnFiltroPendiente"
+                                     Content="Pendiente"
+                                     GroupName="EstadoF"
+                                     Style="{StaticResource FilterRadio}"
+                                     Checked="FiltroEstado_Checked"/>
+                        <RadioButton x:Name="BtnFiltroEntregado"
+                                     Content="Entregado"
+                                     GroupName="EstadoF"
+                                     Style="{StaticResource FilterRadio}"
+                                     Checked="FiltroEstado_Checked"/>
+                    </StackPanel>
+
+                    <!-- Separador -->
+                    <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="8,10"/>
+
+                    <!-- Filtro Cuenta -->
+                    <TextBlock Text="CUENTA"
+                               FontSize="10" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeTextoSec}"
+                               Margin="12,0,0,6"/>
+                    <StackPanel Margin="12,0">
+                        <RadioButton x:Name="BtnCuentaTodos"
+                                     Content="Todos" IsChecked="True"
+                                     GroupName="CuentaF"
+                                     Style="{StaticResource FilterRadio}"
+                                     Checked="FiltroCuenta_Checked"/>
+                        <RadioButton x:Name="BtnCuentaPendiente"
+                                     Content="Pendiente"
+                                     GroupName="CuentaF"
+                                     Style="{StaticResource FilterRadio}"
+                                     Checked="FiltroCuenta_Checked"/>
+                        <RadioButton x:Name="BtnCuentaCancelado"
+                                     Content="Cancelado"
+                                     GroupName="CuentaF"
+                                     Style="{StaticResource FilterRadio}"
+                                     Checked="FiltroCuenta_Checked"/>
+                        <RadioButton x:Name="BtnCuentaParcial"
+                                     Content="Pendiente parcial"
+                                     GroupName="CuentaF"
+                                     Style="{StaticResource FilterRadio}"
+                                     Checked="FiltroCuenta_Checked"/>
+                    </StackPanel>
 
                 </StackPanel>
             </ScrollViewer>
@@ -359,9 +424,13 @@
                                         Binding="{Binding FechaStr}"
                                         Width="148"/>
 
+                    <DataGridTextColumn Header="Cliente / Proveedor"
+                                        Binding="{Binding TerceroDesc}"
+                                        Width="*"/>
+
                     <DataGridTextColumn Header="Referencia"
                                         Binding="{Binding Referencia}"
-                                        Width="*"/>
+                                        Width="140"/>
 
                     <!-- Columna Estado (entrega) con badge -->
                     <DataGridTemplateColumn Header="Estado" Width="100">

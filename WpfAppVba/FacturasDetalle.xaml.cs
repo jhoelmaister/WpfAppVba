@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using WpfAppVba.Data;
 
@@ -79,6 +80,10 @@ namespace WpfAppVba
             Box_Referencia.Text  = Sql.DocumentosFObj.ObtenerItem("referencia",  _idEditar)?.ToString() ?? "";
             Box_Observacion.Text = Sql.DocumentosFObj.ObtenerItem("observacion", _idEditar)?.ToString() ?? "";
 
+            string terceroUuid = Sql.DocumentosFObj.ObtenerItem("tercero", _idEditar)?.ToString() ?? "";
+            Box_Tercero_Identificador.Text = Sql.TercerosObj.ObtenerItem("codigo", terceroUuid)?.ToString() ?? "";
+            ActualizarDescripcionTercero();
+
             string estadoVal = Sql.DocumentosFObj.ObtenerItem("estado", _idEditar)?.ToString() ?? "pendiente";
             SeleccionarEstado(estadoVal);
             _estadoC = Sql.DocumentosFObj.ObtenerItem("estadoC", _idEditar)?.ToString() ?? "pendiente";
@@ -100,17 +105,13 @@ namespace WpfAppVba
 
                 if (Sql.FacturasObj.ObtenerItem("documentoF", id)?.ToString() != _idEditar) continue;
 
-                string categoriaId = Sql.FacturasObj.ObtenerItem("categoria", id)?.ToString() ?? "";
-
                 _items.Add(new FacturaItemFila
                 {
-                    FacturaId            = id,
-                    Linea                = linea++,
-                    Concepto             = Sql.FacturasObj.ObtenerItem("concepto", id)?.ToString() ?? "",
-                    CategoriaId          = categoriaId,
-                    CategoriaCodigo      = ObtenerCodigoCategoria(categoriaId),
-                    CategoriaDescripcion = ObtenerDescripcionCategoria(categoriaId),
-                    Importe              = Convert.ToDouble(Sql.FacturasObj.ObtenerItem("importe", id) ?? 0)
+                    FacturaId   = id,
+                    Linea       = linea++,
+                    Concepto    = Sql.FacturasObj.ObtenerItem("concepto", id)?.ToString() ?? "",
+                    CategoriaId = Sql.FacturasObj.ObtenerItem("categoria", id)?.ToString() ?? "",
+                    Importe     = Convert.ToDouble(Sql.FacturasObj.ObtenerItem("importe", id) ?? 0)
                 });
             }
             _itemsOrig = new HashSet<string>(_items.Select(x => x.FacturaId));
@@ -158,6 +159,9 @@ namespace WpfAppVba
             Box_Emision.Text = $"{ahora:d} {ahora:HH:mm:ss}";
             Box_Edicion.Text = $"{ahora:d} {ahora:HH:mm:ss}";
 
+            Box_Tercero_Identificador.Text = "";
+            Box_Tercero_Descripcion.Text   = "";
+
             SeleccionarEstado("pendiente");
             _estadoC = "pendiente";
 
@@ -190,17 +194,59 @@ namespace WpfAppVba
             ActualizarBadges();
         }
 
-        // ─── Categoría (código ↔ id) ──────────────────────────────────────────
-        private static string ObtenerCodigoCategoria(string categoriaId)
+        // ─── Tercero ──────────────────────────────────────────────────────────
+        private string ResolverTerceroId()
         {
-            if (string.IsNullOrEmpty(categoriaId)) return "";
-            return Sql.CategoriasObj.ObtenerItem("codigo", categoriaId)?.ToString() ?? "";
+            string cod = Box_Tercero_Identificador.Text.Trim();
+            return cod == "" ? "" : Sql.TercerosObj.BuscarIdentificador("codigo", cod);
         }
 
-        private static string ObtenerDescripcionCategoria(string categoriaId)
+        private void ActualizarDescripcionTercero()
         {
-            if (string.IsNullOrEmpty(categoriaId)) return "";
-            return Sql.CategoriasObj.ObtenerItem("descripcion", categoriaId)?.ToString() ?? "";
+            string id = ResolverTerceroId();
+            Box_Tercero_Descripcion.Text = id == "" ? "" : Sql.TercerosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+        }
+
+        private void Box_Tercero_Identificador_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_cargando) return;
+            ActualizarDescripcionTercero();
+            _hayCambios = true;
+        }
+
+        private void Box_Numeros_PreviewTextInput(object sender, TextCompositionEventArgs e)
+            => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
+
+        private void BtnBuscarTercero_Click(object sender, RoutedEventArgs e)
+        {
+            TercerosGeneral.TerceroSeleccionado = null;
+            TercerosGeneral.OpenAsDialog(Window.GetWindow(this)!, modoSelector: true, contexto: _tituloTab, llamador: this, onCerrado: () =>
+            {
+                if (!string.IsNullOrEmpty(TercerosGeneral.TerceroSeleccionado))
+                    Box_Tercero_Identificador.Text = TercerosGeneral.TerceroSeleccionado;
+            });
+        }
+
+        // ─── Categoría: lista para el ComboBox del GridItems ──────────────────
+        public static List<CategoriaComboItem> CategoriasCombo
+        {
+            get
+            {
+                var lista = new List<CategoriaComboItem> { new() { Id = "", Descripcion = "(sin categoría)" } };
+                int uf = Sql.CategoriasObj.ContarFilas;
+                for (int i = 1; i <= uf; i++)
+                {
+                    var idObj = Sql.CategoriasObj.Mover(i);
+                    if (idObj == null) continue;
+                    string id = idObj.ToString()!;
+                    lista.Add(new CategoriaComboItem
+                    {
+                        Id          = id,
+                        Descripcion = Sql.CategoriasObj.ObtenerItem("descripcion", id)?.ToString() ?? id
+                    });
+                }
+                return lista;
+            }
         }
 
         // ─── Refrescar grids ──────────────────────────────────────────────────
@@ -289,11 +335,7 @@ namespace WpfAppVba
         // ─── Nueva línea vacía (líneas de la factura) ─────────────────────────
         private void BtnNuevaLinea_Click(object sender, RoutedEventArgs e)
         {
-            _items.Add(new FacturaItemFila
-            {
-                FacturaId = "", Concepto = "", CategoriaId = "",
-                CategoriaCodigo = "", CategoriaDescripcion = "", Importe = 0
-            });
+            _items.Add(new FacturaItemFila { FacturaId = "", Concepto = "", CategoriaId = "", Importe = 0 });
             _hayCambios = true;
             RefrescarGrid();
             ActualizarTotales();
@@ -314,7 +356,6 @@ namespace WpfAppVba
             var copia = new FacturaItemFila
             {
                 FacturaId = "", Concepto = fila.Concepto, CategoriaId = fila.CategoriaId,
-                CategoriaCodigo = fila.CategoriaCodigo, CategoriaDescripcion = fila.CategoriaDescripcion,
                 Importe = fila.Importe
             };
             _items.Add(copia);
@@ -359,11 +400,7 @@ namespace WpfAppVba
                       : _items.Count;
             if (idx < 0) idx = _items.Count;
 
-            var nueva = new FacturaItemFila
-            {
-                FacturaId = "", Concepto = "", CategoriaId = "",
-                CategoriaCodigo = "", CategoriaDescripcion = "", Importe = 0
-            };
+            var nueva = new FacturaItemFila { FacturaId = "", Concepto = "", CategoriaId = "", Importe = 0 };
             _items.Insert(idx, nueva);
             _hayCambios = true;
             RefrescarGrid();
@@ -381,28 +418,6 @@ namespace WpfAppVba
         {
             _hayCambios = true;
 
-            // Cuando se confirma la edición de la columna Categoría → buscar categoría
-            if (e.EditAction == DataGridEditAction.Commit &&
-                e.Column.Header?.ToString() == "Categoría" &&
-                e.Row.Item is FacturaItemFila fila &&
-                e.EditingElement is TextBox tb)
-            {
-                string codigo = tb.Text.Trim();
-                string catId  = Sql.CategoriasObj.BuscarIdentificador("codigo", codigo);
-                if (!string.IsNullOrEmpty(catId))
-                {
-                    fila.CategoriaId          = catId;
-                    fila.CategoriaCodigo      = codigo;
-                    fila.CategoriaDescripcion = ObtenerDescripcionCategoria(catId);
-                }
-                else
-                {
-                    fila.CategoriaId          = "";
-                    fila.CategoriaCodigo      = codigo;
-                    fila.CategoriaDescripcion = string.IsNullOrEmpty(codigo) ? "" : "⚠ Categoría no encontrada";
-                }
-            }
-
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 RefrescarGrid();
@@ -411,13 +426,13 @@ namespace WpfAppVba
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
-        // ─── Seleccionar todo al entrar al campo Categoría / Importe ──────────
+        // ─── Seleccionar todo al entrar al campo Importe ──────────────────────
         private void GridItems_PreparingCellForEdit(object? sender, DataGridPreparingCellForEditEventArgs e)
         {
             string col = e.Column.Header?.ToString() ?? "";
-            if (col is "Categoría" or "Importe")
-                GridFocusHelper.SeleccionarTodoEnEdicion(e.EditingElement);
-            if (col == "Importe" && e.EditingElement is TextBox tb)
+            if (col != "Importe") return;
+            GridFocusHelper.SeleccionarTodoEnEdicion(e.EditingElement);
+            if (e.EditingElement is TextBox tb)
                 FuncionesComunes.RestringirACantidad(tb);
         }
 
@@ -587,6 +602,7 @@ namespace WpfAppVba
                 Sql.DocumentosFObj.EstablecerItem("codigo",      docId, _codigoDocF);
                 Sql.DocumentosFObj.EstablecerItem("fecha",       docId, fecha);
                 Sql.DocumentosFObj.EstablecerItem("sucursal",    docId, AppState.SucursalActiva);
+                Sql.DocumentosFObj.EstablecerItem("tercero",     docId, ResolverTerceroId());
                 Sql.DocumentosFObj.EstablecerItem("referencia",  docId, Box_Referencia.Text.Trim());
                 Sql.DocumentosFObj.EstablecerItem("observacion", docId, Box_Observacion.Text.Trim());
                 Sql.DocumentosFObj.EstablecerItem("estado",      docId, estado);
@@ -622,6 +638,7 @@ namespace WpfAppVba
                 string estado = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "pendiente";
 
                 Sql.DocumentosFObj.EstablecerItem("fecha",       docId, fecha);
+                Sql.DocumentosFObj.EstablecerItem("tercero",     docId, ResolverTerceroId());
                 Sql.DocumentosFObj.EstablecerItem("referencia",  docId, Box_Referencia.Text.Trim());
                 Sql.DocumentosFObj.EstablecerItem("observacion", docId, Box_Observacion.Text.Trim());
                 Sql.DocumentosFObj.EstablecerItem("estado",      docId, estado);
@@ -743,13 +760,23 @@ namespace WpfAppVba
     // ─── Modelo de ítem (líneas de la factura) ─────────────────────────────────
     public class FacturaItemFila
     {
-        public string FacturaId            { get; set; } = ""; // vacío = nuevo sin guardar
-        public int    Linea                { get; set; }
-        public string Concepto             { get; set; } = "";
-        public string CategoriaId          { get; set; } = "";
-        public string CategoriaCodigo      { get; set; } = "";
-        public string CategoriaDescripcion { get; set; } = "";
-        public double Importe              { get; set; }
+        public string FacturaId   { get; set; } = ""; // vacío = nuevo sin guardar
+        public int    Linea       { get; set; }
+        public string Concepto    { get; set; } = "";
+        public string CategoriaId { get; set; } = "";
+        // Se resuelve en vivo contra la caché de Categorias (no se guarda en la fila).
+        public string CategoriaDescripcion =>
+            string.IsNullOrEmpty(CategoriaId)
+                ? ""
+                : SqlData.Instance.CategoriasObj.ObtenerItem("descripcion", CategoriaId)?.ToString() ?? "";
+        public double Importe { get; set; }
+    }
+
+    // ─── Ítem del ComboBox de categoría en GridItems ───────────────────────────
+    public class CategoriaComboItem
+    {
+        public string Id          { get; set; } = "";
+        public string Descripcion { get; set; } = "";
     }
 
     // ─── Modelo de ítem (cobros / transaccionesF) ──────────────────────────────
