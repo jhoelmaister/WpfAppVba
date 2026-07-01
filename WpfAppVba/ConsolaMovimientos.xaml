@@ -287,6 +287,10 @@
                                     Content="🔧  Correcciones"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Correcciones_Click"/>
+                            <Button x:Name="BtnNav_Facturas"
+                                    Content="🧾  Facturas"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Facturas_Click"/>
                             <Button x:Name="BtnNav_Movimientos"
                                     Content="📈  Movimientos"
                                     Style="{StaticResource NavBtn}"

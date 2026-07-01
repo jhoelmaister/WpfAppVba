@@ -24,6 +24,7 @@ namespace WpfAppVba
         private PedidosGeneral      _panelPedidos      = new();
         private TraspasosGeneral    _panelTraspasos    = new();
         private CorreccionesGeneral _panelCorrecciones = new();
+        private FacturasGeneral     _panelFacturas     = new();
         private TercerosGeneral     _panelTerceros     = new();
         private SucursalesGeneral   _panelSucursales   = new();
         private FamiliasGeneral     _panelFamilias     = new();
@@ -47,6 +48,7 @@ namespace WpfAppVba
             ["pedidos"]      = new List<TabItem>(),
             ["traspasos"]    = new List<TabItem>(),
             ["correcciones"] = new List<TabItem>(),
+            ["facturas"]     = new List<TabItem>(),
             ["terceros"]     = new List<TabItem>(),
             ["sucursales"]   = new List<TabItem>(),
             ["familias"]     = new List<TabItem>(),
@@ -68,6 +70,7 @@ namespace WpfAppVba
             ["pedidos"]      = null,
             ["traspasos"]    = null,
             ["correcciones"] = null,
+            ["facturas"]     = null,
             ["terceros"]     = null,
             ["sucursales"]   = null,
             ["familias"]     = null,
@@ -238,6 +241,7 @@ namespace WpfAppVba
             _panelPedidos      = new();
             _panelTraspasos    = new();
             _panelCorrecciones = new();
+            _panelFacturas     = new();
             _panelTerceros     = new();
             _panelSucursales   = new();
             _panelFamilias     = new();
@@ -292,6 +296,7 @@ namespace WpfAppVba
                 case "pedidos":      TabFijoContenido.Content = _panelPedidos;      TabFijoTitulo.Text = "Pedidos";      break;
                 case "traspasos":    TabFijoContenido.Content = _panelTraspasos;    TabFijoTitulo.Text = "Traspasos";    break;
                 case "correcciones": TabFijoContenido.Content = _panelCorrecciones; TabFijoTitulo.Text = "Correcciones"; break;
+                case "facturas":     TabFijoContenido.Content = _panelFacturas;     TabFijoTitulo.Text = "Facturas";     break;
                 case "terceros":     TabFijoContenido.Content = _panelTerceros;     TabFijoTitulo.Text = "Terceros";     break;
                 case "sucursales":   TabFijoContenido.Content = _panelSucursales;   TabFijoTitulo.Text = "Sucursales";   break;
                 case "familias":     TabFijoContenido.Content = _panelFamilias;     TabFijoTitulo.Text = "Familias";     break;
@@ -465,6 +470,12 @@ namespace WpfAppVba
         {
             MostrarPanel("correcciones");
             MarcarActivo(BtnNav_Correcciones);
+        }
+
+        private void BtnNav_Facturas_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("facturas");
+            MarcarActivo(BtnNav_Facturas);
         }
 
         private void BtnNav_Terceros_Click(object sender, RoutedEventArgs e)

@@ -46,6 +46,10 @@ namespace WpfAppVba.Data
         public DataConsulta DocumentosLObj  { get; } = new();
         public DataConsulta PreciosObj      { get; } = new();
 
+        // ─── Facturas ─────────────────────────────────────────────────────────
+        public DataConsulta DocumentosFObj  { get; } = new();
+        public DataConsulta FacturasObj     { get; } = new();
+
         private SqlData() { } // constructor privado → usar Instance
     }
 }

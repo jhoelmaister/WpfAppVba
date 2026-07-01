@@ -266,6 +266,23 @@ namespace WpfAppVba.Data
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
                 $"AND vg.sucursal = '{suc}' " +
                 $"ORDER BY vd.documentoC ASC, vd.indice ASC");
+
+            // ── DocumentosF (facturas) ────────────────────────────────────────
+            Sql.DocumentosFObj.Conectar("documentosF",
+                $"SELECT * FROM documentosF " +
+                $"WHERE estadof = 'normal' " +
+                $"AND fecha >= '{aper}' AND fecha <= '{cier}' " +
+                $"AND sucursal = '{suc}' " +
+                $"ORDER BY fecha ASC");
+
+            // ── Facturas ──────────────────────────────────────────────────────
+            Sql.FacturasObj.Conectar("facturas",
+                $"SELECT vd.* FROM facturas AS vd " +
+                $"INNER JOIN documentosF AS vg ON vd.documentoF = vg.id " +
+                $"WHERE vg.estadof = 'normal' " +
+                $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
+                $"AND vg.sucursal = '{suc}' " +
+                $"ORDER BY vd.documentoF ASC, vd.indice ASC");
         }
     }
 }
