@@ -10,7 +10,7 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 - **Reportes Excel**: `ClosedXML 0.102.2`
 - **IDE recomendado**: Visual Studio 2022 / VS Code + extensión C#
 - **Proyecto**: `WpfAppVba/WpfAppVba.csproj`
-- **Rama de desarrollo activa**: `claude/optimistic-dirac-5arp05`
+- **Rama de desarrollo activa**: `master` (desde sesión 2026-06-18 en adelante se trabaja directo en `master`; las ramas `claude/*` no se pushean al remoto — ver CLAUDE.md)
 
 ## Lo Que Está Implementado y Funciona
 
@@ -170,6 +170,54 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - **Rama de trabajo**: la sesión actual trabaja en `claude/cool-hopper-vo3mxo`. (La sesión previa de multi-empresa fue `claude/brave-albattani-03ox62`.)
 
 ## Historial de Cambios por Sesión
+
+### Sesión 2026-06-30 — Limpieza de `estadoU`, layout en 2 columnas, validaciones de guardado obligatorias, fixes de regresión en Traspasos/Correcciones y aviso de pestañas vinculadas (rama `master`)
+
+> Sesión larga con varios pedidos encadenados del usuario, todos en `master` (commits `19c57bf`…`17543ca`). Se documenta de una sola vez.
+
+#### Limpieza de `estadoU`, reordenamiento de columnas PDF/Excel, BtnConfigurarConexion e insertar sobre seleccionado (`19c57bf`)
+- **Eliminada toda referencia a la columna `estadoU`** (tabla `usuarios`, ya borrada en SQL por el usuario): `UsuariosGeneral`, `UsuariosDetalle` (XAML y code-behind), `ConsolaMovimientos`, `LoginWindow`. Nota: esto reemplaza/corrige el flujo descrito en la sesión 2026-06-15 (`MarcarInactivo`/`estadoU="activo"/"inactivo"` al login/logout), que ya no aplica.
+- **PDF y Excel de Precios e Inventarios**: columnas `Producto` y `Familia` movidas a la izquierda de `Descripción` (orden final: N°|Código|Producto|Familia|Descripción|Precio o Cantidad).
+- **LoginWindow**: `BtnConfigurarConexion` ahora se deshabilita junto con el resto de controles mientras se procesa el inicio de sesión (antes quedaba activo y permitía abrir la configuración de conexión en medio del login).
+- **`ArticulosGeneral.BtnNuevo_Click`**: el artículo recién creado se inserta encima (`lista.Insert(idx, nueva)`) del ítem que estaba seleccionado antes de abrir el diálogo, en vez de agregarse al final.
+
+#### Validaciones de guardado obligatorias en formularios Detalle (`78dd99b`)
+- **Código obligatorio**: todos los formularios `*Detalle` con código editable por el usuario (Articulos, Categorias, Empresas, Familias, Industrias, Productos, Regiones, Sucursales, Terceros) rechazan guardar en modo nuevo si `Box_Codigo` está vacío (`MessageBox` de advertencia + `return false`). No aplica a los formularios de documentos (Pedidos/Traspasos/Correcciones/Inventarios/Precios), cuyo código se autogenera y el campo está deshabilitado.
+- **`ArticulosDetalle.Guardar()`**: además de la familia (ya exigida en sesión previa), ahora también exige **categoría** resuelta (`ResolverCategoriaId()` no vacío) en los tres modos (nuevo/insertar/editar).
+- **`TraspasosDetalle`**: `GuardarNuevo()` y `GuardarEditar()` rechazan guardar si no se resolvió la sucursal destino/origen (`ResolverSucursalId()` vacío) — mensaje dinámico según `tipo` ("salida"→destino, "entrada"→origen).
+
+#### ArticulosDetalle — esquinas redondeadas en todos los controles (`78dd99b`)
+- Estilo `ModernInput`: `BorderThickness` de `"0,0,0,2"` (solo borde inferior) a `"1"` completo, con `ControlTemplate`/`CornerRadius="6"`.
+- Estilo `SelectorBtn`: agregado `ControlTemplate` con `CornerRadius="6"` + triggers hover/pressed/disabled.
+- Nuevos estilos `BtnBase`/`BtnPrimario`/`BtnSecundario` (mismo patrón que TercerosDetalle/SucursalesDetalle) aplicados a Cancelar/Guardar/Ver Movimientos.
+- El TextBox de OBSERVACIONES se envolvió en un `Border CornerRadius="6"`.
+
+#### Layout en 2 columnas: ArticulosDetalle, TercerosDetalle, SucursalesDetalle (`2adb468`)
+- A pedido explícito del usuario ("lado a lado para evitar scroll"), el contenido de cada formulario pasó de `StackPanel` vertical a un `Grid` de 2 columnas (`*`, gap 12, `*`) dentro del `ScrollViewer`:
+  - **ArticulosDetalle**: IDENTIFICACIÓN (col izq, fila 1) · CLASIFICACIÓN (col der, `RowSpan` filas 1-2) · DETALLES (col izq, fila 2) · OBSERVACIONES (`ColumnSpan` completo, fila 3).
+  - **TercerosDetalle**: IDENTIFICACIÓN (col izq, fila 1) · CONTACTO (col der, `RowSpan` filas 1-2) · INFORMACIÓN (col izq, fila 2) · OBSERVACIONES (ancho completo, fila 3).
+  - **SucursalesDetalle**: IDENTIFICACIÓN —con SIGNO reubicado ahí, junto a Tipo— (col izq, fila 1) · INFORMACIÓN (col der, `RowSpan` filas 1-2) · REGIÓN (col izq, fila 2) · OBSERVACIONES (ancho completo, fila 3).
+  - Todas las cards usan `Margin="0"` (el espaciado lo dan las filas/columnas gap de 12px, no el margen propio de `CardBorder`).
+
+#### Fix: `BtnInsertar_Click` insertaba debajo en vez de arriba (`cd1001e`)
+- El pedido de "insertar sobre el seleccionado" de `19c57bf` solo se había aplicado a `BtnNuevo_Click`. `ArticulosGeneral.BtnInsertar_Click` seguía usando `lista.Insert(idx + 1, nueva)` (debajo de la fila de referencia). Cambiado a `lista.Insert(idx, nueva)` para que también quede arriba.
+
+#### MaxLength en Box_Codigo + regresión de altura en Traspasos/Correcciones (`1f8605c`)
+- **`ArticulosDetalle.Box_Codigo`**: `MaxLength="20"` (columna SQL `nvarchar(20)`; antes no había límite en la UI y se podía escribir más de lo que la base acepta).
+- **Regresión detectada**: el commit `2427e3e` ("Habilita scroll táctil...") había envuelto `TraspasosDetalle` y `CorreccionesDetalle` en un `ScrollViewer` extra y cambiado la fila de `GridItems` de `Height="*"` a `Height="Auto"` — el grid dejó de ocupar el espacio disponible. Revertido: se quitó el `ScrollViewer` envolvente y se restauró `Height="*"` en ambos.
+
+#### Segunda vuelta de la misma regresión: `MinHeight`/`MaxHeight` + Emisión/Edición faltante en Correcciones (`c9358e0`)
+- El usuario notó que aún quedaban "franjas arriba y abajo" del grid — causa: el mismo commit `2427e3e` también había agregado `MinHeight="200" MaxHeight="450"` al `Grid` contenedor de `GridItems` (en ambos formularios), sin relación con el fix anterior. Eliminado en `TraspasosDetalle` y `CorreccionesDetalle`.
+- **`CorreccionesDetalle` no mostraba Emisión/Edición** (sí las tenía `PedidosDetalle`): agregados `Box_Emision`/`Box_Edicion` (TextBlock readonly) en el encabezado, debajo de la fila de campos — mismo patrón visual que `PedidosDetalle`. Code-behind: se cargan desde `DocumentosCObj` en `CargarParaEditar` y se fijan a `DateTime.Now` en `CargarParaNuevo`.
+
+#### Aviso y cierre automático de pestañas vinculadas al guardar/cerrar (`17543ca`)
+- Problema: un formulario Detalle (p. ej. un Pedido) puede tener sub-pestañas abiertas vinculadas a él (buscador de artículos, selector de tercero/sucursal/región — todas con clave `"algo|{contexto}"` donde `contexto` es el `_tituloTab` del formulario padre). Guardar o cerrar el padre sin cerrar esas sub-pestañas las dejaba huérfanas.
+- **`ConsolaMovimientos.ConfirmarCierrePestañasRelacionadas(contexto)`** (nuevo método público): busca en `TabContenido.Items` las pestañas cuya clave (`Tag`) termine en `|{contexto}`; si no hay ninguna, continúa sin interrumpir; si hay, muestra un `MessageBox` (`OKCancel`) listando sus títulos — **Aceptar**: las cierra todas y permite continuar; **Cancelar**: no hace nada y bloquea la acción.
+- Aplicado como guard (`SinPestañasRelacionadas()`, helper de instancia que llama al método de arriba con `_tituloTab`) al inicio de `Guardar()`, `BtnCancelar_Click` e `IntentarCerrar()` en los 5 formularios que abren sub-pestañas: **PedidosDetalle, TraspasosDetalle, CorreccionesDetalle, ArticulosDetalle, SucursalesDetalle**.
+
+#### Notas / pendientes de esta sesión
+- **Sin build en el entorno cloud**: todos los cambios siguen patrones ya existentes en el codebase, pero no se compilaron (no hay SDK de .NET en este entorno). Verificar localmente antes de publicar, en especial el aviso de pestañas vinculadas (`ConfirmarCierrePestañasRelacionadas`) y los fixes de layout de Traspasos/Correcciones.
+- **Regresión recurrente**: el commit `2427e3e` (sesión previa, scroll táctil) introdujo dos problemas distintos en el mismo archivo (`Height="Auto"` y luego `MinHeight`/`MaxHeight`) que requirieron dos rondas de fix en esta sesión porque no se habían notado juntos la primera vez. Si se vuelve a tocar scroll táctil en formularios con `DataGrid` interno, revisar que la fila del grid conserve `Height="*"` y que no se le agregue `MinHeight`/`MaxHeight` fijo al contenedor.
 
 ### Sesión 2026-06-23/29 — InventariosDetalle rediseñado, Stock/Disponible de PreciosDetalle a nivel de empresa, aviso de precio no vigente en Pedidos, recálculo masivo de importes, PDF de lista de precios como tabla, fix de duplicado al editar y control de acceso por tipo de usuario (rama `claude/blissful-mendel-vbilla`)
 
