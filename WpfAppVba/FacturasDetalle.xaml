@@ -196,6 +196,9 @@
                         <!-- Referencia -->
                         <ColumnDefinition Width="150"/>
                         <ColumnDefinition Width="8"/>
+                        <!-- Movimiento -->
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="8"/>
                         <!-- Estado -->
                         <ColumnDefinition Width="110"/>
                     </Grid.ColumnDefinitions>
@@ -260,8 +263,18 @@
                                  TextChanged="Campo_TextChanged"/>
                     </StackPanel>
 
-                    <!-- Estado (manual) -->
+                    <!-- Movimiento -->
                     <StackPanel Grid.Column="14">
+                        <TextBlock Text="Movimiento" Style="{StaticResource LblMuted}"/>
+                        <ComboBox x:Name="Box_Movimiento" Height="28" FontSize="12"
+                                  SelectionChanged="Campo_SelectionChanged">
+                            <ComboBoxItem Content="Venta"/>
+                            <ComboBoxItem Content="Compra"/>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Estado (manual) -->
+                    <StackPanel Grid.Column="16">
                         <TextBlock Text="Estado" Style="{StaticResource LblMuted}"/>
                         <ComboBox x:Name="Box_Estado" Height="28" FontSize="12"
                                   SelectionChanged="Box_Estado_SelectionChanged">

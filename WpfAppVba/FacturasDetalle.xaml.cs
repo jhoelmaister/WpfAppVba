@@ -84,6 +84,9 @@ namespace WpfAppVba
             Box_Tercero_Identificador.Text = Sql.TercerosObj.ObtenerItem("codigo", terceroUuid)?.ToString() ?? "";
             ActualizarDescripcionTercero();
 
+            string movimientoVal = Sql.DocumentosFObj.ObtenerItem("movimiento", _idEditar)?.ToString() ?? "venta";
+            Box_Movimiento.SelectedIndex = string.Equals(movimientoVal, "compra", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+
             string estadoVal = Sql.DocumentosFObj.ObtenerItem("estado", _idEditar)?.ToString() ?? "pendiente";
             SeleccionarEstado(estadoVal);
             _estadoC = Sql.DocumentosFObj.ObtenerItem("estadoC", _idEditar)?.ToString() ?? "pendiente";
@@ -161,6 +164,7 @@ namespace WpfAppVba
 
             Box_Tercero_Identificador.Text = "";
             Box_Tercero_Descripcion.Text   = "";
+            Box_Movimiento.SelectedIndex   = 0;
 
             SeleccionarEstado("pendiente");
             _estadoC = "pendiente";
@@ -225,6 +229,13 @@ namespace WpfAppVba
                 if (!string.IsNullOrEmpty(TercerosGeneral.TerceroSeleccionado))
                     Box_Tercero_Identificador.Text = TercerosGeneral.TerceroSeleccionado;
             });
+        }
+
+        // ─── Categoría: primera encontrada (default de una línea nueva) ───────
+        private static string PrimeraCategoriaId()
+        {
+            var idObj = Sql.CategoriasObj.Mover(1);
+            return idObj?.ToString() ?? "";
         }
 
         // ─── Categoría: lista para el ComboBox del GridItems ──────────────────
@@ -332,10 +343,18 @@ namespace WpfAppVba
             if (!_cargando) _hayCambios = true;
         }
 
+        private void Campo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_cargando) _hayCambios = true;
+        }
+
+        private string MovimientoSeleccionado =>
+            (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "venta";
+
         // ─── Nueva línea vacía (líneas de la factura) ─────────────────────────
         private void BtnNuevaLinea_Click(object sender, RoutedEventArgs e)
         {
-            _items.Add(new FacturaItemFila { FacturaId = "", Concepto = "", CategoriaId = "", Importe = 0 });
+            _items.Add(new FacturaItemFila { FacturaId = "", Concepto = "", CategoriaId = PrimeraCategoriaId(), Importe = 0 });
             _hayCambios = true;
             RefrescarGrid();
             ActualizarTotales();
@@ -400,7 +419,7 @@ namespace WpfAppVba
                       : _items.Count;
             if (idx < 0) idx = _items.Count;
 
-            var nueva = new FacturaItemFila { FacturaId = "", Concepto = "", CategoriaId = "", Importe = 0 };
+            var nueva = new FacturaItemFila { FacturaId = "", Concepto = "", CategoriaId = PrimeraCategoriaId(), Importe = 0 };
             _items.Insert(idx, nueva);
             _hayCambios = true;
             RefrescarGrid();
@@ -603,6 +622,7 @@ namespace WpfAppVba
                 Sql.DocumentosFObj.EstablecerItem("fecha",       docId, fecha);
                 Sql.DocumentosFObj.EstablecerItem("sucursal",    docId, AppState.SucursalActiva);
                 Sql.DocumentosFObj.EstablecerItem("tercero",     docId, ResolverTerceroId());
+                Sql.DocumentosFObj.EstablecerItem("movimiento",  docId, MovimientoSeleccionado);
                 Sql.DocumentosFObj.EstablecerItem("referencia",  docId, Box_Referencia.Text.Trim());
                 Sql.DocumentosFObj.EstablecerItem("observacion", docId, Box_Observacion.Text.Trim());
                 Sql.DocumentosFObj.EstablecerItem("estado",      docId, estado);
@@ -639,6 +659,7 @@ namespace WpfAppVba
 
                 Sql.DocumentosFObj.EstablecerItem("fecha",       docId, fecha);
                 Sql.DocumentosFObj.EstablecerItem("tercero",     docId, ResolverTerceroId());
+                Sql.DocumentosFObj.EstablecerItem("movimiento",  docId, MovimientoSeleccionado);
                 Sql.DocumentosFObj.EstablecerItem("referencia",  docId, Box_Referencia.Text.Trim());
                 Sql.DocumentosFObj.EstablecerItem("observacion", docId, Box_Observacion.Text.Trim());
                 Sql.DocumentosFObj.EstablecerItem("estado",      docId, estado);

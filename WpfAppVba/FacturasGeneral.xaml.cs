@@ -95,6 +95,7 @@ namespace WpfAppVba
             string mesFiltro = _modoFiltro == "filtros"   ? _mesActivo : "";
             string filtroEstado = ObtenerFiltroEstado();
             string filtroCuenta = ObtenerFiltroCuenta();
+            string filtroTipo   = ObtenerFiltroTipo();
 
             int uf = Sql.DocumentosFObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -103,7 +104,11 @@ namespace WpfAppVba
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
 
-                // Filtrar por sucursal activa
+                // Filtrar por tipo de movimiento y sucursal activa
+                string movDoc = (Sql.DocumentosFObj.ObtenerItem("movimiento", id)?.ToString() ?? "venta").ToLower();
+                if (!string.IsNullOrEmpty(filtroTipo) &&
+                    !string.Equals(movDoc, filtroTipo, StringComparison.OrdinalIgnoreCase)) continue;
+
                 string suc = Sql.DocumentosFObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
                 if (suc != AppState.SucursalActiva) continue;
 
@@ -151,6 +156,7 @@ namespace WpfAppVba
                     FechaStr     = fechaDoc != default ? $"{fechaDoc:d} {fechaDoc:HH:mm:ss}" : "",
                     Referencia   = referencia,
                     TerceroDesc  = terceroDesc,
+                    Movimiento   = movDoc,
                     ImporteTotal = importe,
                     Estado       = estado,
                     EstadoC      = estadoC
@@ -158,9 +164,11 @@ namespace WpfAppVba
                 totalImporte += importe;
             }
 
-            Grid1.ItemsSource       = lista;
-            TxtTotalImporte.Text    = totalImporte.ToString("N2");
-            TxtTotalDocumentos.Text = lista.Count.ToString("N0");
+            Grid1.ItemsSource        = lista;
+            TxtTotalImporte.Text     = totalImporte.ToString("N2");
+            TxtTotalDocumentos.Text  = lista.Count.ToString("N0");
+            TxtEstadosPendientes.Text = lista.Count(f => f.Estado == "pendiente").ToString();
+            TxtCuentasPendientes.Text = lista.Count(f => f.EstadoC == "pendiente" || f.EstadoC == "pendiente parcial").ToString();
             int año = AppState.DataFechaFinal.Year > 2000
                 ? AppState.DataFechaFinal.Year
                 : DateTime.Now.Year;
@@ -193,6 +201,19 @@ namespace WpfAppVba
         private void FiltroCuenta_Checked(object sender, RoutedEventArgs e)
             => CargarFacturas();
 
+        private string ObtenerFiltroTipo()
+        {
+            return (CboTipoMovimiento?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() switch
+            {
+                "ventas"  => "venta",
+                "compras" => "compra",
+                _         => ""
+            };
+        }
+
+        private void CboTipoMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
+            => CargarFacturas();
+
         // ─── Nombre de mes ────────────────────────────────────────────────────
         private static string ObtenerNombreMes(int mes)
         {
@@ -219,6 +240,7 @@ namespace WpfAppVba
                 FechaStr     = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                 Referencia   = Sql.DocumentosFObj.ObtenerItem("referencia", id)?.ToString() ?? "",
                 TerceroDesc  = Sql.TercerosObj.ObtenerItem("descripcion", terceroId)?.ToString() ?? "",
+                Movimiento   = (Sql.DocumentosFObj.ObtenerItem("movimiento", id)?.ToString() ?? "venta").ToLower(),
                 ImporteTotal = CalcularImporte(id),
                 Estado       = Sql.DocumentosFObj.ObtenerItem("estado",  id)?.ToString() ?? "pendiente",
                 EstadoC      = Sql.DocumentosFObj.ObtenerItem("estadoC", id)?.ToString() ?? "pendiente"
@@ -235,8 +257,10 @@ namespace WpfAppVba
                 f.Linea       = n++;
                 totalImporte += f.ImporteTotal;
             }
-            TxtTotalImporte.Text    = totalImporte.ToString("N2");
-            TxtTotalDocumentos.Text = lista.Count.ToString("N0");
+            TxtTotalImporte.Text      = totalImporte.ToString("N2");
+            TxtTotalDocumentos.Text   = lista.Count.ToString("N0");
+            TxtEstadosPendientes.Text = lista.Count(f => f.Estado == "pendiente").ToString();
+            TxtCuentasPendientes.Text = lista.Count(f => f.EstadoC == "pendiente" || f.EstadoC == "pendiente parcial").ToString();
             Grid1.Items.Refresh();
         }
 
@@ -482,6 +506,7 @@ namespace WpfAppVba
         public string   FechaStr     { get; set; } = "";
         public string   Referencia   { get; set; } = "";
         public string   TerceroDesc  { get; set; } = "";
+        public string   Movimiento   { get; set; } = "venta";
         public double   ImporteTotal { get; set; }
         public string   Estado       { get; set; } = "pendiente";
         public string   EstadoC      { get; set; } = "pendiente";
