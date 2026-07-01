@@ -520,7 +520,7 @@
         <!-- ════════════════════════════════════════════════════════ -->
         <DockPanel Grid.Row="2"
                    Background="{DynamicResource ThemeBgSurface}"
-                   Margin="14,8">
+                   >
             <TextBlock DockPanel.Dock="Top" Text="Observación"
                        Style="{StaticResource SectionHeader}"/>
             <Border CornerRadius="6" BorderThickness="1"
