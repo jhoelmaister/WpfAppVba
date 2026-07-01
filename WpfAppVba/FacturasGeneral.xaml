@@ -60,6 +60,80 @@
             <Setter Property="Padding"       Value="12,10"/>
         </Style>
 
+        <!-- ── Badge de estado (entrega) en DataGrid ── -->
+        <DataTemplate x:Key="BadgeEstado">
+            <Border Padding="6,2" CornerRadius="10" HorizontalAlignment="Left">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Estado}" Value="entregado">
+                                <Setter Property="Background" Value="#D1FAE5"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Estado}" Value="pendiente">
+                                <Setter Property="Background" Value="#FEE2E2"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                        <Setter Property="Background" Value="{DynamicResource ThemeBgReadOnly}"/>
+                    </Style>
+                </Border.Style>
+                <TextBlock Text="{Binding Estado}" FontSize="11" FontWeight="SemiBold">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Estado}" Value="entregado">
+                                    <Setter Property="Foreground" Value="#065F46"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Estado}" Value="pendiente">
+                                    <Setter Property="Foreground" Value="#991B1B"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Border>
+        </DataTemplate>
+
+        <!-- ── Badge de estado de cuenta (cobro) en DataGrid ── -->
+        <DataTemplate x:Key="BadgeEstadoC">
+            <Border Padding="6,2" CornerRadius="10" HorizontalAlignment="Left">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding EstadoC}" Value="cancelado">
+                                <Setter Property="Background" Value="#D1FAE5"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding EstadoC}" Value="pendiente">
+                                <Setter Property="Background" Value="#FEE2E2"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding EstadoC}" Value="pendiente parcial">
+                                <Setter Property="Background" Value="#FEF3C7"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                        <Setter Property="Background" Value="{DynamicResource ThemeBgReadOnly}"/>
+                    </Style>
+                </Border.Style>
+                <TextBlock Text="{Binding EstadoC}" FontSize="11" FontWeight="SemiBold">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding EstadoC}" Value="cancelado">
+                                    <Setter Property="Foreground" Value="#065F46"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding EstadoC}" Value="pendiente">
+                                    <Setter Property="Foreground" Value="#991B1B"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding EstadoC}" Value="pendiente parcial">
+                                    <Setter Property="Foreground" Value="#92400E"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Border>
+        </DataTemplate>
+
     </UserControl.Resources>
 
     <Grid>
@@ -288,6 +362,28 @@
                     <DataGridTextColumn Header="Referencia"
                                         Binding="{Binding Referencia}"
                                         Width="*"/>
+
+                    <!-- Columna Estado (entrega) con badge -->
+                    <DataGridTemplateColumn Header="Estado" Width="100">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ContentPresenter Content="{Binding}"
+                                                  ContentTemplate="{StaticResource BadgeEstado}"
+                                                  Margin="4,0" VerticalAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Columna Estado de cuenta (cobro) con badge -->
+                    <DataGridTemplateColumn Header="Cuenta" Width="130">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ContentPresenter Content="{Binding}"
+                                                  ContentTemplate="{StaticResource BadgeEstadoC}"
+                                                  Margin="4,0" VerticalAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
 
                     <DataGridTextColumn Header="Importe"
                                         Binding="{Binding ImporteTotal, StringFormat=#\,##0.00}"

@@ -132,7 +132,9 @@ namespace WpfAppVba
                     Fecha        = fechaDoc,
                     FechaStr     = fechaDoc != default ? $"{fechaDoc:d} {fechaDoc:HH:mm:ss}" : "",
                     Referencia   = referencia,
-                    ImporteTotal = importe
+                    ImporteTotal = importe,
+                    Estado       = Sql.DocumentosFObj.ObtenerItem("estado",  id)?.ToString() ?? "pendiente",
+                    EstadoC      = Sql.DocumentosFObj.ObtenerItem("estadoC", id)?.ToString() ?? "pendiente"
                 });
                 totalImporte += importe;
             }
@@ -174,7 +176,9 @@ namespace WpfAppVba
                 Fecha        = fecha,
                 FechaStr     = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                 Referencia   = Sql.DocumentosFObj.ObtenerItem("referencia", id)?.ToString() ?? "",
-                ImporteTotal = CalcularImporte(id)
+                ImporteTotal = CalcularImporte(id),
+                Estado       = Sql.DocumentosFObj.ObtenerItem("estado",  id)?.ToString() ?? "pendiente",
+                EstadoC      = Sql.DocumentosFObj.ObtenerItem("estadoC", id)?.ToString() ?? "pendiente"
             };
         }
 
@@ -435,6 +439,8 @@ namespace WpfAppVba
         public string   FechaStr     { get; set; } = "";
         public string   Referencia   { get; set; } = "";
         public double   ImporteTotal { get; set; }
+        public string   Estado       { get; set; } = "pendiente";
+        public string   EstadoC      { get; set; } = "pendiente";
     }
 
     public class FacturaDetalleFila

@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
@@ -18,8 +20,14 @@ namespace WpfAppVba
         private bool _hayCambios = false;
         private bool _cargando   = true;
         private List<FacturaItemFila> _items = new();
+        private List<TransaccionFItemFila> _cobros = new();
         // IDs de las líneas existentes al abrir para editar (para el guardado diferencial).
-        private HashSet<string> _itemsOrig = new();
+        private HashSet<string> _itemsOrig  = new();
+        private HashSet<string> _cobrosOrig = new();
+
+        // Estado de cuenta calculado a partir del importe de las líneas vs. lo cobrado
+        // (transaccionesF). No es editable por el usuario, a diferencia de "estado".
+        private string _estadoC = "pendiente";
 
         private bool _iniciado = false;
         private readonly string _tituloTab;
@@ -71,6 +79,10 @@ namespace WpfAppVba
             Box_Referencia.Text  = Sql.DocumentosFObj.ObtenerItem("referencia",  _idEditar)?.ToString() ?? "";
             Box_Observacion.Text = Sql.DocumentosFObj.ObtenerItem("observacion", _idEditar)?.ToString() ?? "";
 
+            string estadoVal = Sql.DocumentosFObj.ObtenerItem("estado", _idEditar)?.ToString() ?? "pendiente";
+            SeleccionarEstado(estadoVal);
+            _estadoC = Sql.DocumentosFObj.ObtenerItem("estadoC", _idEditar)?.ToString() ?? "pendiente";
+
             var emisionObj = Sql.DocumentosFObj.ObtenerItem("emision", _idEditar);
             var edicionObj = Sql.DocumentosFObj.ObtenerItem("edicion", _idEditar);
             Box_Emision.Text = emisionObj != null ? $"{Convert.ToDateTime(emisionObj):d} {Convert.ToDateTime(emisionObj):HH:mm:ss}" : "";
@@ -101,9 +113,37 @@ namespace WpfAppVba
                     Importe              = Convert.ToDouble(Sql.FacturasObj.ObtenerItem("importe", id) ?? 0)
                 });
             }
-
             _itemsOrig = new HashSet<string>(_items.Select(x => x.FacturaId));
+
+            // Cargar cobros (transaccionesF)
+            _cobros.Clear();
+            int lineaC = 1;
+            int ufC    = Sql.TransaccionesFObj.ContarFilas;
+            for (int i = 1; i <= ufC; i++)
+            {
+                var idObj = Sql.TransaccionesFObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                if (Sql.TransaccionesFObj.ObtenerItem("documentoF", id)?.ToString() != _idEditar) continue;
+
+                var fObj = Sql.TransaccionesFObj.ObtenerItem("fecha", id);
+                DateTime fc = fObj != null ? Convert.ToDateTime(fObj) : DateTime.Now;
+                _cobros.Add(new TransaccionFItemFila
+                {
+                    TransaccionId = id,
+                    Linea         = lineaC++,
+                    FechaStr      = fc.ToString("d"),
+                    HoraStr       = fc.ToString("HH:mm:ss"),
+                    Descripcion   = Sql.TransaccionesFObj.ObtenerItem("descripcion", id)?.ToString() ?? "",
+                    Forma         = Sql.TransaccionesFObj.ObtenerItem("forma",       id)?.ToString() ?? "efectivo",
+                    Importe       = Convert.ToDouble(Sql.TransaccionesFObj.ObtenerItem("importe", id) ?? 0)
+                });
+            }
+            _cobrosOrig = new HashSet<string>(_cobros.Select(x => x.TransaccionId));
+
             RefrescarGrid();
+            RefrescarGridCobros();
+            ActualizarTotales();
         }
 
         private void CargarParaNuevo()
@@ -118,9 +158,36 @@ namespace WpfAppVba
             Box_Emision.Text = $"{ahora:d} {ahora:HH:mm:ss}";
             Box_Edicion.Text = $"{ahora:d} {ahora:HH:mm:ss}";
 
+            SeleccionarEstado("pendiente");
+            _estadoC = "pendiente";
+
             _items.Clear();
             _itemsOrig.Clear();
+            _cobros.Clear();
+            _cobrosOrig.Clear();
             RefrescarGrid();
+            RefrescarGridCobros();
+            ActualizarTotales();
+        }
+
+        // ─── Estado (manual) ──────────────────────────────────────────────────
+        private void SeleccionarEstado(string valor)
+        {
+            foreach (ComboBoxItem item in Box_Estado.Items)
+            {
+                if (string.Equals(item.Content?.ToString(), valor, StringComparison.OrdinalIgnoreCase))
+                {
+                    Box_Estado.SelectedItem = item;
+                    return;
+                }
+            }
+            if (Box_Estado.Items.Count > 0) Box_Estado.SelectedIndex = 0;
+        }
+
+        private void Box_Estado_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_cargando) _hayCambios = true;
+            ActualizarBadges();
         }
 
         // ─── Categoría (código ↔ id) ──────────────────────────────────────────
@@ -136,7 +203,7 @@ namespace WpfAppVba
             return Sql.CategoriasObj.ObtenerItem("descripcion", categoriaId)?.ToString() ?? "";
         }
 
-        // ─── Refrescar grid ───────────────────────────────────────────────────
+        // ─── Refrescar grids ──────────────────────────────────────────────────
         private void RefrescarGrid()
         {
             for (int i = 0; i < _items.Count; i++)
@@ -149,9 +216,63 @@ namespace WpfAppVba
 
             if (seleccionado != null && _items.Contains(seleccionado))
                 GridItems.SelectedItem = seleccionado;
+        }
 
-            TxtTotalImporte.Text = _items.Sum(x => x.Importe).ToString("N2");
-            TxtTotalLineas.Text  = _items.Count.ToString();
+        private void RefrescarGridCobros()
+        {
+            for (int i = 0; i < _cobros.Count; i++)
+                _cobros[i].Linea = i + 1;
+
+            var seleccionado = GridCobros.SelectedItem as TransaccionFItemFila;
+
+            GridCobros.ItemsSource = null;
+            GridCobros.ItemsSource = _cobros;
+
+            if (seleccionado != null && _cobros.Contains(seleccionado))
+                GridCobros.SelectedItem = seleccionado;
+        }
+
+        // ─── Totales + estado de cuenta ───────────────────────────────────────
+        private void ActualizarTotales()
+        {
+            double importe = _items.Sum(x => x.Importe);
+            double cobrado = _cobros.Sum(x => x.Importe);
+            double saldo   = importe - cobrado;
+
+            TxtTotalImporte.Text = importe.ToString("N2");
+            TxtTotalCobrado.Text = cobrado.ToString("N2");
+            TxtTotalSaldo.Text   = saldo.ToString("N2");
+
+            if (importe > 0 && cobrado == 0)         _estadoC = "pendiente";
+            else if (cobrado > 0 && cobrado < importe) _estadoC = "pendiente parcial";
+            else if (cobrado >= importe)               _estadoC = "cancelado";
+            else                                        _estadoC = "pendiente";
+
+            ActualizarBadges();
+        }
+
+        private void ActualizarBadges()
+        {
+            string estado = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "pendiente";
+            (BadgeEstado.Background, TxtBadgeEstado.Foreground, TxtBadgeEstado.Text) = estado switch
+            {
+                "entregado" => (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
+                                new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)), "Entregado"),
+                _           => (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
+                                new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Pendiente")
+            };
+
+            (BadgeEstadoC.Background, TxtBadgeEstadoC.Foreground, TxtBadgeEstadoC.Text) = _estadoC switch
+            {
+                "cancelado"         => (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
+                                        new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)), "Cta: Cancelado"),
+                "pendiente parcial" => (new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)),
+                                        new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E)), "Cta: Pendiente parcial"),
+                _                   => (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
+                                        new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Cta: Pendiente")
+            };
+
+            LblDocNum.Text = Box_DocumentoF.Text;
         }
 
         // ─── Detectar cambios ─────────────────────────────────────────────────
@@ -165,7 +286,7 @@ namespace WpfAppVba
             if (!_cargando) _hayCambios = true;
         }
 
-        // ─── Nueva línea vacía ────────────────────────────────────────────────
+        // ─── Nueva línea vacía (líneas de la factura) ─────────────────────────
         private void BtnNuevaLinea_Click(object sender, RoutedEventArgs e)
         {
             _items.Add(new FacturaItemFila
@@ -175,6 +296,7 @@ namespace WpfAppVba
             });
             _hayCambios = true;
             RefrescarGrid();
+            ActualizarTotales();
             int lastIdx = GridItems.Items.Count - 1;
             if (lastIdx >= 0)
             {
@@ -198,6 +320,7 @@ namespace WpfAppVba
             _items.Add(copia);
             _hayCambios = true;
             RefrescarGrid();
+            ActualizarTotales();
             GridItems.SelectedItem = copia;
             GridItems.ScrollIntoView(copia);
             GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
@@ -217,6 +340,7 @@ namespace WpfAppVba
                 _items.Remove(fila);
                 _hayCambios = true;
                 RefrescarGrid();
+                ActualizarTotales();
                 if (_items.Count > 0)
                 {
                     var siguiente = _items[Math.Min(idx, _items.Count - 1)];
@@ -243,6 +367,7 @@ namespace WpfAppVba
             _items.Insert(idx, nueva);
             _hayCambios = true;
             RefrescarGrid();
+            ActualizarTotales();
             if (idx < GridItems.Items.Count)
             {
                 GridItems.SelectedIndex = idx;
@@ -251,7 +376,7 @@ namespace WpfAppVba
             GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
         }
 
-        // ─── Celda editada ────────────────────────────────────────────────────
+        // ─── Celda editada (líneas) ────────────────────────────────────────────
         private void GridItems_CellEditEnding(object? sender, DataGridCellEditEndingEventArgs e)
         {
             _hayCambios = true;
@@ -281,6 +406,7 @@ namespace WpfAppVba
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 RefrescarGrid();
+                ActualizarTotales();
                 GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
@@ -295,10 +421,115 @@ namespace WpfAppVba
                 FuncionesComunes.RestringirACantidad(tb);
         }
 
+        // ─── Botones Cobros ────────────────────────────────────────────────────
+        private void BtnNuevaLineaCobro_Click(object sender, RoutedEventArgs e)
+        {
+            DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
+            _cobros.Add(new TransaccionFItemFila
+            {
+                TransaccionId = "",
+                Descripcion   = $"Cobro de documento {Box_DocumentoF.Text}",
+                FechaStr      = fechaDoc.ToString("d"),
+                HoraStr       = DateTime.Now.ToString("HH:mm:ss"),
+                Forma         = "efectivo",
+                Importe       = 0
+            });
+            _hayCambios = true;
+            RefrescarGridCobros();
+            ActualizarTotales();
+        }
+
+        private void BtnInsertarCobro_Click(object sender, RoutedEventArgs e)
+        {
+            int idx = GridCobros.SelectedItem is TransaccionFItemFila sel
+                      ? _cobros.IndexOf(sel) : _cobros.Count;
+            if (idx < 0) idx = _cobros.Count;
+            DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
+            _cobros.Insert(idx, new TransaccionFItemFila
+            {
+                TransaccionId = "",
+                Descripcion   = $"Cobro de documento {Box_DocumentoF.Text}",
+                FechaStr      = fechaDoc.ToString("d"),
+                HoraStr       = DateTime.Now.ToString("HH:mm:ss"),
+                Forma         = "efectivo",
+                Importe       = 0
+            });
+            _hayCambios = true;
+            RefrescarGridCobros();
+            ActualizarTotales();
+        }
+
+        private void BtnEliminarLineaCobro_Click(object sender, RoutedEventArgs e)
+        {
+            if (GridCobros.SelectedItem is not TransaccionFItemFila fila) return;
+            int idx = _cobros.IndexOf(fila);
+            _cobros.Remove(fila);
+            _hayCambios = true;
+            RefrescarGridCobros();
+            ActualizarTotales();
+            if (_cobros.Count > 0)
+            {
+                var siguiente = _cobros[Math.Min(idx, _cobros.Count - 1)];
+                GridCobros.SelectedItem = siguiente;
+                GridCobros.ScrollIntoView(siguiente);
+            }
+            GridFocusHelper.EnfocarCeldaSeleccionada(GridCobros);
+        }
+
+        private void BtnCobrarDocumento_Click(object sender, RoutedEventArgs e)
+        {
+            if (!double.TryParse(TxtTotalSaldo.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double saldo) || saldo <= 0)
+            { MessageBox.Show("La cuenta ya se canceló.", "Consola", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+
+            DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
+            _cobros.Add(new TransaccionFItemFila
+            {
+                TransaccionId = "",
+                Descripcion   = $"Cobro de documento {Box_DocumentoF.Text}",
+                FechaStr      = fechaDoc.ToString("d"),
+                HoraStr       = DateTime.Now.ToString("HH:mm:ss"),
+                Forma         = "efectivo",
+                Importe       = saldo
+            });
+            _hayCambios = true;
+            RefrescarGridCobros();
+            ActualizarTotales();
+        }
+
+        // ─── CellEditEnding – Cobros ───────────────────────────────────────────
+        private void GridCobros_CellEditEnding(object? sender, DataGridCellEditEndingEventArgs e)
+        {
+            if (e.EditAction != DataGridEditAction.Commit) return;
+            if (e.Row.Item is not TransaccionFItemFila fila) return;
+
+            if (e.Column.Header?.ToString() == "Importe" && e.EditingElement is TextBox tbImp)
+            {
+                if (double.TryParse(tbImp.Text.Trim(), NumberStyles.Any, CultureInfo.CurrentCulture, out double imp))
+                    fila.Importe = imp;
+            }
+
+            _hayCambios = true;
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                RefrescarGridCobros();
+                ActualizarTotales();
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridCobros);
+            }), System.Windows.Threading.DispatcherPriority.Background);
+        }
+
+        private void GridCobros_PreparingCellForEdit(object? sender, DataGridPreparingCellForEditEventArgs e)
+        {
+            string col = e.Column.Header?.ToString() ?? "";
+            GridFocusHelper.SeleccionarTodoEnEdicion(e.EditingElement);
+            if (col == "Importe" && e.EditingElement is TextBox tb)
+                FuncionesComunes.RestringirACantidad(tb);
+        }
+
         // ─── Botones Guardar / Cancelar ───────────────────────────────────────
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
             GridItems.CommitEdit(DataGridEditingUnit.Row, true);
+            GridCobros.CommitEdit(DataGridEditingUnit.Row, true);
             bool ok = Guardar();
             if (ok) { _hayCambios = false; Cerrando?.Invoke(); }
         }
@@ -311,6 +542,7 @@ namespace WpfAppVba
         public void IntentarCerrar()
         {
             GridItems.CommitEdit(DataGridEditingUnit.Row, true);
+            GridCobros.CommitEdit(DataGridEditingUnit.Row, true);
             if (!_hayCambios) { Cerrando?.Invoke(); return; }
 
             var res = MessageBox.Show("¿Guardar cambios?", "Consola",
@@ -348,7 +580,8 @@ namespace WpfAppVba
             try
             {
                 string docId = Guid.NewGuid().ToString();
-                DateTime fecha = CombinarFechaHora();
+                DateTime fecha = CombinarFechaHora(Box_Fecha.SelectedDate ?? DateTime.Today, Box_Hora.Text);
+                string estado = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "pendiente";
 
                 Sql.DocumentosFObj.Nuevo(docId);
                 Sql.DocumentosFObj.EstablecerItem("codigo",      docId, _codigoDocF);
@@ -356,15 +589,16 @@ namespace WpfAppVba
                 Sql.DocumentosFObj.EstablecerItem("sucursal",    docId, AppState.SucursalActiva);
                 Sql.DocumentosFObj.EstablecerItem("referencia",  docId, Box_Referencia.Text.Trim());
                 Sql.DocumentosFObj.EstablecerItem("observacion", docId, Box_Observacion.Text.Trim());
+                Sql.DocumentosFObj.EstablecerItem("estado",      docId, estado);
+                Sql.DocumentosFObj.EstablecerItem("estadoC",     docId, _estadoC);
                 Sql.DocumentosFObj.EstablecerItem("emision",     docId, DateTime.Now);
                 Sql.DocumentosFObj.EstablecerItem("edicion",     docId, DateTime.Now);
                 Sql.DocumentosFObj.EstablecerItem("usuario",     docId, AppState.UsuarioActivo);
                 Sql.DocumentosFObj.EstablecerItem("usuarioE",    docId, AppState.UsuarioActivo);
 
-                CrearLineas(docId);
-
-                Sql.FacturasObj.OrdenarData(("documentoF", false), ("indice", false));
-                Sql.DocumentosFObj.OrdenarData(("fecha", false));
+                GuardarLineas(docId);
+                GuardarLineasCobro(docId);
+                OrdenarTablas();
 
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 ItemCreadoId = docId;
@@ -384,19 +618,21 @@ namespace WpfAppVba
             string docId = _idEditar;
             try
             {
-                DateTime fecha = CombinarFechaHora();
+                DateTime fecha = CombinarFechaHora(Box_Fecha.SelectedDate ?? DateTime.Today, Box_Hora.Text);
+                string estado = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "pendiente";
 
                 Sql.DocumentosFObj.EstablecerItem("fecha",       docId, fecha);
                 Sql.DocumentosFObj.EstablecerItem("referencia",  docId, Box_Referencia.Text.Trim());
                 Sql.DocumentosFObj.EstablecerItem("observacion", docId, Box_Observacion.Text.Trim());
+                Sql.DocumentosFObj.EstablecerItem("estado",      docId, estado);
+                Sql.DocumentosFObj.EstablecerItem("estadoC",     docId, _estadoC);
                 Sql.DocumentosFObj.EstablecerItem("edicion",     docId, DateTime.Now);
                 Sql.DocumentosFObj.EstablecerItem("usuarioE",    docId, AppState.UsuarioActivo);
 
                 // Guardado diferencial de líneas (inserta/actualiza/oculta)
-                CrearLineas(docId);
-
-                Sql.FacturasObj.OrdenarData(("documentoF", false), ("indice", false));
-                Sql.DocumentosFObj.OrdenarData(("fecha", false));
+                GuardarLineas(docId);
+                GuardarLineasCobro(docId);
+                OrdenarTablas();
 
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
@@ -409,7 +645,7 @@ namespace WpfAppVba
         }
 
         // ─── Guardado diferencial de líneas (inserta/actualiza/oculta) ──
-        private void CrearLineas(string docId)
+        private void GuardarLineas(string docId)
         {
             var vigentes = new HashSet<string>(
                 _items.Where(x => !string.IsNullOrEmpty(x.FacturaId)).Select(x => x.FacturaId));
@@ -446,19 +682,65 @@ namespace WpfAppVba
             _itemsOrig = new HashSet<string>(_items.Select(x => x.FacturaId));
         }
 
-        // ─── Helper: combinar fecha del DatePicker y hora del TextBox ─────────
-        private DateTime CombinarFechaHora()
+        // ─── Guardado diferencial de cobros (transaccionesF) ──
+        private void GuardarLineasCobro(string docId)
         {
-            DateTime fecha = Box_Fecha.SelectedDate ?? DateTime.Today;
+            var vigentes = new HashSet<string>(
+                _cobros.Where(x => !string.IsNullOrEmpty(x.TransaccionId)).Select(x => x.TransaccionId));
 
-            if (TimeSpan.TryParse(Box_Hora.Text, out TimeSpan hora))
-                return fecha.Date + hora;
+            var reservados = Sql.TransaccionesFObj.IndicesNoNormales("documentoF", docId);
+            foreach (var idOrig in _cobrosOrig)
+                if (!vigentes.Contains(idOrig))
+                {
+                    var ix = Sql.TransaccionesFObj.ObtenerItem("indice", idOrig);
+                    if (ix != null && int.TryParse(ix.ToString(), out int n)) reservados.Add(n);
+                    Sql.TransaccionesFObj.Eliminar(idOrig);
+                }
 
-            return fecha.Date + DateTime.Now.TimeOfDay;
+            int next = 1;
+            foreach (var item in _cobros)
+            {
+                DateTime fechaC = CombinarFechaHora(
+                    DateTime.TryParse(item.FechaStr, out var fd) ? fd : DateTime.Today,
+                    item.HoraStr);
+                string id;
+                if (string.IsNullOrEmpty(item.TransaccionId))
+                {
+                    id = Guid.NewGuid().ToString();
+                    Sql.TransaccionesFObj.Nuevo(id);
+                    Sql.TransaccionesFObj.EstablecerItem("documentoF", id, docId);
+                    item.TransaccionId = id;
+                }
+                else id = item.TransaccionId;
+
+                while (reservados.Contains(next)) next++;
+                Sql.TransaccionesFObj.EstablecerItem("indice",      id, next);
+                next++;
+                Sql.TransaccionesFObj.EstablecerItem("fecha",       id, fechaC);
+                Sql.TransaccionesFObj.EstablecerItem("descripcion", id, item.Descripcion);
+                Sql.TransaccionesFObj.EstablecerItem("importe",     id, item.Importe);
+                Sql.TransaccionesFObj.EstablecerItem("forma",       id, item.Forma);
+            }
+            _cobrosOrig = new HashSet<string>(_cobros.Select(x => x.TransaccionId));
+        }
+
+        private static void OrdenarTablas()
+        {
+            Sql.DocumentosFObj.OrdenarData(("fecha", false));
+            Sql.FacturasObj.OrdenarData(("documentoF", false), ("indice", false));
+            Sql.TransaccionesFObj.OrdenarData(("documentoF", false), ("indice", false));
+        }
+
+        // ─── Helper: combinar una fecha y una hora (cabecera o línea de cobro) ─
+        private static DateTime CombinarFechaHora(DateTime fecha, string horaTexto)
+        {
+            if (TimeSpan.TryParse(horaTexto, out var ts))
+                return fecha.Date + ts;
+            return fecha.Date;
         }
     }
 
-    // ─── Modelo de ítem ───────────────────────────────────────────────────────
+    // ─── Modelo de ítem (líneas de la factura) ─────────────────────────────────
     public class FacturaItemFila
     {
         public string FacturaId            { get; set; } = ""; // vacío = nuevo sin guardar
@@ -468,5 +750,23 @@ namespace WpfAppVba
         public string CategoriaCodigo      { get; set; } = "";
         public string CategoriaDescripcion { get; set; } = "";
         public double Importe              { get; set; }
+    }
+
+    // ─── Modelo de ítem (cobros / transaccionesF) ──────────────────────────────
+    public class TransaccionFItemFila
+    {
+        public string    TransaccionId { get; set; } = ""; // vacío = nuevo sin guardar
+        public int        Linea         { get; set; }
+        public string     FechaStr      { get; set; } = "";
+        // Derivada de FechaStr para mantener sincronizado el DatePicker de edición.
+        public DateTime? FechaDate
+        {
+            get => DateTime.TryParse(FechaStr, out var d) ? d : null;
+            set { if (value.HasValue) FechaStr = value.Value.ToString("d"); }
+        }
+        public string HoraStr     { get; set; } = "";
+        public string Descripcion { get; set; } = "";
+        public string Forma       { get; set; } = "efectivo";
+        public double Importe     { get; set; }
     }
 }

@@ -283,6 +283,15 @@ namespace WpfAppVba.Data
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
                 $"AND vg.sucursal = '{suc}' " +
                 $"ORDER BY vd.documentoF ASC, vd.indice ASC");
+
+            // ── TransaccionesF (cobros/pagos de facturas) ─────────────────────
+            Sql.TransaccionesFObj.Conectar("transaccionesF",
+                $"SELECT vd.* FROM transaccionesF AS vd " +
+                $"INNER JOIN documentosF AS vg ON vd.documentoF = vg.id " +
+                $"WHERE vg.estadof = 'normal' " +
+                $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
+                $"AND vg.sucursal = '{suc}' " +
+                $"ORDER BY vd.documentoF ASC, vd.indice ASC");
         }
     }
 }
