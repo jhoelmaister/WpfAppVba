@@ -102,8 +102,8 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>  <!-- 0  Encabezado -->
-            <RowDefinition Height="*"/>     <!-- 1  TabControl -->
-            <RowDefinition Height="90"/>    <!-- 2  Observación -->
+            <RowDefinition Height="3*"/>    <!-- 1  TabControl -->
+            <RowDefinition Height="*"/>     <!-- 2  Observación -->
             <RowDefinition Height="Auto"/>  <!-- 3  Totales -->
         </Grid.RowDefinitions>
 
@@ -396,7 +396,7 @@
                                 </DataGridTemplateColumn.CellEditingTemplate>
                             </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Importe"
-                                                Binding="{Binding Importe, StringFormat=#\,##0.00}"
+                                                Binding="{Binding Importe, StringFormat=#\,##0.##}"
                                                 Width="100"
                                                 ElementStyle="{StaticResource CeldaNumero}"
                                                 EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>

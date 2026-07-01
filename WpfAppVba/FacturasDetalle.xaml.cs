@@ -243,7 +243,7 @@ namespace WpfAppVba
         {
             get
             {
-                var lista = new List<CategoriaComboItem> { new() { Id = "", Descripcion = "(sin categoría)" } };
+                var lista = new List<CategoriaComboItem>();
                 int uf = Sql.CategoriasObj.ContarFilas;
                 for (int i = 1; i <= uf; i++)
                 {
@@ -435,6 +435,15 @@ namespace WpfAppVba
         // ─── Celda editada (líneas) ────────────────────────────────────────────
         private void GridItems_CellEditEnding(object? sender, DataGridCellEditEndingEventArgs e)
         {
+            if (e.EditAction == DataGridEditAction.Commit &&
+                e.Column.Header?.ToString() == "Importe" &&
+                e.Row.Item is FacturaItemFila fila &&
+                e.EditingElement is TextBox tbImp)
+            {
+                if (double.TryParse(tbImp.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double importe))
+                    fila.Importe = importe;
+            }
+
             _hayCambios = true;
 
             Dispatcher.BeginInvoke(new Action(() =>
@@ -568,8 +577,15 @@ namespace WpfAppVba
             if (ok) { _hayCambios = false; Cerrando?.Invoke(); }
         }
 
+        private bool SinPestañasRelacionadas()
+        {
+            var c = Window.GetWindow(this) as ConsolaMovimientos;
+            return c == null || c.ConfirmarCierrePestañasRelacionadas(_tituloTab);
+        }
+
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
         {
+            if (!SinPestañasRelacionadas()) return;
             _hayCambios = false; Cerrando?.Invoke();
         }
 
@@ -577,6 +593,7 @@ namespace WpfAppVba
         {
             GridItems.CommitEdit(DataGridEditingUnit.Row, true);
             GridCobros.CommitEdit(DataGridEditingUnit.Row, true);
+            if (!SinPestañasRelacionadas()) return;
             if (!_hayCambios) { Cerrando?.Invoke(); return; }
 
             var res = MessageBox.Show("¿Guardar cambios?", "Consola",
@@ -589,6 +606,7 @@ namespace WpfAppVba
         // ─── Guardar ─────────────────────────────────────────────────────────
         private bool Guardar()
         {
+            if (!SinPestañasRelacionadas()) return false;
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
 
             return !string.IsNullOrEmpty(_idEditar)
