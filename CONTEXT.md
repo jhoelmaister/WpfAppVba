@@ -29,6 +29,7 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 | 📑 Pedidos | `PedidosGeneral` | `PedidosDetalle` (pestaña) | TercerosGeneral, ArticulosGeneral |
 | 🔄 Traspasos | `TraspasosGeneral` | `TraspasosDetalle` (pestaña) | SucursalesGeneral, ArticulosGeneral |
 | 🔧 Correcciones | `CorreccionesGeneral` | `CorreccionesDetalle` (pestaña) | ArticulosGeneral (pestaña) |
+| 🧾 Facturas | `FacturasGeneral` | `FacturasDetalle` (pestaña) | TercerosGeneral (pestaña-selector) |
 | *(separador)* | | | |
 | 👥 Terceros | `TercerosGeneral` | `TercerosDetalle` (pestaña) | — |
 | 🏢 Sucursales | `SucursalesGeneral` | `SucursalesDetalle` (pestaña) | RegionesGeneral (pestaña-selector) |
@@ -49,6 +50,7 @@ private readonly ArticulosGeneral    _panelArticulos     = new();
 private readonly PedidosGeneral      _panelPedidos       = new();
 private readonly TraspasosGeneral    _panelTraspasos     = new();
 private readonly CorreccionesGeneral _panelCorrecciones  = new();
+private          FacturasGeneral     _panelFacturas      = new();
 private readonly TercerosGeneral     _panelTerceros      = new();
 private readonly SucursalesGeneral   _panelSucursales    = new();
 private readonly FamiliasGeneral     _panelFamilias      = new();
@@ -130,7 +132,7 @@ public static void OpenAsTab(Window ventana, Action<string>? callback, string co
 private readonly Dictionary<string, List<TabItem>> _pestañasPorSeccion = new()
 {
     ["articulos"] = new(), ["pedidos"] = new(), ["traspasos"] = new(),
-    ["correcciones"] = new(), ["terceros"] = new(), ["sucursales"] = new(),
+    ["correcciones"] = new(), ["facturas"] = new(), ["terceros"] = new(), ["sucursales"] = new(),
     ["familias"] = new(), ["productos"] = new(), ["industrias"] = new(),
     ["categorias"] = new(), ["inventarios"] = new(), ["precios"] = new(),
     ["regiones"] = new(), ["configuracion"] = new(),
@@ -167,9 +169,67 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - **Sin herramientas de build en el entorno cloud**: todos los cambios se aplican siguiendo patrones existentes, pero no pueden compilarse ni ejecutarse remotamente. Siempre verificar localmente antes de merge a producción.
 - **`AppState.TipoPedido` y `AppState.TipoMovimiento` son globales**: en `PedidosGeneral.AbrirEditar` se leen del DB antes de abrir la pestaña para garantizar el valor correcto. Si se abrieran dos pestañas de edición simultáneas muy rápido, podría haber condición de carrera (actualmente no es un problema práctico).
 - **`CorreccionesDetalle` ya es pestaña**: usa `OpenAsTab` de ArticulosGeneral para buscar artículos, igual que Pedidos/Traspasos.
-- **Rama de trabajo**: la sesión actual trabaja en `claude/cool-hopper-vo3mxo`. (La sesión previa de multi-empresa fue `claude/brave-albattani-03ox62`.)
 
 ## Historial de Cambios por Sesión
+
+### Sesión 2026-07-02 — Nuevo módulo Facturas (documentosF/facturas/transaccionesF) completo + fixes de guardado en grids y refresco de Tree1 al eliminar, en Facturas/Pedidos/Traspasos/Correcciones (rama de trabajo local `claude/invoices-form-integration-rmvoq8`, todo confirmado se pasó a `master`)
+
+> Sesión larga construida a pedido, turno a turno, sobre las tablas `documentosF`/`facturas` que el usuario ya había creado en SQL Server. El usuario probó cada entrega manualmente y reportó bugs numerados ("problema1", "problema2"...) turno a turno. Se documenta de una sola vez.
+
+#### Módulo Facturas — creación desde cero
+- Nuevas pantallas **`FacturasGeneral`**/**`FacturasDetalle`**, integrando las tablas `documentosF` (encabezado) y `facturas` (líneas), replicando el patrón de Pedidos/Traspasos/Correcciones.
+- `documentosF.codigo` usa el prefijo `sucursal.signo` igual que los demás documentos; la carga inicial filtra por sucursal activa (`AppLoader.ConectarDocumentos`).
+- Nueva sección propia en el sidebar, **"🧾 Facturas"**, ubicada justo después de "🔧 Correcciones" (a pedido explícito del usuario) y antes del separador que da paso a Terceros.
+- Infraestructura agregada: `SqlData.DocumentosFObj`/`FacturasObj`/`TransaccionesFObj` (`DataConsulta`); `AppLoader.ConectarDocumentos` con los 3 `Conectar(...)` (documentosF, facturas con JOIN a documentosF, transaccionesF con JOIN a documentosF), todos filtrados por sucursal activa + rango de fechas; `CodigoRegenerator` con `("documentosF", "sucursal")`; `ConsolaMovimientos` con `_panelFacturas`, entrada en `_pestañasPorSeccion["facturas"]`, case en el switch de secciones y `BtnNav_Facturas_Click`.
+
+#### `estado`/`estadoC` + tabla `transaccionesF` (Cobros/Pagos)
+- El usuario agregó a `documentosF` las columnas `estado` (`pendiente`/`entregado`) y `estadoC` (`pendiente`/`pendiente parcial`/`cancelado`), y creó `transaccionesF` como sub-ledger de cobros, mismo rol que `transacciones` en Pedidos.
+- A diferencia de Pedidos (donde `estado` se calcula automáticamente), en Facturas **`estado` es editable manualmente** por el usuario (ComboBox en el encabezado); `estadoC` sigue siendo calculado automáticamente comparando `importe` de las líneas contra lo cobrado en `transaccionesF` (mismo criterio que Pedidos con `transacciones`).
+- `FacturasDetalle` ganó una segunda pestaña **"Cobros"** (`GridCobros`) con Lín./Fecha/Hora/Descripción/Forma (mismo combo `PedidosDetalle.FormasTrasaccion`)/Importe, y guardado diferencial propio (`GuardarLineasCobro`) contra `TransaccionesFObj`.
+
+#### `tercero` (FK a `terceros`) en `documentosF`
+- Nueva columna `tercero` (`uniqueidentifier`) aplicada en `FacturasGeneral`/`FacturasDetalle`: resolución por código con búsqueda en vivo (`ResolverTerceroId`/`ActualizarDescripcionTercero`) y selector modal reutilizando `TercerosGeneral.OpenAsDialog`, igual que en Pedidos.
+
+#### `movimiento` (venta/compra), contadores de pendientes y categoría por defecto
+- Nueva columna `movimiento` en `documentosF`; filtro ComboBox (Todos/Ventas/Compras) en `FacturasGeneral`, aplicado también a la numeración/listado igual que en los demás módulos con movimiento.
+- Nuevos contadores en `FacturasGeneral`: **"Estados pendientes"** (documentos con `estado = pendiente`) y **"Cuentas pendientes"** (documentos con `estadoC = pendiente` o `pendiente parcial`).
+- `FacturasDetalle.GridItems`: al insertar/agregar una línea nueva, la columna Categoría se precarga con la primera categoría encontrada en caché (`PrimeraCategoriaId()`, vía `Sql.CategoriasObj.Mover(1)`).
+
+#### Fixes de UX reportados por el usuario en `FacturasDetalle`
+- **Categoría (ComboBox) en `GridItems`**: reemplazó a las columnas de texto Categoría/Descripción; el combo mostraba de más un ítem "(sin categoría)" — filtrado para listar solo categorías reales.
+- **Columna Importe**: formato alineado al de `PedidosDetalle` (`#\,##0.##`) y fix de que la edición no se guardaba al desenfocar la celda (agregado el parseo manual del `TextBox` en `CellEditEnding`, convención ya usada en el resto de la app — ver más abajo el hallazgo de que faltaba también en Concepto/Descripción).
+- **Aviso de pestañas relacionadas al cerrar**: Facturas no tenía el guard `SinPestañasRelacionadas()`/`ConfirmarCierrePestañasRelacionadas` que sí tienen Pedidos/Traspasos/Correcciones/Articulos/Sucursales — agregado.
+- **`Box_Observacion`**: no ocupaba el espacio sobrante (quedaba una franja alrededor); ajustadas las `RowDefinition` del layout (`Auto`/`3*`/`*`/`Auto`) para que ocupe todo el espacio disponible.
+
+#### Fix: Tree1 (árbol de meses) no se actualizaba al guardar/editar un documento
+- `FacturasGeneral.CargarMeses()` reescrito para preservar el mes/nodo activo (`_mesActivo`, función local `SeleccionarMes`, captura de `tagPrevio` antes de reconstruir el árbol) y se agregaron las llamadas a `CargarMeses()` en `BtnNuevo_Click`/`AbrirEditar` (antes solo se recargaba la grilla, no el árbol).
+
+#### Fix sistémico: numeración de documentos reutilizada tras ocultar/eliminar
+- `DataConsulta.SiguienteNumeroDoc`/`SiguienteNumeroDocPorEmpresa`/`SiguienteNumeroDocPorRegion` filtraban `estadof = 'normal'` al calcular el próximo número — un documento oculto/eliminado liberaba su número, que podía reasignarse a otro documento nuevo. Se quitó ese filtro: ahora se considera **todo** registro histórico (sin importar `estadof`) al calcular el siguiente número, igual que ya ocurre con `articulos`/`familias` (índices no reutilizables). Beneficia a Pedidos/Traspasos/Correcciones/Facturas/Precios por igual (helper compartido).
+
+#### Investigado y descartado: "el tercero no se guarda" en `FacturasDetalle`
+- Investigación exhaustiva (comparación línea por línea contra el flujo equivalente de `PedidosDetalle`) sin encontrar ninguna divergencia de código. El usuario confirmó luego que fue un error propio de prueba ("era error mío") — no se aplicó ningún cambio.
+
+#### Investigado y NO aplicado (decisión explícita del usuario): `Ocultar` vs `Eliminar` real al borrar documentos
+- El usuario notó que borrar un `documentoF` (o cualquier documento) lo deja en `estadof = "oculto"` en vez de `"eliminado"`. Se confirmó que es una convención **universal** en los 12+ módulos del sistema (borrado lógico, nunca `DELETE` físico — ver "Decisiones de Arquitectura"), no un bug específico de Facturas. Al ser un cambio estructural que afectaría la semántica histórica de todos los módulos, se presentaron opciones con `AskUserQuestion`; el usuario eligió **dejarlo como está**. Sin cambios de código.
+
+#### Fix: columnas de texto libre en grids no guardaban el valor al desenfocar la celda
+- Se confirmó la convención ya existente en el codebase: **toda** columna editable de un `DataGrid` (numérica o de texto) se parsea manualmente desde el `TextBox` del `EditingElement` dentro de `CellEditEnding` y se asigna al modelo — no alcanza con el binding automático de `DataGridTextColumn`.
+- **`FacturasDetalle.GridItems`**: agregado el manejo de la columna **Concepto** (antes solo se parseaba Importe).
+- **`FacturasDetalle.GridCobros`**: agregado el manejo de la columna **Descripción** (antes solo se parseaba Importe) — mismo problema, columna editable sin `IsReadOnly`.
+- **`PedidosDetalle.GridTrasacciones`** (pestaña Cobros/Pagos): mismo problema encontrado y corregido en su columna **Descripción**.
+- Revisadas todas las demás columnas de texto editables de la app (Traspasos/Correcciones/Precios/Inventarios y los grids `*General` de mantenimiento): o bien ya tenían su manejo manual (columna "Código"), o están marcadas `IsReadOnly="True"` a nivel de grid/columna — sin el mismo problema.
+
+#### Fix: Tree1 no se actualizaba al **eliminar** un documento (Facturas/Pedidos/Traspasos/Correcciones)
+- `BtnEliminar_Click` en los 4 módulos hacía una actualización incremental de la grilla en memoria (`lista.RemoveAt(idx)`) sin tocar el árbol de meses — si el documento eliminado era el último de su mes, el nodo del mes quedaba "fantasma" en el árbol.
+- Cambiado a recarga completa (`CargarMeses(); CargarXxx();`) igual que ya hacían Nuevo/Editar, reseleccionando la fila más cercana por índice capturado antes de la recarga (no por referencia de objeto, que queda inválida tras el reload).
+- **Hallazgo colateral**: `PedidosGeneral`/`TraspasosGeneral`/`CorreccionesGeneral.CargarMeses()` todavía tenían la versión antigua (sin preservar el mes activo, solo "seleccionar mes actual" a ciegas) — a diferencia de `FacturasGeneral`, que ya se había arreglado antes en esta misma sesión. Si se llamaba `CargarMeses()` desde `BtnEliminar_Click` sin ese fix, el árbol saltaba al mes calendario actual en vez de conservar la vista del usuario. Se hizo backport de la lógica de preservación (`tagPrevio`/`SeleccionarMes`) de `FacturasGeneral` a los 3 módulos.
+- `RenumerarYTotales()` quedó sin usos en `FacturasGeneral` tras el cambio (su único llamador era el `BtnEliminar_Click` reemplazado) y se eliminó; en Pedidos/Traspasos/Correcciones el método sigue usándose en otros dos puntos cada uno, así que se conservó.
+- **`ArticulosGeneral` investigado y descartado**: su `Tree1` es un árbol estático de catálogo Producto→Familia (`ConstruirArbolDeseado`, basado en `ProductosObj`/`FamiliasObj`), no depende de cuántos artículos activos tiene cada nodo — eliminar un artículo nunca dejaría un nodo "fantasma" ahí. No presenta el mismo problema; no se tocó.
+
+#### Notas / pendientes de esta sesión
+- **Sin build en el entorno cloud**: ninguno de estos cambios se compiló (sin SDK de .NET disponible en este contenedor); toda la verificación fue por revisión manual de diffs. Probar en máquina local, en especial el guardado diferencial de `transaccionesF`/Cobros y los refrescos de Tree1 al eliminar.
+- **Propuesta discutida y NO implementada**: el usuario preguntó por una aplicación nueva, extensión de esta, para visualizar la empresa "en general" (agregado entre todas las sucursales — el `DashboardGeneral` actual filtra por `AppState.SucursalActiva`). Se propusieron dos caminos: (a) dashboard web liviano (ASP.NET Core/Blazor) leyendo la misma base SQL sin filtro de sucursal, accesible desde cualquier navegador/celular, con el costo de sumar una pieza nueva a hostear (no se distribuye con Velopack); o (b) otra app de escritorio WPF reutilizando `DataConsulta`/`SqlData` tal cual, más rápida de construir pero atada a una PC Windows. El usuario no había decidido el camino al momento de pedir esta actualización de `CONTEXT.md`.
 
 ### Sesión 2026-06-30 — Limpieza de `estadoU`, layout en 2 columnas, validaciones de guardado obligatorias, fixes de regresión en Traspasos/Correcciones y aviso de pestañas vinculadas (rama `master`)
 
