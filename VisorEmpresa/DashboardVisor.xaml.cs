@@ -7,12 +7,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using WpfAppVba;   // WindowHelper
 
 namespace VisorEmpresa
 {
     /// <summary>
-    /// Ventana principal del visor: dashboard de TODA la empresa (todas las
+    /// Sección Dashboard del visor: totales de TODA la empresa (todas las
     /// sucursales, sin filtro por sucursal) en unidades. Render de gráficos
     /// adaptado del DashboardGeneral de la app principal; los datos salen de
     /// consultas agregadas (ConsultasEmpresa), no de las cachés por sucursal.
@@ -20,7 +19,7 @@ namespace VisorEmpresa
     /// gráficos y las tarjetas; las cantidades de cada tipo se muestran siempre
     /// en sus chips.
     /// </summary>
-    public partial class VisorMainWindow : Window
+    public partial class DashboardVisor : UserControl
     {
         private bool _iniciado;
         private bool _cargandoFiltros;   // evita recargas mientras se llenan los combos
@@ -61,17 +60,24 @@ namespace VisorEmpresa
             public override string ToString() => Texto;
         }
 
-        public VisorMainWindow()
+        public DashboardVisor()
         {
             InitializeComponent();
-            WindowHelper.AjustarAlEcran(this);
-            ActualizarIconoTema();
             Loaded += async (_, _) =>
             {
                 if (_iniciado) return;
                 _iniciado = true;
                 await CargarFiltrosYDatosAsync();
             };
+        }
+
+        /// <summary>
+        /// Re-render tras un cambio de tema (los brushes de los gráficos se
+        /// resuelven al dibujar). La llama la consola al alternar claro/oscuro.
+        /// </summary>
+        public void RefrescarTema()
+        {
+            if (_iniciado) Recalcular();
         }
 
         // ─── Filtros del encabezado (empresa / año) ───────────────────────────
@@ -197,20 +203,6 @@ namespace VisorEmpresa
             // que la ventana esté lista; protegemos con _iniciado.
             if (!_iniciado) return;
             Recalcular();
-        }
-
-        private void BtnTema_Click(object sender, RoutedEventArgs e)
-        {
-            string nuevo = TemaVisor.EsOscuroActivo ? TemaVisor.TemaClaro : TemaVisor.TemaOscuro;
-            TemaVisor.AplicarTema(nuevo);
-            ActualizarIconoTema();
-            // Re-render: los gráficos usan brushes del tema resueltos al dibujar.
-            if (_iniciado) Recalcular();
-        }
-
-        private void ActualizarIconoTema()
-        {
-            BtnTema.Content = TemaVisor.EsOscuroActivo ? "☀" : "🌙";
         }
 
         // ─── Cálculo principal (en memoria, sobre las filas agregadas) ────────

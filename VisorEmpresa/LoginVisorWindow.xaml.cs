@@ -227,16 +227,49 @@ namespace VisorEmpresa
                 return;
             }
 
-            VisorState.UsuarioActivo = usuario.Id;
-            VisorState.TipoUsuario   = usuario.Tipo.Trim().ToLowerInvariant();
-            VisorState.EmpresaActiva = usuario.Empresa;
+            try
+            {
+                VisorState.UsuarioActivo = usuario.Id;
+                VisorState.TipoUsuario   = usuario.Tipo.Trim().ToLowerInvariant();
+                VisorState.EmpresaActiva = usuario.Empresa;
 
-            // Tema preferido del usuario (usuarios.temaC), como en la app principal.
-            TemaVisor.AplicarTema(usuario.TemaC);
+                // Estado global compartido con los formularios vinculados de la app
+                // principal (Precios/Empresas/Sucursales/Usuarios leen AppState).
+                AppState.UsuarioActivo = usuario.Id;
+                AppState.TipoUsuario   = VisorState.TipoUsuario;
+                AppState.EmpresaActiva = usuario.Empresa;
+                AppState.SesionActiva  = true;
+                AppState.PeriodoActivo = DateTime.Now.Year.ToString();
+                // Sin sucursal activa: el visor trabaja a nivel de empresa completa.
+                AppState.SucursalActiva = "";
+                AppState.RegionActiva   = "";
 
-            var main = new VisorMainWindow();
-            main.Show();
-            Close();
+                // Tema preferido del usuario (usuarios.temaC), como en la app principal.
+                TemaVisor.AplicarTema(usuario.TemaC);
+                AppState.TemaActivo = VisorState.TemaActivo;
+
+                // Cachés que usan los módulos de edición vinculados. Todas son
+                // empresa-scoped (AppLoader NO filtra por sucursal aquí); las cachés
+                // de documentos (ConectarBases/ConectarDocumentos, sucursal-scoped)
+                // no se cargan: las vistas de documentos del visor consultan SQL
+                // directo a nivel empresa.
+                MostrarEstado("Cargando datos de la cuenta...", Colors.Green);
+                await Task.Run(() => AppLoader.ConectarUsuarios());
+
+                MostrarEstado("Cargando catálogos de la empresa...", Colors.Green);
+                await Task.Run(() => AppLoader.ConectarProductos());
+
+                var main = new ConsolaMovimientos();   // la consola del visor (ConsolaVisor.xaml)
+                main.Show();
+                Close();
+            }
+            catch (Exception ex)
+            {
+                AppState.SesionActiva  = false;
+                AppState.UsuarioActivo = "";
+                MostrarEstado($"⚠ No se pudo cargar los datos: {ex.Message}", Colors.Orange);
+                HabilitarControles(true);
+            }
         }
 
         private void LimpiarContrasena()

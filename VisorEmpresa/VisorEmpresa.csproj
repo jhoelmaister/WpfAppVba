@@ -11,7 +11,7 @@
     <ApplicationIcon>..\WpfAppVba\icono.ico</ApplicationIcon>
 
     <!-- Versión del visor: independiente de la app principal. -->
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,26 +19,78 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.102.2" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
+    <PackageReference Include="PdfSharp" Version="6.2.4" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
     <PackageReference Include="Velopack" Version="1.2.0" />
   </ItemGroup>
 
-  <!-- Código compartido con la app principal por ARCHIVOS VINCULADOS (una sola
-       fuente de verdad, sin copias): conexión SQL, configuración cifrada de
-       servidores (misma %AppData%\WpfAppVba\conexion.dat, se configura una vez
-       por PC), hash de contraseñas, theming de ventanas, las ventanas de
-       gestión de servidores y los diccionarios de tema claro/oscuro. -->
+  <!-- ══ Código compartido con la app principal por ARCHIVOS VINCULADOS ══
+       Una sola fuente de verdad, sin copias. La consola original
+       (ConsolaMovimientos.xaml/.cs) NO se vincula a propósito: el visor define
+       su propia clase WpfAppVba.ConsolaMovimientos (ConsolaVisor.xaml) con la
+       misma API de pestañas, y así los formularios vinculados funcionan sin
+       tocar la app principal. -->
+
+  <!-- Conexión, configuración y utilidades base -->
   <ItemGroup>
     <Compile Include="..\WpfAppVba\DatabaseConnection.cs" Link="Compartido\DatabaseConnection.cs" />
     <Compile Include="..\WpfAppVba\ConexionConfig.cs" Link="Compartido\ConexionConfig.cs" />
+    <Compile Include="..\WpfAppVba\ConexionEstado.cs" Link="Compartido\ConexionEstado.cs" />
     <Compile Include="..\WpfAppVba\PasswordHasher.cs" Link="Compartido\PasswordHasher.cs" />
     <Compile Include="..\WpfAppVba\WindowTheming.cs" Link="Compartido\WindowTheming.cs" />
     <Compile Include="..\WpfAppVba\WindowHelper.cs" Link="Compartido\WindowHelper.cs" />
+    <Compile Include="..\WpfAppVba\GridFocusHelper.cs" Link="Compartido\GridFocusHelper.cs" />
+    <Compile Include="..\WpfAppVba\FuncionesComunes.cs" Link="Compartido\FuncionesComunes.cs" />
+    <Compile Include="..\WpfAppVba\SqlRetry.cs" Link="Compartido\SqlRetry.cs" />
+  </ItemGroup>
+
+  <!-- Capa de datos (cachés por empresa para los módulos de edición) -->
+  <ItemGroup>
+    <Compile Include="..\WpfAppVba\SqlData.cs" Link="Compartido\SqlData.cs" />
+    <Compile Include="..\WpfAppVba\DataConsulta.cs" Link="Compartido\DataConsulta.cs" />
+    <Compile Include="..\WpfAppVba\AppLoader.cs" Link="Compartido\AppLoader.cs" />
+    <Compile Include="..\WpfAppVba\AppState.cs" Link="Compartido\AppState.cs" />
+    <Compile Include="..\WpfAppVba\StockCalculator.cs" Link="Compartido\StockCalculator.cs" />
+  </ItemGroup>
+
+  <!-- Ventanas de configuración de servidores (misma conexion.dat cifrada) -->
+  <ItemGroup>
     <Compile Include="..\WpfAppVba\ConfiguracionDbWindow.xaml.cs" Link="Compartido\ConfiguracionDbWindow.xaml.cs" />
     <Compile Include="..\WpfAppVba\ConexionServidoresWindow.xaml.cs" Link="Compartido\ConexionServidoresWindow.xaml.cs" />
     <Page Include="..\WpfAppVba\ConfiguracionDbWindow.xaml" Link="Compartido\ConfiguracionDbWindow.xaml" />
     <Page Include="..\WpfAppVba\ConexionServidoresWindow.xaml" Link="Compartido\ConexionServidoresWindow.xaml" />
+  </ItemGroup>
+
+  <!-- Módulos de EDICIÓN duplicados de la app principal (empresa-scoped):
+       Precios, Empresas, Sucursales, Usuarios + Regiones (selector que usan
+       Sucursales y Precios). -->
+  <ItemGroup>
+    <Compile Include="..\WpfAppVba\PreciosGeneral.xaml.cs" Link="Modulos\PreciosGeneral.xaml.cs" />
+    <Compile Include="..\WpfAppVba\PreciosDetalle.xaml.cs" Link="Modulos\PreciosDetalle.xaml.cs" />
+    <Compile Include="..\WpfAppVba\EmpresasGeneral.xaml.cs" Link="Modulos\EmpresasGeneral.xaml.cs" />
+    <Compile Include="..\WpfAppVba\EmpresasDetalle.xaml.cs" Link="Modulos\EmpresasDetalle.xaml.cs" />
+    <Compile Include="..\WpfAppVba\SucursalesGeneral.xaml.cs" Link="Modulos\SucursalesGeneral.xaml.cs" />
+    <Compile Include="..\WpfAppVba\SucursalesDetalle.xaml.cs" Link="Modulos\SucursalesDetalle.xaml.cs" />
+    <Compile Include="..\WpfAppVba\UsuariosGeneral.xaml.cs" Link="Modulos\UsuariosGeneral.xaml.cs" />
+    <Compile Include="..\WpfAppVba\UsuariosDetalle.xaml.cs" Link="Modulos\UsuariosDetalle.xaml.cs" />
+    <Compile Include="..\WpfAppVba\RegionesGeneral.xaml.cs" Link="Modulos\RegionesGeneral.xaml.cs" />
+    <Compile Include="..\WpfAppVba\RegionesDetalle.xaml.cs" Link="Modulos\RegionesDetalle.xaml.cs" />
+    <Page Include="..\WpfAppVba\PreciosGeneral.xaml" Link="Modulos\PreciosGeneral.xaml" />
+    <Page Include="..\WpfAppVba\PreciosDetalle.xaml" Link="Modulos\PreciosDetalle.xaml" />
+    <Page Include="..\WpfAppVba\EmpresasGeneral.xaml" Link="Modulos\EmpresasGeneral.xaml" />
+    <Page Include="..\WpfAppVba\EmpresasDetalle.xaml" Link="Modulos\EmpresasDetalle.xaml" />
+    <Page Include="..\WpfAppVba\SucursalesGeneral.xaml" Link="Modulos\SucursalesGeneral.xaml" />
+    <Page Include="..\WpfAppVba\SucursalesDetalle.xaml" Link="Modulos\SucursalesDetalle.xaml" />
+    <Page Include="..\WpfAppVba\UsuariosGeneral.xaml" Link="Modulos\UsuariosGeneral.xaml" />
+    <Page Include="..\WpfAppVba\UsuariosDetalle.xaml" Link="Modulos\UsuariosDetalle.xaml" />
+    <Page Include="..\WpfAppVba\RegionesGeneral.xaml" Link="Modulos\RegionesGeneral.xaml" />
+    <Page Include="..\WpfAppVba\RegionesDetalle.xaml" Link="Modulos\RegionesDetalle.xaml" />
+  </ItemGroup>
+
+  <!-- Temas (misma identidad visual que la app principal) -->
+  <ItemGroup>
     <Page Include="..\WpfAppVba\Themes\LightTheme.xaml" Link="Themes\LightTheme.xaml" />
     <Page Include="..\WpfAppVba\Themes\DarkTheme.xaml" Link="Themes\DarkTheme.xaml" />
   </ItemGroup>

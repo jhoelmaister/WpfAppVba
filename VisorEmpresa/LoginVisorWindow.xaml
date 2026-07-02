@@ -125,7 +125,7 @@
                 <TextBlock Text="🏢  Visor Empresa" FontSize="20" FontWeight="Bold"
                            Foreground="{DynamicResource ThemeTexto}"
                            HorizontalAlignment="Center" Margin="0,0,0,4"/>
-                <TextBlock Text="Panel general de todas las sucursales · solo lectura"
+                <TextBlock Text="Panel general de todas las sucursales · solo administradores"
                            FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
                            HorizontalAlignment="Center" TextWrapping="Wrap"
                            TextAlignment="Center" Margin="0,0,0,22"/>
