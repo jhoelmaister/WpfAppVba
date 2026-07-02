@@ -37,6 +37,10 @@ namespace WpfAppVba
         // ─── Carga el árbol de meses ──────────────────────────────────────────
         private void CargarMeses()
         {
+            // Qué estaba seleccionado ANTES de reconstruir el árbol: null = todavía no se
+            // seleccionó nada (primera carga); "" = nodo raíz "Todos"; nombre de mes = ese mes.
+            object? tagPrevio = (Tree1.SelectedItem as TreeViewItem)?.Tag;
+
             Tree1.Items.Clear();
             string[] meses = { "Enero","Febrero","Marzo","Abril","Mayo","Junio",
                                 "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre" };
@@ -61,7 +65,7 @@ namespace WpfAppVba
             }
 
             // Si no hay documentos en el período, el árbol queda vacío (no se muestra el año).
-            if (mesesConDatos.Count == 0) return;
+            if (mesesConDatos.Count == 0) { _mesActivo = ""; return; }
 
             // Nodo padre con el año/período activo → muestra todos los meses (Tag vacío = sin filtro)
             var nodoGeneral = new TreeViewItem
@@ -75,17 +79,40 @@ namespace WpfAppVba
 
             Tree1.Items.Add(nodoGeneral);
 
-            // Selección por defecto: mes actual (si tiene documentos)
-            int mesActual = DateTime.Now.Month;
-            if (mesesConDatos.Contains(mesActual))
+            bool SeleccionarMes(string nombreMes)
             {
                 foreach (var item in nodoGeneral.Items)
                 {
-                    if (item is not TreeViewItem ti || (string)ti.Tag != meses[mesActual - 1]) continue;
+                    if (item is not TreeViewItem ti || (string)ti.Tag != nombreMes) continue;
                     ti.IsSelected = true;
-                    _mesActivo = meses[mesActual - 1];
-                    break;
+                    _mesActivo = nombreMes;
+                    return true;
                 }
+                return false;
+            }
+
+            string? mesActualNombre = mesesConDatos.Contains(DateTime.Now.Month)
+                ? meses[DateTime.Now.Month - 1]
+                : null;
+
+            if (tagPrevio is string tagVacio && tagVacio == "")
+            {
+                // Se estaba viendo "Todos" (nodo raíz): conservarlo tal cual.
+                nodoGeneral.IsSelected = true;
+                _mesActivo = "";
+            }
+            else if (tagPrevio is string mesPrevio && SeleccionarMes(mesPrevio))
+            {
+                // Mes previamente activo conservado (p. ej. al volver de guardar/editar/eliminar).
+            }
+            else if (mesActualNombre != null)
+            {
+                // Primera carga, o el mes previo ya no tiene documentos: usar el mes actual.
+                SeleccionarMes(mesActualNombre);
+            }
+            else
+            {
+                _mesActivo = "";
             }
         }
 
@@ -487,6 +514,8 @@ namespace WpfAppVba
 
             try
             {
+                int idxPrevio = FilasGrid.IndexOf(fila);
+
                 Sql.DocumentosPObj.EstablecerItem("edicion",  fila.DocumentoP, DateTime.Now);
                 Sql.DocumentosPObj.EstablecerItem("usuarioE", fila.DocumentoP, AppState.UsuarioActivo);
                 Sql.DocumentosPObj.Ocultar(fila.DocumentoP);
@@ -507,14 +536,15 @@ namespace WpfAppVba
                 Sql.DocumentosPObj.OrdenarData(("fecha", false));
                 Sql.PedidosObj.OrdenarData(("documentoP", false), ("indice", false));
 
-                var lista = FilasGrid;
-                int idx   = lista.IndexOf(fila);
-                if (idx >= 0) lista.RemoveAt(idx);
-                RenumerarYTotales();
+                // Recarga completa: el documento eliminado pudo ser el último de su mes,
+                // así que el árbol y el listado deben rehacerse (igual que nuevo/editar).
+                CargarMeses();
+                CargarPedidos();
 
+                var lista = FilasGrid;
                 if (lista.Count > 0)
                 {
-                    var sel = lista[Math.Min(idx, lista.Count - 1)];
+                    var sel = lista[Math.Min(idxPrevio, lista.Count - 1)];
                     Grid1.SelectedItem = sel; Grid1.ScrollIntoView(sel);
                 }
                 else OcultarDetalle();

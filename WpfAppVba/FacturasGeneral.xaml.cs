@@ -253,23 +253,6 @@ namespace WpfAppVba
         private List<FacturaFila> FilasGrid =>
             Grid1.ItemsSource as List<FacturaFila> ?? new List<FacturaFila>();
 
-        private void RenumerarYTotales()
-        {
-            var lista = FilasGrid;
-            int n = 1;
-            double totalImporte = 0;
-            foreach (var f in lista)
-            {
-                f.Linea       = n++;
-                totalImporte += f.ImporteTotal;
-            }
-            TxtTotalImporte.Text      = totalImporte.ToString("N2");
-            TxtTotalDocumentos.Text   = lista.Count.ToString("N0");
-            TxtEstadosPendientes.Text = lista.Count(f => f.Estado == "pendiente").ToString();
-            TxtCuentasPendientes.Text = lista.Count(f => f.EstadoC == "pendiente" || f.EstadoC == "pendiente parcial").ToString();
-            Grid1.Items.Refresh();
-        }
-
         // ─── Suma el importe total de las líneas de un documento ──────────────
         private static double CalcularImporte(string documentoF)
         {
@@ -423,6 +406,8 @@ namespace WpfAppVba
 
             try
             {
+                int idxPrevio = FilasGrid.IndexOf(fila);
+
                 // Ocultar todas las líneas de este documentoF
                 int uf = Sql.FacturasObj.ContarFilas;
                 var idsOcultar = new List<string>();
@@ -445,14 +430,15 @@ namespace WpfAppVba
                 Sql.FacturasObj.OrdenarData(("documentoF", false), ("indice", false));
                 Sql.DocumentosFObj.OrdenarData(("fecha", false));
 
-                var lista = FilasGrid;
-                int idx   = lista.IndexOf(fila);
-                if (idx >= 0) lista.RemoveAt(idx);
-                RenumerarYTotales();
+                // Recarga completa: el documento eliminado pudo ser el último de su mes,
+                // así que el árbol y el listado deben rehacerse (igual que nuevo/editar).
+                CargarMeses();
+                CargarFacturas();
 
+                var lista = FilasGrid;
                 if (lista.Count > 0)
                 {
-                    var sel = lista[Math.Min(idx, lista.Count - 1)];
+                    var sel = lista[Math.Min(idxPrevio, lista.Count - 1)];
                     Grid1.SelectedItem = sel; Grid1.ScrollIntoView(sel);
                 }
                 else OcultarDetalle();

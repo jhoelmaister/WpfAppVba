@@ -436,12 +436,19 @@ namespace WpfAppVba
         private void GridItems_CellEditEnding(object? sender, DataGridCellEditEndingEventArgs e)
         {
             if (e.EditAction == DataGridEditAction.Commit &&
-                e.Column.Header?.ToString() == "Importe" &&
-                e.Row.Item is FacturaItemFila fila &&
-                e.EditingElement is TextBox tbImp)
+                e.Row.Item is FacturaItemFila fila)
             {
-                if (double.TryParse(tbImp.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double importe))
-                    fila.Importe = importe;
+                string col = e.Column.Header?.ToString() ?? "";
+
+                if (col == "Importe" && e.EditingElement is TextBox tbImp)
+                {
+                    if (double.TryParse(tbImp.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double importe))
+                        fila.Importe = importe;
+                }
+                else if (col == "Concepto" && e.EditingElement is TextBox tbConcepto)
+                {
+                    fila.Concepto = tbConcepto.Text;
+                }
             }
 
             _hayCambios = true;
@@ -549,6 +556,10 @@ namespace WpfAppVba
             {
                 if (double.TryParse(tbImp.Text.Trim(), NumberStyles.Any, CultureInfo.CurrentCulture, out double imp))
                     fila.Importe = imp;
+            }
+            else if (e.Column.Header?.ToString() == "Descripción" && e.EditingElement is TextBox tbDesc)
+            {
+                fila.Descripcion = tbDesc.Text;
             }
 
             _hayCambios = true;

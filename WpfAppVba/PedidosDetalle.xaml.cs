@@ -1096,6 +1096,11 @@ namespace WpfAppVba
                     fila.Importe = imp;
             }
 
+            if (e.Column.Header?.ToString() == "Descripción" && e.EditingElement is TextBox tbDesc)
+            {
+                fila.Descripcion = tbDesc.Text;
+            }
+
             _cambioTrasaccion = true;
             Dispatcher.BeginInvoke(new Action(() =>
             {
