@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -28,16 +29,30 @@ namespace WpfAppVba
     {
         private Button? _btnActivo;
 
-        // Paneles fijos por sección.
-        private readonly DashboardVisor    _panelDashboard    = new();
-        private readonly PedidosVisor      _panelPedidos      = new();
-        private readonly TraspasosVisor    _panelTraspasos    = new();
-        private readonly CorreccionesVisor _panelCorrecciones = new();
-        private readonly FacturasVisor     _panelFacturas     = new();
-        private readonly PreciosGeneral    _panelPrecios      = new();
-        private readonly EmpresasGeneral   _panelEmpresas     = new();
-        private readonly SucursalesGeneral _panelSucursales   = new();
-        private readonly UsuariosGeneral   _panelUsuarios     = new();
+        // Filtros globales de la top bar (empresa / año).
+        private bool _iniciadoFiltros;
+        private bool _cargandoFiltros;
+
+        // Item de los combos de la top bar (Id oculto + texto visible).
+        private class Opcion
+        {
+            public string Id    { get; }
+            public string Texto { get; }
+            public Opcion(string id, string texto) { Id = id; Texto = texto; }
+            public override string ToString() => Texto;
+        }
+
+        // Paneles fijos por sección: mutables para poder recrearlos al cambiar de
+        // empresa (mismo criterio que RecargarContexto en la app principal).
+        private DashboardVisor    _panelDashboard    = new();
+        private PedidosVisor      _panelPedidos      = new();
+        private TraspasosVisor    _panelTraspasos    = new();
+        private CorreccionesVisor _panelCorrecciones = new();
+        private FacturasVisor     _panelFacturas     = new();
+        private PreciosGeneral    _panelPrecios      = new();
+        private EmpresasGeneral   _panelEmpresas     = new();
+        private SucursalesGeneral _panelSucursales   = new();
+        private UsuariosGeneral   _panelUsuarios     = new();
 
         // Cada sección del menú lateral conserva su propio juego de pestañas dinámicas.
         private string _seccionActiva = "dashboard";
@@ -79,6 +94,164 @@ namespace WpfAppVba
             ActualizarLabelConexion(ConexionEstado.EnLinea);
             ConexionEstado.Cambio += OnConexionCambio;
             ConexionEstado.Iniciar(Dispatcher);
+
+            // Filtros globales (empresa/año) de la top bar. Los paneles cargan solos
+            // con los valores por defecto (empresa del login + año actual), así que
+            // esta población inicial no dispara recargas (_cargandoFiltros).
+            Loaded += async (_, _) =>
+            {
+                if (_iniciadoFiltros) return;
+                _iniciadoFiltros = true;
+                await CargarFiltrosTopAsync();
+            };
+        }
+
+        // ─── Filtros globales de la top bar (empresa / año) ───────────────────
+        private async Task CargarFiltrosTopAsync()
+        {
+            _cargandoFiltros = true;
+            try
+            {
+                var empresas = await Task.Run(ConsultasEmpresa.CargarEmpresas);
+                var opciones = empresas.Select(e => new Opcion(e.Id, e.Descripcion)).ToList();
+                CmbEmpresaTop.ItemsSource = opciones;
+
+                int idx = opciones.FindIndex(o => o.Id == AppState.EmpresaActiva);
+                bool sinEmpresa = idx < 0 && opciones.Count > 0;
+                if (idx < 0) idx = opciones.Count > 0 ? 0 : -1;
+                CmbEmpresaTop.SelectedIndex = idx;
+
+                // Admin sin empresa asignada: fijar la primera del combo y recargar
+                // las cachés de los módulos de edición para esa empresa.
+                if (sinEmpresa)
+                {
+                    AppState.EmpresaActiva   = opciones[0].Id;
+                    VisorState.EmpresaActiva = opciones[0].Id;
+                    Mouse.OverrideCursor = Cursors.Wait;
+                    await Task.Run(() => AppLoader.ConectarProductos());
+                    ActualizarInfoUsuario();
+                    RefrescarPanelesDatos();
+                }
+
+                await RepoblarAniosTopAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"No se pudieron cargar los filtros de empresa/año:\n{ex.Message}",
+                                "Visor Empresa", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+                _cargandoFiltros = false;
+            }
+        }
+
+        private async Task RepoblarAniosTopAsync()
+        {
+            var anios = await Task.Run(() => ConsultasEmpresa.CargarAnios(AppState.EmpresaActiva));
+            CmbAnioTop.ItemsSource = anios;
+
+            int idx = anios.IndexOf(VisorState.AnioActivo);
+            if (idx < 0) idx = anios.IndexOf(DateTime.Now.Year);
+            if (idx < 0) idx = 0;
+            CmbAnioTop.SelectedIndex = anios.Count > 0 ? idx : -1;
+
+            if (CmbAnioTop.SelectedItem is int anio)
+                VisorState.AnioActivo = anio;
+        }
+
+        private async void CmbEmpresaTop_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_cargandoFiltros) return;
+            string nueva = (CmbEmpresaTop.SelectedItem as Opcion)?.Id ?? "";
+            if (string.IsNullOrEmpty(nueva) || nueva == AppState.EmpresaActiva) return;
+
+            // Cambiar de empresa cierra todas las pestañas y recrea los paneles
+            // (mismo criterio que el cambio de contexto de la app principal):
+            // confirmar primero si hay cambios sin guardar.
+            if (!ConfirmarPerderCambios())
+            {
+                _cargandoFiltros = true;
+                var lista = CmbEmpresaTop.ItemsSource as List<Opcion>;
+                CmbEmpresaTop.SelectedIndex = lista?.FindIndex(o => o.Id == AppState.EmpresaActiva) ?? -1;
+                _cargandoFiltros = false;
+                return;
+            }
+
+            _cargandoFiltros = true;
+            try
+            {
+                Mouse.OverrideCursor = Cursors.Wait;
+
+                AppState.EmpresaActiva   = nueva;
+                VisorState.EmpresaActiva = nueva;
+                AppState.RegionActiva    = "";
+
+                // Recargar las cachés empresa-scoped de los módulos de edición.
+                await Task.Run(() => AppLoader.ConectarProductos());
+
+                await RepoblarAniosTopAsync();
+                RecargarPaneles();
+                ActualizarInfoUsuario();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"No se pudo cambiar de empresa:\n{ex.Message}",
+                                "Visor Empresa", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+                _cargandoFiltros = false;
+            }
+        }
+
+        private void CmbAnioTop_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_cargandoFiltros) return;
+            if (CmbAnioTop.SelectedItem is not int anio || anio == VisorState.AnioActivo) return;
+
+            VisorState.AnioActivo = anio;
+            RefrescarPanelesDatos();
+        }
+
+        // Recarga los paneles con datos (dashboard + vistas de documentos) que ya
+        // se hayan inicializado; los no abiertos cargarán solos al abrirse.
+        private void RefrescarPanelesDatos()
+        {
+            _panelDashboard.RefrescarDatos();
+            _panelPedidos.RefrescarDatos();
+            _panelTraspasos.RefrescarDatos();
+            _panelCorrecciones.RefrescarDatos();
+            _panelFacturas.RefrescarDatos();
+        }
+
+        // Cierra todas las pestañas dinámicas y recrea TODOS los paneles para que
+        // relean las cachés/filtros recién cargados (equivalente a RecargarContexto
+        // de la app principal, manteniendo la sección enfocada).
+        private void RecargarPaneles()
+        {
+            for (int i = TabContenido.Items.Count - 1; i >= 0; i--)
+                if (TabContenido.Items[i] is TabItem t && t != TabFijo)
+                    TabContenido.Items.RemoveAt(i);
+            foreach (var clave in _pestañasPorSeccion.Keys.ToList())
+                _pestañasPorSeccion[clave].Clear();
+            foreach (var clave in _pestañaSeleccionadaPorSeccion.Keys.ToList())
+                _pestañaSeleccionadaPorSeccion[clave] = null;
+
+            _panelDashboard    = new();
+            _panelPedidos      = new();
+            _panelTraspasos    = new();
+            _panelCorrecciones = new();
+            _panelFacturas     = new();
+            _panelPrecios      = new();
+            _panelEmpresas     = new();
+            _panelSucursales   = new();
+            _panelUsuarios     = new();
+
+            AsignarPanelFijo(_seccionActiva);
+            TabContenido.SelectedItem = TabFijo;
         }
 
         // ─── Versión de la app (barra de título de la ventana) ────────────────
@@ -159,18 +332,7 @@ namespace WpfAppVba
             }
 
             // 2. Cambiar el contenido y título de la pestaña fija
-            switch (nombre)
-            {
-                case "dashboard":    TabFijoContenido.Content = _panelDashboard;    TabFijoTitulo.Text = "Dashboard";    break;
-                case "pedidos":      TabFijoContenido.Content = _panelPedidos;      TabFijoTitulo.Text = "Pedidos";      break;
-                case "traspasos":    TabFijoContenido.Content = _panelTraspasos;    TabFijoTitulo.Text = "Traspasos";    break;
-                case "correcciones": TabFijoContenido.Content = _panelCorrecciones; TabFijoTitulo.Text = "Correcciones"; break;
-                case "facturas":     TabFijoContenido.Content = _panelFacturas;     TabFijoTitulo.Text = "Facturas";     break;
-                case "precios":      TabFijoContenido.Content = _panelPrecios;      TabFijoTitulo.Text = "Precios";      break;
-                case "empresas":     TabFijoContenido.Content = _panelEmpresas;     TabFijoTitulo.Text = "Empresas";     break;
-                case "sucursales":   TabFijoContenido.Content = _panelSucursales;   TabFijoTitulo.Text = "Sucursales";   break;
-                case "usuarios":     TabFijoContenido.Content = _panelUsuarios;     TabFijoTitulo.Text = "Usuarios";     break;
-            }
+            AsignarPanelFijo(nombre);
 
             // 3. Restaurar las pestañas propias de la nueva sección
             _seccionActiva = nombre;
@@ -184,6 +346,23 @@ namespace WpfAppVba
             TabContenido.SelectedItem = (selAnterior != null && TabContenido.Items.Contains(selAnterior))
                 ? selAnterior
                 : TabFijo;
+        }
+
+        // Contenido y título de la pestaña fija según la sección.
+        private void AsignarPanelFijo(string nombre)
+        {
+            switch (nombre)
+            {
+                case "dashboard":    TabFijoContenido.Content = _panelDashboard;    TabFijoTitulo.Text = "Dashboard";    break;
+                case "pedidos":      TabFijoContenido.Content = _panelPedidos;      TabFijoTitulo.Text = "Pedidos";      break;
+                case "traspasos":    TabFijoContenido.Content = _panelTraspasos;    TabFijoTitulo.Text = "Traspasos";    break;
+                case "correcciones": TabFijoContenido.Content = _panelCorrecciones; TabFijoTitulo.Text = "Correcciones"; break;
+                case "facturas":     TabFijoContenido.Content = _panelFacturas;     TabFijoTitulo.Text = "Facturas";     break;
+                case "precios":      TabFijoContenido.Content = _panelPrecios;      TabFijoTitulo.Text = "Precios";      break;
+                case "empresas":     TabFijoContenido.Content = _panelEmpresas;     TabFijoTitulo.Text = "Empresas";     break;
+                case "sucursales":   TabFijoContenido.Content = _panelSucursales;   TabFijoTitulo.Text = "Sucursales";   break;
+                case "usuarios":     TabFijoContenido.Content = _panelUsuarios;     TabFijoTitulo.Text = "Usuarios";     break;
+            }
         }
 
         public void AbrirPestaña(string titulo, UIElement contenido, string? clave = null)

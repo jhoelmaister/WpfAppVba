@@ -40,7 +40,18 @@ namespace VisorEmpresa
         }
 
         private string SucursalSeleccionada() => (CmbSucursal.SelectedItem as Opcion)?.Id ?? "";
-        private int    AnioSeleccionado()     => CmbAnio.SelectedItem is int a ? a : DateTime.Now.Year;
+        private int    AnioSeleccionado()     => VisorState.AnioActivo;   // año global (top bar de la consola)
+
+        /// <summary>
+        /// Recarga con los filtros globales actuales (empresa/año de la top bar).
+        /// La llama la consola al cambiar el año; si el panel aún no se abrió,
+        /// cargará solo con los valores vigentes en su primer Loaded.
+        /// </summary>
+        public async void RefrescarDatos()
+        {
+            if (!_iniciado) return;
+            await CargarDatosAsync();
+        }
 
         private async Task CargarFiltrosAsync()
         {
@@ -55,11 +66,6 @@ namespace VisorEmpresa
                 opciones.AddRange(sucursales.Select(s => new Opcion(s.Id, s.Descripcion)));
                 CmbSucursal.ItemsSource   = opciones;
                 CmbSucursal.SelectedIndex = 0;
-
-                var anios = await Task.Run(() => ConsultasEmpresa.CargarAnios(emp));
-                CmbAnio.ItemsSource = anios;
-                int idx = anios.IndexOf(DateTime.Now.Year);
-                CmbAnio.SelectedIndex = idx >= 0 ? idx : (anios.Count > 0 ? 0 : -1);
             }
             catch (Exception ex)
             {

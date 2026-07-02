@@ -71,12 +71,6 @@
             <Setter Property="Margin" Value="0,2,0,0"/>
         </Style>
 
-        <Style x:Key="FiltroLabel" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Margin" Value="0,0,6,0"/>
-        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -101,14 +95,6 @@
                            Foreground="{DynamicResource ThemeTextoSec}"/>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Empresa:" Style="{StaticResource FiltroLabel}"/>
-                    <ComboBox x:Name="CmbEmpresa" Width="230" Height="32" Margin="0,0,16,0"
-                              SelectionChanged="CmbEmpresa_SelectionChanged"/>
-
-                    <TextBlock Text="Año:" Style="{StaticResource FiltroLabel}"/>
-                    <ComboBox x:Name="CmbAnio" Width="90" Height="32" Margin="0,0,16,0"
-                              SelectionChanged="CmbAnio_SelectionChanged"/>
-
                     <Button x:Name="BtnActualizar" Content="↻ Actualizar"
                             Height="32" FontSize="12" FontWeight="SemiBold" Padding="16,0"
                             Background="#1A73E8" Foreground="White"

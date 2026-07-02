@@ -11,5 +11,9 @@ namespace VisorEmpresa
         public static string TipoUsuario   { get; set; } = "";
         public static string EmpresaActiva { get; set; } = "";
         public static string TemaActivo    { get; set; } = TemaVisor.TemaClaro;
+
+        // Año global del visor: lo fija el combo de la top bar de la consola y
+        // lo leen el dashboard y las 4 vistas de documentos.
+        public static int AnioActivo { get; set; } = System.DateTime.Now.Year;
     }
 }

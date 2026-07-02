@@ -22,7 +22,6 @@ namespace VisorEmpresa
     public partial class DashboardVisor : UserControl
     {
         private bool _iniciado;
-        private bool _cargandoFiltros;   // evita recargas mientras se llenan los combos
 
         // Datos del año/empresa activos (se recargan con Actualizar o al cambiar filtros).
         private List<MovimientoFila> _filas = new();
@@ -51,15 +50,6 @@ namespace VisorEmpresa
             Color.FromRgb(0x5C,0x6B,0xC0), Color.FromRgb(0x26,0xA6,0x9A),
         };
 
-        // Item de los combos del encabezado (Id oculto + texto visible).
-        private class Opcion
-        {
-            public string Id    { get; }
-            public string Texto { get; }
-            public Opcion(string id, string texto) { Id = id; Texto = texto; }
-            public override string ToString() => Texto;
-        }
-
         public DashboardVisor()
         {
             InitializeComponent();
@@ -67,7 +57,7 @@ namespace VisorEmpresa
             {
                 if (_iniciado) return;
                 _iniciado = true;
-                await CargarFiltrosYDatosAsync();
+                await CargarDatosAsync();
             };
         }
 
@@ -80,81 +70,22 @@ namespace VisorEmpresa
             if (_iniciado) Recalcular();
         }
 
-        // ─── Filtros del encabezado (empresa / año) ───────────────────────────
-        private async Task CargarFiltrosYDatosAsync()
+        /// <summary>
+        /// Recarga con los filtros globales actuales (empresa/año de la top bar).
+        /// La llama la consola al cambiar el año o corregir la empresa.
+        /// </summary>
+        public async void RefrescarDatos()
         {
-            _cargandoFiltros = true;
-            try
-            {
-                Mouse.OverrideCursor = Cursors.Wait;
-
-                var empresas = await Task.Run(ConsultasEmpresa.CargarEmpresas);
-                var opciones = empresas.Select(e => new Opcion(e.Id, e.Descripcion)).ToList();
-                CmbEmpresa.ItemsSource = opciones;
-
-                // Preselección: la empresa del usuario logueado, o la primera.
-                int idx = opciones.FindIndex(o => o.Id == VisorState.EmpresaActiva);
-                CmbEmpresa.SelectedIndex = idx >= 0 ? idx : (opciones.Count > 0 ? 0 : -1);
-
-                await RepoblarAniosAsync();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"No se pudieron cargar las empresas:\n{ex.Message}",
-                                "Visor Empresa", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-            finally
-            {
-                Mouse.OverrideCursor = null;
-                _cargandoFiltros = false;
-            }
-
-            await CargarDatosAsync();
-        }
-
-        private async Task RepoblarAniosAsync()
-        {
-            string emp       = EmpresaSeleccionada();
-            int anioPrevio   = CmbAnio.SelectedItem is int a ? a : 0;
-
-            var anios = await Task.Run(() => ConsultasEmpresa.CargarAnios(emp));
-            CmbAnio.ItemsSource = anios;
-
-            int idx = anios.IndexOf(anioPrevio);
-            if (idx < 0) idx = anios.IndexOf(DateTime.Now.Year);
-            if (idx < 0) idx = 0;
-            CmbAnio.SelectedIndex = anios.Count > 0 ? idx : -1;
-        }
-
-        private string EmpresaSeleccionada() =>
-            (CmbEmpresa.SelectedItem as Opcion)?.Id ?? "";
-
-        private int AnioSeleccionado() =>
-            CmbAnio.SelectedItem is int a ? a : DateTime.Now.Year;
-
-        private async void CmbEmpresa_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (_cargandoFiltros || !_iniciado) return;
-
-            _cargandoFiltros = true;
-            try     { await RepoblarAniosAsync(); }
-            catch   { /* el error de datos se reporta en CargarDatosAsync */ }
-            finally { _cargandoFiltros = false; }
-
-            await CargarDatosAsync();
-        }
-
-        private async void CmbAnio_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (_cargandoFiltros || !_iniciado) return;
+            if (!_iniciado) return;
             await CargarDatosAsync();
         }
 
         // ─── Carga de datos (consultas agregadas a nivel empresa) ─────────────
         private async Task CargarDatosAsync()
         {
-            string emp  = EmpresaSeleccionada();
-            int    anio = AnioSeleccionado();
+            // Filtros GLOBALES: los fija la top bar de la consola.
+            string emp  = VisorState.EmpresaActiva;
+            int    anio = VisorState.AnioActivo;
 
             if (string.IsNullOrEmpty(emp))
             {
@@ -176,7 +107,6 @@ namespace VisorEmpresa
                 _filas = filas;
                 _resumen = resumen;
                 _traspasosUnidades = traspasos.Unidades;
-                VisorState.EmpresaActiva = emp;
 
                 Recalcular();
             }

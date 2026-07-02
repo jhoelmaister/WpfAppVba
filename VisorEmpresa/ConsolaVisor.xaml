@@ -89,8 +89,26 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Usuario / empresa / tema / conexión -->
+                <!-- Filtros globales / usuario / empresa / tema / conexión -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Empresa y Año: filtros GLOBALES — el dashboard y las vistas
+                         de documentos cargan según estos dos combos. -->
+                    <TextBlock Text="Empresa:" FontSize="11"
+                               Foreground="{DynamicResource ThemeTextoSec}"
+                               VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <ComboBox x:Name="CmbEmpresaTop" Width="200" Height="30"
+                              VerticalAlignment="Center"
+                              SelectionChanged="CmbEmpresaTop_SelectionChanged"/>
+
+                    <TextBlock Text="Año:" FontSize="11"
+                               Foreground="{DynamicResource ThemeTextoSec}"
+                               VerticalAlignment="Center" Margin="12,0,6,0"/>
+                    <ComboBox x:Name="CmbAnioTop" Width="80" Height="30"
+                              VerticalAlignment="Center"
+                              SelectionChanged="CmbAnioTop_SelectionChanged"/>
+
+                    <Rectangle Width="1" Height="24" Fill="{DynamicResource ThemeBorde}" Margin="10,0"/>
+
                     <TextBlock x:Name="LblUsuario"
                                FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
                                VerticalAlignment="Center"/>

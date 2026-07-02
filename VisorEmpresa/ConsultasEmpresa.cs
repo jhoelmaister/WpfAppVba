@@ -101,7 +101,8 @@ namespace VisorEmpresa
         /// </summary>
         public static UsuarioVisor? ValidarLogin(string cuenta, string contrasena)
         {
-            var conn = DatabaseConnection.ObtenerConexion();
+            using var conn = new SqlConnection(CadenaConexion());
+            conn.Open();
 
             string id = "", llave = "", tipo = "", empresa = "", temaC = "";
             using (var cmd = new SqlCommand(
@@ -459,28 +460,55 @@ namespace VisorEmpresa
             return lista;
         }
 
-        /// <summary>Encabezados de facturas de toda la empresa (o de una sucursal).</summary>
+        /// <summary>
+        /// Encabezados de facturas de toda la empresa (o de una sucursal).
+        /// Consulta DEFENSIVA: documentosF ganó columnas por etapas (movimiento,
+        /// tercero, referencia, estado, estadoC) y la base puede no tenerlas todas;
+        /// las ausentes se devuelven como '' en vez de romper la consulta.
+        /// </summary>
         public static List<DocVisorFila> CargarDocsFacturas(string empresa, int anio, string sucursalId)
         {
             var (desde, hasta) = RangoAnio(anio);
             bool porSucursal = !string.IsNullOrEmpty(sucursalId);
 
+            bool conMovimiento = ExisteColumna("documentosF", "movimiento");
+            bool conTercero    = ExisteColumna("documentosF", "tercero");
+            bool conReferencia = ExisteColumna("documentosF", "referencia");
+            bool conEstado     = ExisteColumna("documentosF", "estado");
+            bool conEstadoC    = ExisteColumna("documentosF", "estadoC");
+
+            var select = new List<string> { "vg.id", "vg.codigo", "vg.fecha", "s.descripcion AS sucursal" };
+            var grupo  = new List<string> { "vg.id", "vg.codigo", "vg.fecha", "s.descripcion" };
+
+            select.Add(conMovimiento ? "ISNULL(vg.movimiento, '') AS movimiento" : "'' AS movimiento");
+            if (conMovimiento) grupo.Add("vg.movimiento");
+
+            select.Add(conTercero ? "ISNULL(t.descripcion, '') AS tercero" : "'' AS tercero");
+            if (conTercero) grupo.Add("t.descripcion");
+
+            select.Add(conReferencia ? "ISNULL(vg.referencia, '') AS referencia" : "'' AS referencia");
+            if (conReferencia) grupo.Add("vg.referencia");
+
+            select.Add(conEstado ? "ISNULL(vg.estado, '') AS estado" : "'' AS estado");
+            if (conEstado) grupo.Add("vg.estado");
+
+            select.Add(conEstadoC ? "ISNULL(vg.estadoC, '') AS estadoC" : "'' AS estadoC");
+            if (conEstadoC) grupo.Add("vg.estadoC");
+
+            select.Add("ISNULL(SUM(vd.importe), 0) AS importe");
+
             string sql =
-                "SELECT vg.id, vg.codigo, vg.fecha, s.descripcion AS sucursal, " +
-                "       ISNULL(vg.movimiento, '') AS movimiento, ISNULL(t.descripcion, '') AS tercero, " +
-                "       ISNULL(vg.referencia, '') AS referencia, " +
-                "       ISNULL(vg.estado, '') AS estado, ISNULL(vg.estadoC, '') AS estadoC, " +
-                "       ISNULL(SUM(vd.importe), 0) AS importe " +
+                "SELECT " + string.Join(", ", select) + " " +
                 "FROM documentosF vg " +
                 "INNER JOIN sucursales s ON s.id = vg.sucursal AND s.estadof = 'normal' AND s.empresa = @emp " +
                 "LEFT JOIN " + SubconsultaApertura + " ap ON ap.sucursal = vg.sucursal " +
-                "LEFT JOIN terceros t ON t.id = vg.tercero " +
+                (conTercero ? "LEFT JOIN terceros t ON t.id = vg.tercero " : "") +
                 "LEFT JOIN facturas vd ON vd.documentoF = vg.id " +
                 "WHERE vg.estadof = 'normal' " +
                 "AND vg.fecha >= @desde AND vg.fecha <= @hasta " +
                 "AND vg.fecha >= COALESCE(ap.fecha, s.fecha) " +
                 (porSucursal ? "AND vg.sucursal = @suc " : "") +
-                "GROUP BY vg.id, vg.codigo, vg.fecha, s.descripcion, vg.movimiento, t.descripcion, vg.referencia, vg.estado, vg.estadoC " +
+                "GROUP BY " + string.Join(", ", grupo) + " " +
                 "ORDER BY vg.fecha DESC";
 
             var pars = new List<(string, object)> { ("@emp", EmpresaSegura(empresa)), ("@desde", desde), ("@hasta", hasta) };
@@ -587,17 +615,55 @@ namespace VisorEmpresa
             return DateTime.TryParse(v?.ToString(), out var f) ? f : default;
         }
 
+        // Cadena de conexión PROPIA del visor: mismas credenciales que
+        // DatabaseConnection (leídas de la configuración cifrada compartida), pero
+        // cada consulta abre su propia conexión del pool. Las vistas consultan en
+        // segundo plano (Task.Run) y pueden solaparse entre sí o con los módulos
+        // de edición: dos consultas simultáneas sobre la MISMA SqlConnection dan
+        // "Ya hay un DataReader abierto asociado a Connection". La conexión global
+        // queda solo para las cachés (AppLoader), que la usan secuencialmente.
+        private static string CadenaConexion()
+        {
+            var cfg = ConexionConfig.Cargar()
+                      ?? throw new InvalidOperationException("Sin configuración de conexión.");
+            var (servidor, baseDatos, usuario, contrasena) = cfg.Value;
+            return $"Server={servidor};Database={baseDatos};User Id={usuario};Password={contrasena};" +
+                   "Application Name=edber-visor;Connect Timeout=10;Command Timeout=10;" +
+                   "TrustServerCertificate=True;" +
+                   "Connect Retry Count=3;Connect Retry Interval=10;Pooling=true;";
+        }
+
         private static DataTable EjecutarConsulta(
             string sql, params (string Nombre, object Valor)[] parametros)
         {
             var tabla = new DataTable();
-            var conn  = DatabaseConnection.ObtenerConexion();
+            using var conn = new SqlConnection(CadenaConexion());
+            conn.Open();
             using var cmd = new SqlCommand(sql, conn);
             foreach (var (nombre, valor) in parametros)
                 cmd.Parameters.AddWithValue(nombre, valor);
             using var adaptador = new SqlDataAdapter(cmd);
             adaptador.Fill(tabla);
             return tabla;
+        }
+
+        // Cache de existencia de columnas: algunas columnas de documentosF se
+        // agregaron por etapas (tercero, referencia, estado, estadoC, movimiento)
+        // y pueden no existir aún en la base contra la que corre el visor. La app
+        // principal lee cachés con SELECT * y tolera su ausencia; estas consultas
+        // las nombran explícitamente, así que se verifica antes de armar el SQL.
+        private static readonly Dictionary<string, bool> _columnasExistentes = new();
+
+        private static bool ExisteColumna(string tabla, string columna)
+        {
+            string clave = $"{tabla}.{columna}";
+            if (_columnasExistentes.TryGetValue(clave, out bool existe)) return existe;
+
+            var t = EjecutarConsulta("SELECT COL_LENGTH(@tabla, @columna) AS largo",
+                                     ("@tabla", tabla), ("@columna", columna));
+            existe = t.Rows.Count > 0 && t.Rows[0]["largo"] is not DBNull;
+            _columnasExistentes[clave] = existe;
+            return existe;
         }
 
         private static string Texto(object? v) =>
