@@ -89,6 +89,6 @@ jobs:
           vpk upload github
           --repoUrl https://github.com/jhoelmaister/wpfappvba
           --publish
-          --releaseName "v${{ steps.ver.outputs.version }}"
+          --releaseName "Sistema de Gestión v${{ steps.ver.outputs.version }}"
           --tag "v${{ steps.ver.outputs.version }}"
           --token ${{ secrets.GITHUB_TOKEN }}

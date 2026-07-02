@@ -8,6 +8,15 @@
     <UseWPF>true</UseWPF>
     <ApplicationIcon>icono.ico</ApplicationIcon>
 
+    <!-- Nombre de la APLICACIÓN (lo que ve el usuario: propiedades del .exe,
+         Agregar o quitar programas). Deliberadamente distinto del nombre del
+         PROYECTO (carpeta/namespace/repo, que sigue siendo WpfAppVba) — evita
+         la confusión de "mi proyecto y mi aplicación tienen el mismo nombre".
+         AssemblyName NO se toca: sigue siendo WpfAppVba.exe, que es el mainExe
+         configurado en .github/workflows/release.yml. -->
+    <Product>Sistema de Gestión</Product>
+    <AssemblyTitle>Sistema de Gestión</AssemblyTitle>
+
     <!-- Versión de la app. Velopack la usa para decidir si una release es "más nueva".
          Súbela en cada publicación (1.0.0 -> 1.0.1 -> 1.1.0 ...) y pásala a `vpk pack`. -->
     <Version>1.1.4</Version>
