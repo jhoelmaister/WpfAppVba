@@ -209,6 +209,9 @@ namespace VisorEmpresa
             var (desde, hasta) = RangoAnio(anio);
             var lista = new List<MovimientoFila>();
 
+            // Mismo corte por apertura que las 4 vistas de documentos (ver
+            // SubconsultaApertura más abajo): sin esto, el dashboard sumaba pedidos
+            // anteriores a la última apertura de cada sucursal.
             var tabla = EjecutarConsulta(
                 "SELECT s.id AS sucursalId, s.descripcion AS sucursal, vg.movimiento, " +
                 "       MONTH(vg.fecha) AS mes, " +
@@ -216,11 +219,13 @@ namespace VisorEmpresa
                 "       SUM(vd.cantidad) AS cantidad " +
                 "FROM pedidos vd " +
                 "INNER JOIN documentosP vg ON vd.documentoP = vg.id " +
-                "INNER JOIN sucursales s   ON s.id = vg.sucursal " +
+                "INNER JOIN sucursales s   ON s.id = vg.sucursal AND s.estadof = 'normal' AND s.empresa = @emp " +
+                "LEFT JOIN " + SubconsultaApertura + " ap ON ap.sucursal = vg.sucursal " +
                 "LEFT JOIN articulos a     ON a.id = vd.articulo " +
                 "LEFT JOIN categorias c    ON c.id = a.categoria " +
-                "WHERE vg.estadof = 'normal' AND s.estadof = 'normal' AND s.empresa = @emp " +
+                "WHERE vg.estadof = 'normal' " +
                 "AND vg.fecha >= @desde AND vg.fecha <= @hasta " +
+                "AND vg.fecha >= COALESCE(ap.fecha, s.fecha) " +
                 "GROUP BY s.id, s.descripcion, vg.movimiento, MONTH(vg.fecha), " +
                 "         ISNULL(c.descripcion, N'Sin categoría')",
                 ("@emp", EmpresaSegura(empresa)), ("@desde", desde), ("@hasta", hasta));
@@ -256,9 +261,11 @@ namespace VisorEmpresa
                 "       COUNT(DISTINCT vd.articulo) AS articulos " +
                 "FROM pedidos vd " +
                 "INNER JOIN documentosP vg ON vd.documentoP = vg.id " +
-                "INNER JOIN sucursales s   ON s.id = vg.sucursal " +
-                "WHERE vg.estadof = 'normal' AND s.estadof = 'normal' AND s.empresa = @emp " +
+                "INNER JOIN sucursales s   ON s.id = vg.sucursal AND s.estadof = 'normal' AND s.empresa = @emp " +
+                "LEFT JOIN " + SubconsultaApertura + " ap ON ap.sucursal = vg.sucursal " +
+                "WHERE vg.estadof = 'normal' " +
                 "AND vg.fecha >= @desde AND vg.fecha <= @hasta " +
+                "AND vg.fecha >= COALESCE(ap.fecha, s.fecha) " +
                 "GROUP BY vg.movimiento",
                 ("@emp", EmpresaSegura(empresa)), ("@desde", desde), ("@hasta", hasta));
 
@@ -282,16 +289,23 @@ namespace VisorEmpresa
         {
             var (desde, hasta) = RangoAnio(anio);
 
+            // Mismo criterio por-lado que CargarDocsTraspasos: un traspaso cuenta si
+            // AL MENOS un lado (origen o destino) pertenece a la empresa y está
+            // posterior a la apertura de ESA sucursal.
             var tabla = EjecutarConsulta(
                 "SELECT ISNULL(SUM(vd.cantidad), 0) AS cantidad, " +
                 "       COUNT(DISTINCT vg.id) AS documentos " +
                 "FROM traspasos vd " +
                 "INNER JOIN documentosT vg ON vd.documentoT = vg.id " +
+                "LEFT JOIN sucursales so ON so.id = vg.origen  AND so.estadof = 'normal' " +
+                "LEFT JOIN sucursales sd ON sd.id = vg.destino AND sd.estadof = 'normal' " +
+                "LEFT JOIN " + SubconsultaApertura + " apo ON apo.sucursal = vg.origen " +
+                "LEFT JOIN " + SubconsultaApertura + " apd ON apd.sucursal = vg.destino " +
                 "WHERE vg.estadof = 'normal' " +
                 "AND vg.fecha >= @desde AND vg.fecha <= @hasta " +
                 "AND vg.origen <> vg.destino " +
-                "AND (EXISTS (SELECT 1 FROM sucursales so WHERE so.id = vg.origen  AND so.estadof = 'normal' AND so.empresa = @emp) " +
-                "  OR EXISTS (SELECT 1 FROM sucursales sd WHERE sd.id = vg.destino AND sd.estadof = 'normal' AND sd.empresa = @emp))",
+                "AND ( (so.empresa = @emp AND vg.fecha >= COALESCE(apo.fecha, so.fecha)) " +
+                "   OR (sd.empresa = @emp AND vg.fecha >= COALESCE(apd.fecha, sd.fecha)) )",
                 ("@emp", EmpresaSegura(empresa)), ("@desde", desde), ("@hasta", hasta));
 
             if (tabla.Rows.Count == 0) return (0, 0);

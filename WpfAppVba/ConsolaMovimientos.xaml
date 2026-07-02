@@ -231,6 +231,16 @@
                         </StackPanel>
                     </Border>
 
+                    <Rectangle Width="1" Height="24" Fill="{DynamicResource ThemeBorde}" Margin="10,0"/>
+
+                    <Button x:Name="BtnTema" Content="🌙"
+                            Width="36" Height="30" FontSize="13"
+                            Background="{DynamicResource ThemeBtnSecBg}"
+                            Foreground="{DynamicResource ThemeBtnSecFg}"
+                            BorderThickness="0" Cursor="Hand" Margin="0,0,10,0"
+                            ToolTip="Cambiar tema claro / oscuro"
+                            Click="BtnTema_Click"/>
+
                     <!-- Estado de conexión -->
                     <Border x:Name="PillConexion"
                             VerticalAlignment="Center"

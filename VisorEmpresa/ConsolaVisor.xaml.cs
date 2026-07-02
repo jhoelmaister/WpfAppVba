@@ -301,6 +301,18 @@ namespace WpfAppVba
             ActualizarIconoTema();
             // Los gráficos del dashboard resuelven sus brushes al dibujar: re-render.
             _panelDashboard.RefrescarTema();
+
+            // Persistir en usuarios.temaC (igual que Configuracion.BtnGuardarTema_Click
+            // de la app principal): sin esto, el próximo login de LoginVisorWindow vuelve
+            // a leer el valor viejo de la base y pisa la preferencia recién elegida.
+            // Silencioso ante fallo de red: el tema ya se aplicó visualmente y quedó en
+            // el archivo local (theme.txt) de todos modos.
+            try
+            {
+                SqlData.Instance.UsuariosObj.EstablecerItem("temaC", VisorState.UsuarioActivo, nuevo);
+                SqlData.Instance.UsuariosObj.ExportarItems();
+            }
+            catch { /* sin conexión: el tema queda aplicado visual y localmente igual */ }
         }
 
         private void ActualizarIconoTema()

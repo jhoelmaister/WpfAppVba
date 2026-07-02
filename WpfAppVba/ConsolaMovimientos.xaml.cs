@@ -93,6 +93,7 @@ namespace WpfAppVba
             TabFijoContenido.Content = _panelArticulos;
             MostrarVersion();
             ActualizarInfoUsuario();
+            ActualizarIconoTema();
             MarcarActivo(BtnNav_Articulos);
             if (AppState.EsAdmin)
             {
@@ -217,6 +218,33 @@ namespace WpfAppVba
             LblUsuario.Text  = $"Usuario: {nombres}  |  Período: {AppState.PeriodoActivo}";
             LblSucursal.Text = $"Sucursal: {sucursalDesc}";
             LblEmpresa.Text  = $"Empresa: {empresaDesc}";
+        }
+
+        // ─── Tema claro / oscuro (antes vivía en Configuración; ahora es un
+        //     toggle rápido en la top bar, igual que en VisorEmpresa) ───────────
+        private void BtnTema_Click(object sender, RoutedEventArgs e)
+        {
+            string nuevo = ThemeManager.EsOscuroActivo ? ThemeManager.TemaClaro : ThemeManager.TemaOscuro;
+            ThemeManager.AplicarTema(nuevo);
+            AppState.TemaActivo = nuevo;
+            ActualizarIconoTema();
+
+            // Persistir en usuarios.temaC (mismo mecanismo que el BtnGuardarTema que
+            // existía en Configuración): sin esto, el próximo login vuelve a leer el
+            // valor viejo de la base y pisa la preferencia recién elegida. Silencioso
+            // ante fallo de red: el tema ya se aplicó visualmente de todos modos.
+            try
+            {
+                var sql = SqlData.Instance;
+                sql.UsuariosObj.EstablecerItem("temaC", AppState.UsuarioActivo, nuevo);
+                sql.UsuariosObj.ExportarItems();
+            }
+            catch { /* sin conexión: el tema queda aplicado visualmente igual */ }
+        }
+
+        private void ActualizarIconoTema()
+        {
+            BtnTema.Content = ThemeManager.EsOscuroActivo ? "☀" : "🌙";
         }
 
         /// <summary>

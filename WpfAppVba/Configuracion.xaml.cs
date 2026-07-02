@@ -49,7 +49,6 @@ namespace WpfAppVba
                 string sucId    = Sql.UsuariosObj.ObtenerItem("sucursal",  usuId)?.ToString() ?? "";
                 string empId    = Sql.UsuariosObj.ObtenerItem("empresa",   usuId)?.ToString() ?? "";
                 string tipo     = Sql.UsuariosObj.ObtenerItem("tipo",      usuId)?.ToString() ?? "";
-                string temaDb   = Sql.UsuariosObj.ObtenerItem("temaC",     usuId)?.ToString() ?? "";
 
                 TxtCuenta.Text    = cuenta;
                 TxtNombres.Text   = nombres;
@@ -64,12 +63,6 @@ namespace WpfAppVba
                 BtnRegenerarCodigos.Visibility     = visAdmin;
                 BtnRecalcularPrecios.Visibility    = visAdmin;
                 BtnSincronizarAppsheets.Visibility = visAdmin;
-
-                // Tema: si el valor de BD no es válido, usar el tema activo o "claro"
-                string temaInicial = temaDb.Trim().ToLowerInvariant() == ThemeManager.TemaOscuro
-                    ? ThemeManager.TemaOscuro
-                    : ThemeManager.TemaClaro;
-                SeleccionarTema(temaInicial);
 
                 // Llenar ComboBox de empresas
                 CmbEmpresa.Items.Clear();
@@ -233,22 +226,6 @@ namespace WpfAppVba
                 CmbPeriodo.SelectedIndex = CmbPeriodo.Items.Count - 1;
         }
 
-        // ─── Tema ─────────────────────────────────────────────────────────────
-        private void SeleccionarTema(string tema)
-        {
-            foreach (ComboBoxItem item in CmbTema.Items)
-            {
-                if (item.Content?.ToString() == tema)
-                { CmbTema.SelectedItem = item; return; }
-            }
-            if (CmbTema.Items.Count > 0) CmbTema.SelectedIndex = 0;
-        }
-
-        private void CmbTema_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // El tema solo se aplica al guardar con BtnGuardarTema
-        }
-
         // ─── Regenerar códigos (solo admin) ────────────────────────────────────
         private async void BtnRegenerarCodigos_Click(object sender, RoutedEventArgs e)
         {
@@ -358,35 +335,6 @@ namespace WpfAppVba
                 Owner = Window.GetWindow(this)
             };
             win.ShowDialog();
-        }
-
-        // ─── Guardar solo el tema ────────────────────────────────────────────
-        private void BtnGuardarTema_Click(object sender, RoutedEventArgs e)
-        {
-            // Verificación de conexión en 2 capas (label + chequeo real) antes de guardar.
-            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this)))
-                return;
-
-            try
-            {
-                string usuId = AppState.UsuarioActivo.ToString();
-                string tema  = (CmbTema.SelectedItem as ComboBoxItem)?.Content?.ToString()
-                               ?? ThemeManager.TemaClaro;
-
-                ThemeManager.AplicarTema(tema);
-                AppState.TemaActivo = tema;
-
-                Sql.UsuariosObj.EstablecerItem("temaC", usuId, tema);
-                Sql.UsuariosObj.ExportarItems();
-
-                MessageBox.Show("Tema guardado", "Configuración",
-                                MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error al guardar el tema: {ex.Message}", "Configuración",
-                                MessageBoxButton.OK, MessageBoxImage.Error);
-            }
         }
 
         // ─── Guardar ─────────────────────────────────────────────────────────
