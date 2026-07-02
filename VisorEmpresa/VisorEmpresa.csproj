@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>VisorEmpresa</RootNamespace>
+    <AssemblyName>VisorEmpresa</AssemblyName>
+    <ApplicationIcon>..\WpfAppVba\icono.ico</ApplicationIcon>
+
+    <!-- Versión del visor: independiente de la app principal. -->
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="..\WpfAppVba\icono.ico" Link="icono.ico"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+  </ItemGroup>
+
+  <!-- Código compartido con la app principal por ARCHIVOS VINCULADOS (una sola
+       fuente de verdad, sin copias): conexión SQL, configuración cifrada de
+       servidores (misma %AppData%\WpfAppVba\conexion.dat, se configura una vez
+       por PC), hash de contraseñas, theming de ventanas, las ventanas de
+       gestión de servidores y los diccionarios de tema claro/oscuro. -->
+  <ItemGroup>
+    <Compile Include="..\WpfAppVba\DatabaseConnection.cs" Link="Compartido\DatabaseConnection.cs" />
+    <Compile Include="..\WpfAppVba\ConexionConfig.cs" Link="Compartido\ConexionConfig.cs" />
+    <Compile Include="..\WpfAppVba\PasswordHasher.cs" Link="Compartido\PasswordHasher.cs" />
+    <Compile Include="..\WpfAppVba\WindowTheming.cs" Link="Compartido\WindowTheming.cs" />
+    <Compile Include="..\WpfAppVba\WindowHelper.cs" Link="Compartido\WindowHelper.cs" />
+    <Compile Include="..\WpfAppVba\ConfiguracionDbWindow.xaml.cs" Link="Compartido\ConfiguracionDbWindow.xaml.cs" />
+    <Compile Include="..\WpfAppVba\ConexionServidoresWindow.xaml.cs" Link="Compartido\ConexionServidoresWindow.xaml.cs" />
+    <Page Include="..\WpfAppVba\ConfiguracionDbWindow.xaml" Link="Compartido\ConfiguracionDbWindow.xaml" />
+    <Page Include="..\WpfAppVba\ConexionServidoresWindow.xaml" Link="Compartido\ConexionServidoresWindow.xaml" />
+    <Page Include="..\WpfAppVba\Themes\LightTheme.xaml" Link="Themes\LightTheme.xaml" />
+    <Page Include="..\WpfAppVba\Themes\DarkTheme.xaml" Link="Themes\DarkTheme.xaml" />
+  </ItemGroup>
+
+</Project>
