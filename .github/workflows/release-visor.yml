@@ -1,20 +1,21 @@
-name: Publicar release (Velopack)
+name: Publicar release Visor Empresa (Velopack)
 
 # Cómo se dispara:
-#   A) Empujando un tag vX.Y.Z   -> git tag v1.0.1 && git push origin v1.0.1
-#   B) A mano desde GitHub        -> pestaña "Actions" > este workflow > "Run workflow"
+#   A) Empujando un tag visor-vX.Y.Z -> git tag visor-v0.1.0 && git push origin visor-v0.1.0
+#   B) A mano desde GitHub            -> pestaña "Actions" > este workflow > "Run workflow"
 #
-# El patrón exige un dígito después de la 'v' para que los tags del Visor
-# Empresa (visor-vX.Y.Z, que también empiezan con 'v') NO disparen esta
-# release de la app principal — el visor tiene su propio workflow.
+# Publica en las releases de ESTE MISMO repo, pero en el canal Velopack "visor"
+# (packId VisorEmpresa): así no interfiere con el feed de la app principal
+# (packId SistemaGestion, canal por defecto "win") — cada app lee su propio
+# releases.{canal}.json y sus propios paquetes.
 on:
   push:
     tags:
-      - 'v[0-9]*'
+      - 'visor-v*'
   workflow_dispatch:
     inputs:
       version:
-        description: 'Versión a publicar (ej. 1.0.1). Vacío = usar la del csproj.'
+        description: 'Versión a publicar (ej. 0.1.0). Vacío = usar la del csproj.'
         required: false
 
 permissions:
@@ -43,11 +44,11 @@ jobs:
           $v = "${{ github.event.inputs.version }}"
           if ([string]::IsNullOrWhiteSpace($v)) {
             if ("${{ github.ref_type }}" -eq "tag") {
-              # Tag vX.Y.Z -> quitar la 'v' inicial
-              $v = "${{ github.ref_name }}".TrimStart("v")
+              # Tag visor-vX.Y.Z -> quitar el prefijo 'visor-v'
+              $v = "${{ github.ref_name }}" -replace '^visor-v', ''
             } else {
-              # Leer <Version> del csproj
-              $m = Select-String -Path WpfAppVba/WpfAppVba.csproj `
+              # Leer <Version> del csproj del visor
+              $m = Select-String -Path VisorEmpresa/VisorEmpresa.csproj `
                                   -Pattern '<Version>\s*([^<]+?)\s*</Version>' | Select-Object -First 1
               $v = $m.Matches[0].Groups[1].Value.Trim()
             }
@@ -58,37 +59,39 @@ jobs:
 
       - name: Publish (self-contained single-file)
         run: >
-          dotnet publish WpfAppVba/WpfAppVba.csproj
+          dotnet publish VisorEmpresa/VisorEmpresa.csproj
           -c Release -r win-x64 --self-contained true
           -p:PublishSingleFile=true -p:DebugType=none
           -o ./publish
 
       - name: Descargar release anterior (para generar delta)
         # vpk pack solo genera delta si encuentra localmente el .nupkg full de la
-        # versión previa. Cada corrida de Actions empieza desde cero, así que sin este
-        # paso siempre se publica solo el paquete full (descarga completa para el usuario).
-        # continue-on-error: en la primera release no hay nada que descargar.
+        # versión previa del MISMO canal. continue-on-error: en la primera release
+        # del visor no hay nada que descargar.
         continue-on-error: true
         run: >
           vpk download github
           --repoUrl https://github.com/jhoelmaister/wpfappvba
+          --channel visor
           --token ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pack (Setup.exe + nupkg full/delta + RELEASES)
+      - name: Pack (Setup.exe + nupkg full/delta + releases.visor.json)
         run: >
           vpk pack
-          --packId SistemaGestion
+          --packId VisorEmpresa
           --packVersion ${{ steps.ver.outputs.version }}
           --packDir ./publish
-          --mainExe WpfAppVba.exe
-          --packTitle "Sistema de Gestión"
+          --mainExe VisorEmpresa.exe
+          --packTitle "Visor Empresa"
           --icon WpfAppVba/icono.ico
+          --channel visor
 
       - name: Upload (publica la Release en este repo)
         run: >
           vpk upload github
           --repoUrl https://github.com/jhoelmaister/wpfappvba
+          --channel visor
           --publish
-          --releaseName "v${{ steps.ver.outputs.version }}"
-          --tag "v${{ steps.ver.outputs.version }}"
+          --releaseName "Visor Empresa v${{ steps.ver.outputs.version }}"
+          --tag "visor-v${{ steps.ver.outputs.version }}"
           --token ${{ secrets.GITHUB_TOKEN }}
