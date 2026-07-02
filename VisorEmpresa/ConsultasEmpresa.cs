@@ -626,7 +626,7 @@ namespace VisorEmpresa
         {
             var cfg = ConexionConfig.Cargar()
                       ?? throw new InvalidOperationException("Sin configuración de conexión.");
-            var (servidor, baseDatos, usuario, contrasena) = cfg.Value;
+            var (servidor, baseDatos, usuario, contrasena) = cfg;
             return $"Server={servidor};Database={baseDatos};User Id={usuario};Password={contrasena};" +
                    "Application Name=edber-visor;Connect Timeout=10;Command Timeout=10;" +
                    "TrustServerCertificate=True;" +
