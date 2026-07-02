@@ -130,16 +130,18 @@ namespace WpfAppVba.Data
 
         /// <summary>
         /// Siguiente número correlativo para documentos cuyo codigo = signo + número
-        /// (ej. "A5"). Toma el MAX(número) de las filas en estado normal cuyo
-        /// <paramref name="filtroColumna"/> = <paramref name="filtroValor"/>
-        /// (ej. sucursal/region/origen activa) y devuelve número + 1.
+        /// (ej. "A5"). Toma el MAX(número) de TODAS las filas (normal, ocultado o
+        /// eliminado) cuyo <paramref name="filtroColumna"/> = <paramref name="filtroValor"/>
+        /// (ej. sucursal/region/origen activa) y devuelve número + 1. No se filtra por
+        /// estadof: un número ya usado no debe reutilizarse aunque su fila se haya
+        /// ocultado o eliminado luego.
         /// </summary>
         public int SiguienteNumeroDoc(string signo, string filtroColumna, string filtroValor) => SqlRetry.Ejecutar(() =>
         {
             var conn = DatabaseConnection.ObtenerConexion();
             using var cmd = new SqlCommand(
                 $"SELECT codigo FROM {_nombreTabla} " +
-                $"WHERE estadof = 'normal' AND {filtroColumna} = @f", conn);
+                $"WHERE {filtroColumna} = @f", conn);
             cmd.Parameters.AddWithValue("@f", filtroValor);
 
             int max = 0;
@@ -158,6 +160,8 @@ namespace WpfAppVba.Data
         /// Siguiente número correlativo para documentos cuyo codigo = signo + número,
         /// agrupado por EMPRESA. La empresa se obtiene por la cascada
         /// emitido (sucursal) → sucursales.empresa. Pensado para documentosT (traspasos).
+        /// No se filtra por estadof: un número ya usado no debe reutilizarse aunque su
+        /// fila se haya ocultado o eliminado luego.
         /// </summary>
         public int SiguienteNumeroDocPorEmpresa(string signo, string empresaId)
         {
@@ -169,7 +173,7 @@ namespace WpfAppVba.Data
                 using var cmd = new SqlCommand(
                     $"SELECT d.codigo FROM {_nombreTabla} AS d " +
                     $"INNER JOIN sucursales AS s ON s.id = d.emitido " +
-                    $"WHERE d.estadof = 'normal' AND s.empresa = @emp", conn);
+                    $"WHERE s.empresa = @emp", conn);
                 cmd.Parameters.AddWithValue("@emp", empresaId);
 
                 int max = 0;
@@ -189,7 +193,9 @@ namespace WpfAppVba.Data
         /// Siguiente número correlativo para documentos cuyo codigo = signo + número,
         /// agrupado por EMPRESA. La empresa se obtiene por la cascada
         /// region → regiones.empresa. Pensado para documentosL (listas de precios),
-        /// que no tiene columna empresa ni sucursal directa.
+        /// que no tiene columna empresa ni sucursal directa. No se filtra por estadof:
+        /// un número ya usado no debe reutilizarse aunque su fila se haya ocultado o
+        /// eliminado luego.
         /// </summary>
         public int SiguienteNumeroDocPorRegion(string signo, string empresaId)
         {
@@ -201,7 +207,7 @@ namespace WpfAppVba.Data
                 using var cmd = new SqlCommand(
                     $"SELECT d.codigo FROM {_nombreTabla} AS d " +
                     $"INNER JOIN regiones AS r ON r.id = d.region " +
-                    $"WHERE d.estadof = 'normal' AND r.empresa = @emp", conn);
+                    $"WHERE r.empresa = @emp", conn);
                 cmd.Parameters.AddWithValue("@emp", empresaId);
 
                 int max = 0;
