@@ -128,15 +128,6 @@ namespace WpfAppVba
             string mesFiltro = _modoFiltro == "filtros"   ? _mesActivo : "";
             string tipoMov = ObtenerFiltroTipo();
 
-            // ── Actualizar header de columna "Destino"/"Origen"/"Sucursal" (índice 4) ────
-            if (Grid1.Columns.Count > 4)
-                Grid1.Columns[4].Header = tipoMov switch
-                {
-                    "salida"  => "Destino",
-                    "entrada" => "Origen",
-                    _         => "Sucursal"
-                };
-
             int uf = Sql.DocumentosTObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
             {
@@ -166,8 +157,6 @@ namespace WpfAppVba
                     if (!esSalida && !esEntrada) continue;
                     movActual = esSalida ? "salida" : "entrada";
                 }
-                string campOtro = movActual == "salida" ? "destino" : "origen";
-
                 // Filtro por mes (solo en modo "filtros", independiente de TxtBuscar)
                 if (!string.IsNullOrEmpty(mesFiltro))
                 {
@@ -181,8 +170,8 @@ namespace WpfAppVba
                 var fechaDocObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
                 DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
 
-                string otroSucId   = Sql.DocumentosTObj.ObtenerItem(campOtro, id)?.ToString() ?? "";
-                string otroSucDesc = Sql.SucursalesObj.ObtenerItem("descripcion", otroSucId)?.ToString() ?? otroSucId;
+                string origenDesc  = Sql.SucursalesObj.ObtenerItem("descripcion", origen)?.ToString()  ?? origen;
+                string destinoDesc = Sql.SucursalesObj.ObtenerItem("descripcion", destino)?.ToString() ?? destino;
 
                 string estado  = Sql.DocumentosTObj.ObtenerItem("estado", id)?.ToString() ?? "";
                 string emitido = Sql.DocumentosTObj.ObtenerItem("emitido", id)?.ToString() ?? "";
@@ -196,9 +185,11 @@ namespace WpfAppVba
                     !string.Equals(estado, filtroEstado, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                // Filtro por búsqueda
+                // Filtro por búsqueda (origen o destino, no solo "la otra sucursal")
                 if (!string.IsNullOrEmpty(busqueda))
-                    if (!id.Contains(busqueda) && !otroSucDesc.ToLower().Contains(busqueda))
+                    if (!id.Contains(busqueda) &&
+                        !origenDesc.ToLower().Contains(busqueda) &&
+                        !destinoDesc.ToLower().Contains(busqueda))
                         continue;
 
                 double cant = CalcularCantidad(id);
@@ -209,7 +200,8 @@ namespace WpfAppVba
                     Codigo       = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                     FechaStr     = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                     Movimiento   = movActual,
-                    SucursalDesc = otroSucDesc,
+                    OrigenDesc   = origenDesc,
+                    DestinoDesc  = destinoDesc,
                     Estado       = estado,
                     Cantidad     = cant
                 });
@@ -271,15 +263,15 @@ namespace WpfAppVba
 
         private TraspasoFila ConstruirFilaTraspaso(string id, int linea)
         {
-            string origen   = Sql.DocumentosTObj.ObtenerItem("origen",  id)?.ToString() ?? "";
-            bool esSalida   = origen == AppState.SucursalActiva;
-            string campOtro = esSalida ? "destino" : "origen";
+            string origen  = Sql.DocumentosTObj.ObtenerItem("origen",  id)?.ToString() ?? "";
+            string destino = Sql.DocumentosTObj.ObtenerItem("destino", id)?.ToString() ?? "";
+            bool esSalida  = origen == AppState.SucursalActiva;
 
             var fechaDocObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
             DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
 
-            string otroSucId   = Sql.DocumentosTObj.ObtenerItem(campOtro, id)?.ToString() ?? "";
-            string otroSucDesc = Sql.SucursalesObj.ObtenerItem("descripcion", otroSucId)?.ToString() ?? otroSucId;
+            string origenDesc  = Sql.SucursalesObj.ObtenerItem("descripcion", origen)?.ToString()  ?? origen;
+            string destinoDesc = Sql.SucursalesObj.ObtenerItem("descripcion", destino)?.ToString() ?? destino;
 
             string estado  = Sql.DocumentosTObj.ObtenerItem("estado",  id)?.ToString() ?? "";
             string emitido = Sql.DocumentosTObj.ObtenerItem("emitido", id)?.ToString() ?? "";
@@ -293,7 +285,8 @@ namespace WpfAppVba
                 Codigo       = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 FechaStr     = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                 Movimiento   = esSalida ? "salida" : "entrada",
-                SucursalDesc = otroSucDesc,
+                OrigenDesc   = origenDesc,
+                DestinoDesc  = destinoDesc,
                 Estado       = estado,
                 Cantidad     = CalcularCantidad(id)
             };
@@ -636,14 +629,15 @@ namespace WpfAppVba
     // ─── Modelos ──────────────────────────────────────────────────────────────
     public class TraspasoFila
     {
-        public int    Linea        { get; set; }
-        public string DocumentoT   { get; set; } = "";
-        public string Codigo       { get; set; } = "";
-        public string FechaStr     { get; set; } = "";
-        public string Movimiento   { get; set; } = "";
-        public string SucursalDesc { get; set; } = "";
-        public string Estado       { get; set; } = "";
-        public double Cantidad     { get; set; }
+        public int    Linea       { get; set; }
+        public string DocumentoT  { get; set; } = "";
+        public string Codigo      { get; set; } = "";
+        public string FechaStr    { get; set; } = "";
+        public string Movimiento  { get; set; } = "";
+        public string OrigenDesc  { get; set; } = "";
+        public string DestinoDesc { get; set; } = "";
+        public string Estado      { get; set; } = "";
+        public double Cantidad    { get; set; }
     }
 
     public class TraspasoDetalleFila

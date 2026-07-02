@@ -220,6 +220,10 @@
                                     Content="🏪  Sucursales"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Sucursales_Click"/>
+                            <Button x:Name="BtnNav_Regiones"
+                                    Content="🌐  Regiones"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Regiones_Click"/>
                             <Button x:Name="BtnNav_Usuarios"
                                     Content="👤  Usuarios"
                                     Style="{StaticResource NavBtn}"

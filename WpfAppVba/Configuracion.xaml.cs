@@ -59,11 +59,6 @@ namespace WpfAppVba
                 CmbEmpresa.IsEnabled  = esAdmin;
                 CmbSucursal.IsEnabled = esAdmin;
 
-                Visibility visAdmin = esAdmin ? Visibility.Visible : Visibility.Collapsed;
-                BtnRegenerarCodigos.Visibility     = visAdmin;
-                BtnRecalcularPrecios.Visibility    = visAdmin;
-                BtnSincronizarAppsheets.Visibility = visAdmin;
-
                 // Llenar ComboBox de empresas
                 CmbEmpresa.Items.Clear();
                 int totalEmp = Sql.EmpresasObj.ContarFilas;
@@ -224,107 +219,6 @@ namespace WpfAppVba
                 CmbPeriodo.SelectedItem = selActual;
             else if (CmbPeriodo.Items.Count > 0)
                 CmbPeriodo.SelectedIndex = CmbPeriodo.Items.Count - 1;
-        }
-
-        // ─── Regenerar códigos (solo admin) ────────────────────────────────────
-        private async void BtnRegenerarCodigos_Click(object sender, RoutedEventArgs e)
-        {
-            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
-
-            var r = MessageBox.Show(
-                "Se regenerarán los códigos (desde 1) de las tablas maestras y de documentosT/I/P/C/L. " +
-                "Al finalizar se cerrará la sesión.\n\nEsta acción SOBRESCRIBE los códigos existentes " +
-                "en el servidor activo. ¿Continuar?",
-                "Regenerar códigos", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (r != MessageBoxResult.Yes) return;
-
-            var btn = sender as Button;
-            try
-            {
-                if (btn != null) btn.IsEnabled = false;
-                Mouse.OverrideCursor = Cursors.Wait;
-
-                string resumen = await Task.Run(CodigoRegenerator.RegenerarTodos);
-
-                MessageBox.Show($"Códigos regenerados (filas actualizadas):\n\n{resumen}" +
-                                "\n\nSe cerrará la sesión.",
-                                "Regenerar códigos", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                (Window.GetWindow(this) as ConsolaMovimientos)?.CerrarSesionForzada();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error al regenerar códigos:\n{ex.Message}",
-                                "Regenerar códigos", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                Mouse.OverrideCursor = null;
-                if (btn != null) btn.IsEnabled = true;
-            }
-        }
-
-        // ─── Recalcular precios automáticos (solo admin) ───────────────────────
-        private async void BtnRecalcularPrecios_Click(object sender, RoutedEventArgs e)
-        {
-            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
-
-            var r = MessageBox.Show(
-                "Se recalculará el importe de TODOS los pedidos de tipo automático (toda la tabla, " +
-                "todas las sucursales), según la lista de precios vigente a la fecha de cada documento. " +
-                "Los pedidos de tipo manual no se modifican. Si un pedido no tiene ninguna lista de " +
-                "precios aplicable, su importe quedará en 0.\n\n" +
-                "Esta acción SOBRESCRIBE los importes existentes en el servidor activo. ¿Continuar?",
-                "Recalcular precios", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (r != MessageBoxResult.Yes) return;
-
-            var btn = sender as Button;
-            try
-            {
-                if (btn != null) btn.IsEnabled = false;
-                Mouse.OverrideCursor = Cursors.Wait;
-
-                string resumen = await Task.Run(PedidosPrecioActualizador.ActualizarImportesAutomaticos);
-
-                MessageBox.Show($"Recálculo finalizado:\n\n{resumen}",
-                                "Recalcular precios", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error al recalcular precios:\n{ex.Message}",
-                                "Recalcular precios", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                Mouse.OverrideCursor = null;
-                if (btn != null) btn.IsEnabled = true;
-            }
-        }
-
-        // ─── Sincronizar AppSheets ────────────────────────────────────────────
-        private void BtnSincronizarAppsheets_Click(object sender, RoutedEventArgs e)
-        {
-            var btn = sender as Button;
-            try
-            {
-                if (btn != null) btn.IsEnabled = false;
-                Mouse.OverrideCursor = Cursors.Wait;
-
-                string resumen = AppsheetsSync.SincronizarTodasLasSucursales();
-
-                MessageBox.Show(resumen, "Sincronizar AppSheets",
-                                MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error al sincronizar AppSheets: {ex.Message}",
-                                "Sincronizar AppSheets", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                Mouse.OverrideCursor = null;
-                if (btn != null) btn.IsEnabled = true;
-            }
         }
 
         // ─── Cambiar contraseña ───────────────────────────────────────────────

@@ -205,25 +205,14 @@
         </ScrollViewer>
 
         <!-- ══ BARRA DE ACCIONES ══════════════════════════════════════ -->
+        <!-- Regenerar códigos / Recalcular precios / Sincronizar AppSheets se
+             quitaron de aquí: ahora viven en la top bar de VisorEmpresa (mismas
+             clases CodigoRegenerator/PedidosPrecioActualizador/AppsheetsSync,
+             vinculadas sin copiar). -->
         <Border Grid.Row="2" Background="{DynamicResource ThemeBgSurface}"
                 BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,1,0,0"
                 Padding="20,10">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button x:Name="BtnRegenerarCodigos" Content="🔢 Regenerar códigos"
-                        Height="36" FontSize="13" FontWeight="SemiBold" Padding="18,0"
-                        Background="#6A1B9A" Foreground="White"
-                        BorderThickness="0" Cursor="Hand" Margin="0,0,10,0"
-                        Click="BtnRegenerarCodigos_Click"/>
-                <Button x:Name="BtnRecalcularPrecios" Content="💲 Recalcular precios"
-                        Height="36" FontSize="13" FontWeight="SemiBold" Padding="18,0"
-                        Background="#EF6C00" Foreground="White"
-                        BorderThickness="0" Cursor="Hand" Margin="0,0,10,0"
-                        Click="BtnRecalcularPrecios_Click"/>
-                <Button x:Name="BtnSincronizarAppsheets" Content="🧾 Sincronizar AppSheets"
-                        Height="36" FontSize="13" FontWeight="SemiBold" Padding="18,0"
-                        Background="#2E7D32" Foreground="White"
-                        BorderThickness="0" Cursor="Hand" Margin="0,0,10,0"
-                        Click="BtnSincronizarAppsheets_Click"/>
                 <Button x:Name="BtnCambiarContrasena" Content="🔑 Cambiar Contraseña"
                         Height="36" FontSize="13" FontWeight="SemiBold" Padding="18,0"
                         Background="#5C6BC0" Foreground="White"

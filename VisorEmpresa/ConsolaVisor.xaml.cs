@@ -52,6 +52,7 @@ namespace WpfAppVba
         private PreciosGeneral    _panelPrecios      = new();
         private EmpresasGeneral   _panelEmpresas     = new();
         private SucursalesGeneral _panelSucursales   = new();
+        private RegionesGeneral   _panelRegiones     = new();
         private UsuariosGeneral   _panelUsuarios     = new();
 
         // Cada sección del menú lateral conserva su propio juego de pestañas dinámicas.
@@ -66,6 +67,7 @@ namespace WpfAppVba
             ["precios"]      = new List<TabItem>(),
             ["empresas"]     = new List<TabItem>(),
             ["sucursales"]   = new List<TabItem>(),
+            ["regiones"]     = new List<TabItem>(),
             ["usuarios"]     = new List<TabItem>(),
         };
         private readonly Dictionary<string, TabItem?> _pestañaSeleccionadaPorSeccion = new()
@@ -78,6 +80,7 @@ namespace WpfAppVba
             ["precios"]      = null,
             ["empresas"]     = null,
             ["sucursales"]   = null,
+            ["regiones"]     = null,
             ["usuarios"]     = null,
         };
 
@@ -248,6 +251,7 @@ namespace WpfAppVba
             _panelPrecios      = new();
             _panelEmpresas     = new();
             _panelSucursales   = new();
+            _panelRegiones     = new();
             _panelUsuarios     = new();
 
             AsignarPanelFijo(_seccionActiva);
@@ -372,6 +376,7 @@ namespace WpfAppVba
                 case "precios":      TabFijoContenido.Content = _panelPrecios;      TabFijoTitulo.Text = "Precios";      break;
                 case "empresas":     TabFijoContenido.Content = _panelEmpresas;     TabFijoTitulo.Text = "Empresas";     break;
                 case "sucursales":   TabFijoContenido.Content = _panelSucursales;   TabFijoTitulo.Text = "Sucursales";   break;
+                case "regiones":     TabFijoContenido.Content = _panelRegiones;     TabFijoTitulo.Text = "Regiones";     break;
                 case "usuarios":     TabFijoContenido.Content = _panelUsuarios;     TabFijoTitulo.Text = "Usuarios";     break;
             }
         }
@@ -543,6 +548,12 @@ namespace WpfAppVba
         {
             MostrarPanel("sucursales");
             MarcarActivo(BtnNav_Sucursales);
+        }
+
+        private void BtnNav_Regiones_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("regiones");
+            MarcarActivo(BtnNav_Regiones);
         }
 
         private void BtnNav_Usuarios_Click(object sender, RoutedEventArgs e)
