@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Globalization;
 using Microsoft.Data.SqlClient;
 using WpfAppVba.Data;
 
@@ -35,49 +34,6 @@ namespace VisorEmpresa
     }
 
     /// <summary>
-    /// Documento (encabezado) para las vistas de solo-visualización del visor.
-    /// Modelo único para los 4 módulos: cada vista usa las columnas que le aplican
-    /// (Sucursal para Pedidos/Correcciones/Facturas, Origen/Destino para Traspasos,
-    /// Tercero/EstadoC/Importe para Pedidos/Facturas, Motivo para Correcciones...).
-    /// </summary>
-    public class DocVisorFila
-    {
-        public int      Num        { get; set; }
-        public string   Id         { get; set; } = "";
-        public string   Codigo     { get; set; } = "";
-        public DateTime Fecha      { get; set; }
-        public string   Sucursal   { get; set; } = "";
-        public string   Origen     { get; set; } = "";
-        public string   Destino    { get; set; } = "";
-        public string   Movimiento { get; set; } = "";
-        public string   Tercero    { get; set; } = "";
-        public string   Referencia { get; set; } = "";
-        public string   Motivo     { get; set; } = "";
-        public string   Estado     { get; set; } = "";
-        public string   EstadoC    { get; set; } = "";
-        public double   Cantidad   { get; set; }
-        public double   Importe    { get; set; }
-
-        public string FechaTexto    => Fecha == default ? "" : Fecha.ToString("dd/MM/yyyy");
-        public string CantidadTexto => Cantidad.ToString("N0", CultureInfo.CurrentCulture);
-        public string ImporteTexto  => Importe.ToString("#,##0.##", CultureInfo.CurrentCulture);
-    }
-
-    /// <summary>Línea de un documento para la grilla inferior de las vistas.</summary>
-    public class LineaVisorFila
-    {
-        public int    Lin         { get; set; }
-        public string Codigo      { get; set; } = "";
-        public string Descripcion { get; set; } = "";
-        public string Categoria   { get; set; } = "";
-        public double Cantidad    { get; set; }
-        public double Importe     { get; set; }
-
-        public string CantidadTexto => Cantidad.ToString("N0", CultureInfo.CurrentCulture);
-        public string ImporteTexto  => Importe.ToString("#,##0.##", CultureInfo.CurrentCulture);
-    }
-
-    /// <summary>
     /// Consultas SQL agregadas a nivel de EMPRESA (todas las sucursales, sin el
     /// filtro por sucursal activa de la app principal), parametrizadas y de solo
     /// lectura. Mismo patrón que PreciosDetalle.CalcularStockEmpresa: agregación
@@ -85,6 +41,8 @@ namespace VisorEmpresa
     /// </summary>
     public static class ConsultasEmpresa
     {
+        private static SqlData Sql => SqlData.Instance;
+
         // Empresa vacía: GUID nulo válido para que la comparación contra la columna
         // uniqueidentifier no falle y devuelva 0 filas (mismo criterio que AppLoader
         // con la sucursal activa).
@@ -314,321 +272,168 @@ namespace VisorEmpresa
             return (Numero(r["cantidad"]), Entero(r["documentos"]));
         }
 
-        // ─── Vistas de documentos (encabezados + líneas) ──────────────────────
+        // ─── Cachés SqlData para Pedidos/Traspasos/Correcciones/FacturasGeneral ──
         //
-        // Reglas comunes de las 4 vistas:
-        //  - Sin filtro por sucursal activa: entran TODAS las sucursales de la
-        //    empresa, con filtro opcional por UNA sucursal (combo del panel).
-        //  - Corte por apertura ("problema2"): cada sucursal solo aporta documentos
-        //    con fecha >= MAX(documentosI.fecha) de ESA sucursal (su último
-        //    inventario/apertura); si no tiene ninguno, desde la fecha de creación
-        //    de la sucursal. Mismo criterio que AppState.ActualizarBase y que
-        //    PreciosDetalle.CalcularStockEmpresa en la app principal (se usa >=,
-        //    que es como carga la app principal el período desde la apertura).
+        // Estos 4 controles (VisorEmpresa.PedidosGeneral, etc.) son duplicados
+        // fieles de los de la app principal: mismo código de UI (Tree1 de meses,
+        // filtros, grilla, detalle) que lee de Sql.DocumentosXObj/Sql.XObj
+        // (DataConsulta), igual que AppLoader.ConectarDocumentos. En vez de
+        // reescribir esa lógica de lectura, se puebla la MISMA caché con SQL
+        // scoped a UNA sucursal (sucursalId) o a TODA la empresa (sucursalId
+        // vacío), siempre con el corte por apertura de CADA sucursal
+        // (SubconsultaApertura) — mismo criterio que las antiguas CargarDocsXxx.
 
         private const string SubconsultaApertura =
             "(SELECT sucursal, MAX(fecha) AS fecha FROM documentosI " +
             "WHERE estadof = 'normal' GROUP BY sucursal)";
 
-        /// <summary>Encabezados de pedidos de toda la empresa (o de una sucursal).</summary>
-        public static List<DocVisorFila> CargarDocsPedidos(string empresa, int anio, string sucursalId)
+        private static string FechaLiteral(DateTime dt) => dt.ToString("yyyyMMdd HH:mm:ss");
+
+        /// <summary>Puebla Sql.DocumentosPObj + Sql.PedidosObj (una sucursal o toda la empresa).</summary>
+        public static void ConectarCachePedidos(string empresa, int anio, string sucursalId)
         {
             var (desde, hasta) = RangoAnio(anio);
-            bool porSucursal = !string.IsNullOrEmpty(sucursalId);
+            string aper = FechaLiteral(desde);
+            string cier = FechaLiteral(hasta);
+            string emp  = EmpresaSegura(empresa);
+            string filtroSuc = string.IsNullOrEmpty(sucursalId) ? "" : $" AND vg.sucursal = '{sucursalId}'";
 
-            string sql =
-                "SELECT vg.id, vg.codigo, vg.fecha, s.descripcion AS sucursal, " +
-                "       ISNULL(vg.movimiento, '') AS movimiento, ISNULL(t.descripcion, '') AS tercero, " +
-                "       ISNULL(vg.estado, '') AS estado, ISNULL(vg.estadoC, '') AS estadoC, " +
-                "       ISNULL(SUM(vd.cantidad), 0) AS cantidad, ISNULL(SUM(vd.importe), 0) AS importe " +
-                "FROM documentosP vg " +
-                "INNER JOIN sucursales s ON s.id = vg.sucursal AND s.estadof = 'normal' AND s.empresa = @emp " +
+            Sql.DocumentosPObj.Conectar("documentosP",
+                "SELECT vg.* FROM documentosP AS vg " +
+                $"INNER JOIN sucursales AS s ON s.id = vg.sucursal AND s.estadof = 'normal' AND s.empresa = '{emp}' " +
                 "LEFT JOIN " + SubconsultaApertura + " ap ON ap.sucursal = vg.sucursal " +
-                "LEFT JOIN terceros t ON t.id = vg.tercero " +
-                "LEFT JOIN pedidos vd ON vd.documentoP = vg.id " +
                 "WHERE vg.estadof = 'normal' " +
-                "AND vg.fecha >= @desde AND vg.fecha <= @hasta " +
-                "AND vg.fecha >= COALESCE(ap.fecha, s.fecha) " +
-                (porSucursal ? "AND vg.sucursal = @suc " : "") +
-                "GROUP BY vg.id, vg.codigo, vg.fecha, s.descripcion, vg.movimiento, t.descripcion, vg.estado, vg.estadoC " +
-                "ORDER BY vg.fecha DESC";
+                $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
+                "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
+                filtroSuc +
+                " ORDER BY vg.fecha ASC");
 
-            var pars = new List<(string, object)> { ("@emp", EmpresaSegura(empresa)), ("@desde", desde), ("@hasta", hasta) };
-            if (porSucursal) pars.Add(("@suc", sucursalId));
-
-            var lista = new List<DocVisorFila>();
-            var tabla = EjecutarConsulta(sql, pars.ToArray());
-            foreach (DataRow fila in tabla.Rows)
-            {
-                lista.Add(new DocVisorFila
-                {
-                    Num        = lista.Count + 1,
-                    Id         = Texto(fila["id"]),
-                    Codigo     = Texto(fila["codigo"]),
-                    Fecha      = FechaSql(fila["fecha"]),
-                    Sucursal   = Texto(fila["sucursal"]),
-                    Movimiento = Texto(fila["movimiento"]),
-                    Tercero    = Texto(fila["tercero"]),
-                    Estado     = Texto(fila["estado"]),
-                    EstadoC    = Texto(fila["estadoC"]),
-                    Cantidad   = Numero(fila["cantidad"]),
-                    Importe    = Numero(fila["importe"])
-                });
-            }
-            return lista;
+            Sql.PedidosObj.Conectar("pedidos",
+                "SELECT vd.* FROM pedidos AS vd " +
+                "INNER JOIN documentosP AS vg ON vd.documentoP = vg.id " +
+                $"INNER JOIN sucursales AS s ON s.id = vg.sucursal AND s.estadof = 'normal' AND s.empresa = '{emp}' " +
+                "LEFT JOIN " + SubconsultaApertura + " ap ON ap.sucursal = vg.sucursal " +
+                "WHERE vg.estadof = 'normal' " +
+                $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
+                "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
+                filtroSuc +
+                " ORDER BY vd.documentoP ASC, vd.indice ASC");
         }
 
         /// <summary>
-        /// Encabezados de traspasos donde el origen o el destino pertenece a la
-        /// empresa; cada lado se corta con la apertura de SU propia sucursal.
+        /// Puebla Sql.DocumentosTObj + Sql.TraspasosObj. Cada lado (origen/destino)
+        /// se corta con la apertura de SU propia sucursal, igual con una sucursal
+        /// puntual o con toda la empresa.
         /// </summary>
-        public static List<DocVisorFila> CargarDocsTraspasos(string empresa, int anio, string sucursalId)
+        public static void ConectarCacheTraspasos(string empresa, int anio, string sucursalId)
         {
             var (desde, hasta) = RangoAnio(anio);
+            string aper = FechaLiteral(desde);
+            string cier = FechaLiteral(hasta);
+            string emp  = EmpresaSegura(empresa);
             bool porSucursal = !string.IsNullOrEmpty(sucursalId);
 
             string condLado = porSucursal
-                ? "AND ( (vg.origen = @suc AND vg.fecha >= COALESCE(apo.fecha, so.fecha)) " +
-                  "   OR (vg.destino = @suc AND vg.fecha >= COALESCE(apd.fecha, sd.fecha)) ) "
-                : "AND ( (so.empresa = @emp AND vg.fecha >= COALESCE(apo.fecha, so.fecha)) " +
-                  "   OR (sd.empresa = @emp AND vg.fecha >= COALESCE(apd.fecha, sd.fecha)) ) ";
+                ? $"AND ( (vg.origen = '{sucursalId}' AND vg.fecha >= COALESCE(apo.fecha, so.fecha)) " +
+                  $"   OR (vg.destino = '{sucursalId}' AND vg.fecha >= COALESCE(apd.fecha, sd.fecha)) ) "
+                : $"AND ( (so.empresa = '{emp}' AND vg.fecha >= COALESCE(apo.fecha, so.fecha)) " +
+                  $"   OR (sd.empresa = '{emp}' AND vg.fecha >= COALESCE(apd.fecha, sd.fecha)) ) ";
 
-            string sql =
-                "SELECT vg.id, vg.codigo, vg.fecha, " +
-                "       ISNULL(so.descripcion, '') AS origen, ISNULL(sd.descripcion, '') AS destino, " +
-                "       ISNULL(vg.estado, '') AS estado, " +
-                "       ISNULL(SUM(vd.cantidad), 0) AS cantidad " +
-                "FROM documentosT vg " +
-                "LEFT JOIN sucursales so ON so.id = vg.origen  AND so.estadof = 'normal' " +
-                "LEFT JOIN sucursales sd ON sd.id = vg.destino AND sd.estadof = 'normal' " +
+            Sql.DocumentosTObj.Conectar("documentosT",
+                "SELECT vg.* FROM documentosT AS vg " +
+                "LEFT JOIN sucursales AS so ON so.id = vg.origen  AND so.estadof = 'normal' " +
+                "LEFT JOIN sucursales AS sd ON sd.id = vg.destino AND sd.estadof = 'normal' " +
                 "LEFT JOIN " + SubconsultaApertura + " apo ON apo.sucursal = vg.origen " +
                 "LEFT JOIN " + SubconsultaApertura + " apd ON apd.sucursal = vg.destino " +
-                "LEFT JOIN traspasos vd ON vd.documentoT = vg.id " +
                 "WHERE vg.estadof = 'normal' " +
-                "AND vg.fecha >= @desde AND vg.fecha <= @hasta " +
+                $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
                 condLado +
-                "GROUP BY vg.id, vg.codigo, vg.fecha, so.descripcion, sd.descripcion, vg.estado " +
-                "ORDER BY vg.fecha DESC";
+                "ORDER BY vg.fecha ASC");
 
-            var pars = new List<(string, object)> { ("@emp", EmpresaSegura(empresa)), ("@desde", desde), ("@hasta", hasta) };
-            if (porSucursal) pars.Add(("@suc", sucursalId));
-
-            var lista = new List<DocVisorFila>();
-            var tabla = EjecutarConsulta(sql, pars.ToArray());
-            foreach (DataRow fila in tabla.Rows)
-            {
-                lista.Add(new DocVisorFila
-                {
-                    Num      = lista.Count + 1,
-                    Id       = Texto(fila["id"]),
-                    Codigo   = Texto(fila["codigo"]),
-                    Fecha    = FechaSql(fila["fecha"]),
-                    Origen   = Texto(fila["origen"]),
-                    Destino  = Texto(fila["destino"]),
-                    Estado   = Texto(fila["estado"]),
-                    Cantidad = Numero(fila["cantidad"])
-                });
-            }
-            return lista;
+            Sql.TraspasosObj.Conectar("traspasos",
+                "SELECT vd.* FROM traspasos AS vd " +
+                "INNER JOIN documentosT AS vg ON vd.documentoT = vg.id " +
+                "LEFT JOIN sucursales AS so ON so.id = vg.origen  AND so.estadof = 'normal' " +
+                "LEFT JOIN sucursales AS sd ON sd.id = vg.destino AND sd.estadof = 'normal' " +
+                "LEFT JOIN " + SubconsultaApertura + " apo ON apo.sucursal = vg.origen " +
+                "LEFT JOIN " + SubconsultaApertura + " apd ON apd.sucursal = vg.destino " +
+                "WHERE vg.estadof = 'normal' " +
+                $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
+                condLado +
+                "ORDER BY vd.documentoT ASC, vd.indice ASC");
         }
 
-        /// <summary>Encabezados de correcciones de toda la empresa (o de una sucursal).</summary>
-        public static List<DocVisorFila> CargarDocsCorrecciones(string empresa, int anio, string sucursalId)
+        /// <summary>Puebla Sql.DocumentosCObj + Sql.CorreccionesObj (una sucursal o toda la empresa).</summary>
+        public static void ConectarCacheCorrecciones(string empresa, int anio, string sucursalId)
         {
             var (desde, hasta) = RangoAnio(anio);
-            bool porSucursal = !string.IsNullOrEmpty(sucursalId);
+            string aper = FechaLiteral(desde);
+            string cier = FechaLiteral(hasta);
+            string emp  = EmpresaSegura(empresa);
+            string filtroSuc = string.IsNullOrEmpty(sucursalId) ? "" : $" AND vg.sucursal = '{sucursalId}'";
 
-            string sql =
-                "SELECT vg.id, vg.codigo, vg.fecha, s.descripcion AS sucursal, " +
-                "       ISNULL(vg.movimiento, '') AS movimiento, ISNULL(vg.motivo, '') AS motivo, " +
-                "       ISNULL(SUM(vd.cantidad), 0) AS cantidad " +
-                "FROM documentosC vg " +
-                "INNER JOIN sucursales s ON s.id = vg.sucursal AND s.estadof = 'normal' AND s.empresa = @emp " +
+            Sql.DocumentosCObj.Conectar("documentosC",
+                "SELECT vg.* FROM documentosC AS vg " +
+                $"INNER JOIN sucursales AS s ON s.id = vg.sucursal AND s.estadof = 'normal' AND s.empresa = '{emp}' " +
                 "LEFT JOIN " + SubconsultaApertura + " ap ON ap.sucursal = vg.sucursal " +
-                "LEFT JOIN correcciones vd ON vd.documentoC = vg.id " +
                 "WHERE vg.estadof = 'normal' " +
-                "AND vg.fecha >= @desde AND vg.fecha <= @hasta " +
-                "AND vg.fecha >= COALESCE(ap.fecha, s.fecha) " +
-                (porSucursal ? "AND vg.sucursal = @suc " : "") +
-                "GROUP BY vg.id, vg.codigo, vg.fecha, s.descripcion, vg.movimiento, vg.motivo " +
-                "ORDER BY vg.fecha DESC";
+                $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
+                "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
+                filtroSuc +
+                " ORDER BY vg.fecha ASC");
 
-            var pars = new List<(string, object)> { ("@emp", EmpresaSegura(empresa)), ("@desde", desde), ("@hasta", hasta) };
-            if (porSucursal) pars.Add(("@suc", sucursalId));
-
-            var lista = new List<DocVisorFila>();
-            var tabla = EjecutarConsulta(sql, pars.ToArray());
-            foreach (DataRow fila in tabla.Rows)
-            {
-                lista.Add(new DocVisorFila
-                {
-                    Num        = lista.Count + 1,
-                    Id         = Texto(fila["id"]),
-                    Codigo     = Texto(fila["codigo"]),
-                    Fecha      = FechaSql(fila["fecha"]),
-                    Sucursal   = Texto(fila["sucursal"]),
-                    Movimiento = Texto(fila["movimiento"]),
-                    Motivo     = Texto(fila["motivo"]),
-                    Cantidad   = Numero(fila["cantidad"])
-                });
-            }
-            return lista;
+            Sql.CorreccionesObj.Conectar("correcciones",
+                "SELECT vd.* FROM correcciones AS vd " +
+                "INNER JOIN documentosC AS vg ON vd.documentoC = vg.id " +
+                $"INNER JOIN sucursales AS s ON s.id = vg.sucursal AND s.estadof = 'normal' AND s.empresa = '{emp}' " +
+                "LEFT JOIN " + SubconsultaApertura + " ap ON ap.sucursal = vg.sucursal " +
+                "WHERE vg.estadof = 'normal' " +
+                $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
+                "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
+                filtroSuc +
+                " ORDER BY vd.documentoC ASC, vd.indice ASC");
         }
 
         /// <summary>
-        /// Encabezados de facturas de toda la empresa (o de una sucursal).
-        /// Consulta DEFENSIVA: documentosF ganó columnas por etapas (movimiento,
-        /// tercero, referencia, estado, estadoC) y la base puede no tenerlas todas;
-        /// las ausentes se devuelven como '' en vez de romper la consulta.
+        /// Puebla Sql.DocumentosFObj + Sql.FacturasObj (una sucursal o toda la
+        /// empresa). Al usar SELECT vg.*/vd.* (no columnas nombradas) no hace falta
+        /// verificar existencia de columnas: se adapta sola al esquema real, igual
+        /// que AppLoader.ConectarDocumentos.
         /// </summary>
-        public static List<DocVisorFila> CargarDocsFacturas(string empresa, int anio, string sucursalId)
+        public static void ConectarCacheFacturas(string empresa, int anio, string sucursalId)
         {
             var (desde, hasta) = RangoAnio(anio);
-            bool porSucursal = !string.IsNullOrEmpty(sucursalId);
+            string aper = FechaLiteral(desde);
+            string cier = FechaLiteral(hasta);
+            string emp  = EmpresaSegura(empresa);
+            string filtroSuc = string.IsNullOrEmpty(sucursalId) ? "" : $" AND vg.sucursal = '{sucursalId}'";
 
-            bool conMovimiento = ExisteColumna("documentosF", "movimiento");
-            bool conTercero    = ExisteColumna("documentosF", "tercero");
-            bool conReferencia = ExisteColumna("documentosF", "referencia");
-            bool conEstado     = ExisteColumna("documentosF", "estado");
-            bool conEstadoC    = ExisteColumna("documentosF", "estadoC");
-
-            var select = new List<string> { "vg.id", "vg.codigo", "vg.fecha", "s.descripcion AS sucursal" };
-            var grupo  = new List<string> { "vg.id", "vg.codigo", "vg.fecha", "s.descripcion" };
-
-            select.Add(conMovimiento ? "ISNULL(vg.movimiento, '') AS movimiento" : "'' AS movimiento");
-            if (conMovimiento) grupo.Add("vg.movimiento");
-
-            select.Add(conTercero ? "ISNULL(t.descripcion, '') AS tercero" : "'' AS tercero");
-            if (conTercero) grupo.Add("t.descripcion");
-
-            select.Add(conReferencia ? "ISNULL(vg.referencia, '') AS referencia" : "'' AS referencia");
-            if (conReferencia) grupo.Add("vg.referencia");
-
-            select.Add(conEstado ? "ISNULL(vg.estado, '') AS estado" : "'' AS estado");
-            if (conEstado) grupo.Add("vg.estado");
-
-            select.Add(conEstadoC ? "ISNULL(vg.estadoC, '') AS estadoC" : "'' AS estadoC");
-            if (conEstadoC) grupo.Add("vg.estadoC");
-
-            select.Add("ISNULL(SUM(vd.importe), 0) AS importe");
-
-            string sql =
-                "SELECT " + string.Join(", ", select) + " " +
-                "FROM documentosF vg " +
-                "INNER JOIN sucursales s ON s.id = vg.sucursal AND s.estadof = 'normal' AND s.empresa = @emp " +
+            Sql.DocumentosFObj.Conectar("documentosF",
+                "SELECT vg.* FROM documentosF AS vg " +
+                $"INNER JOIN sucursales AS s ON s.id = vg.sucursal AND s.estadof = 'normal' AND s.empresa = '{emp}' " +
                 "LEFT JOIN " + SubconsultaApertura + " ap ON ap.sucursal = vg.sucursal " +
-                (conTercero ? "LEFT JOIN terceros t ON t.id = vg.tercero " : "") +
-                "LEFT JOIN facturas vd ON vd.documentoF = vg.id " +
                 "WHERE vg.estadof = 'normal' " +
-                "AND vg.fecha >= @desde AND vg.fecha <= @hasta " +
-                "AND vg.fecha >= COALESCE(ap.fecha, s.fecha) " +
-                (porSucursal ? "AND vg.sucursal = @suc " : "") +
-                "GROUP BY " + string.Join(", ", grupo) + " " +
-                "ORDER BY vg.fecha DESC";
+                $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
+                "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
+                filtroSuc +
+                " ORDER BY vg.fecha ASC");
 
-            var pars = new List<(string, object)> { ("@emp", EmpresaSegura(empresa)), ("@desde", desde), ("@hasta", hasta) };
-            if (porSucursal) pars.Add(("@suc", sucursalId));
-
-            var lista = new List<DocVisorFila>();
-            var tabla = EjecutarConsulta(sql, pars.ToArray());
-            foreach (DataRow fila in tabla.Rows)
-            {
-                lista.Add(new DocVisorFila
-                {
-                    Num        = lista.Count + 1,
-                    Id         = Texto(fila["id"]),
-                    Codigo     = Texto(fila["codigo"]),
-                    Fecha      = FechaSql(fila["fecha"]),
-                    Sucursal   = Texto(fila["sucursal"]),
-                    Movimiento = Texto(fila["movimiento"]),
-                    Tercero    = Texto(fila["tercero"]),
-                    Referencia = Texto(fila["referencia"]),
-                    Estado     = Texto(fila["estado"]),
-                    EstadoC    = Texto(fila["estadoC"]),
-                    Importe    = Numero(fila["importe"])
-                });
-            }
-            return lista;
-        }
-
-        // ─── Líneas del documento seleccionado ────────────────────────────────
-        // Igual que AppLoader: las líneas se filtran solo por el encabezado (sin
-        // filtro propio de estadof), para mostrar exactamente lo mismo que la app
-        // principal.
-
-        public static List<LineaVisorFila> CargarLineasPedido(string documentoId) =>
-            MapearLineas(EjecutarConsulta(
-                "SELECT vd.indice, ISNULL(a.codigo, '') AS codigo, ISNULL(a.descripcion, '') AS descripcion, " +
-                "       ISNULL(vd.cantidad, 0) AS cantidad, ISNULL(vd.importe, 0) AS importe " +
-                "FROM pedidos vd LEFT JOIN articulos a ON a.id = vd.articulo " +
-                "WHERE vd.documentoP = @doc ORDER BY vd.indice ASC",
-                ("@doc", documentoId)), conImporte: true);
-
-        public static List<LineaVisorFila> CargarLineasTraspaso(string documentoId) =>
-            MapearLineas(EjecutarConsulta(
-                "SELECT vd.indice, ISNULL(a.codigo, '') AS codigo, ISNULL(a.descripcion, '') AS descripcion, " +
-                "       ISNULL(vd.cantidad, 0) AS cantidad " +
-                "FROM traspasos vd LEFT JOIN articulos a ON a.id = vd.articulo " +
-                "WHERE vd.documentoT = @doc ORDER BY vd.indice ASC",
-                ("@doc", documentoId)), conImporte: false);
-
-        public static List<LineaVisorFila> CargarLineasCorreccion(string documentoId) =>
-            MapearLineas(EjecutarConsulta(
-                "SELECT vd.indice, ISNULL(a.codigo, '') AS codigo, ISNULL(a.descripcion, '') AS descripcion, " +
-                "       ISNULL(vd.cantidad, 0) AS cantidad " +
-                "FROM correcciones vd LEFT JOIN articulos a ON a.id = vd.articulo " +
-                "WHERE vd.documentoC = @doc ORDER BY vd.indice ASC",
-                ("@doc", documentoId)), conImporte: false);
-
-        public static List<LineaVisorFila> CargarLineasFactura(string documentoId)
-        {
-            var lista = new List<LineaVisorFila>();
-            var tabla = EjecutarConsulta(
-                "SELECT vd.indice, ISNULL(vd.concepto, '') AS descripcion, " +
-                "       ISNULL(c.descripcion, '') AS categoria, ISNULL(vd.importe, 0) AS importe " +
-                "FROM facturas vd LEFT JOIN categorias c ON c.id = vd.categoria " +
-                "WHERE vd.documentoF = @doc ORDER BY vd.indice ASC",
-                ("@doc", documentoId));
-            foreach (DataRow fila in tabla.Rows)
-            {
-                lista.Add(new LineaVisorFila
-                {
-                    Lin         = Entero(fila["indice"]),
-                    Descripcion = Texto(fila["descripcion"]),
-                    Categoria   = Texto(fila["categoria"]),
-                    Importe     = Numero(fila["importe"])
-                });
-            }
-            return lista;
-        }
-
-        private static List<LineaVisorFila> MapearLineas(DataTable tabla, bool conImporte)
-        {
-            var lista = new List<LineaVisorFila>();
-            foreach (DataRow fila in tabla.Rows)
-            {
-                lista.Add(new LineaVisorFila
-                {
-                    Lin         = Entero(fila["indice"]),
-                    Codigo      = Texto(fila["codigo"]),
-                    Descripcion = Texto(fila["descripcion"]),
-                    Cantidad    = Numero(fila["cantidad"]),
-                    Importe     = conImporte ? Numero(fila["importe"]) : 0
-                });
-            }
-            return lista;
+            Sql.FacturasObj.Conectar("facturas",
+                "SELECT vd.* FROM facturas AS vd " +
+                "INNER JOIN documentosF AS vg ON vd.documentoF = vg.id " +
+                $"INNER JOIN sucursales AS s ON s.id = vg.sucursal AND s.estadof = 'normal' AND s.empresa = '{emp}' " +
+                "LEFT JOIN " + SubconsultaApertura + " ap ON ap.sucursal = vg.sucursal " +
+                "WHERE vg.estadof = 'normal' " +
+                $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
+                "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
+                filtroSuc +
+                " ORDER BY vd.documentoF ASC, vd.indice ASC");
         }
 
         // ─── Helpers ──────────────────────────────────────────────────────────
 
         private static (DateTime Desde, DateTime Hasta) RangoAnio(int anio) =>
             (new DateTime(anio, 1, 1, 0, 0, 0), new DateTime(anio, 12, 31, 23, 59, 59));
-
-        private static DateTime FechaSql(object? v)
-        {
-            if (v is DateTime dt) return dt;
-            return DateTime.TryParse(v?.ToString(), out var f) ? f : default;
-        }
 
         // Cadena de conexión PROPIA del visor: mismas credenciales que
         // DatabaseConnection (leídas de la configuración cifrada compartida), pero
@@ -660,25 +465,6 @@ namespace VisorEmpresa
             using var adaptador = new SqlDataAdapter(cmd);
             adaptador.Fill(tabla);
             return tabla;
-        }
-
-        // Cache de existencia de columnas: algunas columnas de documentosF se
-        // agregaron por etapas (tercero, referencia, estado, estadoC, movimiento)
-        // y pueden no existir aún en la base contra la que corre el visor. La app
-        // principal lee cachés con SELECT * y tolera su ausencia; estas consultas
-        // las nombran explícitamente, así que se verifica antes de armar el SQL.
-        private static readonly Dictionary<string, bool> _columnasExistentes = new();
-
-        private static bool ExisteColumna(string tabla, string columna)
-        {
-            string clave = $"{tabla}.{columna}";
-            if (_columnasExistentes.TryGetValue(clave, out bool existe)) return existe;
-
-            var t = EjecutarConsulta("SELECT COL_LENGTH(@tabla, @columna) AS largo",
-                                     ("@tabla", tabla), ("@columna", columna));
-            existe = t.Rows.Count > 0 && t.Rows[0]["largo"] is not DBNull;
-            _columnasExistentes[clave] = existe;
-            return existe;
         }
 
         private static string Texto(object? v) =>

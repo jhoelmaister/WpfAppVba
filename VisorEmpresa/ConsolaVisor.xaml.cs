@@ -21,9 +21,11 @@ namespace WpfAppVba
     /// compilarla aquí (la consola original NO se vincula) funcionan sin cambios.
     ///
     /// Secciones: Dashboard + documentos en solo-visualización (Pedidos,
-    /// Traspasos, Correcciones, Facturas — paneles propios del visor, a nivel
-    /// empresa) + catálogos con edición completa (Precios, Empresas, Sucursales,
-    /// Usuarios — formularios vinculados de la app principal).
+    /// Traspasos, Correcciones, Facturas — duplicados fieles de los controles
+    /// de la app principal, con un combo de Sucursal propio en vez de
+    /// AppState.SucursalActiva) + catálogos con edición completa (Precios,
+    /// Empresas, Sucursales, Usuarios — formularios vinculados de la app
+    /// principal).
     /// </summary>
     public partial class ConsolaMovimientos : Window
     {
@@ -45,10 +47,10 @@ namespace WpfAppVba
         // Paneles fijos por sección: mutables para poder recrearlos al cambiar de
         // empresa (mismo criterio que RecargarContexto en la app principal).
         private DashboardVisor    _panelDashboard    = new();
-        private PedidosVisor      _panelPedidos      = new();
-        private TraspasosVisor    _panelTraspasos    = new();
-        private CorreccionesVisor _panelCorrecciones = new();
-        private FacturasVisor     _panelFacturas     = new();
+        private PedidosGeneral    _panelPedidos      = new();
+        private TraspasosGeneral  _panelTraspasos    = new();
+        private CorreccionesGeneral _panelCorrecciones = new();
+        private FacturasGeneral   _panelFacturas     = new();
         private PreciosGeneral    _panelPrecios      = new();
         private EmpresasGeneral   _panelEmpresas     = new();
         private SucursalesGeneral _panelSucursales   = new();
