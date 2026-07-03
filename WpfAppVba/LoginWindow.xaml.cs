@@ -297,11 +297,9 @@ namespace WpfAppVba
                     AppState.SesionActiva   = true;
                     AppState.PeriodoActivo  = DateTime.Now.Year.ToString();
 
-                    string temaUsuario = Sql.UsuariosObj.ObtenerItem("temaC", idEncontrado)?.ToString() ?? "";
-                    AppState.TemaActivo = temaUsuario.Trim().ToLowerInvariant() == ThemeManager.TemaOscuro
-                        ? ThemeManager.TemaOscuro
-                        : ThemeManager.TemaClaro;
-                    ThemeManager.AplicarTema(AppState.TemaActivo);
+                    // Tema: 100% local (theme.txt), sin columna en SQL. App.xaml.cs
+                    // ya aplicó el preferido de esta PC antes de mostrar el login;
+                    // AppState.TemaActivo ya quedó correcto desde ese momento.
 
                     // Recargar catálogos ya filtrados por la empresa del usuario.
                     MostrarEstado("Cargando catálogos de la empresa...", Colors.Green);

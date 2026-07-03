@@ -7,9 +7,9 @@ namespace WpfAppVba
 {
     /// <summary>
     /// Aplica y persiste el tema visual (claro / oscuro) del proyecto.
-    /// - Persistencia en SQL Server: usuarios.temaC (preferencia del usuario)
-    /// - Persistencia local: %LOCALAPPDATA%\WpfAppVba\theme.txt (último tema usado en esta PC,
-    ///   para aplicar el tema correcto a la LoginWindow antes de saber qué usuario es)
+    /// Persistencia 100% local: %LOCALAPPDATA%\WpfAppVba\theme.txt (último tema
+    /// usado en esta PC). Sin persistencia en SQL: la columna usuarios.temaC que
+    /// se usaba antes fue eliminada de la base.
     /// </summary>
     public static class ThemeManager
     {
