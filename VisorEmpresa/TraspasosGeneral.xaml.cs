@@ -19,17 +19,20 @@ namespace VisorEmpresa
     /// AppState.SucursalActiva. La caché (Sql.DocumentosTObj/TraspasosObj) se
     /// puebla vía ConsultasEmpresa.ConectarCacheTraspasos.
     ///
-    /// Dos diferencias de fondo respecto al original, decididas explícitamente
-    /// para el visor (no aplican a la app principal):
-    ///  - Estado: SIEMPRE el valor crudo ("pendiente"/"entregado"). Se elimina la
-    ///    reinterpretación "pendiente revisar" (emitido != sucursal activa), que
-    ///    solo tenía sentido con una única sucursal activa fija.
-    ///  - Columna/filtro "Movimiento" (salida/entrada): solo tienen un punto de
-    ///    referencia válido cuando el combo de Sucursal apunta a UNA sucursal
-    ///    puntual (se calcula relativo a esa elección, igual que la app principal
-    ///    lo hace relativo a AppState.SucursalActiva). En modo "Todas las
-    ///    sucursales" no hay una única referencia — se ocultan/deshabilitan,
-    ///    ya que Origen+Destino ya identifican la dirección sin ambigüedad.
+    /// Diferencias de fondo respecto al original, decididas explícitamente para
+    /// el visor (no aplican a la app principal):
+    ///  - Estado: el valor crudo es "pendiente"/"entregado" (sin la reinterpretación
+    ///    "pendiente revisar" relativa a AppState.SucursalActiva, que solo tenía
+    ///    sentido con una única sucursal activa fija), pero "pendiente" se
+    ///    MUESTRA como "pendiente al revisar" (ver TraspasoFila.EstadoTexto) —
+    ///    solo cambia el texto, no el valor ni el filtro.
+    ///  - Sin columna "Movimiento" (salida/entrada) en la grilla: Origen+Destino
+    ///    ya identifican la dirección sin ambigüedad. El filtro Entradas/Salidas
+    ///    (CboTipoMovimiento) se conserva porque sigue siendo útil para acotar la
+    ///    grilla, pero solo tiene un punto de referencia válido cuando el combo
+    ///    de Sucursal apunta a UNA sucursal puntual (se calcula relativo a esa
+    ///    elección, igual que la app principal lo hace relativo a
+    ///    AppState.SucursalActiva); en modo "Todas las sucursales" se deshabilita.
     /// </summary>
     public partial class TraspasosGeneral : UserControl
     {
@@ -130,17 +133,16 @@ namespace VisorEmpresa
             await RecargarCacheYVistaAsync();
         }
 
-        // El filtro Entradas/Salidas y la columna Movimiento solo tienen sentido
-        // relativos a UNA sucursal puntual: en "Todas las sucursales" un mismo
-        // traspaso es a la vez salida de una y entrada de otra, sin una única
-        // referencia — se deshabilitan (Origen/Destino ya alcanzan).
+        // El filtro Entradas/Salidas solo tiene sentido relativo a UNA sucursal
+        // puntual: en "Todas las sucursales" un mismo traspaso es a la vez salida
+        // de una y entrada de otra, sin una única referencia — se deshabilita
+        // (no hay columna Movimiento en la grilla: Origen/Destino ya alcanzan).
         private void ActualizarDisponibilidadMovimiento()
         {
             bool haySucursalRef = !string.IsNullOrEmpty(_sucursalFiltro);
             if (!haySucursalRef)
                 CboTipoMovimiento.SelectedIndex = 0; // "Todos"
             CboTipoMovimiento.IsEnabled = haySucursalRef;
-            ColMovimiento.Visibility = haySucursalRef ? Visibility.Visible : Visibility.Collapsed;
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
@@ -238,29 +240,18 @@ namespace VisorEmpresa
                 string origen  = Sql.DocumentosTObj.ObtenerItem("origen",  id)?.ToString() ?? "";
                 string destino = Sql.DocumentosTObj.ObtenerItem("destino", id)?.ToString() ?? "";
 
-                // Movimiento (salida/entrada): solo relativo a una sucursal puntual
-                // elegida en CmbSucursal (ver ActualizarDisponibilidadMovimiento).
-                string movActual = "";
+                // Filtro Entradas/Salidas: solo se aplica relativo a una sucursal
+                // puntual elegida en CmbSucursal (ver ActualizarDisponibilidadMovimiento).
+                // Sin columna Movimiento en la grilla: Origen/Destino ya identifican
+                // la dirección, así que no hace falta guardar el resultado en la fila.
                 if (haySucursalRef)
                 {
                     bool esSalida  = origen  == _sucursalFiltro;
                     bool esEntrada = destino == _sucursalFiltro;
 
-                    if (tipoMov == "salida")
-                    {
-                        if (!esSalida) continue;
-                        movActual = "salida";
-                    }
-                    else if (tipoMov == "entrada")
-                    {
-                        if (!esEntrada) continue;
-                        movActual = "entrada";
-                    }
-                    else
-                    {
-                        if (!esSalida && !esEntrada) continue;
-                        movActual = esSalida ? "salida" : "entrada";
-                    }
+                    if (tipoMov == "salida"  && !esSalida)  continue;
+                    if (tipoMov == "entrada" && !esEntrada) continue;
+                    if (tipoMov != "salida" && tipoMov != "entrada" && !esSalida && !esEntrada) continue;
                 }
 
                 // Filtro por mes (solo en modo "filtros", independiente de TxtBuscar)
@@ -301,7 +292,6 @@ namespace VisorEmpresa
                     DocumentoT   = id,
                     Codigo       = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                     FechaStr     = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
-                    Movimiento   = movActual,
                     OrigenDesc   = origenDesc,
                     DestinoDesc  = destinoDesc,
                     Estado       = estado,
@@ -429,6 +419,47 @@ namespace VisorEmpresa
                 OcultarDetalle();
         }
 
+        // ─── Doble clic / Enter → ver documento completo (solo lectura) ──────
+        private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            e.Handled = true;
+            AbrirVerDetalle();
+        }
+
+        private void Grid1_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+            e.Handled = true;
+            AbrirVerDetalle();
+        }
+
+        // Abre TraspasosDetalle (formulario real de la app principal, vinculado) en
+        // modo solo lectura, sin Guardar ni edición. TraspasosDetalle muestra un
+        // único campo "Sucursal" (la opuesta a AppState.TipoMovimiento): con una
+        // sucursal puntual elegida en CmbSucursal se usa como referencia (igual
+        // que la app principal usa AppState.SucursalActiva); en "Todas las
+        // sucursales" no hay una única referencia — se asume "salida" (el campo
+        // Sucursal del detalle mostrará el destino), ya que la grilla ya muestra
+        // Origen+Destino sin ambigüedad antes de abrir el detalle.
+        private void AbrirVerDetalle()
+        {
+            if (Grid1.SelectedItem is not TraspasoFila fila) return;
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+
+            string origen = Sql.DocumentosTObj.ObtenerItem("origen", fila.DocumentoT)?.ToString() ?? "";
+            bool haySucursalRef = !string.IsNullOrEmpty(_sucursalFiltro);
+            AppState.TipoMovimiento = haySucursalRef
+                ? (origen == _sucursalFiltro ? "salida" : "entrada")
+                : "salida";
+            AppState.EventoFormularioM = "editar";
+
+            string titulo = $"Traspaso {fila.Codigo}";
+            var dlg = new TraspasosDetalle(null, fila.DocumentoT, tituloTab: titulo, soloLectura: true);
+            dlg.Cerrando += () => consola.CerrarPestaña(dlg);
+            consola.AbrirPestaña(titulo, dlg, $"traspaso-{fila.DocumentoT}");
+        }
+
         // ─── Eventos de árbol y filtros ───────────────────────────────────────
         private void Tree1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
@@ -491,11 +522,15 @@ namespace VisorEmpresa
         public string DocumentoT  { get; set; } = "";
         public string Codigo      { get; set; } = "";
         public string FechaStr    { get; set; } = "";
-        public string Movimiento  { get; set; } = "";
         public string OrigenDesc  { get; set; } = "";
         public string DestinoDesc { get; set; } = "";
         public string Estado      { get; set; } = "";
         public double Cantidad    { get; set; }
+
+        /// <summary>Texto mostrado en la columna Estado: "pendiente" se ve como
+        /// "pendiente al revisar" (el valor crudo de Estado no cambia, solo el
+        /// texto — ver nota de la clase).</summary>
+        public string EstadoTexto => Estado == "pendiente" ? "pendiente al revisar" : Estado;
     }
 
     public class TraspasoDetalleFila

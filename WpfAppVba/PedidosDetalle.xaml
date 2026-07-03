@@ -186,11 +186,11 @@
                     <!-- Guardar / Cancelar (siempre visibles aquí) -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal"
                                 VerticalAlignment="Center">
-                        <Button Content="Cancelar"
+                        <Button x:Name="BtnCancelar" Content="Cancelar"
                                 Style="{StaticResource BtnSecundario}"
                                 Margin="0,0,6,0"
                                 Click="BtnCancelar_Click"/>
-                        <Button Content="💾 Guardar"
+                        <Button x:Name="BtnGuardar" Content="💾 Guardar"
                                 Height="30" FontWeight="SemiBold"
                                 Style="{StaticResource BtnPrimario}"
                                 Click="BtnGuardar_Click"/>
@@ -198,7 +198,7 @@
                 </Grid>
 
                 <!-- Fila de campos de cabecera -->
-                <Grid>
+                <Grid x:Name="PanelCamposCabecera">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="88"/>
                         <ColumnDefinition Width="8"/>
@@ -336,7 +336,7 @@
                             BorderBrush="{DynamicResource ThemeBorde}"
                             BorderThickness="0,0,0,1"
                             Padding="10,6">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <StackPanel x:Name="PanelBotonesArticulos" Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Content="Importar artículos"
                                     Style="{StaticResource BtnPrimario}"
                                     Margin="0,0,5,0"
@@ -597,7 +597,7 @@
                             BorderBrush="{DynamicResource ThemeBorde}"
                             BorderThickness="0,0,0,1"
                             Padding="10,6">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <StackPanel x:Name="PanelBotonesTrasacciones" Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Content="Nueva línea"
                                     Style="{StaticResource BtnSecundario}"
                                     Margin="0,0,5,0"
@@ -704,7 +704,7 @@
                             BorderBrush="{DynamicResource ThemeBorde}"
                             BorderThickness="0,0,0,1"
                             Padding="10,6">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <StackPanel x:Name="PanelBotonesEntregas" Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Content="Importar artículos"
                                     Style="{StaticResource BtnPrimario}"
                                     Margin="0,0,5,0"

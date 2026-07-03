@@ -462,6 +462,41 @@ namespace VisorEmpresa
                 OcultarDetalle();
         }
 
+        // ─── Doble clic / Enter → ver documento completo (solo lectura) ──────
+        private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            e.Handled = true;
+            AbrirVerDetalle();
+        }
+
+        private void Grid1_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+            e.Handled = true;
+            AbrirVerDetalle();
+        }
+
+        // Abre PedidosDetalle (formulario real de la app principal, vinculado) en
+        // modo solo lectura: mismos campos/tabs (Artículos, Cobros, Entregas) que
+        // la app principal, sin Guardar ni edición. AppState.TipoMovimiento/
+        // TipoPedido se leen del propio documento (igual que AbrirEditar en la app
+        // principal), ya que el visor no tiene un único "tipo" activo de sesión.
+        private void AbrirVerDetalle()
+        {
+            if (Grid1.SelectedItem is not PedidoFila fila) return;
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+
+            AppState.EventoFormularioM = "editar";
+            AppState.TipoMovimiento = Sql.DocumentosPObj.ObtenerItem("movimiento", fila.DocumentoP)?.ToString() ?? "venta";
+            AppState.TipoPedido     = Sql.DocumentosPObj.ObtenerItem("tipo",       fila.DocumentoP)?.ToString() ?? "rapido";
+
+            string titulo = $"Pedido {fila.Codigo}";
+            var dlg = new PedidosDetalle(null, fila.DocumentoP, tituloTab: titulo, soloLectura: true);
+            dlg.Cerrando += () => consola.CerrarPestaña(dlg);
+            consola.AbrirPestaña(titulo, dlg, $"pedido-{fila.DocumentoP}");
+        }
+
         // ─── Búsqueda (independiente del Tree1) ──────────────────────────────
         private void TxtBuscar_KeyDown(object sender, KeyEventArgs e)
         {

@@ -304,7 +304,9 @@
                       BorderThickness="0"
                       FontSize="12"
                       RowHeight="34"
-                      SelectionChanged="Grid1_SelectionChanged">
+                      SelectionChanged="Grid1_SelectionChanged"
+                      MouseDoubleClick="Grid1_MouseDoubleClick"
+                      PreviewKeyDown="Grid1_PreviewKeyDown">
 
                 <DataGrid.ColumnHeaderStyle>
                     <Style TargetType="DataGridColumnHeader">

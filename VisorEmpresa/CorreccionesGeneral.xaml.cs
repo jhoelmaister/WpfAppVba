@@ -354,6 +354,36 @@ namespace VisorEmpresa
                 OcultarDetalle();
         }
 
+        // ─── Doble clic / Enter → ver documento completo (solo lectura) ──────
+        private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            e.Handled = true;
+            AbrirVerDetalle();
+        }
+
+        private void Grid1_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+            e.Handled = true;
+            AbrirVerDetalle();
+        }
+
+        // Abre CorreccionesDetalle (formulario real de la app principal, vinculado)
+        // en modo solo lectura: mismos campos/badges/stock que la app principal,
+        // sin Guardar ni edición de líneas.
+        private void AbrirVerDetalle()
+        {
+            if (Grid1.SelectedItem is not CorreccionFila fila) return;
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+
+            AppState.EventoFormularioC = "editar";
+            string titulo = $"Corrección {fila.Codigo}";
+            var dlg = new CorreccionesDetalle(null, fila.Id, tituloTab: titulo, soloLectura: true);
+            dlg.Cerrando += () => consola.CerrarPestaña(dlg);
+            consola.AbrirPestaña(titulo, dlg, $"correccion-{fila.Id}");
+        }
+
         // ─── Eventos de árbol ─────────────────────────────────────────────────
         private void Tree1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {

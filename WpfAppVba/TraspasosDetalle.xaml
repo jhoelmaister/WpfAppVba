@@ -162,7 +162,7 @@
 
                     <!-- Guardar / Cancelar -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button Content="Cancelar" Style="{StaticResource BtnSecundario}"
+                        <Button x:Name="BtnCancelar" Content="Cancelar" Style="{StaticResource BtnSecundario}"
                                 Margin="0,0,6,0" Click="BtnCancelar_Click"/>
                         <Button x:Name="BtnGuardar" Content="💾 Guardar"
                                 Height="30" Padding="14,0"
@@ -173,7 +173,7 @@
                 </Grid>
 
                 <!-- Fila 2: campos de cabecera en línea -->
-                <Grid>
+                <Grid x:Name="PanelCamposCabecera">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="90"/>
                         <ColumnDefinition Width="8"/>
@@ -311,7 +311,7 @@
                            FontSize="11" FontWeight="SemiBold"
                            Foreground="{DynamicResource ThemeTextoSec}"
                            VerticalAlignment="Center"/>
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <StackPanel x:Name="PanelBotonesArticulos" Grid.Column="1" Orientation="Horizontal">
                     <Button x:Name="BtnImportarArticulos" Content="Importar artículos"
                             Style="{StaticResource BtnPrimario}"
                             Margin="0,0,5,0" Click="BtnImportarArticulos_Click"/>

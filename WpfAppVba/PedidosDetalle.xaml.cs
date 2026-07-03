@@ -14,7 +14,12 @@ namespace WpfAppVba
     {
         public event Action? Cerrando;
         private static SqlData Sql => SqlData.Instance;
-        private readonly PedidosGeneral? _padre;
+        // object en vez de PedidosGeneral: VisorEmpresa.PedidosGeneral (su grilla de
+        // solo-lectura propia) no es del mismo tipo que el de la app principal, y
+        // _padre no se usa dentro de esta clase — object evita que el visor deba
+        // vincular también el PedidosGeneral completo de la app principal solo para
+        // satisfacer este parámetro.
+        private readonly object? _padre;
         private readonly string _idEditar;
 
         private bool _cargando         = true;
@@ -47,14 +52,23 @@ namespace WpfAppVba
 
         private bool _iniciado = false;
         private readonly string _tituloTab;
+        private readonly bool _soloLectura;
 
-        public PedidosDetalle(PedidosGeneral? padre = null, string idEditar = "", string tituloTab = "")
+        /// <param name="soloLectura">
+        /// true = vista de solo lectura (sin Guardar ni edición de cabecera/líneas);
+        /// la usa VisorEmpresa para "ver documento" desde su grilla de solo-lectura.
+        /// AppState.EventoFormularioM debe seguir siendo "editar" para que
+        /// CargarUserform cargue los datos del documento (nunca "nuevo").
+        /// </param>
+        public PedidosDetalle(object? padre = null, string idEditar = "", string tituloTab = "",
+            bool soloLectura = false)
         {
             InitializeComponent();
-            _padre     = padre;
-            _idEditar  = idEditar;
-            _tituloTab = tituloTab;
-            Loaded    += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
+            _padre       = padre;
+            _idEditar    = idEditar;
+            _tituloTab   = tituloTab;
+            _soloLectura = soloLectura;
+            Loaded      += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
         }
 
         // ─── Cambiar tipo de movimiento en pestaña existente ─────────────────
@@ -98,6 +112,23 @@ namespace WpfAppVba
             _cambioPedido    = false;
             _cambioTrasaccion= false;
             _cambioEntrega   = false;
+
+            if (_soloLectura) AplicarModoSoloLectura();
+        }
+
+        // ─── Modo solo lectura (VisorEmpresa): sin Guardar ni edición ─────────
+        private void AplicarModoSoloLectura()
+        {
+            BtnGuardar.Visibility              = Visibility.Collapsed;
+            BtnCancelar.Content                = "Cerrar";
+            PanelCamposCabecera.IsEnabled      = false;
+            Box_Observaciones.IsEnabled        = false;
+            PanelBotonesArticulos.IsEnabled     = false;
+            PanelBotonesTrasacciones.IsEnabled  = false;
+            PanelBotonesEntregas.IsEnabled      = false;
+            GridItems.IsReadOnly               = true;
+            GridTrasacciones.IsReadOnly         = true;
+            GridEntregas.IsReadOnly             = true;
         }
 
         // ─── Modo nuevo ───────────────────────────────────────────────────────
