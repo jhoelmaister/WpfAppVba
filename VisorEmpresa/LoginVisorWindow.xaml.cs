@@ -244,8 +244,10 @@ namespace VisorEmpresa
                 AppState.SucursalActiva = "";
                 AppState.RegionActiva   = "";
 
-                // Tema preferido del usuario (usuarios.temaC), como en la app principal.
-                TemaVisor.AplicarTema(usuario.TemaC);
+                // Tema: el visor es independiente de la app principal, no lee ni
+                // aplica usuarios.temaC. App.xaml.cs ya aplicó el preferido LOCAL de
+                // esta PC (TemaVisor.CargarTemaLocal()) antes de mostrar el login;
+                // solo se sincroniza AppState para los formularios vinculados.
                 AppState.TemaActivo = VisorState.TemaActivo;
 
                 // Cachés que usan los módulos de edición vinculados. Todas son

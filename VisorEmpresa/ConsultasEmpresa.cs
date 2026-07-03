@@ -23,13 +23,15 @@ namespace VisorEmpresa
         public double Cantidad   { get; set; }
     }
 
-    /// <summary>Datos del usuario autenticado que necesita el visor.</summary>
+    /// <summary>
+    /// Datos del usuario autenticado que necesita el visor. Sin TemaC a propósito:
+    /// el tema del visor es independiente del de la app principal (ver TemaVisor).
+    /// </summary>
     public class UsuarioVisor
     {
         public string Id      { get; set; } = "";
         public string Tipo    { get; set; } = "";
         public string Empresa { get; set; } = "";
-        public string TemaC   { get; set; } = "";
     }
 
     /// <summary>
@@ -104,9 +106,9 @@ namespace VisorEmpresa
             using var conn = new SqlConnection(CadenaConexion());
             conn.Open();
 
-            string id = "", llave = "", tipo = "", empresa = "", temaC = "";
+            string id = "", llave = "", tipo = "", empresa = "";
             using (var cmd = new SqlCommand(
-                "SELECT id, llave, tipo, empresa, temaC FROM usuarios " +
+                "SELECT id, llave, tipo, empresa FROM usuarios " +
                 "WHERE cuenta = @cuenta AND estadof = 'normal'", conn))
             {
                 cmd.Parameters.AddWithValue("@cuenta", cuenta);
@@ -116,7 +118,6 @@ namespace VisorEmpresa
                 llave   = Texto(reader["llave"]);
                 tipo    = Texto(reader["tipo"]);
                 empresa = Texto(reader["empresa"]);
-                temaC   = Texto(reader["temaC"]);
             }
 
             if (string.IsNullOrEmpty(id)) return null;
@@ -125,7 +126,7 @@ namespace VisorEmpresa
                           || (!PasswordHasher.EsHash(llave) && llave == contrasena);
             if (!valida) return null;
 
-            return new UsuarioVisor { Id = id, Tipo = tipo, Empresa = empresa, TemaC = temaC };
+            return new UsuarioVisor { Id = id, Tipo = tipo, Empresa = empresa };
         }
 
         // ─── Catálogos mínimos ────────────────────────────────────────────────
