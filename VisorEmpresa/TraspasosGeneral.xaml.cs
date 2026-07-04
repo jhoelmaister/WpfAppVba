@@ -36,6 +36,12 @@ namespace VisorEmpresa
     ///    ella (vía origen/destino, igual que antes); en "Todas las sucursales"
     ///    no hay una única referencia, así que filtra directo por el valor
     ///    crudo de movimiento (ver CargarTraspasos).
+    ///  - El combo de Sucursal (CmbSucursal), cuando apunta a UNA sucursal
+    ///    puntual, filtra Grid1 (en CargarTraspasos, en memoria) para mostrar
+    ///    únicamente los traspasos donde esa sucursal es la CONTRAPARTE
+    ///    (sucursalR) — no los que ella misma creó. La caché sigue trayendo
+    ///    ambos lados (ConsultasEmpresa.ConectarCacheTraspasos, vía
+    ///    origen/destino); el recorte es solo en la grilla.
     /// </summary>
     public partial class TraspasosGeneral : UserControl
     {
@@ -229,6 +235,13 @@ namespace VisorEmpresa
                 string origen     = Sql.DocumentosTObj.ObtenerItem("origen",     id)?.ToString() ?? "";
                 string destino    = Sql.DocumentosTObj.ObtenerItem("destino",    id)?.ToString() ?? "";
                 string movimiento = Sql.DocumentosTObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
+                string sucursalR  = Sql.DocumentosTObj.ObtenerItem("sucursalR",  id)?.ToString() ?? "";
+
+                // Filtro por sucursal puntual (CmbSucursal): Grid1 muestra solo los
+                // traspasos donde la sucursal elegida es la CONTRAPARTE (columna
+                // "Sucursal"/sucursalR) — no los que ella misma creó (columna
+                // "SucursalF"/sucursal).
+                if (haySucursalRef && sucursalR != _sucursalFiltro) continue;
 
                 // Filtro Entradas/Salidas: con una sucursal puntual elegida en
                 // CmbSucursal, filtra relativo a ella (origen/destino, igual que
@@ -263,7 +276,6 @@ namespace VisorEmpresa
                 DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
 
                 string sucursal      = Sql.DocumentosTObj.ObtenerItem("sucursal",  id)?.ToString() ?? "";
-                string sucursalR     = Sql.DocumentosTObj.ObtenerItem("sucursalR", id)?.ToString() ?? "";
                 string sucursalDesc  = Sql.SucursalesObj.ObtenerItem("descripcion", sucursal)?.ToString()  ?? sucursal;
                 string sucursalRDesc = Sql.SucursalesObj.ObtenerItem("descripcion", sucursalR)?.ToString() ?? sucursalR;
 
