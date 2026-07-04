@@ -210,8 +210,8 @@ namespace WpfAppVba
         {
             _editarFormulario = true;
             Box_DocumentoT.IsEnabled = false;
-            string signo  = Sql.EmpresasObj.ObtenerItem("signo", AppState.EmpresaActiva)?.ToString() ?? "";
-            int    numero = Sql.DocumentosTObj.SiguienteNumeroDocPorEmpresa(signo, AppState.EmpresaActiva);
+            string signo  = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
+            int    numero = Sql.DocumentosTObj.SiguienteNumeroDoc(signo, "sucursal", AppState.SucursalActiva);
             _codigoDocT          = $"{signo.ToUpper()}{numero}";
             Box_DocumentoT.Text      = _codigoDocT;
 
