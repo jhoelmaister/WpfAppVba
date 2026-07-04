@@ -28,9 +28,9 @@ namespace VisorEmpresa
     ///    solo cambia el texto, no el valor ni el filtro.
     ///  - Columna "Movimiento": lectura directa de documentosT.movimiento (sin
     ///    cálculo relativo a ninguna sucursal). Columna "Sucursal": lectura
-    ///    directa de documentosT.sucursalR (la contraparte). Columna
-    ///    "SucursalF": lectura directa de documentosT.sucursal (la sucursal
-    ///    que originó el documento).
+    ///    directa de documentosT.sucursal (la sucursal que originó el
+    ///    documento). Columna "SucursalR": lectura directa de
+    ///    documentosT.sucursalR (la contraparte).
     ///  - El filtro Entradas/Salidas (CboTipoMovimiento) está SIEMPRE habilitado:
     ///    con el combo de Sucursal en UNA sucursal puntual filtra relativo a
     ///    ella (vía origen/destino, igual que antes); en "Todas las sucursales"
@@ -39,9 +39,10 @@ namespace VisorEmpresa
     ///  - El combo de Sucursal (CmbSucursal), cuando apunta a UNA sucursal
     ///    puntual, filtra Grid1 (en CargarTraspasos, en memoria) para mostrar
     ///    únicamente los traspasos donde esa sucursal es la CONTRAPARTE
-    ///    (sucursalR) — no los que ella misma creó. La caché sigue trayendo
-    ///    ambos lados (ConsultasEmpresa.ConectarCacheTraspasos, vía
-    ///    origen/destino); el recorte es solo en la grilla.
+    ///    (columna "SucursalR"/sucursalR) — no los que ella misma creó
+    ///    (columna "Sucursal"/sucursal). La caché sigue trayendo ambos lados
+    ///    (ConsultasEmpresa.ConectarCacheTraspasos, vía origen/destino); el
+    ///    recorte es solo en la grilla.
     /// </summary>
     public partial class TraspasosGeneral : UserControl
     {
@@ -239,8 +240,8 @@ namespace VisorEmpresa
 
                 // Filtro por sucursal puntual (CmbSucursal): Grid1 muestra solo los
                 // traspasos donde la sucursal elegida es la CONTRAPARTE (columna
-                // "Sucursal"/sucursalR) — no los que ella misma creó (columna
-                // "SucursalF"/sucursal).
+                // "SucursalR"/sucursalR) — no los que ella misma creó (columna
+                // "Sucursal"/sucursal).
                 if (haySucursalRef && sucursalR != _sucursalFiltro) continue;
 
                 // Filtro Entradas/Salidas: con una sucursal puntual elegida en

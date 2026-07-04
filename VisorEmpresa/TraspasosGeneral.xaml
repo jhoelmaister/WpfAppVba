@@ -426,7 +426,7 @@
                                         Width="148"/>
 
                     <DataGridTextColumn Header="Sucursal"
-                                        Binding="{Binding SucursalRDesc}"
+                                        Binding="{Binding SucursalDesc}"
                                         Width="*"/>
 
                     <!-- Columna Movimiento con badge -->
@@ -440,8 +440,8 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTextColumn Header="SucursalF"
-                                        Binding="{Binding SucursalDesc}"
+                    <DataGridTextColumn Header="SucursalR"
+                                        Binding="{Binding SucursalRDesc}"
                                         Width="*"/>
 
                     <!-- Columna Estado con badge -->
