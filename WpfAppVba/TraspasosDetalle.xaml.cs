@@ -508,9 +508,14 @@ namespace WpfAppVba
         }
 
         // ─── Buscar artículo (single-select) ─────────────────────────────────
+        // #if !VISOR: ArticulosGeneral (y su cadena Familias/Productos/
+        // Categorías/Industrias/Movimientos/informe Excel, ~28 archivos) no está
+        // vinculada en VisorEmpresa.csproj — innecesario porque este botón ya
+        // queda deshabilitado en modo solo lectura (AplicarModoSoloLectura).
         private void BtnBuscarArticulo_Click(object sender, RoutedEventArgs e)
         {
             if (!_editarFormulario) return;
+#if !VISOR
 
             var filaActual = GridItems.SelectedItem as TraspasoItemFila;
             ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, null, art =>
@@ -543,6 +548,7 @@ namespace WpfAppVba
                 EnfocarColumnaCantidad(filaEnfocar);
                 return true;
             }, contexto: _tituloTab, llamador: this);
+#endif
         }
 
         // Posiciona el cursor en la celda Cantidad de la fila indicada e inicia edición
@@ -566,6 +572,7 @@ namespace WpfAppVba
         private void BtnImportarArticulos_Click(object sender, RoutedEventArgs e)
         {
             if (!_editarFormulario) return;
+#if !VISOR
 
             ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, arts =>
             {
@@ -592,6 +599,7 @@ namespace WpfAppVba
                 GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
                 return true;
             }, null, contexto: _tituloTab, llamador: this);
+#endif
         }
 
         // ─── Nueva línea vacía ────────────────────────────────────────────────

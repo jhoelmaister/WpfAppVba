@@ -245,14 +245,19 @@ namespace WpfAppVba
         private void Box_Numeros_PreviewTextInput(object sender, TextCompositionEventArgs e)
             => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
 
+        // #if !VISOR: TercerosGeneral+TercerosDetalle no están vinculados en
+        // VisorEmpresa.csproj — innecesario porque este botón ya queda
+        // deshabilitado en modo solo lectura (AplicarModoSoloLectura).
         private void BtnBuscarTercero_Click(object sender, RoutedEventArgs e)
         {
+#if !VISOR
             TercerosGeneral.TerceroSeleccionado = null;
             TercerosGeneral.OpenAsDialog(Window.GetWindow(this)!, modoSelector: true, contexto: _tituloTab, llamador: this, onCerrado: () =>
             {
                 if (!string.IsNullOrEmpty(TercerosGeneral.TerceroSeleccionado))
                     Box_Tercero_Identificador.Text = TercerosGeneral.TerceroSeleccionado;
             });
+#endif
         }
 
         // ─── Categoría: primera encontrada (default de una línea nueva) ───────

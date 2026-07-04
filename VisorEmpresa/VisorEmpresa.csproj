@@ -12,6 +12,16 @@
 
     <!-- Versión del visor: independiente de la app principal. -->
     <Version>0.5.0</Version>
+
+    <!-- Símbolo de compilación exclusivo del visor: los formularios Detalle
+         vinculados (PedidosDetalle, etc.) usan #if !VISOR alrededor de los
+         botones "buscar artículo/tercero" (abren ArticulosGeneral/
+         TercerosGeneral, que arrastran una cadena de ~28 archivos ajenos al
+         visor — Familias/Productos/Categorías/Industrias/Movimientos/informe
+         Excel). En modoSoloLectura esos botones ya están deshabilitados
+         (AplicarModoSoloLectura), así que no hace falta vincular esa cadena:
+         el bloque queda vacío solo en la compilación del visor. -->
+    <DefineConstants>$(DefineConstants);VISOR</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

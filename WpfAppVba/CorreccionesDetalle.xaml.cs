@@ -355,8 +355,13 @@ namespace WpfAppVba
             => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
 
         // ─── Buscar artículos (multi-select) ──────────────────────────────────
+        // #if !VISOR: ArticulosGeneral (y su cadena Familias/Productos/
+        // Categorías/Industrias/Movimientos/informe Excel, ~28 archivos) no está
+        // vinculada en VisorEmpresa.csproj — innecesario porque este botón ya
+        // queda deshabilitado en modo solo lectura (AplicarModoSoloLectura).
         private void BtnBuscarArticulos_Click(object sender, RoutedEventArgs e)
         {
+#if !VISOR
             ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, arts =>
             {
                 foreach (var art in arts)
@@ -384,11 +389,13 @@ namespace WpfAppVba
                 GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
                 return true;
             }, null, contexto: _tituloTab, llamador: this);
+#endif
         }
 
         // ─── Buscar artículo (single-select) ─────────────────────────────────
         private void BtnBuscarArticulo_Click(object sender, RoutedEventArgs e)
         {
+#if !VISOR
             var filaActual = GridItems.SelectedItem as CorreccionItemFila;
             ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, null, art =>
             {
@@ -419,6 +426,7 @@ namespace WpfAppVba
                 EnfocarColumnaCantidad(filaEnfocar);
                 return true;
             }, contexto: _tituloTab, llamador: this);
+#endif
         }
 
         // Posiciona el cursor en la celda Cantidad de la fila indicada e inicia edición

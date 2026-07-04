@@ -788,14 +788,19 @@ namespace WpfAppVba
             => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
 
         // ─── Buscar tercero ───────────────────────────────────────────────────
+        // #if !VISOR: TercerosGeneral+TercerosDetalle no están vinculados en
+        // VisorEmpresa.csproj — innecesario porque este botón ya queda
+        // deshabilitado en modo solo lectura (AplicarModoSoloLectura).
         private void BtnBuscarTercero_Click(object sender, RoutedEventArgs e)
         {
+#if !VISOR
             TercerosGeneral.TerceroSeleccionado = null;
             TercerosGeneral.OpenAsDialog(Window.GetWindow(this)!, modoSelector: true, contexto: _tituloTab, llamador: this, onCerrado: () =>
             {
                 if (!string.IsNullOrEmpty(TercerosGeneral.TerceroSeleccionado))
                     Box_Tercero_Identificador.Text = TercerosGeneral.TerceroSeleccionado;
             });
+#endif
         }
 
         // ─── Selección en grid de pedidos ─────────────────────────────────────
@@ -917,8 +922,13 @@ namespace WpfAppVba
         }
 
         // ─── Botones Pedidos ──────────────────────────────────────────────────
+        // #if !VISOR: ArticulosGeneral (y su cadena Familias/Productos/
+        // Categorías/Industrias/Movimientos/informe Excel, ~28 archivos) no está
+        // vinculada en VisorEmpresa.csproj — innecesario porque este botón ya
+        // queda deshabilitado en modo solo lectura (AplicarModoSoloLectura).
         private void BtnImportarArticulos_Click(object sender, RoutedEventArgs e)
         {
+#if !VISOR
             ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, arts =>
             {
                 var precios = ObtenerPreciosConAviso(arts.Select(a => (a.Id, a.Descripcion)));
@@ -946,11 +956,13 @@ namespace WpfAppVba
                 GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
                 return true;
             }, null, contexto: _tituloTab, llamador: this);
+#endif
         }
 
         // ─── Buscar artículo individual (doble clic en ArticulosGeneral) ────────
         private void BtnBuscarArticulo_Click(object sender, RoutedEventArgs e)
         {
+#if !VISOR
             // Guardar referencia a la fila actualmente seleccionada
             var filaActual = GridItems.SelectedItem as PedidoItemFila;
 
@@ -992,6 +1004,7 @@ namespace WpfAppVba
                 EnfocarColumnaCantidad(filaEnfocar);
                 return true;
             }, contexto: _tituloTab, llamador: this);
+#endif
         }
 
         // Posiciona el cursor en la celda Cantidad de la fila indicada e inicia edición
@@ -1270,8 +1283,13 @@ namespace WpfAppVba
         }
 
         // ─── Botones Entregas ─────────────────────────────────────────────────
+        // #if !VISOR: ArticulosGeneral (y su cadena Familias/Productos/
+        // Categorías/Industrias/Movimientos/informe Excel, ~28 archivos) no está
+        // vinculada en VisorEmpresa.csproj — innecesario porque este botón ya
+        // queda deshabilitado en modo solo lectura (AplicarModoSoloLectura).
         private void BtnImportarArticulosEntregas_Click(object sender, RoutedEventArgs e)
         {
+#if !VISOR
             ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, arts =>
             {
                 DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
@@ -1298,10 +1316,12 @@ namespace WpfAppVba
                 GridFocusHelper.EnfocarCeldaSeleccionada(GridEntregas);
                 return true;
             }, null, contexto: _tituloTab, llamador: this);
+#endif
         }
 
         private void BtnBuscarArticuloEntregas_Click(object sender, RoutedEventArgs e)
         {
+#if !VISOR
             var filaActual = GridEntregas.SelectedItem as EntregaItemFila;
             DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
 
@@ -1347,6 +1367,7 @@ namespace WpfAppVba
                     }), System.Windows.Threading.DispatcherPriority.Background);
                 return true;
             }, contexto: _tituloTab, llamador: this);
+#endif
         }
 
         private void BtnNuevaLineaEntrega_Click(object sender, RoutedEventArgs e)
