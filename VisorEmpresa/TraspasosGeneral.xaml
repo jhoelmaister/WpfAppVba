@@ -239,9 +239,10 @@
                         <ComboBox x:Name="CmbSucursal"
                                   Width="180" Height="28" FontSize="12" Margin="0,0,16,0"
                                   SelectionChanged="Filtro_SelectionChanged"/>
-                        <!-- El filtro Entradas/Salidas solo tiene sentido relativo a UNA
-                             sucursal puntual: con "Todas las sucursales" se deshabilita
-                             (ver ActualizarDisponibilidadMovimiento en el code-behind). -->
+                        <!-- El filtro Entradas/Salidas siempre está habilitado: con una
+                             sucursal puntual filtra relativo a ella (origen/destino);
+                             en "Todas las sucursales" filtra directo por el valor
+                             crudo de movimiento (ver CargarTraspasos en el code-behind). -->
                         <TextBlock Text="Movimiento:"
                                    FontSize="12" VerticalAlignment="Center"
                                    Foreground="{DynamicResource ThemeTextoSec}"
@@ -424,6 +425,10 @@
                                         Binding="{Binding FechaStr}"
                                         Width="148"/>
 
+                    <DataGridTextColumn Header="Sucursal"
+                                        Binding="{Binding SucursalRDesc}"
+                                        Width="*"/>
+
                     <!-- Columna Movimiento con badge -->
                     <DataGridTemplateColumn Header="Movimiento" Width="90">
                         <DataGridTemplateColumn.CellTemplate>
@@ -435,7 +440,7 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTextColumn Header="Sucursal"
+                    <DataGridTextColumn Header="SucursalF"
                                         Binding="{Binding SucursalDesc}"
                                         Width="*"/>
 

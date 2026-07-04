@@ -462,7 +462,7 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTextColumn Header="Sucursal"
+                    <DataGridTextColumn Header="SucursalR"
                                         Binding="{Binding SucursalRDesc}"
                                         Width="*"/>
 
