@@ -808,6 +808,7 @@ namespace WpfAppVba
                 Sql.DocumentosTObj.EstablecerItem("origen",      id, origenId);
                 Sql.DocumentosTObj.EstablecerItem("destino",     id, destinoId);
                 Sql.DocumentosTObj.EstablecerItem("sucursal",    id, AppState.SucursalActiva);
+                Sql.DocumentosTObj.EstablecerItem("sucursalR",   id, otroUuid);
                 Sql.DocumentosTObj.EstablecerItem("fecha",       id, fechaFinal);
                 Sql.DocumentosTObj.EstablecerItem("estado",      id, estado);
                 Sql.DocumentosTObj.EstablecerItem("referencia",  id, Box_Referencia.Text.Trim());
@@ -816,7 +817,6 @@ namespace WpfAppVba
                 Sql.DocumentosTObj.EstablecerItem("edicion",     id, DateTime.Now);
                 Sql.DocumentosTObj.EstablecerItem("usuario",     id, AppState.UsuarioActivo);
                 Sql.DocumentosTObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
-                Sql.DocumentosTObj.EstablecerItem("emitido",     id, AppState.SucursalActiva);
 
                 // ── Crear líneas (diferencial: documento nuevo → todas se insertan) ──
                 GuardarLineasTraspaso(id);
@@ -862,6 +862,7 @@ namespace WpfAppVba
 
                 Sql.DocumentosTObj.EstablecerItem("fecha",       docT, fechaFinal);
                 Sql.DocumentosTObj.EstablecerItem(campOtro,      docT, otroUuidE);
+                Sql.DocumentosTObj.EstablecerItem("sucursalR",   docT, otroUuidE);
                 Sql.DocumentosTObj.EstablecerItem("estado",      docT, estado);
                 Sql.DocumentosTObj.EstablecerItem("referencia",  docT, Box_Referencia.Text.Trim());
                 Sql.DocumentosTObj.EstablecerItem("observacion", docT, Box_Observaciones.Text.Trim());
