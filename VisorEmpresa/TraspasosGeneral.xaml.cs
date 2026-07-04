@@ -26,13 +26,16 @@ namespace VisorEmpresa
     ///    sentido con una única sucursal activa fija), pero "pendiente" se
     ///    MUESTRA como "pendiente al revisar" (ver TraspasoFila.EstadoTexto) —
     ///    solo cambia el texto, no el valor ni el filtro.
-    ///  - Sin columna "Movimiento" (salida/entrada) en la grilla: Origen+Destino
-    ///    ya identifican la dirección sin ambigüedad. El filtro Entradas/Salidas
-    ///    (CboTipoMovimiento) se conserva porque sigue siendo útil para acotar la
-    ///    grilla, pero solo tiene un punto de referencia válido cuando el combo
-    ///    de Sucursal apunta a UNA sucursal puntual (se calcula relativo a esa
-    ///    elección, igual que la app principal lo hace relativo a
-    ///    AppState.SucursalActiva); en modo "Todas las sucursales" se deshabilita.
+    ///  - Columna "Movimiento": lectura directa de documentosT.movimiento (sin
+    ///    cálculo relativo a ninguna sucursal — a diferencia del filtro
+    ///    Entradas/Salidas de abajo, que sigue siendo relativo a _sucursalFiltro).
+    ///    Columna "Sucursal": lectura directa de documentosT.sucursal (la
+    ///    sucursal que originó el documento).
+    ///  - El filtro Entradas/Salidas (CboTipoMovimiento) se conserva porque
+    ///    sigue siendo útil para acotar la grilla, pero solo tiene un punto de
+    ///    referencia válido cuando el combo de Sucursal apunta a UNA sucursal
+    ///    puntual (se calcula relativo a esa elección, vía origen/destino,
+    ///    igual que antes); en modo "Todas las sucursales" se deshabilita.
     /// </summary>
     public partial class TraspasosGeneral : UserControl
     {
@@ -242,8 +245,8 @@ namespace VisorEmpresa
 
                 // Filtro Entradas/Salidas: solo se aplica relativo a una sucursal
                 // puntual elegida en CmbSucursal (ver ActualizarDisponibilidadMovimiento).
-                // Sin columna Movimiento en la grilla: Origen/Destino ya identifican
-                // la dirección, así que no hace falta guardar el resultado en la fila.
+                // Sigue siendo relativo a origen/destino — la columna Movimiento de
+                // la grilla es un dato distinto (lectura directa, sin relativizar).
                 if (haySucursalRef)
                 {
                     bool esSalida  = origen  == _sucursalFiltro;
@@ -267,8 +270,9 @@ namespace VisorEmpresa
                 var fechaDocObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
                 DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
 
-                string origenDesc  = Sql.SucursalesObj.ObtenerItem("descripcion", origen)?.ToString()  ?? origen;
-                string destinoDesc = Sql.SucursalesObj.ObtenerItem("descripcion", destino)?.ToString() ?? destino;
+                string sucursal     = Sql.DocumentosTObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
+                string movimiento   = Sql.DocumentosTObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
+                string sucursalDesc = Sql.SucursalesObj.ObtenerItem("descripcion", sucursal)?.ToString() ?? sucursal;
 
                 // Estado: SIEMPRE el valor crudo, sin reinterpretación "pendiente revisar".
                 string estado = Sql.DocumentosTObj.ObtenerItem("estado", id)?.ToString() ?? "";
@@ -278,11 +282,10 @@ namespace VisorEmpresa
                     !string.Equals(estado, filtroEstado, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                // Filtro por búsqueda (origen o destino)
+                // Filtro por búsqueda (sucursal)
                 if (!string.IsNullOrEmpty(busqueda))
                     if (!id.Contains(busqueda) &&
-                        !origenDesc.ToLower().Contains(busqueda) &&
-                        !destinoDesc.ToLower().Contains(busqueda))
+                        !sucursalDesc.ToLower().Contains(busqueda))
                         continue;
 
                 double cant = CalcularCantidad(id);
@@ -292,8 +295,8 @@ namespace VisorEmpresa
                     DocumentoT   = id,
                     Codigo       = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                     FechaStr     = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
-                    OrigenDesc   = origenDesc,
-                    DestinoDesc  = destinoDesc,
+                    Movimiento   = movimiento,
+                    SucursalDesc = sucursalDesc,
                     Estado       = estado,
                     Cantidad     = cant
                 });
@@ -518,14 +521,14 @@ namespace VisorEmpresa
     // ─── Modelos ──────────────────────────────────────────────────────────────
     public class TraspasoFila
     {
-        public int    Linea       { get; set; }
-        public string DocumentoT  { get; set; } = "";
-        public string Codigo      { get; set; } = "";
-        public string FechaStr    { get; set; } = "";
-        public string OrigenDesc  { get; set; } = "";
-        public string DestinoDesc { get; set; } = "";
-        public string Estado      { get; set; } = "";
-        public double Cantidad    { get; set; }
+        public int    Linea        { get; set; }
+        public string DocumentoT   { get; set; } = "";
+        public string Codigo       { get; set; } = "";
+        public string FechaStr     { get; set; } = "";
+        public string Movimiento   { get; set; } = "";
+        public string SucursalDesc { get; set; } = "";
+        public string Estado       { get; set; } = "";
+        public double Cantidad     { get; set; }
 
         /// <summary>Texto mostrado en la columna Estado: "pendiente" se ve como
         /// "pendiente al revisar" (el valor crudo de Estado no cambia, solo el

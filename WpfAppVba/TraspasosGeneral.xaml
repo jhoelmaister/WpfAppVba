@@ -462,12 +462,8 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTextColumn Header="Origen"
-                                        Binding="{Binding OrigenDesc}"
-                                        Width="*"/>
-
-                    <DataGridTextColumn Header="Destino"
-                                        Binding="{Binding DestinoDesc}"
+                    <DataGridTextColumn Header="Sucursal"
+                                        Binding="{Binding SucursalRDesc}"
                                         Width="*"/>
 
                     <!-- Columna Estado con badge -->
