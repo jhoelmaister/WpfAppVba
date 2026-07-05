@@ -281,7 +281,6 @@ namespace VisorEmpresa
                 var fechaDocObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
                 DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
 
-                string sucursal      = Sql.DocumentosTObj.ObtenerItem("sucursal",  id)?.ToString() ?? "";
                 string sucursalDesc  = Sql.SucursalesObj.ObtenerItem("descripcion", sucursal)?.ToString()  ?? sucursal;
                 string sucursalRDesc = Sql.SucursalesObj.ObtenerItem("descripcion", sucursalR)?.ToString() ?? sucursalR;
 
