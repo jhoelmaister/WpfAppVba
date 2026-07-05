@@ -55,7 +55,6 @@ namespace WpfAppVba
                     Codigo        = Sql.DocumentosIObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                     Fecha         = fecha,
                     FechaStr      = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
-                    Referencia    = Sql.DocumentosIObj.ObtenerItem("referencia", id)?.ToString() ?? "",
                     CantidadTotal = cantidad
                 });
             }
@@ -78,7 +77,6 @@ namespace WpfAppVba
                 Codigo        = Sql.DocumentosIObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 Fecha         = fecha,
                 FechaStr      = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
-                Referencia    = Sql.DocumentosIObj.ObtenerItem("referencia", id)?.ToString() ?? "",
                 CantidadTotal = CalcularCantidad(id)
             };
         }
@@ -599,7 +597,6 @@ namespace WpfAppVba
         public string   Codigo        { get; set; } = "";
         public DateTime Fecha         { get; set; }
         public string   FechaStr      { get; set; } = "";
-        public string   Referencia    { get; set; } = "";
         public double   CantidadTotal { get; set; }
     }
 }

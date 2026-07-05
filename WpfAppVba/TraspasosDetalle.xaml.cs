@@ -34,10 +34,6 @@ namespace WpfAppVba
         private readonly string _tituloTab;
         private readonly bool _soloLectura;
         private string _codigoDocT = "";
-        // documentosT.sucursal (quien emite el documento) — en modo nuevo es siempre
-        // la sucursal activa; en modo editar se lee de la base. Usado para decidir si
-        // LblSucursalTipo muestra "Sucursal destino" o "Sucursal origen".
-        private string _sucursalDoc = "";
 
         /// <summary>
         /// ID del documento recién creado (solo en modo "nuevo").
@@ -115,7 +111,9 @@ namespace WpfAppVba
             Box_Hora.Text = fecha.ToString("HH:mm:ss");
 
             // Sucursal opuesta — mostrar codigo, no UUID
-            string otroUuid = Sql.DocumentosTObj.ObtenerItem("sucursalR", _idEditar)?.ToString() ?? "";
+            string tipo    = AppState.TipoMovimiento.ToLower();
+            string campOtro = tipo == "salida" ? "destino" : "origen";
+            string otroUuid  = Sql.DocumentosTObj.ObtenerItem(campOtro, _idEditar)?.ToString() ?? "";
             Box_Sucursal_Identificador.Text = Sql.SucursalesObj.ObtenerItem("codigo", otroUuid)?.ToString() ?? "";
             ActualizarDescripcionSucursal();
 
@@ -128,11 +126,10 @@ namespace WpfAppVba
             Box_Referencia.Text    = Sql.DocumentosTObj.ObtenerItem("referencia",  _idEditar)?.ToString() ?? "";
             Box_Observaciones.Text = Sql.DocumentosTObj.ObtenerItem("observacion", _idEditar)?.ToString() ?? "";
 
-            // Permisos según sucursal emisora ──────────────────────────────────
-            string emisora  = Sql.DocumentosTObj.ObtenerItem("sucursal", _idEditar)?.ToString() ?? "";
+            // Permisos según emitido ─────────────────────────────────────────
+            string emitido  = Sql.DocumentosTObj.ObtenerItem("emitido", _idEditar)?.ToString() ?? "";
             string estadoDB = Sql.DocumentosTObj.ObtenerItem("estado",  _idEditar)?.ToString() ?? "pendiente";
-            bool esLocal    = (emisora == AppState.SucursalActiva);
-            _sucursalDoc    = emisora;
+            bool esLocal    = (emitido == AppState.SucursalActiva);
 
             if (esLocal)
             {
@@ -212,10 +209,9 @@ namespace WpfAppVba
         private void CargarParaNuevo()
         {
             _editarFormulario = true;
-            _sucursalDoc = AppState.SucursalActiva;
             Box_DocumentoT.IsEnabled = false;
-            string signo  = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
-            int    numero = Sql.DocumentosTObj.SiguienteNumeroDoc(signo, "sucursal", AppState.SucursalActiva);
+            string signo  = Sql.EmpresasObj.ObtenerItem("signo", AppState.EmpresaActiva)?.ToString() ?? "";
+            int    numero = Sql.DocumentosTObj.SiguienteNumeroDocPorEmpresa(signo, AppState.EmpresaActiva);
             _codigoDocT          = $"{signo.ToUpper()}{numero}";
             Box_DocumentoT.Text      = _codigoDocT;
 
@@ -273,14 +269,8 @@ namespace WpfAppVba
                 ? new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E))
                 : new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46));
 
-            LblDocNum.Text = Box_DocumentoT.Text;
-
-            // LblSucursalTipo: relativo a documentosT.sucursal (quien emite), no a "tipo"
-            // en sí — si la sucursal activa es quien emite y el movimiento es salida, la
-            // contraparte (Box_Sucursal_Identificador) es el destino; en cualquier otro
-            // caso, es el origen.
-            bool esDestino = _sucursalDoc == AppState.SucursalActiva && tipo == "salida";
-            LblSucursalTipo.Text = esDestino ? "Sucursal destino" : "Sucursal origen";
+            LblDocNum.Text       = Box_DocumentoT.Text;
+            LblSucursalTipo.Text = esSalida ? "Sucursal destino" : "Sucursal origen";
         }
 
         private string ResolverSucursalId()
@@ -476,7 +466,7 @@ namespace WpfAppVba
             string activaCodigo = Sql.SucursalesObj.ObtenerItem("codigo", AppState.SucursalActiva)?.ToString() ?? "";
             if (cod != "" && cod == activaCodigo)
             {
-                MessageBox.Show("No puede seleccionar la sucursal activa como contraparte del traspaso.",
+                MessageBox.Show("No puede seleccionar la sucursal activa como destino/origen.",
                     "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
                 Box_Sucursal_Identificador.Text = "";
                 Box_Sucursal_Descripcion.Text   = "";
@@ -506,7 +496,7 @@ namespace WpfAppVba
                     string activaCodigo = Sql.SucursalesObj.ObtenerItem("codigo", AppState.SucursalActiva)?.ToString() ?? "";
                     if (selCodigo == activaCodigo)
                     {
-                        MessageBox.Show("No puede seleccionar la sucursal activa como contraparte del traspaso.",
+                        MessageBox.Show("No puede seleccionar la sucursal activa como destino/origen.",
                             "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
                         return;
                     }
@@ -802,20 +792,22 @@ namespace WpfAppVba
                 string otroUuid  = ResolverSucursalId();
                 if (string.IsNullOrEmpty(otroUuid))
                 {
-                    string campo = tipo == "salida" ? "sucursal receptora" : "sucursal emisora";
+                    string campo = tipo == "salida" ? "sucursal destino" : "sucursal origen";
                     MessageBox.Show($"Debe asignar una {campo} al documento.", "Consola",
                         MessageBoxButton.OK, MessageBoxImage.Warning);
                     return false;
                 }
+                string origenId  = tipo == "salida"  ? AppState.SucursalActiva : otroUuid;
+                string destinoId = tipo == "entrada" ? AppState.SucursalActiva : otroUuid;
                 string estado    = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "pendiente";
 
                 string id = Guid.NewGuid().ToString();
 
                 Sql.DocumentosTObj.Nuevo(id);
                 Sql.DocumentosTObj.EstablecerItem("codigo",      id, _codigoDocT);
+                Sql.DocumentosTObj.EstablecerItem("origen",      id, origenId);
+                Sql.DocumentosTObj.EstablecerItem("destino",     id, destinoId);
                 Sql.DocumentosTObj.EstablecerItem("sucursal",    id, AppState.SucursalActiva);
-                Sql.DocumentosTObj.EstablecerItem("sucursalR",   id, otroUuid);
-                Sql.DocumentosTObj.EstablecerItem("movimiento",  id, tipo);
                 Sql.DocumentosTObj.EstablecerItem("fecha",       id, fechaFinal);
                 Sql.DocumentosTObj.EstablecerItem("estado",      id, estado);
                 Sql.DocumentosTObj.EstablecerItem("referencia",  id, Box_Referencia.Text.Trim());
@@ -824,6 +816,7 @@ namespace WpfAppVba
                 Sql.DocumentosTObj.EstablecerItem("edicion",     id, DateTime.Now);
                 Sql.DocumentosTObj.EstablecerItem("usuario",     id, AppState.UsuarioActivo);
                 Sql.DocumentosTObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
+                Sql.DocumentosTObj.EstablecerItem("emitido",     id, AppState.SucursalActiva);
 
                 // ── Crear líneas (diferencial: documento nuevo → todas se insertan) ──
                 GuardarLineasTraspaso(id);
@@ -852,6 +845,7 @@ namespace WpfAppVba
                 DateTime fechaFinal = CombinarFechaHora(fechaBase, Box_Hora.Text);
 
                 string tipo     = AppState.TipoMovimiento.ToLower();
+                string campOtro = tipo == "salida" ? "destino" : "origen";
                 string estado   = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "pendiente";
 
                 // Si es "pendiente revisar" guardar como "pendiente" en la DB (igual VBA)
@@ -860,15 +854,14 @@ namespace WpfAppVba
                 string otroUuidE = ResolverSucursalId();
                 if (_editarFormulario && string.IsNullOrEmpty(otroUuidE))
                 {
-                    string campo = tipo == "salida" ? "sucursal receptora" : "sucursal emisora";
+                    string campo = tipo == "salida" ? "sucursal destino" : "sucursal origen";
                     MessageBox.Show($"Debe asignar una {campo} al documento.", "Consola",
                         MessageBoxButton.OK, MessageBoxImage.Warning);
                     return false;
                 }
 
                 Sql.DocumentosTObj.EstablecerItem("fecha",       docT, fechaFinal);
-                Sql.DocumentosTObj.EstablecerItem("sucursalR",   docT, otroUuidE);
-                Sql.DocumentosTObj.EstablecerItem("movimiento",  docT, tipo);
+                Sql.DocumentosTObj.EstablecerItem(campOtro,      docT, otroUuidE);
                 Sql.DocumentosTObj.EstablecerItem("estado",      docT, estado);
                 Sql.DocumentosTObj.EstablecerItem("referencia",  docT, Box_Referencia.Text.Trim());
                 Sql.DocumentosTObj.EstablecerItem("observacion", docT, Box_Observaciones.Text.Trim());

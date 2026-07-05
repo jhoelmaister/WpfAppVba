@@ -169,52 +169,8 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - **Sin herramientas de build en el entorno cloud**: todos los cambios se aplican siguiendo patrones existentes, pero no pueden compilarse ni ejecutarse remotamente. Siempre verificar localmente antes de merge a producción.
 - **`AppState.TipoPedido` y `AppState.TipoMovimiento` son globales**: en `PedidosGeneral.AbrirEditar` se leen del DB antes de abrir la pestaña para garantizar el valor correcto. Si se abrieran dos pestañas de edición simultáneas muy rápido, podría haber condición de carrera (actualmente no es un problema práctico).
 - **`CorreccionesDetalle` ya es pestaña**: usa `OpenAsTab` de ArticulosGeneral para buscar artículos, igual que Pedidos/Traspasos.
-- **Columna `emitido` de `documentosT` sin migrar (pendiente de confirmación del usuario)**: fue renombrada a `sucursal` hace tiempo, pero `TraspasosGeneral.xaml.cs`/`MovimientosGeneral.xaml.cs` (reinterpretación "pendiente revisar") y `TraspasosDetalle.xaml.cs` (permiso de edición `esLocal`) todavía leen `emitido` — siempre vacío, así que probablemente hoy "pendiente" se muestra siempre como "pendiente revisar" y `esLocal` da siempre `false`. Ver sesión 2026-07-05 para el detalle completo.
 
 ## Historial de Cambios por Sesión
-
-### Sesión 2026-07-05 — Migración de `documentosT`: `origen`/`destino` → `sucursal`/`movimiento`/`sucursalR` (rama de trabajo local `claude/company-dashboard-extension-d43hjr`, todo confirmado se pasó a `master`)
-
-> Sesión larga y turno a turno (estilo "problema1"/"problema2"), construida sobre un cambio de esquema que el usuario fue haciendo en SQL Server en el camino (nunca vía DDL de Claude, por convención del proyecto). Afecta tanto `WpfAppVba` (app principal) como **VisorEmpresa**, la app compañera que visualiza la empresa completa (multi-sucursal) reutilizando gran parte del código de `WpfAppVba` vía archivos vinculados en `VisorEmpresa.csproj` — una sola fuente de verdad, sin copias. VisorEmpresa no está documentada en detalle en este archivo (fuera del alcance de esta entrada); ver su `.csproj` para el patrón de vínculos.
-
-#### Cambio de esquema en `documentosT` (hecho por el usuario en SQL Server)
-- `emitido` renombrada a `sucursal` (mismo tipo `UNIQUEIDENTIFIER`, mismo contenido).
-- Nueva columna `movimiento NVARCHAR(255)` (`'entrada'`/`'salida'`).
-- Nueva columna `sucursalR UNIQUEIDENTIFIER` (la sucursal contraparte de `sucursal`).
-- `origen`/`destino` coexistieron un tiempo con las columnas nuevas (para no romper nada mientras se migraba el código) y **se eliminaron de la base más adelante en esta misma sesión** (ver más abajo).
-
-#### Semántica descubierta: `sucursal` no es absoluta, `movimiento` es relativo a quien creó el documento
-- Rastreando `TraspasosDetalle.GuardarNuevo()` se confirmó que `sucursal` = la sucursal que **creó** el traspaso (`AppState.SucursalActiva` de quien lo guardó), no necesariamente el emisor; `sucursalR` = la contraparte; `movimiento` ("entrada"/"salida") es relativo a `sucursal`, no un concepto absoluto como eran `origen`/`destino`.
-- Consecuencia: cualquier código que necesite saber si una sucursal de referencia (no necesariamente quien creó el documento) está enviando o recibiendo tiene que usar la fórmula bidireccional:
-  `esSalida = (sucursal==referencia && movimiento=="salida") || (sucursalR==referencia && movimiento=="entrada")` (e inversa para `esEntrada`). Se aplicó de forma consistente en todos los puntos migrados de esta sesión.
-
-#### Grillas: columnas Origen/Destino reemplazadas por Sucursal/SucursalR/Movimiento
-- **App principal** (`TraspasosGeneral` Grid1): Origen+Destino reemplazadas por una sola columna **"SucursalR"** (dato `sucursalR`, la contraparte); la columna "Movimiento" (badge) existente no cambió.
-- **VisorEmpresa** (`TraspasosGeneral` Grid1): tras varias idas y vueltas terminó en Fecha / **Sucursal** (dato `sucursal`) / **Movimiento** (badge, lectura directa) / **SucursalR** (dato `sucursalR`) / Estado / Cantidad.
-- **Filtro de sucursal puntual** (combo `CmbSucursal` del visor): ya no depende solo de lo que trae la caché — `CargarTraspasos()` filtra Grid1 en memoria para mostrar únicamente los traspasos donde la sucursal elegida es la **contraparte** (`sucursalR`), no los que ella misma creó.
-- **Filtro Entradas/Salidas** (`CboTipoMovimiento` del visor): antes se deshabilitaba en "Todas las sucursales" (no había una única sucursal de referencia); ahora queda siempre habilitado — en ese modo filtra directo por el valor crudo de `movimiento` (sin cálculo relativo).
-
-#### Bug crítico encontrado: `sucursalR` y `movimiento` nunca se escribían
-- `TraspasosDetalle.GuardarNuevo()`/`GuardarEditar()` (archivo compartido/vinculado entre las dos apps) seguían escribiendo `origen`/`destino`/`sucursal`, pero **nunca** `sucursalR` ni `movimiento` — quedaban `NULL` en todo documento nuevo o editado desde que se agregaron esas columnas.
-- Corregido escribiendo ambas junto a `sucursal`, usando la misma variable ya resuelta para el `origen`/`destino` viejo (la sucursal contraparte elegida en el formulario). Los documentos ya existentes en la base quedan con `sucursalR`/`movimiento` en `NULL` hasta que se abran y guarden de nuevo (el fix los backfillea solo en ese momento).
-
-#### `CodigoRegenerator` + numeración de `documentosT`: de "por empresa" a "por sucursal"
-- Antes, `documentosT` era un caso especial: `codigo = signo_empresa + correlativo por empresa`, vía cascada `emitido → sucursales.empresa → empresas.signo` (ver sesión 2026-06-12 más abajo, ya obsoleta).
-- Ahora usa el mismo esquema que `documentosI/P/C/F`: `codigo = signo_sucursal + correlativo por sucursal`, directo sobre `documentosT.sucursal`. Se eliminó `RenumerarTraspasosPorEmpresa` de `CodigoRegenerator` y el método `DataConsulta.SiguienteNumeroDocPorEmpresa` (quedó sin uso).
-- `TraspasosDetalle.CargarParaNuevo()` (numeración al crear un traspaso nuevo) migrado al mismo esquema (`SiguienteNumeroDoc(signo, "sucursal", SucursalActiva)`, igual que Pedidos/Correcciones/Facturas) — antes llamaba a `SiguienteNumeroDocPorEmpresa` con `emitido`, que ya no existía.
-
-#### Crisis en vivo: `origen`/`destino` fueron eliminadas de la base — purga completa
-- El usuario reportó una `SqlException` real en producción: `"Invalid column name 'origen'. Invalid column name 'destino'."` (+ un error de `ORDER BY`/`UNION` en la misma consulta), confirmando que el DROP de esas columnas — anunciado como "más adelante" al principio de la migración — ya se había ejecutado.
-- Se encontraron y migraron **todas** las referencias restantes a `sucursal`/`sucursalR`/`movimiento`:
-  - **SQL crudo contra la base** (tiraba excepción): `VisorEmpresa/ConsultasEmpresa.cs` (`CargarAnios` — además se envolvió el `UNION` en una subconsulta para que el `ORDER BY` no fallara —, `ConectarCacheTraspasos`, `CargarTraspasosInternos`); `WpfAppVba/AppLoader.cs` (`ConectarDocumentos` — **esto rompía la carga de datos de TODA la app principal al iniciar sesión**, para cualquier usuario); `WpfAppVba/PreciosDetalle.xaml.cs` (consulta de traspasos para sugerencia de precios).
-  - **Lógica C# silenciosamente rota** (sin excepción, pero leyendo siempre vacío porque la caché ya no tenía esas columnas): `WpfAppVba/TraspasosGeneral.xaml.cs` (`CargarTraspasos`, `ConstruirFilaTraspaso`, `AbrirEditar`) — consecuencia práctica: **la grilla de Traspasos de la app principal mostraba siempre CERO documentos**, para cualquier usuario; `TraspasosDetalle.xaml.cs` (`CargarParaEditar`); `StockCalculator.cs` (`ContarStock`/`ContarStock2`); `DashboardGeneral.xaml.cs`; `MovimientosGeneral.xaml.cs`; `VisorEmpresa/TraspasosGeneral.xaml.cs` (`CargarTraspasos`, `AbrirVerDetalle`).
-- Fix de compilación (`CS0128`) encontrado por el usuario al compilar localmente: variable `sucursal` duplicada en el mismo scope de `VisorEmpresa/TraspasosGeneral.CargarTraspasos` (remanente de una ronda de edits anterior en esta misma migración).
-
-#### Limpieza final: toda referencia textual a "origen"/"destino"
-- A pedido explícito del usuario, se eliminaron también las últimas referencias que quedaban solo como texto (ya no había lecturas/escrituras de columnas): labels y mensajes de `TraspasosDetalle.xaml.cs` ("Sucursal destino/origen" → "Sucursal receptora/emisora"; "no puede seleccionar... como destino/origen" → "...como contraparte del traspaso"), variables locales de `PreciosDetalle.xaml.cs` (`origen`/`destino` → `emisora`/`receptora`), comentario de ejemplo en `DataConsulta.cs`.
-
-#### Pendiente / no resuelto — decisión del usuario todavía sin confirmar
-- La columna **`emitido`** (renombrada a `sucursal` en una migración anterior a esta sesión) sigue teniendo referencias activas: `WpfAppVba/TraspasosGeneral.xaml.cs` y `MovimientosGeneral.xaml.cs` (reinterpretación "pendiente" → "pendiente revisar"), `TraspasosDetalle.xaml.cs` (permiso de edición vía `esLocal = (emitido == SucursalActiva)`). Como `emitido` ya no existe, esas lecturas siempre devuelven vacío — probablemente `esLocal` da siempre `false` (permisos de edición más restrictivos de lo que deberían) y "pendiente" se muestra siempre como "pendiente revisar" sin importar quién creó el documento. Señalado al usuario más de una vez; **no confirmó todavía** si quiere que se migre también (mismo patrón que el resto: reemplazar por `sucursal`).
 
 ### Sesión 2026-07-02 — Nuevo módulo Facturas (documentosF/facturas/transaccionesF) completo + fixes de guardado en grids y refresco de Tree1 al eliminar, en Facturas/Pedidos/Traspasos/Correcciones (rama de trabajo local `claude/invoices-form-integration-rmvoq8`, todo confirmado se pasó a `master`)
 

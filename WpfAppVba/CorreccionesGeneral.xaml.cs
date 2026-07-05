@@ -172,7 +172,6 @@ namespace WpfAppVba
                     FechaStr      = fechaDoc != default ? $"{fechaDoc:d} {fechaDoc:HH:mm:ss}" : "",
                     Movimiento    = movimiento,
                     Motivo        = motivo,
-                    Referencia    = Sql.DocumentosCObj.ObtenerItem("referencia", id)?.ToString() ?? "",
                     CantidadTotal = cant
                 });
                 totalCant += cant;
@@ -232,9 +231,8 @@ namespace WpfAppVba
                 Codigo        = Sql.DocumentosCObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 Fecha         = fecha,
                 FechaStr      = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
-                Movimiento    = Sql.DocumentosCObj.ObtenerItem("movimiento",  id)?.ToString() ?? "",
-                Motivo        = Sql.DocumentosCObj.ObtenerItem("motivo",      id)?.ToString() ?? "",
-                Referencia    = Sql.DocumentosCObj.ObtenerItem("referencia",  id)?.ToString() ?? "",
+                Movimiento    = Sql.DocumentosCObj.ObtenerItem("movimiento", id)?.ToString() ?? "",
+                Motivo        = Sql.DocumentosCObj.ObtenerItem("motivo",     id)?.ToString() ?? "",
                 CantidadTotal = CalcularCantidad(id)
             };
         }
@@ -516,7 +514,6 @@ namespace WpfAppVba
         public string   FechaStr      { get; set; } = "";
         public string   Movimiento    { get; set; } = "";
         public string   Motivo        { get; set; } = "";
-        public string   Referencia    { get; set; } = "";
         public double   CantidadTotal { get; set; }
     }
 

@@ -135,17 +135,11 @@ namespace WpfAppVba
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
 
-                // Filtrar por sucursal activa según tipo de movimiento. "movimiento" es
-                // relativo a "sucursal" (quien creó el documento, puede ser cualquiera
-                // de los dos lados) — si la sucursal activa es la contraparte
-                // (sucursalR), el sentido se invierte.
-                string sucursal   = Sql.DocumentosTObj.ObtenerItem("sucursal",   id)?.ToString() ?? "";
-                string sucursalR  = Sql.DocumentosTObj.ObtenerItem("sucursalR",  id)?.ToString() ?? "";
-                string movimiento = Sql.DocumentosTObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
-                bool esSalida  = (sucursal  == AppState.SucursalActiva && movimiento == "salida") ||
-                                  (sucursalR == AppState.SucursalActiva && movimiento == "entrada");
-                bool esEntrada = (sucursal  == AppState.SucursalActiva && movimiento == "entrada") ||
-                                  (sucursalR == AppState.SucursalActiva && movimiento == "salida");
+                // Filtrar por sucursal activa según tipo de movimiento
+                string origen  = Sql.DocumentosTObj.ObtenerItem("origen",  id)?.ToString() ?? "";
+                string destino = Sql.DocumentosTObj.ObtenerItem("destino", id)?.ToString() ?? "";
+                bool esSalida  = origen  == AppState.SucursalActiva;
+                bool esEntrada = destino == AppState.SucursalActiva;
 
                 string movActual;
                 if (tipoMov == "salida")
@@ -176,16 +170,14 @@ namespace WpfAppVba
                 var fechaDocObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
                 DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
 
-                // Columna Origen/Destino: la contraparte relativa a la sucursal activa,
-                // no siempre "sucursalR" — si la activa ES sucursalR, la contraparte es
-                // "sucursal".
-                string contraparte = sucursal == AppState.SucursalActiva ? sucursalR : sucursal;
-                string sucursalRDesc = Sql.SucursalesObj.ObtenerItem("descripcion", contraparte)?.ToString() ?? contraparte;
+                string origenDesc  = Sql.SucursalesObj.ObtenerItem("descripcion", origen)?.ToString()  ?? origen;
+                string destinoDesc = Sql.SucursalesObj.ObtenerItem("descripcion", destino)?.ToString() ?? destino;
 
                 string estado  = Sql.DocumentosTObj.ObtenerItem("estado", id)?.ToString() ?? "";
+                string emitido = Sql.DocumentosTObj.ObtenerItem("emitido", id)?.ToString() ?? "";
 
-                // Si fue emitido (sucursal) por otra sucursal y está "pendiente" → "pendiente revisar"
-                if (sucursal != AppState.SucursalActiva && estado == "pendiente")
+                // Si fue emitido por otra sucursal y está "pendiente" → "pendiente revisar"
+                if (emitido != AppState.SucursalActiva && estado == "pendiente")
                     estado = "pendiente revisar";
 
                 // Filtro por estado
@@ -193,24 +185,25 @@ namespace WpfAppVba
                     !string.Equals(estado, filtroEstado, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                // Filtro por búsqueda (la otra sucursal involucrada)
+                // Filtro por búsqueda (origen o destino, no solo "la otra sucursal")
                 if (!string.IsNullOrEmpty(busqueda))
                     if (!id.Contains(busqueda) &&
-                        !sucursalRDesc.ToLower().Contains(busqueda))
+                        !origenDesc.ToLower().Contains(busqueda) &&
+                        !destinoDesc.ToLower().Contains(busqueda))
                         continue;
 
                 double cant = CalcularCantidad(id);
                 lista.Add(new TraspasoFila
                 {
-                    Linea         = linea++,
-                    DocumentoT    = id,
-                    Codigo        = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
-                    FechaStr      = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
-                    Movimiento    = movActual,
-                    SucursalRDesc = sucursalRDesc,
-                    Referencia    = Sql.DocumentosTObj.ObtenerItem("referencia", id)?.ToString() ?? "",
-                    Estado        = estado,
-                    Cantidad      = cant
+                    Linea        = linea++,
+                    DocumentoT   = id,
+                    Codigo       = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
+                    FechaStr     = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
+                    Movimiento   = movActual,
+                    OrigenDesc   = origenDesc,
+                    DestinoDesc  = destinoDesc,
+                    Estado       = estado,
+                    Cantidad     = cant
                 });
                 totalCant += cant;
             }
@@ -270,36 +263,32 @@ namespace WpfAppVba
 
         private TraspasoFila ConstruirFilaTraspaso(string id, int linea)
         {
-            string sucursal   = Sql.DocumentosTObj.ObtenerItem("sucursal",   id)?.ToString() ?? "";
-            string sucursalR  = Sql.DocumentosTObj.ObtenerItem("sucursalR",  id)?.ToString() ?? "";
-            string movimiento = Sql.DocumentosTObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
-            bool esSalida  = (sucursal  == AppState.SucursalActiva && movimiento == "salida") ||
-                              (sucursalR == AppState.SucursalActiva && movimiento == "entrada");
+            string origen  = Sql.DocumentosTObj.ObtenerItem("origen",  id)?.ToString() ?? "";
+            string destino = Sql.DocumentosTObj.ObtenerItem("destino", id)?.ToString() ?? "";
+            bool esSalida  = origen == AppState.SucursalActiva;
 
             var fechaDocObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
             DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
 
-            // Columna Origen/Destino: la contraparte relativa a la sucursal activa,
-            // no siempre "sucursalR" — si la activa ES sucursalR, la contraparte es
-            // "sucursal".
-            string contraparte = sucursal == AppState.SucursalActiva ? sucursalR : sucursal;
-            string sucursalRDesc = Sql.SucursalesObj.ObtenerItem("descripcion", contraparte)?.ToString() ?? contraparte;
+            string origenDesc  = Sql.SucursalesObj.ObtenerItem("descripcion", origen)?.ToString()  ?? origen;
+            string destinoDesc = Sql.SucursalesObj.ObtenerItem("descripcion", destino)?.ToString() ?? destino;
 
             string estado  = Sql.DocumentosTObj.ObtenerItem("estado",  id)?.ToString() ?? "";
-            if (sucursal != AppState.SucursalActiva && estado == "pendiente")
+            string emitido = Sql.DocumentosTObj.ObtenerItem("emitido", id)?.ToString() ?? "";
+            if (emitido != AppState.SucursalActiva && estado == "pendiente")
                 estado = "pendiente revisar";
 
             return new TraspasoFila
             {
-                Linea         = linea,
-                DocumentoT    = id,
-                Codigo        = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
-                FechaStr      = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
-                Movimiento    = esSalida ? "salida" : "entrada",
-                SucursalRDesc = sucursalRDesc,
-                Referencia    = Sql.DocumentosTObj.ObtenerItem("referencia", id)?.ToString() ?? "",
-                Estado        = estado,
-                Cantidad      = CalcularCantidad(id)
+                Linea        = linea,
+                DocumentoT   = id,
+                Codigo       = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
+                FechaStr     = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
+                Movimiento   = esSalida ? "salida" : "entrada",
+                OrigenDesc   = origenDesc,
+                DestinoDesc  = destinoDesc,
+                Estado       = estado,
+                Cantidad     = CalcularCantidad(id)
             };
         }
 
@@ -549,7 +538,7 @@ namespace WpfAppVba
         // ─── Entregar todos ────────────────────────────────────────────────────
         // Cambia el estado de todos los documentosT cargados (sucursal activa + período)
         // que estén en "pendiente" a "entregado". Con verificadores de conexión.
-        // Solo puede afectar documentos emitidos por OTRA sucursal (sucursal != activa):
+        // Solo puede afectar documentos emitidos por OTRA sucursal (emitido != activa):
         // un documento emitido por la sucursal activa lo entrega la sucursal receptora,
         // no quien lo emitió.
         private void BtnEntregarTodos_Click(object sender, RoutedEventArgs e)
@@ -566,10 +555,10 @@ namespace WpfAppVba
                 var idObj = Sql.DocumentosTObj.Mover(i);
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
-                string estado   = Sql.DocumentosTObj.ObtenerItem("estado",   id)?.ToString() ?? "";
-                string sucursal = Sql.DocumentosTObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
+                string estado  = Sql.DocumentosTObj.ObtenerItem("estado",  id)?.ToString() ?? "";
+                string emitido = Sql.DocumentosTObj.ObtenerItem("emitido", id)?.ToString() ?? "";
                 if (string.Equals(estado, "pendiente", StringComparison.OrdinalIgnoreCase) &&
-                    sucursal != AppState.SucursalActiva)
+                    emitido != AppState.SucursalActiva)
                     idsPendientes.Add(id);
             }
 
@@ -614,12 +603,8 @@ namespace WpfAppVba
             string docSel = fila.DocumentoT;
             int    linea  = fila.Linea;
             AppState.EventoFormularioM = "editar";
-            string sucursalDoc   = Sql.DocumentosTObj.ObtenerItem("sucursal",   docSel)?.ToString() ?? "";
-            string sucursalRDoc  = Sql.DocumentosTObj.ObtenerItem("sucursalR", docSel)?.ToString() ?? "";
-            string movimientoDoc = Sql.DocumentosTObj.ObtenerItem("movimiento", docSel)?.ToString() ?? "";
-            bool esSalidaDoc = (sucursalDoc  == AppState.SucursalActiva && movimientoDoc == "salida") ||
-                               (sucursalRDoc == AppState.SucursalActiva && movimientoDoc == "entrada");
-            AppState.TipoMovimiento = esSalidaDoc ? "salida" : "entrada";
+            string origenDoc = Sql.DocumentosTObj.ObtenerItem("origen", docSel)?.ToString() ?? "";
+            AppState.TipoMovimiento = origenDoc == AppState.SucursalActiva ? "salida" : "entrada";
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
             var dlg = new TraspasosDetalle(this, docSel, tituloTab: $"Traspaso {fila.Codigo}");
@@ -644,15 +629,15 @@ namespace WpfAppVba
     // ─── Modelos ──────────────────────────────────────────────────────────────
     public class TraspasoFila
     {
-        public int    Linea         { get; set; }
-        public string DocumentoT    { get; set; } = "";
-        public string Codigo        { get; set; } = "";
-        public string FechaStr      { get; set; } = "";
-        public string Movimiento    { get; set; } = "";
-        public string SucursalRDesc { get; set; } = "";
-        public string Referencia    { get; set; } = "";
-        public string Estado        { get; set; } = "";
-        public double Cantidad      { get; set; }
+        public int    Linea       { get; set; }
+        public string DocumentoT  { get; set; } = "";
+        public string Codigo      { get; set; } = "";
+        public string FechaStr    { get; set; } = "";
+        public string Movimiento  { get; set; } = "";
+        public string OrigenDesc  { get; set; } = "";
+        public string DestinoDesc { get; set; } = "";
+        public string Estado      { get; set; } = "";
+        public double Cantidad    { get; set; }
     }
 
     public class TraspasoDetalleFila

@@ -238,7 +238,7 @@ namespace WpfAppVba.Data
                 $"SELECT * FROM documentosT " +
                 $"WHERE estadof = 'normal' " +
                 $"AND fecha >= '{aper}' AND fecha <= '{cier}' " +
-                $"AND (sucursal = '{suc}' OR sucursalR = '{suc}') " +
+                $"AND (destino = '{suc}' OR origen = '{suc}') " +
                 $"ORDER BY fecha ASC");
 
             // ── Traspasos ─────────────────────────────────────────────────────
@@ -247,7 +247,7 @@ namespace WpfAppVba.Data
                 $"INNER JOIN documentosT AS vg ON vd.documentoT = vg.id " +
                 $"WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
-                $"AND (vg.sucursal = '{suc}' OR vg.sucursalR = '{suc}') " +
+                $"AND (vg.origen = '{suc}' OR vg.destino = '{suc}') " +
                 $"ORDER BY vd.documentoT ASC, vd.indice ASC");
 
             // ── DocumentosC (correcciones de stock) ───────────────────────────

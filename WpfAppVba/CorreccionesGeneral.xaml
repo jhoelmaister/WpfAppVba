@@ -382,10 +382,6 @@
                                         Binding="{Binding Motivo}"
                                         Width="*"/>
 
-                    <DataGridTextColumn Header="Referencia"
-                                        Binding="{Binding Referencia}"
-                                        Width="150"/>
-
                     <DataGridTextColumn Header="Cantidad"
                                         Binding="{Binding CantidadTotal, StringFormat=#\,##0.##}"
                                         Width="80"

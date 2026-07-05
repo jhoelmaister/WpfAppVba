@@ -132,7 +132,7 @@ namespace WpfAppVba.Data
         /// Siguiente número correlativo para documentos cuyo codigo = signo + número
         /// (ej. "A5"). Toma el MAX(número) de TODAS las filas (normal, ocultado o
         /// eliminado) cuyo <paramref name="filtroColumna"/> = <paramref name="filtroValor"/>
-        /// (ej. sucursal/region activa) y devuelve número + 1. No se filtra por
+        /// (ej. sucursal/region/origen activa) y devuelve número + 1. No se filtra por
         /// estadof: un número ya usado no debe reutilizarse aunque su fila se haya
         /// ocultado o eliminado luego.
         /// </summary>
@@ -155,6 +155,39 @@ namespace WpfAppVba.Data
             }
             return max + 1;
         });
+
+        /// <summary>
+        /// Siguiente número correlativo para documentos cuyo codigo = signo + número,
+        /// agrupado por EMPRESA. La empresa se obtiene por la cascada
+        /// emitido (sucursal) → sucursales.empresa. Pensado para documentosT (traspasos).
+        /// No se filtra por estadof: un número ya usado no debe reutilizarse aunque su
+        /// fila se haya ocultado o eliminado luego.
+        /// </summary>
+        public int SiguienteNumeroDocPorEmpresa(string signo, string empresaId)
+        {
+            if (string.IsNullOrEmpty(empresaId)) return 1;
+
+            return SqlRetry.Ejecutar(() =>
+            {
+                var conn = DatabaseConnection.ObtenerConexion();
+                using var cmd = new SqlCommand(
+                    $"SELECT d.codigo FROM {_nombreTabla} AS d " +
+                    $"INNER JOIN sucursales AS s ON s.id = d.emitido " +
+                    $"WHERE s.empresa = @emp", conn);
+                cmd.Parameters.AddWithValue("@emp", empresaId);
+
+                int max = 0;
+                using var rd = cmd.ExecuteReader();
+                while (rd.Read())
+                {
+                    string c = rd[0]?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(signo) && c.StartsWith(signo, StringComparison.OrdinalIgnoreCase))
+                        c = c.Substring(signo.Length);
+                    if (int.TryParse(c, out int n) && n > max) max = n;
+                }
+                return max + 1;
+            });
+        }
 
         /// <summary>
         /// Siguiente número correlativo para documentos cuyo codigo = signo + número,

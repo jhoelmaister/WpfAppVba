@@ -290,37 +290,31 @@ namespace WpfAppVba
                 }
 
                 // ── Traspasos (entradas/salidas; cada lado se gatea con la apertura
-                //    propia de SU sucursal, que puede diferir entre sucursal y
-                //    sucursalR). "movimiento" es relativo a "sucursal" (quien creó
-                //    el documento): salida = sucursal envía, sucursalR recibe.
+                //    propia de SU sucursal, que puede diferir entre origen y destino) ─
                 var tTraspasos = EjecutarConsulta(
-                    "SELECT vg.sucursal, vg.sucursalR, vg.movimiento, vd.articulo, vd.cantidad, vg.fecha " +
+                    "SELECT vg.origen, vg.destino, vd.articulo, vd.cantidad, vg.fecha " +
                     "FROM traspasos AS vd " +
                     "INNER JOIN documentosT AS vg ON vd.documentoT = vg.id " +
                     "WHERE vg.estadof = 'normal' AND vg.fecha <= @ahora " +
-                    "AND (EXISTS (SELECT 1 FROM sucursales so WHERE so.id = vg.sucursal  AND so.estadof = 'normal' AND so.empresa = @emp) " +
-                    "  OR EXISTS (SELECT 1 FROM sucursales sd WHERE sd.id = vg.sucursalR AND sd.estadof = 'normal' AND sd.empresa = @emp))",
+                    "AND (EXISTS (SELECT 1 FROM sucursales so WHERE so.id = vg.origen  AND so.estadof = 'normal' AND so.empresa = @emp) " +
+                    "  OR EXISTS (SELECT 1 FROM sucursales sd WHERE sd.id = vg.destino AND sd.estadof = 'normal' AND sd.empresa = @emp))",
                     ("@emp", emp), ("@ahora", ahora));
 
                 foreach (DataRow fila in tTraspasos.Rows)
                 {
-                    string sucursal   = Texto(fila, "sucursal");
-                    string sucursalR  = Texto(fila, "sucursalR");
-                    string movimiento = Texto(fila, "movimiento").ToLower();
-                    string articulo   = Texto(fila, "articulo");
-                    double cantidad   = Numero(fila, "cantidad");
-                    DateTime fecha    = Fecha(fila, "fecha");
+                    string origen   = Texto(fila, "origen");
+                    string destino  = Texto(fila, "destino");
+                    string articulo = Texto(fila, "articulo");
+                    double cantidad = Numero(fila, "cantidad");
+                    DateTime fecha  = Fecha(fila, "fecha");
 
-                    if (sucursal == sucursalR) continue;
+                    if (origen == destino) continue;
 
-                    string emisora   = movimiento == "salida" ? sucursal : sucursalR;
-                    string receptora = movimiento == "salida" ? sucursalR : sucursal;
+                    if (aperturaFecha.TryGetValue(origen, out var apOrigen) && fecha >= apOrigen)
+                        Obtener(porSucursal, origen, articulo).Salidas += cantidad;
 
-                    if (aperturaFecha.TryGetValue(emisora, out var apEmisora) && fecha >= apEmisora)
-                        Obtener(porSucursal, emisora, articulo).Salidas += cantidad;
-
-                    if (aperturaFecha.TryGetValue(receptora, out var apReceptora) && fecha >= apReceptora)
-                        Obtener(porSucursal, receptora, articulo).Entradas += cantidad;
+                    if (aperturaFecha.TryGetValue(destino, out var apDestino) && fecha >= apDestino)
+                        Obtener(porSucursal, destino, articulo).Entradas += cantidad;
                 }
 
                 // ── Correcciones (ingreso suma, egreso resta) ────────────────────

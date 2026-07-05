@@ -95,41 +95,6 @@
             </Border>
         </DataTemplate>
 
-        <!-- ── Badge de movimiento (entrada/salida), lectura directa de la
-             columna "movimiento" — sin cálculo relativo a ninguna sucursal ── -->
-        <DataTemplate x:Key="BadgeMovimiento">
-            <Border Padding="6,2" CornerRadius="4" HorizontalAlignment="Left">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Movimiento}" Value="salida">
-                                <Setter Property="Background" Value="#FEE2E2"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Movimiento}" Value="entrada">
-                                <Setter Property="Background" Value="#D1FAE5"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                        <Setter Property="Background" Value="{DynamicResource ThemeBgReadOnly}"/>
-                    </Style>
-                </Border.Style>
-                <TextBlock Text="{Binding Movimiento}" FontSize="11" FontWeight="SemiBold">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Movimiento}" Value="salida">
-                                    <Setter Property="Foreground" Value="#991B1B"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Movimiento}" Value="entrada">
-                                    <Setter Property="Foreground" Value="#065F46"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-            </Border>
-        </DataTemplate>
-
     </UserControl.Resources>
 
     <Grid>
@@ -239,10 +204,11 @@
                         <ComboBox x:Name="CmbSucursal"
                                   Width="180" Height="28" FontSize="12" Margin="0,0,16,0"
                                   SelectionChanged="Filtro_SelectionChanged"/>
-                        <!-- El filtro Entradas/Salidas siempre está habilitado: con una
-                             sucursal puntual filtra relativo a ella (origen/destino);
-                             en "Todas las sucursales" filtra directo por el valor
-                             crudo de movimiento (ver CargarTraspasos en el code-behind). -->
+                        <!-- El filtro Entradas/Salidas solo tiene sentido relativo a UNA
+                             sucursal puntual: con "Todas las sucursales" se deshabilita
+                             (ver ActualizarDisponibilidadMovimiento en el code-behind).
+                             Sin columna Movimiento en la grilla (Origen/Destino ya
+                             identifican la dirección sin ambigüedad). -->
                         <TextBlock Text="Movimiento:"
                                    FontSize="12" VerticalAlignment="Center"
                                    Foreground="{DynamicResource ThemeTextoSec}"
@@ -425,23 +391,12 @@
                                         Binding="{Binding FechaStr}"
                                         Width="148"/>
 
-                    <DataGridTextColumn Header="Sucursal"
-                                        Binding="{Binding SucursalDesc}"
+                    <DataGridTextColumn Header="Origen"
+                                        Binding="{Binding OrigenDesc}"
                                         Width="*"/>
 
-                    <!-- Columna Movimiento con badge -->
-                    <DataGridTemplateColumn Header="Movimiento" Width="90">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <ContentPresenter Content="{Binding}"
-                                                  ContentTemplate="{StaticResource BadgeMovimiento}"
-                                                  Margin="4,0" VerticalAlignment="Center"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-
-                    <DataGridTextColumn Header="SucursalR"
-                                        Binding="{Binding SucursalRDesc}"
+                    <DataGridTextColumn Header="Destino"
+                                        Binding="{Binding DestinoDesc}"
                                         Width="*"/>
 
                     <!-- Columna Estado con badge -->

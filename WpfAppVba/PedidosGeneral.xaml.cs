@@ -195,7 +195,6 @@ namespace WpfAppVba
                     FechaStr    = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                     Movimiento  = movDoc,
                     TerceroDesc = terceroDesc,
-                    Referencia  = Sql.DocumentosPObj.ObtenerItem("referencia", id)?.ToString() ?? "",
                     Estado      = estado,
                     Cuenta      = estadoC,
                     Cantidad    = cant,
@@ -290,7 +289,6 @@ namespace WpfAppVba
                 FechaStr    = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                 Movimiento  = movDoc,
                 TerceroDesc = terceroDesc,
-                Referencia  = Sql.DocumentosPObj.ObtenerItem("referencia", id)?.ToString() ?? "",
                 Estado      = estado,
                 Cuenta      = estadoC,
                 Cantidad    = CalcularCantidad(id),
@@ -607,7 +605,6 @@ namespace WpfAppVba
         public string FechaStr    { get; set; } = "";
         public string Movimiento  { get; set; } = "";
         public string TerceroDesc { get; set; } = "";
-        public string Referencia  { get; set; } = "";
         public string Estado      { get; set; } = "";
         public string Cuenta      { get; set; } = "";
         public double Cantidad    { get; set; }

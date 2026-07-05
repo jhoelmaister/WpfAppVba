@@ -89,21 +89,12 @@ namespace WpfAppVba.Data
                 var articuloObj = Sql.TraspasosObj.ObtenerItem("articulo", id);
                 if (articuloObj?.ToString() != codigo) continue;
 
-                // "movimiento" es relativo a "sucursalDoc" (quien creó el documento,
-                // puede ser cualquiera de los dos lados) — si la sucursal activa es
-                // la contraparte (sucursalRDoc), el sentido se invierte.
-                string sucursalDoc   = Sql.DocumentosTObj.ObtenerItem("sucursal",   documentoT)?.ToString() ?? "";
-                string sucursalRDoc  = Sql.DocumentosTObj.ObtenerItem("sucursalR",  documentoT)?.ToString() ?? "";
-                string movimientoDoc = Sql.DocumentosTObj.ObtenerItem("movimiento", documentoT)?.ToString() ?? "";
+                string origen  = Sql.DocumentosTObj.ObtenerItem("origen",  documentoT)?.ToString() ?? "";
+                string destino = Sql.DocumentosTObj.ObtenerItem("destino", documentoT)?.ToString() ?? "";
                 double cantidad = Convert.ToDouble(Sql.TraspasosObj.ObtenerItem("cantidad", id) ?? 0);
 
-                bool esSalidaLocal  = (sucursalDoc  == sucursal && movimientoDoc == "salida") ||
-                                      (sucursalRDoc == sucursal && movimientoDoc == "entrada");
-                bool esEntradaLocal = (sucursalDoc  == sucursal && movimientoDoc == "entrada") ||
-                                      (sucursalRDoc == sucursal && movimientoDoc == "salida");
-
-                if (esSalidaLocal)  salidas  += cantidad;
-                if (esEntradaLocal) entradas += cantidad;
+                if (origen == sucursal && destino != sucursal) salidas  += cantidad;
+                if (destino == sucursal && origen != sucursal) entradas += cantidad;
             }
 
             // ── Correcciones (ingreso suma, egreso resta) ────────────────────
@@ -210,21 +201,12 @@ namespace WpfAppVba.Data
                 var articuloObj = Sql.TraspasosObj.ObtenerItem("articulo", id);
                 if (articuloObj?.ToString() != codigo) continue;
 
-                // "movimiento" es relativo a "sucursalDoc" (quien creó el documento,
-                // puede ser cualquiera de los dos lados) — si la sucursal activa es
-                // la contraparte (sucursalRDoc), el sentido se invierte.
-                string sucursalDoc   = Sql.DocumentosTObj.ObtenerItem("sucursal",   documentoT)?.ToString() ?? "";
-                string sucursalRDoc  = Sql.DocumentosTObj.ObtenerItem("sucursalR",  documentoT)?.ToString() ?? "";
-                string movimientoDoc = Sql.DocumentosTObj.ObtenerItem("movimiento", documentoT)?.ToString() ?? "";
+                string origen  = Sql.DocumentosTObj.ObtenerItem("origen",  documentoT)?.ToString() ?? "";
+                string destino = Sql.DocumentosTObj.ObtenerItem("destino", documentoT)?.ToString() ?? "";
                 double cantidad = Convert.ToDouble(Sql.TraspasosObj.ObtenerItem("cantidad", id) ?? 0);
 
-                bool esSalidaLocal  = (sucursalDoc  == sucursal && movimientoDoc == "salida") ||
-                                      (sucursalRDoc == sucursal && movimientoDoc == "entrada");
-                bool esEntradaLocal = (sucursalDoc  == sucursal && movimientoDoc == "entrada") ||
-                                      (sucursalRDoc == sucursal && movimientoDoc == "salida");
-
-                if (esSalidaLocal)  salidas  += cantidad;
-                if (esEntradaLocal) entradas += cantidad;
+                if (origen == sucursal && destino != sucursal) salidas  += cantidad;
+                if (destino == sucursal && origen != sucursal) entradas += cantidad;
             }
 
             // ── Correcciones (ingreso suma, egreso resta) ────────────────────
