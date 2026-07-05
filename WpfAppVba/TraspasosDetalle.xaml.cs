@@ -34,6 +34,10 @@ namespace WpfAppVba
         private readonly string _tituloTab;
         private readonly bool _soloLectura;
         private string _codigoDocT = "";
+        // documentosT.sucursal (quien emite el documento) — en modo nuevo es siempre
+        // la sucursal activa; en modo editar se lee de la base. Usado para decidir si
+        // LblSucursalTipo muestra "Sucursal destino" o "Sucursal origen".
+        private string _sucursalDoc = "";
 
         /// <summary>
         /// ID del documento recién creado (solo en modo "nuevo").
@@ -128,6 +132,7 @@ namespace WpfAppVba
             string emisora  = Sql.DocumentosTObj.ObtenerItem("sucursal", _idEditar)?.ToString() ?? "";
             string estadoDB = Sql.DocumentosTObj.ObtenerItem("estado",  _idEditar)?.ToString() ?? "pendiente";
             bool esLocal    = (emisora == AppState.SucursalActiva);
+            _sucursalDoc    = emisora;
 
             if (esLocal)
             {
@@ -207,6 +212,7 @@ namespace WpfAppVba
         private void CargarParaNuevo()
         {
             _editarFormulario = true;
+            _sucursalDoc = AppState.SucursalActiva;
             Box_DocumentoT.IsEnabled = false;
             string signo  = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
             int    numero = Sql.DocumentosTObj.SiguienteNumeroDoc(signo, "sucursal", AppState.SucursalActiva);
@@ -267,8 +273,14 @@ namespace WpfAppVba
                 ? new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E))
                 : new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46));
 
-            LblDocNum.Text       = Box_DocumentoT.Text;
-            LblSucursalTipo.Text = esSalida ? "Sucursal receptora" : "Sucursal emisora";
+            LblDocNum.Text = Box_DocumentoT.Text;
+
+            // LblSucursalTipo: relativo a documentosT.sucursal (quien emite), no a "tipo"
+            // en sí — si la sucursal activa es quien emite y el movimiento es salida, la
+            // contraparte (Box_Sucursal_Identificador) es el destino; en cualquier otro
+            // caso, es el origen.
+            bool esDestino = _sucursalDoc == AppState.SucursalActiva && tipo == "salida";
+            LblSucursalTipo.Text = esDestino ? "Sucursal destino" : "Sucursal origen";
         }
 
         private string ResolverSucursalId()

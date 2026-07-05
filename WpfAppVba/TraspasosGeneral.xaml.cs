@@ -204,6 +204,7 @@ namespace WpfAppVba
                     FechaStr      = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                     Movimiento    = movActual,
                     SucursalRDesc = sucursalRDesc,
+                    Referencia    = Sql.DocumentosTObj.ObtenerItem("referencia", id)?.ToString() ?? "",
                     Estado        = estado,
                     Cantidad      = cant
                 });
@@ -288,6 +289,7 @@ namespace WpfAppVba
                 FechaStr      = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                 Movimiento    = esSalida ? "salida" : "entrada",
                 SucursalRDesc = sucursalRDesc,
+                Referencia    = Sql.DocumentosTObj.ObtenerItem("referencia", id)?.ToString() ?? "",
                 Estado        = estado,
                 Cantidad      = CalcularCantidad(id)
             };
@@ -640,6 +642,7 @@ namespace WpfAppVba
         public string FechaStr      { get; set; } = "";
         public string Movimiento    { get; set; } = "";
         public string SucursalRDesc { get; set; } = "";
+        public string Referencia    { get; set; } = "";
         public string Estado        { get; set; } = "";
         public double Cantidad      { get; set; }
     }
