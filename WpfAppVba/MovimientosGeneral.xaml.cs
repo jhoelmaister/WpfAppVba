@@ -160,9 +160,8 @@ namespace WpfAppVba
                 string sucursalDoc   = Sql.DocumentosTObj.ObtenerItem("sucursal",   docT)?.ToString() ?? "";
                 string sucursalRDoc  = Sql.DocumentosTObj.ObtenerItem("sucursalR",  docT)?.ToString() ?? "";
                 string movimientoDoc = Sql.DocumentosTObj.ObtenerItem("movimiento", docT)?.ToString() ?? "";
-                string emitido = Sql.DocumentosTObj.ObtenerItem("emitido",  docT)?.ToString() ?? "";
 
-                if (emitido != AppState.SucursalActiva && estado == "pendiente")
+                if (sucursalDoc != AppState.SucursalActiva && estado == "pendiente")
                     estado = "pendiente revisar";
 
                 // "movimiento" es relativo a "sucursalDoc" (quien creó el documento) —

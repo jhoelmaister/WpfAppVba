@@ -179,10 +179,9 @@ namespace WpfAppVba
                 string sucursalRDesc = Sql.SucursalesObj.ObtenerItem("descripcion", sucursalR)?.ToString() ?? sucursalR;
 
                 string estado  = Sql.DocumentosTObj.ObtenerItem("estado", id)?.ToString() ?? "";
-                string emitido = Sql.DocumentosTObj.ObtenerItem("emitido", id)?.ToString() ?? "";
 
-                // Si fue emitido por otra sucursal y está "pendiente" → "pendiente revisar"
-                if (emitido != AppState.SucursalActiva && estado == "pendiente")
+                // Si fue emitido (sucursal) por otra sucursal y está "pendiente" → "pendiente revisar"
+                if (sucursal != AppState.SucursalActiva && estado == "pendiente")
                     estado = "pendiente revisar";
 
                 // Filtro por estado
@@ -278,8 +277,7 @@ namespace WpfAppVba
             string sucursalRDesc = Sql.SucursalesObj.ObtenerItem("descripcion", sucursalR)?.ToString() ?? sucursalR;
 
             string estado  = Sql.DocumentosTObj.ObtenerItem("estado",  id)?.ToString() ?? "";
-            string emitido = Sql.DocumentosTObj.ObtenerItem("emitido", id)?.ToString() ?? "";
-            if (emitido != AppState.SucursalActiva && estado == "pendiente")
+            if (sucursal != AppState.SucursalActiva && estado == "pendiente")
                 estado = "pendiente revisar";
 
             return new TraspasoFila
@@ -541,7 +539,7 @@ namespace WpfAppVba
         // ─── Entregar todos ────────────────────────────────────────────────────
         // Cambia el estado de todos los documentosT cargados (sucursal activa + período)
         // que estén en "pendiente" a "entregado". Con verificadores de conexión.
-        // Solo puede afectar documentos emitidos por OTRA sucursal (emitido != activa):
+        // Solo puede afectar documentos emitidos por OTRA sucursal (sucursal != activa):
         // un documento emitido por la sucursal activa lo entrega la sucursal receptora,
         // no quien lo emitió.
         private void BtnEntregarTodos_Click(object sender, RoutedEventArgs e)
@@ -558,10 +556,10 @@ namespace WpfAppVba
                 var idObj = Sql.DocumentosTObj.Mover(i);
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
-                string estado  = Sql.DocumentosTObj.ObtenerItem("estado",  id)?.ToString() ?? "";
-                string emitido = Sql.DocumentosTObj.ObtenerItem("emitido", id)?.ToString() ?? "";
+                string estado   = Sql.DocumentosTObj.ObtenerItem("estado",   id)?.ToString() ?? "";
+                string sucursal = Sql.DocumentosTObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
                 if (string.Equals(estado, "pendiente", StringComparison.OrdinalIgnoreCase) &&
-                    emitido != AppState.SucursalActiva)
+                    sucursal != AppState.SucursalActiva)
                     idsPendientes.Add(id);
             }
 

@@ -124,10 +124,10 @@ namespace WpfAppVba
             Box_Referencia.Text    = Sql.DocumentosTObj.ObtenerItem("referencia",  _idEditar)?.ToString() ?? "";
             Box_Observaciones.Text = Sql.DocumentosTObj.ObtenerItem("observacion", _idEditar)?.ToString() ?? "";
 
-            // Permisos según emitido ─────────────────────────────────────────
-            string emitido  = Sql.DocumentosTObj.ObtenerItem("emitido", _idEditar)?.ToString() ?? "";
+            // Permisos según sucursal emisora ──────────────────────────────────
+            string emisora  = Sql.DocumentosTObj.ObtenerItem("sucursal", _idEditar)?.ToString() ?? "";
             string estadoDB = Sql.DocumentosTObj.ObtenerItem("estado",  _idEditar)?.ToString() ?? "pendiente";
-            bool esLocal    = (emitido == AppState.SucursalActiva);
+            bool esLocal    = (emisora == AppState.SucursalActiva);
 
             if (esLocal)
             {
