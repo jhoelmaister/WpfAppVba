@@ -268,7 +268,7 @@ namespace WpfAppVba
                 : new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46));
 
             LblDocNum.Text       = Box_DocumentoT.Text;
-            LblSucursalTipo.Text = esSalida ? "Sucursal destino" : "Sucursal origen";
+            LblSucursalTipo.Text = esSalida ? "Sucursal receptora" : "Sucursal emisora";
         }
 
         private string ResolverSucursalId()
@@ -464,7 +464,7 @@ namespace WpfAppVba
             string activaCodigo = Sql.SucursalesObj.ObtenerItem("codigo", AppState.SucursalActiva)?.ToString() ?? "";
             if (cod != "" && cod == activaCodigo)
             {
-                MessageBox.Show("No puede seleccionar la sucursal activa como destino/origen.",
+                MessageBox.Show("No puede seleccionar la sucursal activa como contraparte del traspaso.",
                     "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
                 Box_Sucursal_Identificador.Text = "";
                 Box_Sucursal_Descripcion.Text   = "";
@@ -494,7 +494,7 @@ namespace WpfAppVba
                     string activaCodigo = Sql.SucursalesObj.ObtenerItem("codigo", AppState.SucursalActiva)?.ToString() ?? "";
                     if (selCodigo == activaCodigo)
                     {
-                        MessageBox.Show("No puede seleccionar la sucursal activa como destino/origen.",
+                        MessageBox.Show("No puede seleccionar la sucursal activa como contraparte del traspaso.",
                             "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
                         return;
                     }
@@ -790,7 +790,7 @@ namespace WpfAppVba
                 string otroUuid  = ResolverSucursalId();
                 if (string.IsNullOrEmpty(otroUuid))
                 {
-                    string campo = tipo == "salida" ? "sucursal destino" : "sucursal origen";
+                    string campo = tipo == "salida" ? "sucursal receptora" : "sucursal emisora";
                     MessageBox.Show($"Debe asignar una {campo} al documento.", "Consola",
                         MessageBoxButton.OK, MessageBoxImage.Warning);
                     return false;
@@ -848,7 +848,7 @@ namespace WpfAppVba
                 string otroUuidE = ResolverSucursalId();
                 if (_editarFormulario && string.IsNullOrEmpty(otroUuidE))
                 {
-                    string campo = tipo == "salida" ? "sucursal destino" : "sucursal origen";
+                    string campo = tipo == "salida" ? "sucursal receptora" : "sucursal emisora";
                     MessageBox.Show($"Debe asignar una {campo} al documento.", "Consola",
                         MessageBoxButton.OK, MessageBoxImage.Warning);
                     return false;

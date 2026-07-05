@@ -313,14 +313,14 @@ namespace WpfAppVba
 
                     if (sucursal == sucursalR) continue;
 
-                    string origen  = movimiento == "salida" ? sucursal : sucursalR;
-                    string destino = movimiento == "salida" ? sucursalR : sucursal;
+                    string emisora   = movimiento == "salida" ? sucursal : sucursalR;
+                    string receptora = movimiento == "salida" ? sucursalR : sucursal;
 
-                    if (aperturaFecha.TryGetValue(origen, out var apOrigen) && fecha >= apOrigen)
-                        Obtener(porSucursal, origen, articulo).Salidas += cantidad;
+                    if (aperturaFecha.TryGetValue(emisora, out var apEmisora) && fecha >= apEmisora)
+                        Obtener(porSucursal, emisora, articulo).Salidas += cantidad;
 
-                    if (aperturaFecha.TryGetValue(destino, out var apDestino) && fecha >= apDestino)
-                        Obtener(porSucursal, destino, articulo).Entradas += cantidad;
+                    if (aperturaFecha.TryGetValue(receptora, out var apReceptora) && fecha >= apReceptora)
+                        Obtener(porSucursal, receptora, articulo).Entradas += cantidad;
                 }
 
                 // ── Correcciones (ingreso suma, egreso resta) ────────────────────

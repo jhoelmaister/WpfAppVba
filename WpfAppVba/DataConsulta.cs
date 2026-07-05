@@ -132,7 +132,7 @@ namespace WpfAppVba.Data
         /// Siguiente número correlativo para documentos cuyo codigo = signo + número
         /// (ej. "A5"). Toma el MAX(número) de TODAS las filas (normal, ocultado o
         /// eliminado) cuyo <paramref name="filtroColumna"/> = <paramref name="filtroValor"/>
-        /// (ej. sucursal/region/origen activa) y devuelve número + 1. No se filtra por
+        /// (ej. sucursal/region activa) y devuelve número + 1. No se filtra por
         /// estadof: un número ya usado no debe reutilizarse aunque su fila se haya
         /// ocultado o eliminado luego.
         /// </summary>
