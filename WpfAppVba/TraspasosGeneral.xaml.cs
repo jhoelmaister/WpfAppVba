@@ -176,7 +176,11 @@ namespace WpfAppVba
                 var fechaDocObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
                 DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
 
-                string sucursalRDesc = Sql.SucursalesObj.ObtenerItem("descripcion", sucursalR)?.ToString() ?? sucursalR;
+                // Columna Origen/Destino: la contraparte relativa a la sucursal activa,
+                // no siempre "sucursalR" — si la activa ES sucursalR, la contraparte es
+                // "sucursal".
+                string contraparte = sucursal == AppState.SucursalActiva ? sucursalR : sucursal;
+                string sucursalRDesc = Sql.SucursalesObj.ObtenerItem("descripcion", contraparte)?.ToString() ?? contraparte;
 
                 string estado  = Sql.DocumentosTObj.ObtenerItem("estado", id)?.ToString() ?? "";
 
@@ -275,7 +279,11 @@ namespace WpfAppVba
             var fechaDocObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
             DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
 
-            string sucursalRDesc = Sql.SucursalesObj.ObtenerItem("descripcion", sucursalR)?.ToString() ?? sucursalR;
+            // Columna Origen/Destino: la contraparte relativa a la sucursal activa,
+            // no siempre "sucursalR" — si la activa ES sucursalR, la contraparte es
+            // "sucursal".
+            string contraparte = sucursal == AppState.SucursalActiva ? sucursalR : sucursal;
+            string sucursalRDesc = Sql.SucursalesObj.ObtenerItem("descripcion", contraparte)?.ToString() ?? contraparte;
 
             string estado  = Sql.DocumentosTObj.ObtenerItem("estado",  id)?.ToString() ?? "";
             if (sucursal != AppState.SucursalActiva && estado == "pendiente")
