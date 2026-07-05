@@ -290,25 +290,31 @@ namespace WpfAppVba
                 }
 
                 // ── Traspasos (entradas/salidas; cada lado se gatea con la apertura
-                //    propia de SU sucursal, que puede diferir entre origen y destino) ─
+                //    propia de SU sucursal, que puede diferir entre sucursal y
+                //    sucursalR). "movimiento" es relativo a "sucursal" (quien creó
+                //    el documento): salida = sucursal envía, sucursalR recibe.
                 var tTraspasos = EjecutarConsulta(
-                    "SELECT vg.origen, vg.destino, vd.articulo, vd.cantidad, vg.fecha " +
+                    "SELECT vg.sucursal, vg.sucursalR, vg.movimiento, vd.articulo, vd.cantidad, vg.fecha " +
                     "FROM traspasos AS vd " +
                     "INNER JOIN documentosT AS vg ON vd.documentoT = vg.id " +
                     "WHERE vg.estadof = 'normal' AND vg.fecha <= @ahora " +
-                    "AND (EXISTS (SELECT 1 FROM sucursales so WHERE so.id = vg.origen  AND so.estadof = 'normal' AND so.empresa = @emp) " +
-                    "  OR EXISTS (SELECT 1 FROM sucursales sd WHERE sd.id = vg.destino AND sd.estadof = 'normal' AND sd.empresa = @emp))",
+                    "AND (EXISTS (SELECT 1 FROM sucursales so WHERE so.id = vg.sucursal  AND so.estadof = 'normal' AND so.empresa = @emp) " +
+                    "  OR EXISTS (SELECT 1 FROM sucursales sd WHERE sd.id = vg.sucursalR AND sd.estadof = 'normal' AND sd.empresa = @emp))",
                     ("@emp", emp), ("@ahora", ahora));
 
                 foreach (DataRow fila in tTraspasos.Rows)
                 {
-                    string origen   = Texto(fila, "origen");
-                    string destino  = Texto(fila, "destino");
-                    string articulo = Texto(fila, "articulo");
-                    double cantidad = Numero(fila, "cantidad");
-                    DateTime fecha  = Fecha(fila, "fecha");
+                    string sucursal   = Texto(fila, "sucursal");
+                    string sucursalR  = Texto(fila, "sucursalR");
+                    string movimiento = Texto(fila, "movimiento").ToLower();
+                    string articulo   = Texto(fila, "articulo");
+                    double cantidad   = Numero(fila, "cantidad");
+                    DateTime fecha    = Fecha(fila, "fecha");
 
-                    if (origen == destino) continue;
+                    if (sucursal == sucursalR) continue;
+
+                    string origen  = movimiento == "salida" ? sucursal : sucursalR;
+                    string destino = movimiento == "salida" ? sucursalR : sucursal;
 
                     if (aperturaFecha.TryGetValue(origen, out var apOrigen) && fecha >= apOrigen)
                         Obtener(porSucursal, origen, articulo).Salidas += cantidad;

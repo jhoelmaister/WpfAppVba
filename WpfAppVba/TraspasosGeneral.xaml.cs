@@ -135,12 +135,17 @@ namespace WpfAppVba
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
 
-                // Filtrar por sucursal activa según tipo de movimiento
-                string origen  = Sql.DocumentosTObj.ObtenerItem("origen",  id)?.ToString() ?? "";
-                string destino = Sql.DocumentosTObj.ObtenerItem("destino", id)?.ToString() ?? "";
-                string sucursalR = Sql.DocumentosTObj.ObtenerItem("sucursalR", id)?.ToString() ?? "";
-                bool esSalida  = origen  == AppState.SucursalActiva;
-                bool esEntrada = destino == AppState.SucursalActiva;
+                // Filtrar por sucursal activa según tipo de movimiento. "movimiento" es
+                // relativo a "sucursal" (quien creó el documento, puede ser cualquiera
+                // de los dos lados) — si la sucursal activa es la contraparte
+                // (sucursalR), el sentido se invierte.
+                string sucursal   = Sql.DocumentosTObj.ObtenerItem("sucursal",   id)?.ToString() ?? "";
+                string sucursalR  = Sql.DocumentosTObj.ObtenerItem("sucursalR",  id)?.ToString() ?? "";
+                string movimiento = Sql.DocumentosTObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
+                bool esSalida  = (sucursal  == AppState.SucursalActiva && movimiento == "salida") ||
+                                  (sucursalR == AppState.SucursalActiva && movimiento == "entrada");
+                bool esEntrada = (sucursal  == AppState.SucursalActiva && movimiento == "entrada") ||
+                                  (sucursalR == AppState.SucursalActiva && movimiento == "salida");
 
                 string movActual;
                 if (tipoMov == "salida")
@@ -261,9 +266,11 @@ namespace WpfAppVba
 
         private TraspasoFila ConstruirFilaTraspaso(string id, int linea)
         {
-            string origen    = Sql.DocumentosTObj.ObtenerItem("origen",    id)?.ToString() ?? "";
-            string sucursalR = Sql.DocumentosTObj.ObtenerItem("sucursalR", id)?.ToString() ?? "";
-            bool esSalida  = origen == AppState.SucursalActiva;
+            string sucursal   = Sql.DocumentosTObj.ObtenerItem("sucursal",   id)?.ToString() ?? "";
+            string sucursalR  = Sql.DocumentosTObj.ObtenerItem("sucursalR",  id)?.ToString() ?? "";
+            string movimiento = Sql.DocumentosTObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
+            bool esSalida  = (sucursal  == AppState.SucursalActiva && movimiento == "salida") ||
+                              (sucursalR == AppState.SucursalActiva && movimiento == "entrada");
 
             var fechaDocObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
             DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
@@ -599,8 +606,12 @@ namespace WpfAppVba
             string docSel = fila.DocumentoT;
             int    linea  = fila.Linea;
             AppState.EventoFormularioM = "editar";
-            string origenDoc = Sql.DocumentosTObj.ObtenerItem("origen", docSel)?.ToString() ?? "";
-            AppState.TipoMovimiento = origenDoc == AppState.SucursalActiva ? "salida" : "entrada";
+            string sucursalDoc   = Sql.DocumentosTObj.ObtenerItem("sucursal",   docSel)?.ToString() ?? "";
+            string sucursalRDoc  = Sql.DocumentosTObj.ObtenerItem("sucursalR", docSel)?.ToString() ?? "";
+            string movimientoDoc = Sql.DocumentosTObj.ObtenerItem("movimiento", docSel)?.ToString() ?? "";
+            bool esSalidaDoc = (sucursalDoc  == AppState.SucursalActiva && movimientoDoc == "salida") ||
+                               (sucursalRDoc == AppState.SucursalActiva && movimientoDoc == "entrada");
+            AppState.TipoMovimiento = esSalidaDoc ? "salida" : "entrada";
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
             var dlg = new TraspasosDetalle(this, docSel, tituloTab: $"Traspaso {fila.Codigo}");

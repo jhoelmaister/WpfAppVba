@@ -32,16 +32,17 @@ namespace VisorEmpresa
     ///    documento). Columna "SucursalR": lectura directa de
     ///    documentosT.sucursalR (la contraparte).
     ///  - El filtro Entradas/Salidas (CboTipoMovimiento) está SIEMPRE habilitado:
-    ///    con el combo de Sucursal en UNA sucursal puntual filtra relativo a
-    ///    ella (vía origen/destino, igual que antes); en "Todas las sucursales"
-    ///    no hay una única referencia, así que filtra directo por el valor
-    ///    crudo de movimiento (ver CargarTraspasos).
+    ///    con el combo de Sucursal en UNA sucursal puntual filtra relativo a ella
+    ///    ("movimiento" es relativo a "sucursal", quien creó el documento — si la
+    ///    sucursal elegida es la contraparte, sucursalR, el sentido se invierte);
+    ///    en "Todas las sucursales" no hay una única referencia, así que filtra
+    ///    directo por el valor crudo de movimiento (ver CargarTraspasos).
     ///  - El combo de Sucursal (CmbSucursal), cuando apunta a UNA sucursal
     ///    puntual, filtra Grid1 (en CargarTraspasos, en memoria) para mostrar
     ///    únicamente los traspasos donde esa sucursal es la CONTRAPARTE
     ///    (columna "SucursalR"/sucursalR) — no los que ella misma creó
     ///    (columna "Sucursal"/sucursal). La caché sigue trayendo ambos lados
-    ///    (ConsultasEmpresa.ConectarCacheTraspasos, vía origen/destino); el
+    ///    (ConsultasEmpresa.ConectarCacheTraspasos, vía sucursal/sucursalR); el
     ///    recorte es solo en la grilla.
     /// </summary>
     public partial class TraspasosGeneral : UserControl
@@ -233,10 +234,9 @@ namespace VisorEmpresa
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
 
-                string origen     = Sql.DocumentosTObj.ObtenerItem("origen",     id)?.ToString() ?? "";
-                string destino    = Sql.DocumentosTObj.ObtenerItem("destino",    id)?.ToString() ?? "";
-                string movimiento = Sql.DocumentosTObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
+                string sucursal   = Sql.DocumentosTObj.ObtenerItem("sucursal",   id)?.ToString() ?? "";
                 string sucursalR  = Sql.DocumentosTObj.ObtenerItem("sucursalR",  id)?.ToString() ?? "";
+                string movimiento = Sql.DocumentosTObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
 
                 // Filtro por sucursal puntual (CmbSucursal): Grid1 muestra solo los
                 // traspasos donde la sucursal elegida es la CONTRAPARTE (columna
@@ -245,13 +245,18 @@ namespace VisorEmpresa
                 if (haySucursalRef && sucursalR != _sucursalFiltro) continue;
 
                 // Filtro Entradas/Salidas: con una sucursal puntual elegida en
-                // CmbSucursal, filtra relativo a ella (origen/destino, igual que
-                // antes). En "Todas las sucursales" no hay una única referencia,
-                // así que filtra directo por el valor crudo de movimiento.
+                // CmbSucursal, filtra relativo a ella. "movimiento" es relativo a
+                // "sucursal" (quien creó el documento) — como el filtro de arriba ya
+                // garantiza que la sucursal elegida es siempre la contraparte
+                // (sucursalR), el sentido se invierte. En "Todas las sucursales" no
+                // hay una única referencia, así que filtra directo por el valor
+                // crudo de movimiento.
                 if (haySucursalRef)
                 {
-                    bool esSalida  = origen  == _sucursalFiltro;
-                    bool esEntrada = destino == _sucursalFiltro;
+                    bool esSalida  = (sucursal  == _sucursalFiltro && movimiento == "salida") ||
+                                     (sucursalR == _sucursalFiltro && movimiento == "entrada");
+                    bool esEntrada = (sucursal  == _sucursalFiltro && movimiento == "entrada") ||
+                                     (sucursalR == _sucursalFiltro && movimiento == "salida");
 
                     if (tipoMov == "salida"  && !esSalida)  continue;
                     if (tipoMov == "entrada" && !esEntrada) continue;
@@ -447,19 +452,21 @@ namespace VisorEmpresa
         // único campo "Sucursal" (la opuesta a AppState.TipoMovimiento): con una
         // sucursal puntual elegida en CmbSucursal se usa como referencia (igual
         // que la app principal usa AppState.SucursalActiva); en "Todas las
-        // sucursales" no hay una única referencia — se asume "salida" (el campo
-        // Sucursal del detalle mostrará el destino), ya que la grilla ya muestra
-        // Origen+Destino sin ambigüedad antes de abrir el detalle.
+        // sucursales" no hay una única referencia — se asume "salida".
         private void AbrirVerDetalle()
         {
             if (Grid1.SelectedItem is not TraspasoFila fila) return;
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
 
-            string origen = Sql.DocumentosTObj.ObtenerItem("origen", fila.DocumentoT)?.ToString() ?? "";
+            string sucursalDoc   = Sql.DocumentosTObj.ObtenerItem("sucursal",   fila.DocumentoT)?.ToString() ?? "";
+            string sucursalRDoc  = Sql.DocumentosTObj.ObtenerItem("sucursalR",  fila.DocumentoT)?.ToString() ?? "";
+            string movimientoDoc = Sql.DocumentosTObj.ObtenerItem("movimiento", fila.DocumentoT)?.ToString() ?? "";
             bool haySucursalRef = !string.IsNullOrEmpty(_sucursalFiltro);
+            bool esSalidaDoc = (sucursalDoc  == _sucursalFiltro && movimientoDoc == "salida") ||
+                               (sucursalRDoc == _sucursalFiltro && movimientoDoc == "entrada");
             AppState.TipoMovimiento = haySucursalRef
-                ? (origen == _sucursalFiltro ? "salida" : "entrada")
+                ? (esSalidaDoc ? "salida" : "entrada")
                 : "salida";
             AppState.EventoFormularioM = "editar";
 

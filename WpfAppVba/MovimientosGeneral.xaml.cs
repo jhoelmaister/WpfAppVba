@@ -157,16 +157,19 @@ namespace WpfAppVba
 
                 string docT    = Sql.TraspasosObj.ObtenerItem("documentoT", id)?.ToString() ?? "";
                 string estado  = Sql.DocumentosTObj.ObtenerItem("estado",   docT)?.ToString() ?? "";
-                string origen  = Sql.DocumentosTObj.ObtenerItem("origen",   docT)?.ToString() ?? "";
-                string destino = Sql.DocumentosTObj.ObtenerItem("destino",  docT)?.ToString() ?? "";
+                string sucursalDoc   = Sql.DocumentosTObj.ObtenerItem("sucursal",   docT)?.ToString() ?? "";
+                string sucursalRDoc  = Sql.DocumentosTObj.ObtenerItem("sucursalR",  docT)?.ToString() ?? "";
+                string movimientoDoc = Sql.DocumentosTObj.ObtenerItem("movimiento", docT)?.ToString() ?? "";
                 string emitido = Sql.DocumentosTObj.ObtenerItem("emitido",  docT)?.ToString() ?? "";
 
                 if (emitido != AppState.SucursalActiva && estado == "pendiente")
                     estado = "pendiente revisar";
 
-                string movimiento = (origen == AppState.SucursalActiva &&
-                                     destino != AppState.SucursalActiva)
-                                    ? "salida" : "entrada";
+                // "movimiento" es relativo a "sucursalDoc" (quien creó el documento) —
+                // si la sucursal activa es la contraparte (sucursalRDoc), se invierte.
+                bool esSalida = (sucursalDoc  == AppState.SucursalActiva && movimientoDoc == "salida") ||
+                                (sucursalRDoc == AppState.SucursalActiva && movimientoDoc == "entrada");
+                string movimiento = esSalida ? "salida" : "entrada";
 
                 var fechaObj   = Sql.DocumentosTObj.ObtenerItem("fecha", docT);
                 DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : default;

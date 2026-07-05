@@ -165,19 +165,26 @@ namespace WpfAppVba
 
                 string docT = Sql.TraspasosObj.ObtenerItem("documentoT", id)?.ToString() ?? "";
                 if (docT == "") continue;
-                string origen  = Sql.DocumentosTObj.ObtenerItem("origen",  docT)?.ToString() ?? "";
-                string destino = Sql.DocumentosTObj.ObtenerItem("destino", docT)?.ToString() ?? "";
+                string sucursalDoc   = Sql.DocumentosTObj.ObtenerItem("sucursal",   docT)?.ToString() ?? "";
+                string sucursalRDoc  = Sql.DocumentosTObj.ObtenerItem("sucursalR",  docT)?.ToString() ?? "";
+                string movimientoDoc = Sql.DocumentosTObj.ObtenerItem("movimiento", docT)?.ToString() ?? "";
                 double cant = ConvertirCantidad(Sql.TraspasosObj.ObtenerItem("cantidad", id));
                 string art  = Sql.TraspasosObj.ObtenerItem("articulo", id)?.ToString() ?? "";
                 DateTime? fecha = ConvertirFecha(Sql.DocumentosTObj.ObtenerItem("fecha", docT));
 
-                // Salida: la sucursal activa es el origen. Entrada: es el destino.
-                if (origen == suc)
+                // "movimiento" es relativo a "sucursalDoc" (quien creó el documento) —
+                // si la sucursal activa es la contraparte (sucursalRDoc), se invierte.
+                bool esSalida  = (sucursalDoc  == suc && movimientoDoc == "salida") ||
+                                 (sucursalRDoc == suc && movimientoDoc == "entrada");
+                bool esEntrada = (sucursalDoc  == suc && movimientoDoc == "entrada") ||
+                                 (sucursalRDoc == suc && movimientoDoc == "salida");
+
+                if (esSalida)
                 {
                     totSalida += cant;
                     Acumular(incSalida, cant, fecha, art, docT);
                 }
-                else if (destino == suc)
+                else if (esEntrada)
                 {
                     totEntrada += cant;
                     Acumular(incEntrada, cant, fecha, art, docT);

@@ -109,22 +109,24 @@ namespace VisorEmpresa
         {
             var anios = new List<int>();
             var tabla = EjecutarConsulta(
-                "SELECT DISTINCT YEAR(vg.fecha) AS anio FROM documentosP vg " +
-                "INNER JOIN sucursales s ON s.id = vg.sucursal " +
-                "WHERE vg.estadof = 'normal' AND s.estadof = 'normal' AND s.empresa = @emp " +
-                "UNION " +
-                "SELECT DISTINCT YEAR(vg.fecha) FROM documentosC vg " +
-                "INNER JOIN sucursales s ON s.id = vg.sucursal " +
-                "WHERE vg.estadof = 'normal' AND s.estadof = 'normal' AND s.empresa = @emp " +
-                "UNION " +
-                "SELECT DISTINCT YEAR(vg.fecha) FROM documentosF vg " +
-                "INNER JOIN sucursales s ON s.id = vg.sucursal " +
-                "WHERE vg.estadof = 'normal' AND s.estadof = 'normal' AND s.empresa = @emp " +
-                "UNION " +
-                "SELECT DISTINCT YEAR(vg.fecha) FROM documentosT vg " +
-                "WHERE vg.estadof = 'normal' " +
-                "AND (EXISTS (SELECT 1 FROM sucursales so WHERE so.id = vg.origen  AND so.estadof = 'normal' AND so.empresa = @emp) " +
-                "  OR EXISTS (SELECT 1 FROM sucursales sd WHERE sd.id = vg.destino AND sd.estadof = 'normal' AND sd.empresa = @emp)) " +
+                "SELECT anio FROM (" +
+                "  SELECT DISTINCT YEAR(vg.fecha) AS anio FROM documentosP vg " +
+                "  INNER JOIN sucursales s ON s.id = vg.sucursal " +
+                "  WHERE vg.estadof = 'normal' AND s.estadof = 'normal' AND s.empresa = @emp " +
+                "  UNION " +
+                "  SELECT DISTINCT YEAR(vg.fecha) FROM documentosC vg " +
+                "  INNER JOIN sucursales s ON s.id = vg.sucursal " +
+                "  WHERE vg.estadof = 'normal' AND s.estadof = 'normal' AND s.empresa = @emp " +
+                "  UNION " +
+                "  SELECT DISTINCT YEAR(vg.fecha) FROM documentosF vg " +
+                "  INNER JOIN sucursales s ON s.id = vg.sucursal " +
+                "  WHERE vg.estadof = 'normal' AND s.estadof = 'normal' AND s.empresa = @emp " +
+                "  UNION " +
+                "  SELECT DISTINCT YEAR(vg.fecha) FROM documentosT vg " +
+                "  WHERE vg.estadof = 'normal' " +
+                "  AND (EXISTS (SELECT 1 FROM sucursales so WHERE so.id = vg.sucursal  AND so.estadof = 'normal' AND so.empresa = @emp) " +
+                "    OR EXISTS (SELECT 1 FROM sucursales sd WHERE sd.id = vg.sucursalR AND sd.estadof = 'normal' AND sd.empresa = @emp)) " +
+                ") AS combinado " +
                 "ORDER BY anio DESC",
                 ("@emp", EmpresaSegura(empresa)));
             foreach (DataRow fila in tabla.Rows)
@@ -238,10 +240,11 @@ namespace VisorEmpresa
         }
 
         /// <summary>
-        /// Traspasos internos del año: unidades y documentos donde el origen o el
-        /// destino pertenece a la empresa. A nivel de empresa las "entradas" y
-        /// "salidas" se cancelan entre sí, por eso se muestran como un único
-        /// total de movimiento interno (se excluyen auto-traspasos origen=destino).
+        /// Traspasos internos del año: unidades y documentos donde la sucursal o la
+        /// contraparte (sucursalR) pertenece a la empresa. A nivel de empresa las
+        /// "entradas" y "salidas" se cancelan entre sí, por eso se muestran como un
+        /// único total de movimiento interno (se excluyen auto-traspasos
+        /// sucursal=sucursalR).
         /// </summary>
         public static (double Unidades, int Documentos) CargarTraspasosInternos(
             string empresa, int anio)
@@ -249,20 +252,20 @@ namespace VisorEmpresa
             var (desde, hasta) = RangoAnio(anio);
 
             // Mismo criterio por-lado que CargarDocsTraspasos: un traspaso cuenta si
-            // AL MENOS un lado (origen o destino) pertenece a la empresa y está
+            // AL MENOS un lado (sucursal o sucursalR) pertenece a la empresa y está
             // posterior a la apertura de ESA sucursal.
             var tabla = EjecutarConsulta(
                 "SELECT ISNULL(SUM(vd.cantidad), 0) AS cantidad, " +
                 "       COUNT(DISTINCT vg.id) AS documentos " +
                 "FROM traspasos vd " +
                 "INNER JOIN documentosT vg ON vd.documentoT = vg.id " +
-                "LEFT JOIN sucursales so ON so.id = vg.origen  AND so.estadof = 'normal' " +
-                "LEFT JOIN sucursales sd ON sd.id = vg.destino AND sd.estadof = 'normal' " +
-                "LEFT JOIN " + SubconsultaApertura + " apo ON apo.sucursal = vg.origen " +
-                "LEFT JOIN " + SubconsultaApertura + " apd ON apd.sucursal = vg.destino " +
+                "LEFT JOIN sucursales so ON so.id = vg.sucursal  AND so.estadof = 'normal' " +
+                "LEFT JOIN sucursales sd ON sd.id = vg.sucursalR AND sd.estadof = 'normal' " +
+                "LEFT JOIN " + SubconsultaApertura + " apo ON apo.sucursal = vg.sucursal " +
+                "LEFT JOIN " + SubconsultaApertura + " apd ON apd.sucursal = vg.sucursalR " +
                 "WHERE vg.estadof = 'normal' " +
                 "AND vg.fecha >= @desde AND vg.fecha <= @hasta " +
-                "AND vg.origen <> vg.destino " +
+                "AND vg.sucursal <> vg.sucursalR " +
                 "AND ( (so.empresa = @emp AND vg.fecha >= COALESCE(apo.fecha, so.fecha)) " +
                 "   OR (sd.empresa = @emp AND vg.fecha >= COALESCE(apd.fecha, sd.fecha)) )",
                 ("@emp", EmpresaSegura(empresa)), ("@desde", desde), ("@hasta", hasta));
@@ -321,7 +324,7 @@ namespace VisorEmpresa
         }
 
         /// <summary>
-        /// Puebla Sql.DocumentosTObj + Sql.TraspasosObj. Cada lado (origen/destino)
+        /// Puebla Sql.DocumentosTObj + Sql.TraspasosObj. Cada lado (sucursal/sucursalR)
         /// se corta con la apertura de SU propia sucursal, igual con una sucursal
         /// puntual o con toda la empresa.
         /// </summary>
@@ -334,17 +337,17 @@ namespace VisorEmpresa
             bool porSucursal = !string.IsNullOrEmpty(sucursalId);
 
             string condLado = porSucursal
-                ? $"AND ( (vg.origen = '{sucursalId}' AND vg.fecha >= COALESCE(apo.fecha, so.fecha)) " +
-                  $"   OR (vg.destino = '{sucursalId}' AND vg.fecha >= COALESCE(apd.fecha, sd.fecha)) ) "
+                ? $"AND ( (vg.sucursal = '{sucursalId}' AND vg.fecha >= COALESCE(apo.fecha, so.fecha)) " +
+                  $"   OR (vg.sucursalR = '{sucursalId}' AND vg.fecha >= COALESCE(apd.fecha, sd.fecha)) ) "
                 : $"AND ( (so.empresa = '{emp}' AND vg.fecha >= COALESCE(apo.fecha, so.fecha)) " +
                   $"   OR (sd.empresa = '{emp}' AND vg.fecha >= COALESCE(apd.fecha, sd.fecha)) ) ";
 
             Sql.DocumentosTObj.Conectar("documentosT",
                 "SELECT vg.* FROM documentosT AS vg " +
-                "LEFT JOIN sucursales AS so ON so.id = vg.origen  AND so.estadof = 'normal' " +
-                "LEFT JOIN sucursales AS sd ON sd.id = vg.destino AND sd.estadof = 'normal' " +
-                "LEFT JOIN " + SubconsultaApertura + " apo ON apo.sucursal = vg.origen " +
-                "LEFT JOIN " + SubconsultaApertura + " apd ON apd.sucursal = vg.destino " +
+                "LEFT JOIN sucursales AS so ON so.id = vg.sucursal  AND so.estadof = 'normal' " +
+                "LEFT JOIN sucursales AS sd ON sd.id = vg.sucursalR AND sd.estadof = 'normal' " +
+                "LEFT JOIN " + SubconsultaApertura + " apo ON apo.sucursal = vg.sucursal " +
+                "LEFT JOIN " + SubconsultaApertura + " apd ON apd.sucursal = vg.sucursalR " +
                 "WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
                 condLado +
@@ -353,10 +356,10 @@ namespace VisorEmpresa
             Sql.TraspasosObj.Conectar("traspasos",
                 "SELECT vd.* FROM traspasos AS vd " +
                 "INNER JOIN documentosT AS vg ON vd.documentoT = vg.id " +
-                "LEFT JOIN sucursales AS so ON so.id = vg.origen  AND so.estadof = 'normal' " +
-                "LEFT JOIN sucursales AS sd ON sd.id = vg.destino AND sd.estadof = 'normal' " +
-                "LEFT JOIN " + SubconsultaApertura + " apo ON apo.sucursal = vg.origen " +
-                "LEFT JOIN " + SubconsultaApertura + " apd ON apd.sucursal = vg.destino " +
+                "LEFT JOIN sucursales AS so ON so.id = vg.sucursal  AND so.estadof = 'normal' " +
+                "LEFT JOIN sucursales AS sd ON sd.id = vg.sucursalR AND sd.estadof = 'normal' " +
+                "LEFT JOIN " + SubconsultaApertura + " apo ON apo.sucursal = vg.sucursal " +
+                "LEFT JOIN " + SubconsultaApertura + " apd ON apd.sucursal = vg.sucursalR " +
                 "WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
                 condLado +

@@ -111,9 +111,7 @@ namespace WpfAppVba
             Box_Hora.Text = fecha.ToString("HH:mm:ss");
 
             // Sucursal opuesta — mostrar codigo, no UUID
-            string tipo    = AppState.TipoMovimiento.ToLower();
-            string campOtro = tipo == "salida" ? "destino" : "origen";
-            string otroUuid  = Sql.DocumentosTObj.ObtenerItem(campOtro, _idEditar)?.ToString() ?? "";
+            string otroUuid = Sql.DocumentosTObj.ObtenerItem("sucursalR", _idEditar)?.ToString() ?? "";
             Box_Sucursal_Identificador.Text = Sql.SucursalesObj.ObtenerItem("codigo", otroUuid)?.ToString() ?? "";
             ActualizarDescripcionSucursal();
 
@@ -797,18 +795,15 @@ namespace WpfAppVba
                         MessageBoxButton.OK, MessageBoxImage.Warning);
                     return false;
                 }
-                string origenId  = tipo == "salida"  ? AppState.SucursalActiva : otroUuid;
-                string destinoId = tipo == "entrada" ? AppState.SucursalActiva : otroUuid;
                 string estado    = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "pendiente";
 
                 string id = Guid.NewGuid().ToString();
 
                 Sql.DocumentosTObj.Nuevo(id);
                 Sql.DocumentosTObj.EstablecerItem("codigo",      id, _codigoDocT);
-                Sql.DocumentosTObj.EstablecerItem("origen",      id, origenId);
-                Sql.DocumentosTObj.EstablecerItem("destino",     id, destinoId);
                 Sql.DocumentosTObj.EstablecerItem("sucursal",    id, AppState.SucursalActiva);
                 Sql.DocumentosTObj.EstablecerItem("sucursalR",   id, otroUuid);
+                Sql.DocumentosTObj.EstablecerItem("movimiento",  id, tipo);
                 Sql.DocumentosTObj.EstablecerItem("fecha",       id, fechaFinal);
                 Sql.DocumentosTObj.EstablecerItem("estado",      id, estado);
                 Sql.DocumentosTObj.EstablecerItem("referencia",  id, Box_Referencia.Text.Trim());
@@ -845,7 +840,6 @@ namespace WpfAppVba
                 DateTime fechaFinal = CombinarFechaHora(fechaBase, Box_Hora.Text);
 
                 string tipo     = AppState.TipoMovimiento.ToLower();
-                string campOtro = tipo == "salida" ? "destino" : "origen";
                 string estado   = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "pendiente";
 
                 // Si es "pendiente revisar" guardar como "pendiente" en la DB (igual VBA)
@@ -861,8 +855,8 @@ namespace WpfAppVba
                 }
 
                 Sql.DocumentosTObj.EstablecerItem("fecha",       docT, fechaFinal);
-                Sql.DocumentosTObj.EstablecerItem(campOtro,      docT, otroUuidE);
                 Sql.DocumentosTObj.EstablecerItem("sucursalR",   docT, otroUuidE);
+                Sql.DocumentosTObj.EstablecerItem("movimiento",  docT, tipo);
                 Sql.DocumentosTObj.EstablecerItem("estado",      docT, estado);
                 Sql.DocumentosTObj.EstablecerItem("referencia",  docT, Box_Referencia.Text.Trim());
                 Sql.DocumentosTObj.EstablecerItem("observacion", docT, Box_Observaciones.Text.Trim());
