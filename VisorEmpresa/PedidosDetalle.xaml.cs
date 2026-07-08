@@ -6,19 +6,20 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using WpfAppVba;
 using WpfAppVba.Data;
 
-namespace WpfAppVba
+namespace VisorEmpresa
 {
+    /// <summary>
+    /// Duplicado de WpfAppVba.PedidosDetalle para el visor: siempre de SOLO
+    /// LECTURA (sin Guardar ni edición), abierto desde VisorEmpresa.PedidosGeneral
+    /// para "ver documento".
+    /// </summary>
     public partial class PedidosDetalle : UserControl
     {
         public event Action? Cerrando;
         private static SqlData Sql => SqlData.Instance;
-        // object en vez de PedidosGeneral: VisorEmpresa.PedidosGeneral (su grilla de
-        // solo-lectura propia) no es del mismo tipo que el de la app principal, y
-        // _padre no se usa dentro de esta clase — object evita que el visor deba
-        // vincular también el PedidosGeneral completo de la app principal solo para
-        // satisfacer este parámetro.
         private readonly object? _padre;
         private readonly string _idEditar;
 
@@ -103,6 +104,23 @@ namespace WpfAppVba
             _cambioPedido    = false;
             _cambioTrasaccion= false;
             _cambioEntrega   = false;
+
+            AplicarModoSoloLectura();
+        }
+
+        // ─── Modo solo lectura: sin Guardar ni edición ────────────────────────
+        private void AplicarModoSoloLectura()
+        {
+            BtnGuardar.Visibility              = Visibility.Collapsed;
+            BtnCancelar.Content                = "Cerrar";
+            PanelCamposCabecera.IsEnabled      = false;
+            Box_Observaciones.IsEnabled        = false;
+            PanelBotonesArticulos.IsEnabled     = false;
+            PanelBotonesTrasacciones.IsEnabled  = false;
+            PanelBotonesEntregas.IsEnabled      = false;
+            GridItems.IsReadOnly               = true;
+            GridTrasacciones.IsReadOnly         = true;
+            GridEntregas.IsReadOnly             = true;
         }
 
         // ─── Modo nuevo ───────────────────────────────────────────────────────

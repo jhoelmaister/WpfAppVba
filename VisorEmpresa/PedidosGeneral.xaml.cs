@@ -492,7 +492,7 @@ namespace VisorEmpresa
             AppState.TipoPedido     = Sql.DocumentosPObj.ObtenerItem("tipo",       fila.DocumentoP)?.ToString() ?? "rapido";
 
             string titulo = $"Pedido {fila.Codigo}";
-            var dlg = new PedidosDetalle(null, fila.DocumentoP, tituloTab: titulo, soloLectura: true);
+            var dlg = new PedidosDetalle(null, fila.DocumentoP, tituloTab: titulo);
             dlg.Cerrando += () => consola.CerrarPestaña(dlg);
             consola.AbrirPestaña(titulo, dlg, $"pedido-{fila.DocumentoP}");
         }

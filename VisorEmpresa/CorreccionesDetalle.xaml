@@ -1,7 +1,7 @@
-<UserControl x:Class="WpfAppVba.TraspasosDetalle"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Background="{DynamicResource ThemeBgPrincipal}">
+<UserControl x:Class="VisorEmpresa.CorreccionesDetalle"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource ThemeBgPrincipal}">
 
     <UserControl.Resources>
 
@@ -101,9 +101,9 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>  <!-- 0  Encabezado -->
-            <RowDefinition Height="Auto"/>  <!-- 1  Toolbar artículos -->
+            <RowDefinition Height="Auto"/>  <!-- 1  Toolbar -->
             <RowDefinition Height="*"/>     <!-- 2  GridItems -->
-            <RowDefinition Height="140"/>   <!-- 3  Stock + Observaciones -->
+            <RowDefinition Height="140"/>   <!-- 3  Stock + Observación -->
             <RowDefinition Height="Auto"/>  <!-- 4  Totales -->
         </Grid.RowDefinitions>
 
@@ -117,7 +117,7 @@
                 Padding="14,10">
             <StackPanel>
 
-                <!-- Fila 1: ícono + título + badge + Guardar/Cancelar -->
+                <!-- Fila 1: ícono + título + doc + badge + Guardar/Cancelar -->
                 <Grid Margin="0,0,0,10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -125,15 +125,14 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Ícono + título + doc -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal"
                                 VerticalAlignment="Center" Margin="0,0,12,0">
                         <Border x:Name="IconoBorde"
                                 Width="36" Height="36" CornerRadius="8"
-                                Background="#FEF3C7" Margin="0,0,10,0">
+                                Background="#FEE2E2" Margin="0,0,10,0">
                             <TextBlock x:Name="LblIconoTipo"
-                                       Text="SA" FontSize="13" FontWeight="SemiBold"
-                                       Foreground="#92400E"
+                                       Text="EG" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="#991B1B"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
                         </Border>
@@ -152,7 +151,7 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <!-- Badge estado -->
+                    <!-- Badge movimiento -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                         <Border x:Name="BadgeEstado" CornerRadius="10" Padding="8,3">
                             <TextBlock x:Name="TxtBadgeEstado"
@@ -172,35 +171,28 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- Fila 2: campos de cabecera en línea -->
+                <!-- Fila 2: campos en línea -->
                 <Grid x:Name="PanelCamposCabecera">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="90"/>
+                        <ColumnDefinition Width="100"/>
                         <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="134"/>
                         <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="90"/>
                         <ColumnDefinition Width="8"/>
-                        <!-- Sucursal: label+código + botón + descripción -->
-                        <ColumnDefinition Width="80"/>
-                        <ColumnDefinition Width="4"/>
-                        <ColumnDefinition Width="28"/>
+                        <ColumnDefinition Width="130"/>
                         <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="8"/>
-                        <ColumnDefinition Width="140"/>
-                        <ColumnDefinition Width="8"/>
-                        <ColumnDefinition Width="134"/>
-                        <ColumnDefinition Width="8"/>
-                        <ColumnDefinition Width="96"/>
+                        <ColumnDefinition Width="180"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Doc. Traspaso -->
+                    <!-- Doc. Corrección -->
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Doc. Traspaso" Style="{StaticResource LblMuted}"/>
-                        <TextBox x:Name="Box_DocumentoT" Style="{StaticResource ModernInput}"
-                                 PreviewTextInput="Box_Numeros_PreviewTextInput"
-                                 TextChanged="Campo_TextChanged"/>
+                        <TextBlock Text="Doc. Corrección" Style="{StaticResource LblMuted}"/>
+                        <TextBox x:Name="Box_DocumentoC" Style="{StaticResource ModernInput}"
+                                 TextChanged="Campo_TextChanged"
+                                 PreviewTextInput="Box_Numeros_PreviewTextInput"/>
                     </StackPanel>
 
                     <!-- Fecha -->
@@ -217,77 +209,40 @@
                                  TextChanged="Campo_TextChanged"/>
                     </StackPanel>
 
-                    <!-- Sucursal: label dinámica encima + código -->
-                    <StackPanel Grid.Column="6" x:Name="PanelSucursalCampo">
-                        <TextBlock x:Name="LblSucursalTipo" Text="Sucursal destino"
-                                   Style="{StaticResource LblMuted}"/>
-                        <TextBox x:Name="Box_Sucursal_Identificador"
-                                 Style="{StaticResource ModernInput}"
-                                 PreviewTextInput="Box_Numeros_PreviewTextInput"
-                                 TextChanged="Box_Sucursal_Identificador_TextChanged"/>
+                    <!-- Movimiento -->
+                    <StackPanel Grid.Column="6">
+                        <TextBlock Text="Movimiento" Style="{StaticResource LblMuted}"/>
+                        <ComboBox x:Name="Box_Movimiento" Height="28" FontSize="12"
+                                  SelectionChanged="Box_Movimiento_SelectionChanged">
+                            <ComboBoxItem Content="egreso"/>
+                            <ComboBoxItem Content="ingreso"/>
+                        </ComboBox>
                     </StackPanel>
 
-                    <!-- Botón buscar sucursal -->
-                    <Button Grid.Column="8" x:Name="BtnBuscarSucursal"
-                            Content="···" Height="28" Width="28" Padding="0"
-                            Style="{StaticResource BtnSecundario}"
-                            Margin="0,14,0,0"
-                            Click="BtnBuscarSucursal_Click"/>
-
-                    <!-- Descripción sucursal (readonly) -->
-                    <StackPanel Grid.Column="10" x:Name="PanelSucursalDescripcion">
-                        <TextBlock Text=" " Style="{StaticResource LblMuted}"/>
-                        <Border Height="28"
-                                Background="{DynamicResource ThemeBgReadOnly}"
-                                BorderBrush="{DynamicResource ThemeBorde}"
-                                BorderThickness="1" CornerRadius="6"
-                                Padding="7,0">
-                            <TextBlock x:Name="Box_Sucursal_Descripcion"
-                                       FontSize="12"
-                                       Foreground="{DynamicResource ThemeTextoMuted}"
-                                       VerticalAlignment="Center"
-                                       TextTrimming="CharacterEllipsis"/>
-                        </Border>
+                    <!-- Motivo -->
+                    <StackPanel Grid.Column="8">
+                        <TextBlock Text="Motivo" Style="{StaticResource LblMuted}"/>
+                        <ComboBox x:Name="Box_Motivo" Height="28" FontSize="12"
+                                  SelectionChanged="Campo_SelectionChanged"/>
                     </StackPanel>
 
                     <!-- Referencia -->
-                    <StackPanel Grid.Column="12">
+                    <StackPanel Grid.Column="10">
                         <TextBlock Text="Referencia" Style="{StaticResource LblMuted}"/>
                         <TextBox x:Name="Box_Referencia" Style="{StaticResource ModernInput}"
                                  TextChanged="Campo_TextChanged"/>
                     </StackPanel>
-
-                    <!-- Estado -->
-                    <StackPanel Grid.Column="14">
-                        <TextBlock Text="Estado" Style="{StaticResource LblMuted}"/>
-                        <ComboBox x:Name="Box_Estado" Height="28" FontSize="12"
-                                  SelectionChanged="Campo_SelectionChanged">
-                            <ComboBoxItem Content="pendiente"/>
-                            <ComboBoxItem Content="pendiente revisar"/>
-                            <ComboBoxItem Content="entregado"/>
-                        </ComboBox>
-                    </StackPanel>
-
-                    <!-- Tipo -->
-                    <StackPanel Grid.Column="16">
-                        <TextBlock Text="Movimiento" Style="{StaticResource LblMuted}"/>
-                        <ComboBox x:Name="CboMovimiento" Height="28" FontSize="12"
-                                  SelectionChanged="CboMovimiento_SelectionChanged">
-                            <ComboBoxItem Content="Entrada"/>
-                            <ComboBoxItem Content="Salida"/>
-                        </ComboBox>
-                    </StackPanel>
                 </Grid>
 
-                <!-- Fila 3: emisión / edición -->
+                <!-- Emisión / edición (readonly) -->
                 <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                     <TextBlock Text="Emisión:" Style="{StaticResource LblMuted}"/>
-                    <TextBlock x:Name="TxtEmision" FontSize="10"
-                               Foreground="{DynamicResource ThemeTexto}"
+                    <TextBlock x:Name="Box_Emision"
+                               FontSize="10" Foreground="{DynamicResource ThemeTexto}"
                                VerticalAlignment="Center" Margin="0,0,16,0"/>
                     <TextBlock Text="Edición:" Style="{StaticResource LblMuted}"/>
-                    <TextBlock x:Name="TxtEdicion" FontSize="10"
-                               Foreground="{DynamicResource ThemeTexto}"
+                    <TextBlock x:Name="Box_Edicion"
+                               FontSize="10" Foreground="{DynamicResource ThemeTexto}"
                                VerticalAlignment="Center"/>
                 </StackPanel>
 
@@ -307,27 +262,27 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Artículos del traspaso"
+                <TextBlock Grid.Column="0" Text="Artículos a corregir"
                            FontSize="11" FontWeight="SemiBold"
                            Foreground="{DynamicResource ThemeTextoSec}"
                            VerticalAlignment="Center"/>
                 <StackPanel x:Name="PanelBotonesArticulos" Grid.Column="1" Orientation="Horizontal">
-                    <Button x:Name="BtnImportarArticulos" Content="Importar artículos"
+                    <Button Content="Importar artículos" Margin="0,0,5,0"
                             Style="{StaticResource BtnPrimario}"
-                            Margin="0,0,5,0" Click="BtnImportarArticulos_Click"/>
-                    <Button x:Name="BtnBuscarArticulo" Content="Buscar artículo"
+                            Click="BtnBuscarArticulos_Click"/>
+                    <Button Content="Buscar artículo" Margin="0,0,5,0"
                             Style="{StaticResource BtnSecundario}"
-                            Margin="0,0,5,0" Click="BtnBuscarArticulo_Click"/>
-                    <Button x:Name="BtnInsertar" Content="Insertar"
+                            Click="BtnBuscarArticulo_Click"/>
+                    <Button Content="Insertar" Margin="0,0,5,0"
                             Style="{StaticResource BtnSecundario}"
-                            Margin="0,0,5,0" Click="BtnInsertar_Click"/>
-                    <Button x:Name="BtnNuevaLinea" Content="Nueva línea"
+                            Click="BtnInsertar_Click"/>
+                    <Button Content="Nueva línea" Margin="0,0,5,0"
                             Style="{StaticResource BtnSecundario}"
-                            Margin="0,0,5,0" Click="BtnNuevaLinea_Click"/>
-                    <Button x:Name="BtnDuplicarLinea" Content="Duplicar"
+                            Click="BtnNuevaLinea_Click"/>
+                    <Button Content="Duplicar" Margin="0,0,5,0"
                             Style="{StaticResource BtnSecundario}"
-                            Margin="0,0,5,0" Click="BtnDuplicarLinea_Click"/>
-                    <Button x:Name="BtnEliminarLinea" Content="Eliminar línea"
+                            Click="BtnDuplicarLinea_Click"/>
+                    <Button Content="Eliminar línea"
                             Style="{StaticResource BtnPeligro}"
                             Click="BtnEliminarLinea_Click"/>
                 </StackPanel>
@@ -343,55 +298,54 @@
                 <ColumnDefinition Width="220"/>
             </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" BorderThickness="0">
-            <DataGrid x:Name="GridItems"
-                      AutoGenerateColumns="False"
-                      CanUserAddRows="False"
-                      SelectionMode="Single"
-                      HeadersVisibility="Column"
-                      GridLinesVisibility="Horizontal"
-                      BorderBrush="{DynamicResource ThemeBorde}"
-                      BorderThickness="0"
-                      FontSize="12"
-                      RowHeight="32"
-                      SelectionChanged="GridItems_SelectionChanged"
-                      CellEditEnding="GridItems_CellEditEnding"
-                      PreparingCellForEdit="GridItems_PreparingCellForEdit"
-                      ScrollViewer.PanningMode="VerticalOnly">
+        <DataGrid x:Name="GridItems" Grid.Column="0"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  SelectionMode="Single"
+                  HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal"
+                  BorderBrush="{DynamicResource ThemeBorde}"
+                  BorderThickness="0"
+                  FontSize="12"
+                  RowHeight="32"
+                  SelectionChanged="GridItems_SelectionChanged"
+                  CellEditEnding="GridItems_CellEditEnding"
+                  PreparingCellForEdit="GridItems_PreparingCellForEdit"
+                  ScrollViewer.PanningMode="VerticalOnly">
 
-                <DataGrid.ColumnHeaderStyle>
-                    <Style TargetType="DataGridColumnHeader">
-                        <Setter Property="Background"      Value="{DynamicResource ThemeBgSurface}"/>
-                        <Setter Property="Foreground"      Value="{DynamicResource ThemeTextoSec}"/>
-                        <Setter Property="BorderBrush"     Value="{DynamicResource ThemeBorde}"/>
-                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                        <Setter Property="Padding"         Value="8,5"/>
-                        <Setter Property="FontSize"        Value="11"/>
-                        <Setter Property="FontWeight"      Value="SemiBold"/>
-                    </Style>
-                </DataGrid.ColumnHeaderStyle>
+            <DataGrid.ColumnHeaderStyle>
+                <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="Background"      Value="{DynamicResource ThemeBgSurface}"/>
+                    <Setter Property="Foreground"      Value="{DynamicResource ThemeTextoSec}"/>
+                    <Setter Property="BorderBrush"     Value="{DynamicResource ThemeBorde}"/>
+                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                    <Setter Property="Padding"         Value="8,5"/>
+                    <Setter Property="FontSize"        Value="11"/>
+                    <Setter Property="FontWeight"      Value="SemiBold"/>
+                </Style>
+            </DataGrid.ColumnHeaderStyle>
 
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Lín." Binding="{Binding Linea}"
-                                        Width="42" IsReadOnly="True">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Foreground"        Value="{DynamicResource ThemeTextoSec}"/>
-                                <Setter Property="VerticalAlignment" Value="Center"/>
-                                <Setter Property="Margin"            Value="8,0,0,0"/>
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-                    <DataGridTextColumn Header="Código"      Binding="{Binding Codigo}"      Width="80"/>
-                    <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*" IsReadOnly="True"/>
-                    <DataGridTextColumn Header="Cantidad"
-                                        Binding="{Binding Cantidad, StringFormat=#\,##0.##}"
-                                        Width="86"
-                                        ElementStyle="{StaticResource CeldaNumero}"
-                                        EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
-                </DataGrid.Columns>
-            </DataGrid>
-        </Border>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Lín." Binding="{Binding Linea}"
+                                    Width="42" IsReadOnly="True">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground"        Value="{DynamicResource ThemeTextoSec}"/>
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                            <Setter Property="Margin"            Value="8,0,0,0"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Código"      Binding="{Binding Codigo}"      Width="80"/>
+                <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Cantidad"
+                                    Binding="{Binding Cantidad, StringFormat=#\,##0.##}"
+                                    Width="86"
+                                    ElementStyle="{StaticResource CeldaNumero}"
+                                    EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
+            </DataGrid.Columns>
+        </DataGrid>
 
             <!-- Categorías (a la derecha del grid) -->
             <Border Grid.Column="1"
@@ -421,7 +375,7 @@
         </Grid>
 
         <!-- ════════════════════════════════════════════════════════ -->
-        <!-- 3 · STOCK + OBSERVACIONES (debajo del grid)             -->
+        <!-- 3 · STOCK + OBSERVACIÓN (debajo del grid)               -->
         <!-- ════════════════════════════════════════════════════════ -->
         <Grid Grid.Row="3"
               Background="{DynamicResource ThemeBgSurface}"
@@ -432,7 +386,7 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Stock -->
+            <!-- Stock actual -->
             <DockPanel Grid.Column="0" Margin="14,8,10,8">
                 <TextBlock DockPanel.Dock="Top" Text="Stock actual"
                            Style="{StaticResource SectionHeader}"/>
@@ -471,13 +425,13 @@
             <!-- Separador vertical -->
             <Rectangle Grid.Column="1" Fill="{DynamicResource ThemeBorde}"/>
 
-            <!-- Observaciones -->
+            <!-- Observación -->
             <DockPanel Grid.Column="2" Margin="10,8,14,8">
-                <TextBlock DockPanel.Dock="Top" Text="Observaciones"
+                <TextBlock DockPanel.Dock="Top" Text="Observación"
                            Style="{StaticResource SectionHeader}"/>
                 <Border CornerRadius="6" BorderThickness="1"
                         BorderBrush="{DynamicResource ThemeBordeInput}" ClipToBounds="True">
-                    <TextBox x:Name="Box_Observaciones" FontSize="12"
+                    <TextBox x:Name="Box_Observacion" FontSize="12"
                              Padding="7,5"
                              BorderThickness="0"
                              AcceptsReturn="True"
@@ -505,7 +459,7 @@
                                    Foreground="{DynamicResource ThemeTextoSec}"/>
                         <TextBlock x:Name="TxtTotalUnidades"
                                    FontSize="17" FontWeight="SemiBold"
-                                   HorizontalAlignment="Right"
+                                   HorizontalAlignment="Right" Text="0.00"
                                    Foreground="{DynamicResource ThemeTexto}"/>
                     </StackPanel>
                 </Border>
@@ -517,13 +471,12 @@
                                    Foreground="{DynamicResource ThemeTextoSec}"/>
                         <TextBlock x:Name="TxtUnidadesDiferentes"
                                    FontSize="17" FontWeight="SemiBold"
-                                   HorizontalAlignment="Right"
+                                   HorizontalAlignment="Right" Text="0"
                                    Foreground="{DynamicResource ThemeTexto}"/>
                     </StackPanel>
                 </Border>
 
             </StackPanel>
         </Border>
-
     </Grid>
 </UserControl>

@@ -5,21 +5,22 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using WpfAppVba;
 using WpfAppVba.Data;
 
-namespace WpfAppVba
+namespace VisorEmpresa
 {
+    /// <summary>
+    /// Duplicado de WpfAppVba.CorreccionesDetalle para el visor: siempre de SOLO
+    /// LECTURA (sin Guardar ni edición), abierto desde
+    /// VisorEmpresa.CorreccionesGeneral para "ver documento".
+    /// </summary>
     public partial class CorreccionesDetalle : UserControl
     {
         public event Action? Cerrando;
 
         private static SqlData Sql => SqlData.Instance;
 
-        // object en vez de CorreccionesGeneral: VisorEmpresa.CorreccionesGeneral (su
-        // grilla de solo-lectura propia) no es del mismo tipo que el de la app
-        // principal, y _padre no se usa dentro de esta clase — object evita que el
-        // visor deba vincular también el CorreccionesGeneral completo de la app
-        // principal solo para satisfacer este parámetro.
         private readonly object? _padre;
         private readonly string _idEditar;
         private bool _hayCambios = false;
@@ -53,7 +54,7 @@ namespace WpfAppVba
             {
                 string movEdit   = Sql.DocumentosCObj.ObtenerItem("movimiento", _idEditar)?.ToString() ?? "egreso";
                 string tipoLabel = movEdit == "ingreso" ? "Ingreso" : "Egreso";
-                LblTitulo.Text   = $"Editar Corrección de {tipoLabel}";
+                LblTitulo.Text   = $"Corrección de {tipoLabel}";
                 CargarParaEditar();
             }
             else
@@ -67,6 +68,19 @@ namespace WpfAppVba
             ActualizarBadge();
             _cargando   = false;
             _hayCambios = false;
+
+            AplicarModoSoloLectura();
+        }
+
+        // ─── Modo solo lectura: sin Guardar ni edición ────────────────────────
+        private void AplicarModoSoloLectura()
+        {
+            BtnGuardar.Visibility     = Visibility.Collapsed;
+            BtnCancelar.Content       = "Cerrar";
+            PanelCamposCabecera.IsEnabled = false;
+            Box_Observacion.IsEnabled     = false;
+            PanelBotonesArticulos.IsEnabled = false;
+            GridItems.IsReadOnly = true;
         }
 
         private void CargarParaEditar()

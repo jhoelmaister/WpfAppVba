@@ -6,19 +6,22 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using WpfAppVba;
 using WpfAppVba.Data;
 
-namespace WpfAppVba
+namespace VisorEmpresa
 {
+    /// <summary>
+    /// Duplicado de WpfAppVba.TraspasosDetalle para el visor: siempre de SOLO
+    /// LECTURA (sin Guardar ni edición de líneas/cabecera), abierto desde
+    /// VisorEmpresa.TraspasosGeneral para "ver documento". Muestra Sucursal
+    /// origen/destino explícitos en vez del campo "Sucursal" único y ambiguo
+    /// de la versión editable.
+    /// </summary>
     public partial class TraspasosDetalle : System.Windows.Controls.UserControl
     {
         public event Action? Cerrando;
         private static SqlData Sql => SqlData.Instance;
-        // object en vez de TraspasosGeneral: VisorEmpresa.TraspasosGeneral (su grilla
-        // de solo-lectura propia) no es del mismo tipo que el de la app principal, y
-        // _padre no se usa dentro de esta clase — object evita que el visor deba
-        // vincular también el TraspasosGeneral completo de la app principal solo
-        // para satisfacer este parámetro.
         private readonly object? _padre;
         private readonly string _idEditar;
         private bool _hayCambios      = false;
@@ -74,6 +77,31 @@ namespace WpfAppVba
 
             _cargando   = false;
             _hayCambios = false;
+
+            AplicarModoSoloLectura();
+        }
+
+        // ─── Modo solo lectura: sin Guardar ni edición ────────────────────────
+        private void AplicarModoSoloLectura()
+        {
+            BtnGuardar.Visibility           = Visibility.Collapsed;
+            BtnCancelar.Content             = "Cerrar";
+            PanelCamposCabecera.IsEnabled   = false;
+            Box_Observaciones.IsEnabled     = false;
+            PanelBotonesArticulos.IsEnabled = false;
+            GridItems.IsReadOnly            = true;
+
+            // El campo "Sucursal" único (arriba) solo alcanza a mostrar un lado
+            // (origen o destino, según AppState.TipoMovimiento) — en modo solo
+            // lectura se reemplaza por los dos campos explícitos.
+            PanelSucursalCampo.Visibility       = Visibility.Collapsed;
+            PanelSucursalDescripcion.Visibility = Visibility.Collapsed;
+            PanelOrigenDestino.Visibility       = Visibility.Visible;
+
+            string origenId  = Sql.DocumentosTObj.ObtenerItem("origen",  _idEditar)?.ToString() ?? "";
+            string destinoId = Sql.DocumentosTObj.ObtenerItem("destino", _idEditar)?.ToString() ?? "";
+            Box_Origen_Descripcion.Text  = Sql.SucursalesObj.ObtenerItem("descripcion", origenId)?.ToString()  ?? origenId;
+            Box_Destino_Descripcion.Text = Sql.SucursalesObj.ObtenerItem("descripcion", destinoId)?.ToString() ?? destinoId;
         }
 
         // ─── Modo editar ──────────────────────────────────────────────────────
@@ -486,9 +514,10 @@ namespace WpfAppVba
         }
 
         // ─── Buscar artículo (single-select) ─────────────────────────────────
-        // #if !VISOR ya no es necesario en la práctica (TraspasosDetalle no está
-        // vinculado en VisorEmpresa.csproj — tiene su propia copia), pero se deja
-        // por si en el futuro algo más vuelve a vincular este archivo.
+        // #if !VISOR: ArticulosGeneral (y su cadena Familias/Productos/
+        // Categorías/Industrias/Movimientos/informe Excel, ~28 archivos) no está
+        // vinculada en VisorEmpresa.csproj — innecesario porque este botón ya
+        // queda deshabilitado en modo solo lectura (AplicarModoSoloLectura).
         private void BtnBuscarArticulo_Click(object sender, RoutedEventArgs e)
         {
             if (!_editarFormulario) return;

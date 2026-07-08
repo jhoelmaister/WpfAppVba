@@ -6,21 +6,22 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using WpfAppVba;
 using WpfAppVba.Data;
 
-namespace WpfAppVba
+namespace VisorEmpresa
 {
+    /// <summary>
+    /// Duplicado de WpfAppVba.FacturasDetalle para el visor: siempre de SOLO
+    /// LECTURA (sin Guardar ni edición), abierto desde VisorEmpresa.FacturasGeneral
+    /// para "ver documento".
+    /// </summary>
     public partial class FacturasDetalle : UserControl
     {
         public event Action? Cerrando;
 
         private static SqlData Sql => SqlData.Instance;
 
-        // object en vez de FacturasGeneral: VisorEmpresa.FacturasGeneral (su grilla
-        // de solo-lectura propia) no es del mismo tipo que el de la app principal, y
-        // _padre no se usa dentro de esta clase — object evita que el visor deba
-        // vincular también el FacturasGeneral completo de la app principal solo para
-        // satisfacer este parámetro.
         private readonly object? _padre;
         private readonly string _idEditar;
         private bool _hayCambios = false;
@@ -58,7 +59,7 @@ namespace WpfAppVba
 
             if (!string.IsNullOrEmpty(_idEditar))
             {
-                LblTitulo.Text = "Editar Factura";
+                LblTitulo.Text = "Factura";
                 CargarParaEditar();
             }
             else
@@ -70,6 +71,21 @@ namespace WpfAppVba
             LblDocNum.Text = Box_DocumentoF.Text;
             _cargando   = false;
             _hayCambios = false;
+
+            AplicarModoSoloLectura();
+        }
+
+        // ─── Modo solo lectura: sin Guardar ni edición ────────────────────────
+        private void AplicarModoSoloLectura()
+        {
+            BtnGuardar.Visibility          = Visibility.Collapsed;
+            BtnCancelar.Content            = "Cerrar";
+            PanelCamposCabecera.IsEnabled  = false;
+            Box_Observacion.IsEnabled      = false;
+            PanelBotonesArticulos.IsEnabled = false;
+            PanelBotonesCobros.IsEnabled    = false;
+            GridItems.IsReadOnly  = true;
+            GridCobros.IsReadOnly = true;
         }
 
         private void CargarParaEditar()

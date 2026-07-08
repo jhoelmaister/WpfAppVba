@@ -412,7 +412,7 @@ namespace VisorEmpresa
             if (consola == null) return;
 
             string titulo = $"Factura {fila.Codigo}";
-            var dlg = new FacturasDetalle(null, fila.Id, tituloTab: titulo, soloLectura: true);
+            var dlg = new FacturasDetalle(null, fila.Id, tituloTab: titulo);
             dlg.Cerrando += () => consola.CerrarPestaña(dlg);
             consola.AbrirPestaña(titulo, dlg, $"factura-{fila.Id}");
         }

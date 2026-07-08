@@ -379,7 +379,7 @@ namespace VisorEmpresa
 
             AppState.EventoFormularioC = "editar";
             string titulo = $"Corrección {fila.Codigo}";
-            var dlg = new CorreccionesDetalle(null, fila.Id, tituloTab: titulo, soloLectura: true);
+            var dlg = new CorreccionesDetalle(null, fila.Id, tituloTab: titulo);
             dlg.Cerrando += () => consola.CerrarPestaña(dlg);
             consola.AbrirPestaña(titulo, dlg, $"correccion-{fila.Id}");
         }

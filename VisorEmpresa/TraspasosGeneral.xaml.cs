@@ -404,7 +404,7 @@ namespace VisorEmpresa
             AppState.EventoFormularioM = "editar";
 
             string titulo = $"Traspaso {fila.Codigo}";
-            var dlg = new TraspasosDetalle(null, fila.DocumentoT, tituloTab: titulo, soloLectura: true);
+            var dlg = new TraspasosDetalle(null, fila.DocumentoT, tituloTab: titulo);
             dlg.Cerrando += () => consola.CerrarPestaña(dlg);
             consola.AbrirPestaña(titulo, dlg, $"traspaso-{fila.DocumentoT}");
         }

@@ -111,23 +111,12 @@
     <Page Include="..\WpfAppVba\RegionesDetalle.xaml" Link="Modulos\RegionesDetalle.xaml" />
   </ItemGroup>
 
-  <!-- Formularios de detalle de Pedidos/Traspasos/Correcciones/Facturas,
-       vinculados en modo solo lectura (parámetro soloLectura=true) desde las
-       grillas propias del visor (VisorEmpresa.PedidosGeneral, etc. — NO se
-       vincula el PedidosGeneral/etc. de la app principal, el visor tiene el
-       suyo). El parámetro "padre" de estos formularios no se usa internamente,
-       por eso su tipo es "object" y no genera dependencia con las grillas de
-       la app principal. -->
-  <ItemGroup>
-    <Compile Include="..\WpfAppVba\PedidosDetalle.xaml.cs" Link="Modulos\PedidosDetalle.xaml.cs" />
-    <Compile Include="..\WpfAppVba\TraspasosDetalle.xaml.cs" Link="Modulos\TraspasosDetalle.xaml.cs" />
-    <Compile Include="..\WpfAppVba\CorreccionesDetalle.xaml.cs" Link="Modulos\CorreccionesDetalle.xaml.cs" />
-    <Compile Include="..\WpfAppVba\FacturasDetalle.xaml.cs" Link="Modulos\FacturasDetalle.xaml.cs" />
-    <Page Include="..\WpfAppVba\PedidosDetalle.xaml" Link="Modulos\PedidosDetalle.xaml" />
-    <Page Include="..\WpfAppVba\TraspasosDetalle.xaml" Link="Modulos\TraspasosDetalle.xaml" />
-    <Page Include="..\WpfAppVba\CorreccionesDetalle.xaml" Link="Modulos\CorreccionesDetalle.xaml" />
-    <Page Include="..\WpfAppVba\FacturasDetalle.xaml" Link="Modulos\FacturasDetalle.xaml" />
-  </ItemGroup>
+  <!-- Los formularios de detalle de Pedidos/Traspasos/Correcciones/Facturas ya
+       NO están vinculados: cada uno tiene su propia copia física en este
+       proyecto (VisorEmpresa\PedidosDetalle.xaml[.cs], etc.), siempre de solo
+       lectura (sin el parámetro soloLectura — ya no hace falta, es el único
+       modo que existe en la copia del visor). Se recogen automáticamente por
+       el globbing implícito del SDK, igual que XxxGeneral.xaml[.cs]. -->
 
   <!-- Temas (misma identidad visual que la app principal) -->
   <ItemGroup>
