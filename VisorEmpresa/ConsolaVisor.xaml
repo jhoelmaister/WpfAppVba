@@ -184,6 +184,10 @@
                                     Content="📊  Dashboard"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Dashboard_Click"/>
+                            <Button x:Name="BtnNav_Articulos"
+                                    Content="📋  Artículos"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Articulos_Click"/>
 
                             <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="12,8"/>
 

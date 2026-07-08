@@ -91,13 +91,6 @@ namespace VisorEmpresa
             PanelBotonesArticulos.IsEnabled = false;
             GridItems.IsReadOnly            = true;
 
-            // El campo "Sucursal" único (arriba) solo alcanza a mostrar un lado
-            // (origen o destino, según AppState.TipoMovimiento) — en modo solo
-            // lectura se reemplaza por los dos campos explícitos.
-            PanelSucursalCampo.Visibility       = Visibility.Collapsed;
-            PanelSucursalDescripcion.Visibility = Visibility.Collapsed;
-            PanelOrigenDestino.Visibility       = Visibility.Visible;
-
             string origenId  = Sql.DocumentosTObj.ObtenerItem("origen",  _idEditar)?.ToString() ?? "";
             string destinoId = Sql.DocumentosTObj.ObtenerItem("destino", _idEditar)?.ToString() ?? "";
             Box_Origen_Descripcion.Text  = Sql.SucursalesObj.ObtenerItem("descripcion", origenId)?.ToString()  ?? origenId;
@@ -115,13 +108,6 @@ namespace VisorEmpresa
             DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : DateTime.Now;
             Box_Fecha.SelectedDate = fecha.Date;
             Box_Hora.Text = fecha.ToString("HH:mm:ss");
-
-            // Sucursal opuesta — mostrar codigo, no UUID
-            string tipo    = AppState.TipoMovimiento.ToLower();
-            string campOtro = tipo == "salida" ? "destino" : "origen";
-            string otroUuid  = Sql.DocumentosTObj.ObtenerItem(campOtro, _idEditar)?.ToString() ?? "";
-            Box_Sucursal_Identificador.Text = Sql.SucursalesObj.ObtenerItem("codigo", otroUuid)?.ToString() ?? "";
-            ActualizarDescripcionSucursal();
 
             // Emisión / Edición
             var emisionObj = Sql.DocumentosTObj.ObtenerItem("emision", _idEditar);
@@ -237,19 +223,6 @@ namespace VisorEmpresa
                 : new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46));
 
             LblDocNum.Text       = Box_DocumentoT.Text;
-            LblSucursalTipo.Text = esSalida ? "Sucursal destino" : "Sucursal origen";
-        }
-
-        private string ResolverSucursalId()
-        {
-            string cod = Box_Sucursal_Identificador.Text.Trim();
-            return cod == "" ? "" : Sql.SucursalesObj.BuscarIdentificador("codigo", cod);
-        }
-
-        private void ActualizarDescripcionSucursal()
-        {
-            string id = ResolverSucursalId();
-            Box_Sucursal_Descripcion.Text = id == "" ? "" : Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
         }
 
         private static string ObtenerDescripcionArticulo(string artId)
@@ -266,8 +239,6 @@ namespace VisorEmpresa
             Box_DocumentoT.IsEnabled            = false;
             Box_Fecha.IsEnabled                  = false;
             Box_Hora.IsEnabled                   = false;
-            Box_Sucursal_Identificador.IsEnabled = false;
-            BtnBuscarSucursal.IsEnabled          = false;
             Box_Estado.IsEnabled                 = false;
             Box_Referencia.IsEnabled             = false;
             Box_Observaciones.IsEnabled          = false;
@@ -431,53 +402,12 @@ namespace VisorEmpresa
             if (sender == Box_Estado) ActualizarBadgeEstado();
         }
 
-        private void Box_Sucursal_Identificador_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (_cargando) return;
-            string cod = Box_Sucursal_Identificador.Text.Trim();
-            string activaCodigo = Sql.SucursalesObj.ObtenerItem("codigo", AppState.SucursalActiva)?.ToString() ?? "";
-            if (cod != "" && cod == activaCodigo)
-            {
-                MessageBox.Show("No puede seleccionar la sucursal activa como destino/origen.",
-                    "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
-                Box_Sucursal_Identificador.Text = "";
-                Box_Sucursal_Descripcion.Text   = "";
-                return;
-            }
-            ActualizarDescripcionSucursal();
-            _hayCambios = true;
-        }
-
         private void Box_Numeros_PreviewTextInput(object sender, TextCompositionEventArgs e)
             => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
 
         // ─── Selección en GridItems → mostrar stock ───────────────────────────
         private void GridItems_SelectionChanged(object sender, SelectionChangedEventArgs e)
             => CargarStock(GridItems.SelectedItem as TraspasoItemFila);
-
-        // ─── Buscar sucursal ──────────────────────────────────────────────────
-        private void BtnBuscarSucursal_Click(object sender, RoutedEventArgs e)
-        {
-            SucursalesGeneral.SucursalSeleccionada = null;
-            SucursalesGeneral.OpenAsDialog(Window.GetWindow(this)!, modoSelector: true, contexto: _tituloTab, llamador: this, onCerrado: () =>
-            {
-                if (SucursalesGeneral.SucursalSeleccionada != null)
-                {
-                    string selCodigo = SucursalesGeneral.SucursalSeleccionada;
-                    SucursalesGeneral.SucursalSeleccionada = null;
-                    string activaCodigo = Sql.SucursalesObj.ObtenerItem("codigo", AppState.SucursalActiva)?.ToString() ?? "";
-                    if (selCodigo == activaCodigo)
-                    {
-                        MessageBox.Show("No puede seleccionar la sucursal activa como destino/origen.",
-                            "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        return;
-                    }
-                    Box_Sucursal_Identificador.Text = selCodigo;
-                    ActualizarDescripcionSucursal();
-                    _hayCambios = true;
-                }
-            });
-        }
 
         // ─── Buscar artículo (single-select) ─────────────────────────────────
         // #if !VISOR: ArticulosGeneral (y su cadena Familias/Productos/
@@ -761,7 +691,7 @@ namespace VisorEmpresa
                 DateTime fechaFinal = CombinarFechaHora(fechaBase, Box_Hora.Text);
 
                 string tipo      = AppState.TipoMovimiento.ToLower();
-                string otroUuid  = ResolverSucursalId();
+                string otroUuid  = "";
                 if (string.IsNullOrEmpty(otroUuid))
                 {
                     string campo = tipo == "salida" ? "sucursal destino" : "sucursal origen";
@@ -823,7 +753,7 @@ namespace VisorEmpresa
                 // Si es "pendiente revisar" guardar como "pendiente" en la DB (igual VBA)
                 if (estado == "pendiente revisar") estado = "pendiente";
 
-                string otroUuidE = ResolverSucursalId();
+                string otroUuidE = "";
                 if (_editarFormulario && string.IsNullOrEmpty(otroUuidE))
                 {
                     string campo = tipo == "salida" ? "sucursal destino" : "sucursal origen";

@@ -47,6 +47,7 @@ namespace WpfAppVba
         // Paneles fijos por sección: mutables para poder recrearlos al cambiar de
         // empresa (mismo criterio que RecargarContexto en la app principal).
         private DashboardVisor    _panelDashboard    = new();
+        private ArticulosGeneral  _panelArticulos    = new();
         private PedidosGeneral    _panelPedidos      = new();
         private TraspasosGeneral  _panelTraspasos    = new();
         private CorreccionesGeneral _panelCorrecciones = new();
@@ -62,6 +63,7 @@ namespace WpfAppVba
         private readonly Dictionary<string, List<TabItem>> _pestañasPorSeccion = new()
         {
             ["dashboard"]    = new List<TabItem>(),
+            ["articulos"]    = new List<TabItem>(),
             ["pedidos"]      = new List<TabItem>(),
             ["traspasos"]    = new List<TabItem>(),
             ["correcciones"] = new List<TabItem>(),
@@ -75,6 +77,7 @@ namespace WpfAppVba
         private readonly Dictionary<string, TabItem?> _pestañaSeleccionadaPorSeccion = new()
         {
             ["dashboard"]    = null,
+            ["articulos"]    = null,
             ["pedidos"]      = null,
             ["traspasos"]    = null,
             ["correcciones"] = null,
@@ -246,6 +249,7 @@ namespace WpfAppVba
                 _pestañaSeleccionadaPorSeccion[clave] = null;
 
             _panelDashboard    = new();
+            _panelArticulos    = new();
             _panelPedidos      = new();
             _panelTraspasos    = new();
             _panelCorrecciones = new();
@@ -364,6 +368,7 @@ namespace WpfAppVba
             switch (nombre)
             {
                 case "dashboard":    TabFijoContenido.Content = _panelDashboard;    TabFijoTitulo.Text = "Dashboard";    break;
+                case "articulos":    TabFijoContenido.Content = _panelArticulos;    TabFijoTitulo.Text = "Artículos";    break;
                 case "pedidos":      TabFijoContenido.Content = _panelPedidos;      TabFijoTitulo.Text = "Pedidos";      break;
                 case "traspasos":    TabFijoContenido.Content = _panelTraspasos;    TabFijoTitulo.Text = "Traspasos";    break;
                 case "correcciones": TabFijoContenido.Content = _panelCorrecciones; TabFijoTitulo.Text = "Correcciones"; break;
@@ -501,6 +506,12 @@ namespace WpfAppVba
         {
             MostrarPanel("dashboard");
             MarcarActivo(BtnNav_Dashboard);
+        }
+
+        private void BtnNav_Articulos_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("articulos");
+            MarcarActivo(BtnNav_Articulos);
         }
 
         private void BtnNav_Pedidos_Click(object sender, RoutedEventArgs e)
