@@ -132,52 +132,13 @@ namespace VisorEmpresa
             Box_Referencia.Text    = Sql.DocumentosTObj.ObtenerItem("referencia",  _idEditar)?.ToString() ?? "";
             Box_Observaciones.Text = Sql.DocumentosTObj.ObtenerItem("observacion", _idEditar)?.ToString() ?? "";
 
-            // Permisos según emitido ─────────────────────────────────────────
-            string emitido  = Sql.DocumentosTObj.ObtenerItem("emitido", _idEditar)?.ToString() ?? "";
-            string estadoDB = Sql.DocumentosTObj.ObtenerItem("estado",  _idEditar)?.ToString() ?? "pendiente";
-            bool esLocal    = (emitido == AppState.SucursalActiva);
-
-            if (esLocal)
-            {
-                if (estadoDB.ToLower() == "entregado")
-                {
-                    // Solo lectura total: no se puede editar nada, ni siquiera tipo de
-                    // movimiento, duplicar línea o guardar.
-                    DeshabilitarControlesCabecera();
-                    CboMovimiento.IsEnabled = false;
-                    BtnGuardar.IsEnabled    = false;
-                    _editarFormulario = false;
-                    GridItems.IsEnabled = false;
-                    ActualizarBotonesGrid();
-                }
-                else
-                {
-                    // Puede editar artículos pero no el estado
-                    Box_Estado.IsEnabled = false;
-                    _editarFormulario    = true;
-                }
-                SeleccionarEstado(estadoDB);
-            }
-            else
-            {
-                // De otra sucursal: no se puede editar nada excepto el estado (se permite
-                // guardar para poder persistir ese cambio). Los artículos solo se ven, no
-                // se modifican, y el tipo de movimiento tampoco se puede cambiar.
-                DeshabilitarControlesCabecera();
-
-                if (estadoDB.ToLower() == "pendiente")
-                    estadoDB = "pendiente revisar";
-
-                Box_Estado.Items.Clear();
-                Box_Estado.Items.Add(new ComboBoxItem { Content = "pendiente revisar" });
-                Box_Estado.Items.Add(new ComboBoxItem { Content = "entregado" });
-                Box_Estado.IsEnabled = true;
-                CboMovimiento.IsEnabled = false;
-                _editarFormulario = false;
-                GridItems.IsEnabled = false;
-                ActualizarBotonesGrid();
-                SeleccionarEstado(estadoDB);
-            }
+            // Solo lectura siempre (AplicarModoSoloLectura se aplica igual más abajo):
+            // a diferencia de la app principal, no hay "esLocal" — AppState.SucursalActiva
+            // no existe en el visor. El estado se muestra tal cual, sin la reinterpretación
+            // "pendiente revisar" (mismo criterio ya usado en VisorEmpresa.TraspasosGeneral).
+            string estadoDB = Sql.DocumentosTObj.ObtenerItem("estado", _idEditar)?.ToString() ?? "pendiente";
+            DeshabilitarControlesCabecera();
+            SeleccionarEstado(estadoDB);
 
             // Cargar artículos
             ActualizarBadgeEstado();
