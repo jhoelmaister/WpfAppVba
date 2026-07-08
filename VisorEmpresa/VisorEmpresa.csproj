@@ -82,11 +82,16 @@
   </ItemGroup>
 
   <!-- Módulos de EDICIÓN duplicados de la app principal (empresa-scoped):
-       Precios, Empresas, Sucursales, Usuarios + Regiones (selector que usan
-       Sucursales y Precios). -->
+       Empresas, Sucursales, Usuarios + Regiones (selector que usan Sucursales
+       y Precios). PreciosGeneral queda vinculado (su caché ya es empresa-wide
+       vía AppLoader.ConectarProductos, sin necesidad de lógica propia), pero
+       PreciosDetalle.xaml/.xaml.cs tienen su propia copia física en este
+       proyecto (VisorEmpresa\PreciosDetalle.xaml[.cs]) — el cálculo de Stock/
+       Disponible de empresa usa ConsultasEmpresa.ObtenerStockEmpresa (cacheado
+       en memoria) en vez de recalcular con SQL directo cada vez que se abre un
+       documento, como hace la versión vinculada. -->
   <ItemGroup>
     <Compile Include="..\WpfAppVba\PreciosGeneral.xaml.cs" Link="Modulos\PreciosGeneral.xaml.cs" />
-    <Compile Include="..\WpfAppVba\PreciosDetalle.xaml.cs" Link="Modulos\PreciosDetalle.xaml.cs" />
     <Compile Include="..\WpfAppVba\EmpresasGeneral.xaml.cs" Link="Modulos\EmpresasGeneral.xaml.cs" />
     <Compile Include="..\WpfAppVba\EmpresasDetalle.xaml.cs" Link="Modulos\EmpresasDetalle.xaml.cs" />
     <Compile Include="..\WpfAppVba\SucursalesGeneral.xaml.cs" Link="Modulos\SucursalesGeneral.xaml.cs" />
@@ -96,7 +101,6 @@
     <Compile Include="..\WpfAppVba\RegionesGeneral.xaml.cs" Link="Modulos\RegionesGeneral.xaml.cs" />
     <Compile Include="..\WpfAppVba\RegionesDetalle.xaml.cs" Link="Modulos\RegionesDetalle.xaml.cs" />
     <Page Include="..\WpfAppVba\PreciosGeneral.xaml" Link="Modulos\PreciosGeneral.xaml" />
-    <Page Include="..\WpfAppVba\PreciosDetalle.xaml" Link="Modulos\PreciosDetalle.xaml" />
     <Page Include="..\WpfAppVba\EmpresasGeneral.xaml" Link="Modulos\EmpresasGeneral.xaml" />
     <Page Include="..\WpfAppVba\EmpresasDetalle.xaml" Link="Modulos\EmpresasDetalle.xaml" />
     <Page Include="..\WpfAppVba\SucursalesGeneral.xaml" Link="Modulos\SucursalesGeneral.xaml" />
