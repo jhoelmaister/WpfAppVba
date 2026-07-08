@@ -332,11 +332,11 @@ namespace VisorEmpresa
 
             StockAcumuladoInfo Obtener(string sucursal, string articulo)
             {
-                string clave = sucursal + "|" + articulo;
-                if (!porSucursal.TryGetValue(clave, out var acumulado))
+                string claveSucArt = sucursal + "|" + articulo;
+                if (!porSucursal.TryGetValue(claveSucArt, out var acumulado))
                 {
                     acumulado = new StockAcumuladoInfo();
-                    porSucursal[clave] = acumulado;
+                    porSucursal[claveSucArt] = acumulado;
                 }
                 return acumulado;
             }
@@ -464,9 +464,9 @@ namespace VisorEmpresa
 
             // ── Totales por artículo (suma de todas las sucursales) ──────────
             var totales = new Dictionary<string, (double Disponible, double Stock)>();
-            foreach (var (clave, acumulado) in porSucursal)
+            foreach (var (claveSucArt, acumulado) in porSucursal)
             {
-                string articulo = clave.Substring(clave.IndexOf('|') + 1);
+                string articulo = claveSucArt.Substring(claveSucArt.IndexOf('|') + 1);
                 totales.TryGetValue(articulo, out var actual);
                 totales[articulo] = (actual.Disponible + acumulado.Disponible, actual.Stock + acumulado.Stock);
             }
