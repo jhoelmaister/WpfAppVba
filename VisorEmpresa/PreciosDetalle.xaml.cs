@@ -11,11 +11,14 @@ using WpfAppVba.Data;
 namespace VisorEmpresa
 {
     /// <summary>
-    /// Duplicado de WpfAppVba.PreciosDetalle para el visor: misma UI/lógica (árbol
-    /// de familias, catálogo completo, panel de Stock por sucursal), pero el
-    /// cálculo de Stock/Disponible de empresa usa ConsultasEmpresa.ObtenerStockEmpresa
-    /// (cacheado en memoria) en vez de recalcular con 5 consultas SQL cada vez que
-    /// se abre un documento — ver CalcularStockEmpresa() más abajo.
+    /// Detalle de lista de precios del visor: misma UI/lógica que la versión
+    /// original de WpfAppVba (árbol de familias, catálogo completo, panel de
+    /// Stock por sucursal), pero el cálculo de Stock/Disponible de empresa usa
+    /// ConsultasEmpresa.ObtenerStockEmpresa (cacheado en memoria) en vez de
+    /// recalcular con 5 consultas SQL cada vez que se abre un documento — ver
+    /// CalcularStockEmpresa() más abajo. Precios/Empresas/Sucursales/Regiones/
+    /// Usuarios ya no están vinculados a WpfAppVba: cada uno tiene su propia
+    /// copia física e independiente en este proyecto.
     /// </summary>
     public partial class PreciosDetalle : UserControl
     {
@@ -23,9 +26,8 @@ namespace VisorEmpresa
 
         private static SqlData Sql => SqlData.Instance;
 
-        // object en vez de PreciosGeneral: WpfAppVba.PreciosGeneral (vinculado,
-        // compartido) no es del mismo tipo que un futuro PreciosGeneral propio del
-        // visor, y _padre no se usa dentro de esta clase — object evita el acople.
+        // object en vez de PreciosGeneral: _padre no se usa dentro de esta
+        // clase, así que object evita acoplar el tipo sin necesidad.
         private readonly object? _padre;
         private readonly string _idEditar;
         private readonly string _idCopiarDe;

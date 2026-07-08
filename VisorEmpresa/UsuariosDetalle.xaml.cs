@@ -2,9 +2,10 @@ using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using WpfAppVba;
 using WpfAppVba.Data;
 
-namespace WpfAppVba
+namespace VisorEmpresa
 {
     public partial class UsuariosDetalle : System.Windows.Controls.UserControl
     {

@@ -11,9 +11,10 @@ using PdfSharp;
 using PdfSharp.Drawing;
 using PdfSharp.Fonts;
 using PdfSharp.Pdf;
+using WpfAppVba;
 using WpfAppVba.Data;
 
-namespace WpfAppVba
+namespace VisorEmpresa
 {
     public partial class PreciosGeneral : System.Windows.Controls.UserControl
     {
@@ -441,11 +442,7 @@ namespace WpfAppVba
             if (consola == null) return;
             string titulo = "Nueva Lista de Precios";
             string clave  = "nueva-lista-precios";
-#if VISOR
-            var dlg = new VisorEmpresa.PreciosDetalle(this, tituloTab: titulo);
-#else
             var dlg = new PreciosDetalle(this, tituloTab: titulo);
-#endif
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);
@@ -469,11 +466,7 @@ namespace WpfAppVba
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
             string titulo = $"Copia de {fila.Codigo}";
-#if VISOR
-            var dlg = new VisorEmpresa.PreciosDetalle(this, tituloTab: titulo, idCopiarDe: fila.Id);
-#else
             var dlg = new PreciosDetalle(this, tituloTab: titulo, idCopiarDe: fila.Id);
-#endif
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);
@@ -903,11 +896,7 @@ namespace WpfAppVba
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
             string titulo = $"Lista de Precios {fila.Codigo}";
-#if VISOR
-            var dlg = new VisorEmpresa.PreciosDetalle(this, idSel, tituloTab: titulo);
-#else
             var dlg = new PreciosDetalle(this, idSel, tituloTab: titulo);
-#endif
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);

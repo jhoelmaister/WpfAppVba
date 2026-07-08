@@ -1,9 +1,10 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using WpfAppVba;
 using WpfAppVba.Data;
 
-namespace WpfAppVba
+namespace VisorEmpresa
 {
     public partial class RegionesDetalle : System.Windows.Controls.UserControl
     {

@@ -26,17 +26,12 @@ namespace WpfAppVba
         private CorreccionesGeneral _panelCorrecciones = new();
         private FacturasGeneral     _panelFacturas     = new();
         private TercerosGeneral     _panelTerceros     = new();
-        private SucursalesGeneral   _panelSucursales   = new();
         private FamiliasGeneral     _panelFamilias     = new();
         private ProductosGeneral    _panelProductos    = new();
         private IndustriasGeneral   _panelIndustrias   = new();
         private CategoriasGeneral   _panelCategorias   = new();
         private InventariosGeneral  _panelInventarios  = new();
-        private PreciosGeneral      _panelPrecios      = new();
-        private RegionesGeneral     _panelRegiones     = new();
-        private EmpresasGeneral     _panelEmpresas     = new();
         private readonly Configuracion       _panelConfiguracion= new();
-        private UsuariosGeneral     _panelUsuarios     = new();
         private MovimientosGeneral  _panelMovimientos  = new();
         private DashboardGeneral    _panelDashboard    = new();
 
@@ -50,17 +45,12 @@ namespace WpfAppVba
             ["correcciones"] = new List<TabItem>(),
             ["facturas"]     = new List<TabItem>(),
             ["terceros"]     = new List<TabItem>(),
-            ["sucursales"]   = new List<TabItem>(),
             ["familias"]     = new List<TabItem>(),
             ["productos"]    = new List<TabItem>(),
             ["industrias"]   = new List<TabItem>(),
             ["categorias"]   = new List<TabItem>(),
             ["inventarios"]  = new List<TabItem>(),
-            ["precios"]      = new List<TabItem>(),
-            ["regiones"]     = new List<TabItem>(),
-            ["empresas"]     = new List<TabItem>(),
             ["configuracion"]= new List<TabItem>(),
-            ["usuarios"]     = new List<TabItem>(),
             ["movimientos"]  = new List<TabItem>(),
             ["dashboard"]    = new List<TabItem>(),
         };
@@ -72,17 +62,12 @@ namespace WpfAppVba
             ["correcciones"] = null,
             ["facturas"]     = null,
             ["terceros"]     = null,
-            ["sucursales"]   = null,
             ["familias"]     = null,
             ["productos"]    = null,
             ["industrias"]   = null,
             ["categorias"]   = null,
             ["inventarios"]  = null,
-            ["precios"]      = null,
-            ["regiones"]     = null,
-            ["empresas"]     = null,
             ["configuracion"]= null,
-            ["usuarios"]     = null,
             ["movimientos"]  = null,
             ["dashboard"]    = null,
         };
@@ -95,17 +80,6 @@ namespace WpfAppVba
             ActualizarInfoUsuario();
             ActualizarIconoTema();
             MarcarActivo(BtnNav_Articulos);
-            if (AppState.EsAdmin)
-            {
-                BtnNav_Usuarios.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                BtnNav_Regiones.Visibility   = Visibility.Collapsed;
-                BtnNav_Precios.Visibility    = Visibility.Collapsed;
-                BtnNav_Sucursales.Visibility = Visibility.Collapsed;
-                BtnNav_Empresas.Visibility   = Visibility.Collapsed;
-            }
 
             // Estado de conexión: pintar el estado actual y escuchar cambios.
             ActualizarLabelConexion(ConexionEstado.EnLinea);
@@ -260,18 +234,13 @@ namespace WpfAppVba
             _panelCorrecciones = new();
             _panelFacturas     = new();
             _panelTerceros     = new();
-            _panelSucursales   = new();
             _panelFamilias     = new();
             _panelProductos    = new();
             _panelIndustrias   = new();
             _panelCategorias   = new();
             _panelInventarios  = new();
-            _panelPrecios      = new();
-            _panelRegiones     = new();
-            _panelEmpresas     = new();
             _panelMovimientos  = new();
             _panelDashboard    = new();
-            _panelUsuarios     = new();
 
             // 3. Mantener Configuración como panel fijo enfocado
             _seccionActiva = "configuracion";
@@ -315,17 +284,12 @@ namespace WpfAppVba
                 case "correcciones": TabFijoContenido.Content = _panelCorrecciones; TabFijoTitulo.Text = "Correcciones"; break;
                 case "facturas":     TabFijoContenido.Content = _panelFacturas;     TabFijoTitulo.Text = "Facturas";     break;
                 case "terceros":     TabFijoContenido.Content = _panelTerceros;     TabFijoTitulo.Text = "Terceros";     break;
-                case "sucursales":   TabFijoContenido.Content = _panelSucursales;   TabFijoTitulo.Text = "Sucursales";   break;
                 case "familias":     TabFijoContenido.Content = _panelFamilias;     TabFijoTitulo.Text = "Familias";     break;
                 case "productos":    TabFijoContenido.Content = _panelProductos;    TabFijoTitulo.Text = "Productos";    break;
                 case "industrias":   TabFijoContenido.Content = _panelIndustrias;   TabFijoTitulo.Text = "Industrias";   break;
                 case "categorias":   TabFijoContenido.Content = _panelCategorias;   TabFijoTitulo.Text = "Categorías";   break;
                 case "inventarios":  TabFijoContenido.Content = _panelInventarios;  TabFijoTitulo.Text = "Inventarios";  break;
-                case "precios":      TabFijoContenido.Content = _panelPrecios;      TabFijoTitulo.Text = "Precios";      break;
-                case "regiones":     TabFijoContenido.Content = _panelRegiones;     TabFijoTitulo.Text = "Regiones";     break;
-                case "empresas":     TabFijoContenido.Content = _panelEmpresas;     TabFijoTitulo.Text = "Empresas";     break;
                 case "configuracion":TabFijoContenido.Content = _panelConfiguracion;TabFijoTitulo.Text = "Configuración";break;
-                case "usuarios":     TabFijoContenido.Content = _panelUsuarios;     TabFijoTitulo.Text = "Usuarios";     break;
                 case "movimientos":  TabFijoContenido.Content = _panelMovimientos;  TabFijoTitulo.Text = "Movimientos";  break;
                 case "dashboard":    TabFijoContenido.Content = _panelDashboard;    TabFijoTitulo.Text = "Dashboard";    break;
             }
@@ -501,12 +465,6 @@ namespace WpfAppVba
             MarcarActivo(BtnNav_Terceros);
         }
 
-        private void BtnNav_Sucursales_Click(object sender, RoutedEventArgs e)
-        {
-            MostrarPanel("sucursales");
-            MarcarActivo(BtnNav_Sucursales);
-        }
-
         private void BtnNav_Familias_Click(object sender, RoutedEventArgs e)
         {
             MostrarPanel("familias");
@@ -537,34 +495,10 @@ namespace WpfAppVba
             MarcarActivo(BtnNav_Inventarios);
         }
 
-        private void BtnNav_Regiones_Click(object sender, RoutedEventArgs e)
-        {
-            MostrarPanel("regiones");
-            MarcarActivo(BtnNav_Regiones);
-        }
-
-        private void BtnNav_Precios_Click(object sender, RoutedEventArgs e)
-        {
-            MostrarPanel("precios");
-            MarcarActivo(BtnNav_Precios);
-        }
-
-        private void BtnNav_Empresas_Click(object sender, RoutedEventArgs e)
-        {
-            MostrarPanel("empresas");
-            MarcarActivo(BtnNav_Empresas);
-        }
-
         private void BtnNav_Configuracion_Click(object sender, RoutedEventArgs e)
         {
             MostrarPanel("configuracion");
             MarcarActivo(BtnNav_Configuracion);
-        }
-
-        private void BtnNav_Usuarios_Click(object sender, RoutedEventArgs e)
-        {
-            MostrarPanel("usuarios");
-            MarcarActivo(BtnNav_Usuarios);
         }
 
         // ─── Cerrar sesión ────────────────────────────────────────────────────

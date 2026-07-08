@@ -465,7 +465,7 @@ namespace WpfAppVba
         private void BtnBuscarSucursal_Click(object sender, RoutedEventArgs e)
         {
             SucursalesGeneral.SucursalSeleccionada = null;
-            SucursalesGeneral.OpenAsDialog(Window.GetWindow(this)!, modoSelector: true, contexto: _tituloTab, llamador: this, onCerrado: () =>
+            SucursalesGeneral.OpenAsDialog(Window.GetWindow(this)!, contexto: _tituloTab, llamador: this, onCerrado: () =>
             {
                 if (SucursalesGeneral.SucursalSeleccionada != null)
                 {

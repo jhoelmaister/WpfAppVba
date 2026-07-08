@@ -54,7 +54,10 @@ namespace WpfAppVba
         private FacturasGeneral   _panelFacturas     = new();
         private PreciosGeneral    _panelPrecios      = new();
         private EmpresasGeneral   _panelEmpresas     = new();
-        private SucursalesGeneral _panelSucursales   = new();
+        // Calificado explícitamente: WpfAppVba también tiene su propia clase
+        // SucursalesGeneral (reducida a selector para Traspasos) — sin calificar,
+        // "mismo namespace gana sobre using" resolvería a esa por error.
+        private VisorEmpresa.SucursalesGeneral _panelSucursales = new();
         private RegionesGeneral   _panelRegiones     = new();
         private UsuariosGeneral   _panelUsuarios     = new();
 

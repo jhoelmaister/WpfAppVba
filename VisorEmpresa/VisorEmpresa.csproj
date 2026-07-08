@@ -81,42 +81,16 @@
     <Page Include="..\WpfAppVba\ConexionServidoresWindow.xaml" Link="Compartido\ConexionServidoresWindow.xaml" />
   </ItemGroup>
 
-  <!-- Módulos de EDICIÓN duplicados de la app principal (empresa-scoped):
-       Empresas, Sucursales, Usuarios + Regiones (selector que usan Sucursales
-       y Precios). PreciosGeneral queda vinculado (su caché ya es empresa-wide
-       vía AppLoader.ConectarProductos, sin necesidad de lógica propia), pero
-       PreciosDetalle.xaml/.xaml.cs tienen su propia copia física en este
-       proyecto (VisorEmpresa\PreciosDetalle.xaml[.cs]) — el cálculo de Stock/
-       Disponible de empresa usa ConsultasEmpresa.ObtenerStockEmpresa (cacheado
-       en memoria) en vez de recalcular con SQL directo cada vez que se abre un
-       documento, como hace la versión vinculada. -->
-  <ItemGroup>
-    <Compile Include="..\WpfAppVba\PreciosGeneral.xaml.cs" Link="Modulos\PreciosGeneral.xaml.cs" />
-    <Compile Include="..\WpfAppVba\EmpresasGeneral.xaml.cs" Link="Modulos\EmpresasGeneral.xaml.cs" />
-    <Compile Include="..\WpfAppVba\EmpresasDetalle.xaml.cs" Link="Modulos\EmpresasDetalle.xaml.cs" />
-    <Compile Include="..\WpfAppVba\SucursalesGeneral.xaml.cs" Link="Modulos\SucursalesGeneral.xaml.cs" />
-    <Compile Include="..\WpfAppVba\SucursalesDetalle.xaml.cs" Link="Modulos\SucursalesDetalle.xaml.cs" />
-    <Compile Include="..\WpfAppVba\UsuariosGeneral.xaml.cs" Link="Modulos\UsuariosGeneral.xaml.cs" />
-    <Compile Include="..\WpfAppVba\UsuariosDetalle.xaml.cs" Link="Modulos\UsuariosDetalle.xaml.cs" />
-    <Compile Include="..\WpfAppVba\RegionesGeneral.xaml.cs" Link="Modulos\RegionesGeneral.xaml.cs" />
-    <Compile Include="..\WpfAppVba\RegionesDetalle.xaml.cs" Link="Modulos\RegionesDetalle.xaml.cs" />
-    <Page Include="..\WpfAppVba\PreciosGeneral.xaml" Link="Modulos\PreciosGeneral.xaml" />
-    <Page Include="..\WpfAppVba\EmpresasGeneral.xaml" Link="Modulos\EmpresasGeneral.xaml" />
-    <Page Include="..\WpfAppVba\EmpresasDetalle.xaml" Link="Modulos\EmpresasDetalle.xaml" />
-    <Page Include="..\WpfAppVba\SucursalesGeneral.xaml" Link="Modulos\SucursalesGeneral.xaml" />
-    <Page Include="..\WpfAppVba\SucursalesDetalle.xaml" Link="Modulos\SucursalesDetalle.xaml" />
-    <Page Include="..\WpfAppVba\UsuariosGeneral.xaml" Link="Modulos\UsuariosGeneral.xaml" />
-    <Page Include="..\WpfAppVba\UsuariosDetalle.xaml" Link="Modulos\UsuariosDetalle.xaml" />
-    <Page Include="..\WpfAppVba\RegionesGeneral.xaml" Link="Modulos\RegionesGeneral.xaml" />
-    <Page Include="..\WpfAppVba\RegionesDetalle.xaml" Link="Modulos\RegionesDetalle.xaml" />
-  </ItemGroup>
-
-  <!-- Los formularios de detalle de Pedidos/Traspasos/Correcciones/Facturas ya
-       NO están vinculados: cada uno tiene su propia copia física en este
-       proyecto (VisorEmpresa\PedidosDetalle.xaml[.cs], etc.), siempre de solo
-       lectura (sin el parámetro soloLectura — ya no hace falta, es el único
-       modo que existe en la copia del visor). Se recogen automáticamente por
-       el globbing implícito del SDK, igual que XxxGeneral.xaml[.cs]. -->
+  <!-- Los módulos de catálogo/gestión (Precios, Empresas, Sucursales, Regiones,
+       Usuarios) y los formularios de detalle de Pedidos/Traspasos/Correcciones/
+       Facturas ya NO están vinculados: cada uno tiene su propia copia física en
+       este proyecto (VisorEmpresa\PreciosGeneral.xaml[.cs], etc.), siempre de
+       gestión completa (catálogos) o solo lectura (documentos, sin el parámetro
+       soloLectura — ya no hace falta, es el único modo que existe en la copia
+       del visor). Se recogen automáticamente por el globbing implícito del SDK.
+       WpfAppVba conserva su propia copia, físicamente separada, de
+       SucursalesGeneral (reducida a un selector de sucursal para Traspasos) —
+       no hay vínculo ni fuente compartida con la de acá. -->
 
   <!-- Temas (misma identidad visual que la app principal) -->
   <ItemGroup>
