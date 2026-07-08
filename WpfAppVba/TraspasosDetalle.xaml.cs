@@ -67,6 +67,8 @@ namespace WpfAppVba
                 : "Entrada de Productos Detalle";
             CboMovimiento.SelectedIndex = tipo == "salida" ? 1 : 0;
 
+            CargarComboSucursales();
+
             if (AppState.EventoFormularioM == "editar")
                 CargarParaEditar();
             else
@@ -88,12 +90,11 @@ namespace WpfAppVba
             Box_Fecha.SelectedDate = fecha.Date;
             Box_Hora.Text = fecha.ToString("HH:mm:ss");
 
-            // Sucursal opuesta — mostrar codigo, no UUID
+            // Sucursal opuesta
             string tipo    = AppState.TipoMovimiento.ToLower();
             string campOtro = tipo == "salida" ? "destino" : "origen";
             string otroUuid  = Sql.DocumentosTObj.ObtenerItem(campOtro, _idEditar)?.ToString() ?? "";
-            Box_Sucursal_Identificador.Text = Sql.SucursalesObj.ObtenerItem("codigo", otroUuid)?.ToString() ?? "";
-            ActualizarDescripcionSucursal();
+            CboSucursal.SelectedValue = otroUuid;
 
             // Emisión / Edición
             var emisionObj = Sql.DocumentosTObj.ObtenerItem("emision", _idEditar);
@@ -251,17 +252,29 @@ namespace WpfAppVba
             LblSucursalTipo.Text = esSalida ? "Sucursal destino" : "Sucursal origen";
         }
 
-        private string ResolverSucursalId()
+        // ─── Combo de sucursal contraparte: todas menos la activa ─────────────
+        private void CargarComboSucursales()
         {
-            string cod = Box_Sucursal_Identificador.Text.Trim();
-            return cod == "" ? "" : Sql.SucursalesObj.BuscarIdentificador("codigo", cod);
+            var lista = new List<SucursalOpcion>();
+            int uf = Sql.SucursalesObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.SucursalesObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                if (id == AppState.SucursalActiva) continue;
+
+                string codigo = Sql.SucursalesObj.ObtenerItem("codigo",      id)?.ToString() ?? "";
+                string desc   = Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
+                lista.Add(new SucursalOpcion { Id = id, Descripcion = $"{codigo} - {desc}" });
+            }
+
+            CboSucursal.DisplayMemberPath = "Descripcion";
+            CboSucursal.SelectedValuePath = "Id";
+            CboSucursal.ItemsSource       = lista;
         }
 
-        private void ActualizarDescripcionSucursal()
-        {
-            string id = ResolverSucursalId();
-            Box_Sucursal_Descripcion.Text = id == "" ? "" : Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
-        }
+        private string ResolverSucursalId() => CboSucursal.SelectedValue?.ToString() ?? "";
 
         private static string ObtenerDescripcionArticulo(string artId)
         {
@@ -277,8 +290,7 @@ namespace WpfAppVba
             Box_DocumentoT.IsEnabled            = false;
             Box_Fecha.IsEnabled                  = false;
             Box_Hora.IsEnabled                   = false;
-            Box_Sucursal_Identificador.IsEnabled = false;
-            BtnBuscarSucursal.IsEnabled          = false;
+            CboSucursal.IsEnabled                = false;
             Box_Estado.IsEnabled                 = false;
             Box_Referencia.IsEnabled             = false;
             Box_Observaciones.IsEnabled          = false;
@@ -437,21 +449,9 @@ namespace WpfAppVba
             if (sender == Box_Estado) ActualizarBadgeEstado();
         }
 
-        private void Box_Sucursal_Identificador_TextChanged(object sender, TextChangedEventArgs e)
+        private void CboSucursal_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_cargando) return;
-            string cod = Box_Sucursal_Identificador.Text.Trim();
-            string activaCodigo = Sql.SucursalesObj.ObtenerItem("codigo", AppState.SucursalActiva)?.ToString() ?? "";
-            if (cod != "" && cod == activaCodigo)
-            {
-                MessageBox.Show("No puede seleccionar la sucursal activa como destino/origen.",
-                    "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
-                Box_Sucursal_Identificador.Text = "";
-                Box_Sucursal_Descripcion.Text   = "";
-                return;
-            }
-            ActualizarDescripcionSucursal();
-            _hayCambios = true;
+            if (!_cargando) _hayCambios = true;
         }
 
         private void Box_Numeros_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -460,30 +460,6 @@ namespace WpfAppVba
         // ─── Selección en GridItems → mostrar stock ───────────────────────────
         private void GridItems_SelectionChanged(object sender, SelectionChangedEventArgs e)
             => CargarStock(GridItems.SelectedItem as TraspasoItemFila);
-
-        // ─── Buscar sucursal ──────────────────────────────────────────────────
-        private void BtnBuscarSucursal_Click(object sender, RoutedEventArgs e)
-        {
-            SucursalesGeneral.SucursalSeleccionada = null;
-            SucursalesGeneral.OpenAsDialog(Window.GetWindow(this)!, contexto: _tituloTab, llamador: this, onCerrado: () =>
-            {
-                if (SucursalesGeneral.SucursalSeleccionada != null)
-                {
-                    string selCodigo = SucursalesGeneral.SucursalSeleccionada;
-                    SucursalesGeneral.SucursalSeleccionada = null;
-                    string activaCodigo = Sql.SucursalesObj.ObtenerItem("codigo", AppState.SucursalActiva)?.ToString() ?? "";
-                    if (selCodigo == activaCodigo)
-                    {
-                        MessageBox.Show("No puede seleccionar la sucursal activa como destino/origen.",
-                            "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        return;
-                    }
-                    Box_Sucursal_Identificador.Text = selCodigo;
-                    ActualizarDescripcionSucursal();
-                    _hayCambios = true;
-                }
-            });
-        }
 
         // ─── Buscar artículo (single-select) ─────────────────────────────────
         // #if !VISOR ya no es necesario en la práctica (TraspasosDetalle no está
@@ -951,5 +927,11 @@ namespace WpfAppVba
         public string Codigo     { get; set; } = "";
         public string Disponible { get; set; } = "";
         public string Stock      { get; set; } = "";
+    }
+
+    public class SucursalOpcion
+    {
+        public string Id          { get; set; } = "";
+        public string Descripcion { get; set; } = "";
     }
 }
