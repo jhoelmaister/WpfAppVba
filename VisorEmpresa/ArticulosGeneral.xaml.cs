@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -16,7 +18,10 @@ namespace VisorEmpresa
     /// calculan a nivel de EMPRESA vía ConsultasEmpresa.ObtenerStockEmpresa en
     /// vez de StockCalculator (que depende de AppState.SucursalActiva/
     /// AperturaActiva/DataFechaFinal, nunca poblados en VisorEmpresa — ver la
-    /// nota de la clase en ConsultasEmpresa.cs).
+    /// nota de la clase en ConsultasEmpresa.cs). Combo de Sucursal (Todas las
+    /// sucursales o una puntual, igual que PedidosGeneral): como
+    /// ObtenerStockEmpresa ya devuelve el desglose por sucursal en el mismo
+    /// resultado (PorSucursal), filtrar no requiere una consulta SQL aparte.
     /// </summary>
     public partial class ArticulosGeneral : UserControl
     {
@@ -24,13 +29,64 @@ namespace VisorEmpresa
 
         // Modo de filtro activo: "todos" (carga inicial) | "busqueda" (TxtBuscar) | "familia" (Tree1)
         private string _modoFiltro = "todos";
+        private string _sucursalFiltro = "";   // "" = Todas las sucursales
 
         private bool _iniciado = false;
+        private bool _cargandoFiltros;
+
+        private class Opcion
+        {
+            public string Id    { get; }
+            public string Texto { get; }
+            public Opcion(string id, string texto) { Id = id; Texto = texto; }
+            public override string ToString() => Texto;
+        }
 
         public ArticulosGeneral()
         {
             InitializeComponent();
-            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarArbol(); CargarArticulos(); };
+            Loaded += async (_, _) =>
+            {
+                if (_iniciado) return;
+                _iniciado = true;
+                await IniciarAsync();
+            };
+        }
+
+        // ─── Carga inicial: combo de sucursales + primera consulta ───────────
+        private async Task IniciarAsync()
+        {
+            _cargandoFiltros = true;
+            try
+            {
+                Mouse.OverrideCursor = Cursors.Wait;
+                string emp = AppState.EmpresaActiva;
+                var sucursales = await Task.Run(() => ConsultasEmpresa.CargarSucursalesEmpresa(emp));
+                var opciones = new List<Opcion> { new("", "Todas las sucursales") };
+                opciones.AddRange(sucursales.Select(s => new Opcion(s.Id, s.Descripcion)));
+                CmbSucursal.ItemsSource   = opciones;
+                CmbSucursal.SelectedIndex = 0;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"No se pudieron cargar las sucursales:\n{ex.Message}",
+                                "Visor Empresa", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+                _cargandoFiltros = false;
+            }
+
+            CargarArbol();
+            CargarArticulos();
+        }
+
+        private void Filtro_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_cargandoFiltros || !_iniciado) return;
+            _sucursalFiltro = (CmbSucursal.SelectedItem as Opcion)?.Id ?? "";
+            CargarArticulos();
         }
 
         // ─── Árbol de productos/familias (mismo patrón que WpfAppVba.ArticulosGeneral) ──
@@ -80,7 +136,7 @@ namespace VisorEmpresa
         // ─── Carga la lista de artículos ──────────────────────────────────────
         public void CargarArticulos()
         {
-            var stock = ConsultasEmpresa.ObtenerStockEmpresa(AppState.EmpresaActiva).Totales;
+            var resultado = ConsultasEmpresa.ObtenerStockEmpresa(AppState.EmpresaActiva);
 
             var lista = new List<ArticuloFila>();
             int linea = 1;
@@ -130,7 +186,19 @@ namespace VisorEmpresa
                         continue;
                 }
 
-                stock.TryGetValue(id, out var totales);
+                double disponible, stockVal;
+                if (string.IsNullOrEmpty(_sucursalFiltro))
+                {
+                    resultado.Totales.TryGetValue(id, out var totales);
+                    disponible = totales.Disponible;
+                    stockVal   = totales.Stock;
+                }
+                else
+                {
+                    resultado.PorSucursal.TryGetValue(_sucursalFiltro + "|" + id, out var acumulado);
+                    disponible = acumulado?.Disponible ?? 0;
+                    stockVal   = acumulado?.Stock ?? 0;
+                }
 
                 lista.Add(new ArticuloFila
                 {
@@ -139,8 +207,8 @@ namespace VisorEmpresa
                     Codigo      = codigo,
                     Categoria   = catDesc,
                     Descripcion = descCompleta,
-                    Disponible  = totales.Disponible,
-                    Stock       = totales.Stock
+                    Disponible  = disponible,
+                    Stock       = stockVal
                 });
             }
 

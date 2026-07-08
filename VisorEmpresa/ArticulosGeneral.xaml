@@ -109,15 +109,32 @@
                     BorderBrush="{DynamicResource ThemeBorde}"
                     BorderThickness="0,0,0,1"
                     Padding="16,10">
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="Artículos"
-                               FontSize="15" FontWeight="SemiBold"
-                               Foreground="{DynamicResource ThemeTexto}"/>
-                    <TextBlock x:Name="LblSubtitulo"
-                               FontSize="11"
-                               Foreground="{DynamicResource ThemeTextoSec}"
-                               Margin="0,2,0,0"/>
-                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock Text="Artículos"
+                                   FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThemeTexto}"/>
+                        <TextBlock x:Name="LblSubtitulo"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource ThemeTextoSec}"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Sucursal:"
+                                   FontSize="12" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource ThemeTextoSec}"
+                                   Margin="0,0,6,0"/>
+                        <ComboBox x:Name="CmbSucursal"
+                                  Width="180" Height="28" FontSize="12"
+                                  SelectionChanged="Filtro_SelectionChanged"/>
+                    </StackPanel>
+                </Grid>
             </Border>
 
             <!-- ── Métricas ── -->

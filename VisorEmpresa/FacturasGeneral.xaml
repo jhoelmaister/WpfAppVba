@@ -506,10 +506,6 @@
                                         Binding="{Binding TerceroDesc}"
                                         Width="*"/>
 
-                    <DataGridTextColumn Header="Referencia"
-                                        Binding="{Binding Referencia}"
-                                        Width="140"/>
-
                     <!-- Columna Estado (entrega) con badge -->
                     <DataGridTemplateColumn Header="Estado" Width="100">
                         <DataGridTemplateColumn.CellTemplate>

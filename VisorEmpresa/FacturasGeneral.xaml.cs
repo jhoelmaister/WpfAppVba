@@ -258,7 +258,6 @@ namespace VisorEmpresa
                     Fecha        = fechaDoc,
                     FechaStr     = fechaDoc != default ? $"{fechaDoc:d} {fechaDoc:HH:mm:ss}" : "",
                     SucursalDesc = sucDesc,
-                    Referencia   = referencia,
                     TerceroDesc  = terceroDesc,
                     Movimiento   = movDoc,
                     ImporteTotal = importe,
@@ -474,7 +473,6 @@ namespace VisorEmpresa
         public DateTime Fecha        { get; set; }
         public string   FechaStr     { get; set; } = "";
         public string   SucursalDesc { get; set; } = "";
-        public string   Referencia   { get; set; } = "";
         public string   TerceroDesc  { get; set; } = "";
         public string   Movimiento   { get; set; } = "venta";
         public double   ImporteTotal { get; set; }

@@ -184,10 +184,11 @@ namespace VisorEmpresa
         /// KPIs, el gráfico mensual, el desglose por categoría y la comparativa
         /// por sucursal.
         /// </summary>
-        public static List<MovimientoFila> CargarMovimientos(string empresa, int anio)
+        public static List<MovimientoFila> CargarMovimientos(string empresa, int anio, string sucursalId = "")
         {
             var (desde, hasta) = RangoAnio(anio);
             var lista = new List<MovimientoFila>();
+            string filtroSuc = string.IsNullOrEmpty(sucursalId) ? "" : " AND s.id = @suc";
 
             // Mismo corte por apertura que las 4 vistas de documentos (ver
             // SubconsultaApertura más abajo): sin esto, el dashboard sumaba pedidos
@@ -205,10 +206,11 @@ namespace VisorEmpresa
                 "LEFT JOIN categorias c    ON c.id = a.categoria " +
                 "WHERE vg.estadof = 'normal' " +
                 "AND vg.fecha >= @desde AND vg.fecha <= @hasta " +
-                "AND vg.fecha >= COALESCE(ap.fecha, s.fecha) " +
-                "GROUP BY s.id, s.descripcion, vg.movimiento, MONTH(vg.fecha), " +
+                "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
+                filtroSuc +
+                " GROUP BY s.id, s.descripcion, vg.movimiento, MONTH(vg.fecha), " +
                 "         ISNULL(c.descripcion, N'Sin categoría')",
-                ("@emp", EmpresaSegura(empresa)), ("@desde", desde), ("@hasta", hasta));
+                ("@emp", EmpresaSegura(empresa)), ("@desde", desde), ("@hasta", hasta), ("@suc", sucursalId));
 
             foreach (DataRow fila in tabla.Rows)
             {
@@ -230,10 +232,11 @@ namespace VisorEmpresa
         /// artículos distintos del año en toda la empresa.
         /// </summary>
         public static Dictionary<string, (int Documentos, int Articulos)> CargarResumenPedidos(
-            string empresa, int anio)
+            string empresa, int anio, string sucursalId = "")
         {
             var (desde, hasta) = RangoAnio(anio);
             var resumen = new Dictionary<string, (int, int)>();
+            string filtroSuc = string.IsNullOrEmpty(sucursalId) ? "" : " AND vg.sucursal = @suc";
 
             var tabla = EjecutarConsulta(
                 "SELECT vg.movimiento, " +
@@ -245,9 +248,10 @@ namespace VisorEmpresa
                 "LEFT JOIN " + SubconsultaApertura + " ap ON ap.sucursal = vg.sucursal " +
                 "WHERE vg.estadof = 'normal' " +
                 "AND vg.fecha >= @desde AND vg.fecha <= @hasta " +
-                "AND vg.fecha >= COALESCE(ap.fecha, s.fecha) " +
-                "GROUP BY vg.movimiento",
-                ("@emp", EmpresaSegura(empresa)), ("@desde", desde), ("@hasta", hasta));
+                "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
+                filtroSuc +
+                " GROUP BY vg.movimiento",
+                ("@emp", EmpresaSegura(empresa)), ("@desde", desde), ("@hasta", hasta), ("@suc", sucursalId));
 
             foreach (DataRow fila in tabla.Rows)
             {
@@ -265,13 +269,20 @@ namespace VisorEmpresa
         /// total de movimiento interno (se excluyen auto-traspasos origen=destino).
         /// </summary>
         public static (double Unidades, int Documentos) CargarTraspasosInternos(
-            string empresa, int anio)
+            string empresa, int anio, string sucursalId = "")
         {
             var (desde, hasta) = RangoAnio(anio);
 
             // Mismo criterio por-lado que CargarDocsTraspasos: un traspaso cuenta si
-            // AL MENOS un lado (origen o destino) pertenece a la empresa y está
-            // posterior a la apertura de ESA sucursal.
+            // AL MENOS un lado (origen o destino) pertenece a la empresa (o, con una
+            // sucursal puntual elegida, si esa sucursal es el origen o el destino) y
+            // está posterior a la apertura de ESA sucursal.
+            string condicionLado = string.IsNullOrEmpty(sucursalId)
+                ? "( (so.empresa = @emp AND vg.fecha >= COALESCE(apo.fecha, so.fecha)) " +
+                  "   OR (sd.empresa = @emp AND vg.fecha >= COALESCE(apd.fecha, sd.fecha)) )"
+                : "( (vg.origen = @suc AND vg.fecha >= COALESCE(apo.fecha, so.fecha)) " +
+                  "   OR (vg.destino = @suc AND vg.fecha >= COALESCE(apd.fecha, sd.fecha)) )";
+
             var tabla = EjecutarConsulta(
                 "SELECT ISNULL(SUM(vd.cantidad), 0) AS cantidad, " +
                 "       COUNT(DISTINCT vg.id) AS documentos " +
@@ -284,9 +295,8 @@ namespace VisorEmpresa
                 "WHERE vg.estadof = 'normal' " +
                 "AND vg.fecha >= @desde AND vg.fecha <= @hasta " +
                 "AND vg.origen <> vg.destino " +
-                "AND ( (so.empresa = @emp AND vg.fecha >= COALESCE(apo.fecha, so.fecha)) " +
-                "   OR (sd.empresa = @emp AND vg.fecha >= COALESCE(apd.fecha, sd.fecha)) )",
-                ("@emp", EmpresaSegura(empresa)), ("@desde", desde), ("@hasta", hasta));
+                "AND " + condicionLado,
+                ("@emp", EmpresaSegura(empresa)), ("@desde", desde), ("@hasta", hasta), ("@suc", sucursalId));
 
             if (tabla.Rows.Count == 0) return (0, 0);
             var r = tabla.Rows[0];

@@ -28,6 +28,17 @@ namespace VisorEmpresa
         private Dictionary<string, (int Documentos, int Articulos)> _resumen = new();
         private double _traspasosUnidades;
 
+        private string _sucursalFiltro = "";   // "" = Todas las sucursales
+        private bool _cargandoFiltros;
+
+        private class Opcion
+        {
+            public string Id    { get; }
+            public string Texto { get; }
+            public Opcion(string id, string texto) { Id = id; Texto = texto; }
+            public override string ToString() => Texto;
+        }
+
         // Color asignado a cada categoría en el render actual.
         private readonly Dictionary<string, Brush> _colorCat = new();
 
@@ -57,8 +68,41 @@ namespace VisorEmpresa
             {
                 if (_iniciado) return;
                 _iniciado = true;
-                await CargarDatosAsync();
+                await IniciarAsync();
             };
+        }
+
+        // ─── Carga inicial: combo de sucursales + primera consulta ───────────
+        private async Task IniciarAsync()
+        {
+            _cargandoFiltros = true;
+            try
+            {
+                string emp = VisorState.EmpresaActiva;
+                var sucursales = await Task.Run(() => ConsultasEmpresa.CargarSucursalesEmpresa(emp));
+                var opciones = new List<Opcion> { new("", "Todas las sucursales") };
+                opciones.AddRange(sucursales.Select(s => new Opcion(s.Id, s.Descripcion)));
+                CmbSucursal.ItemsSource   = opciones;
+                CmbSucursal.SelectedIndex = 0;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"No se pudieron cargar las sucursales:\n{ex.Message}",
+                                "Visor Empresa", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            finally
+            {
+                _cargandoFiltros = false;
+            }
+
+            await CargarDatosAsync();
+        }
+
+        private void Filtro_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_cargandoFiltros || !_iniciado) return;
+            _sucursalFiltro = (CmbSucursal.SelectedItem as Opcion)?.Id ?? "";
+            _ = CargarDatosAsync();
         }
 
         /// <summary>
@@ -100,9 +144,9 @@ namespace VisorEmpresa
             {
                 Mouse.OverrideCursor = Cursors.Wait;
 
-                var filas    = await Task.Run(() => ConsultasEmpresa.CargarMovimientos(emp, anio));
-                var resumen  = await Task.Run(() => ConsultasEmpresa.CargarResumenPedidos(emp, anio));
-                var traspasos = await Task.Run(() => ConsultasEmpresa.CargarTraspasosInternos(emp, anio));
+                var filas    = await Task.Run(() => ConsultasEmpresa.CargarMovimientos(emp, anio, _sucursalFiltro));
+                var resumen  = await Task.Run(() => ConsultasEmpresa.CargarResumenPedidos(emp, anio, _sucursalFiltro));
+                var traspasos = await Task.Run(() => ConsultasEmpresa.CargarTraspasosInternos(emp, anio, _sucursalFiltro));
 
                 _filas = filas;
                 _resumen = resumen;

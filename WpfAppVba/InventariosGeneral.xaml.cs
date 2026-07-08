@@ -317,8 +317,6 @@ namespace WpfAppVba
             const double altoFila      = 16;
             const double anchoN        = 28;
             const double anchoCodigo   = 80;
-            const double anchoProd     = 90;
-            const double anchoFam      = 80;
             const double anchoCantidad = 75;
 
             var document = new PdfDocument();
@@ -327,31 +325,25 @@ namespace WpfAppVba
             XGraphics gfx = XGraphics.FromPdfPage(page);
 
             double anchoTabla = page.Width - margen * 2;
-            double anchoDesc  = anchoTabla - anchoN - anchoCodigo - anchoProd - anchoFam - anchoCantidad;
+            double anchoDesc  = anchoTabla - anchoN - anchoCodigo - anchoCantidad;
             double xN        = margen;
             double xCodigo   = xN + anchoN;
-            double xProd     = xCodigo + anchoCodigo;
-            double xFam      = xProd + anchoProd;
-            double xDesc     = xFam + anchoFam;
+            double xDesc     = xCodigo + anchoCodigo;
             double xCantidad = xDesc + anchoDesc;
 
             double y = margen;
 
-            // Fila de datos: 6 columnas con sus líneas separadoras.
-            void DibujarFilaDatos(string n, string codigo, string desc, string prod, string fam, string cantidad)
+            // Fila de datos: 4 columnas con sus líneas separadoras.
+            void DibujarFilaDatos(string n, string codigo, string desc, string cantidad)
             {
                 gfx.DrawRectangle(penLinea, xN, y, anchoTabla, altoFila);
                 gfx.DrawLine(penLinea, xCodigo,   y, xCodigo,   y + altoFila);
                 gfx.DrawLine(penLinea, xDesc,     y, xDesc,     y + altoFila);
-                gfx.DrawLine(penLinea, xProd,     y, xProd,     y + altoFila);
-                gfx.DrawLine(penLinea, xFam,      y, xFam,      y + altoFila);
                 gfx.DrawLine(penLinea, xCantidad, y, xCantidad, y + altoFila);
 
                 gfx.DrawString(n,        fontCuerpo, XBrushes.Black, new XRect(xN,           y, anchoN,          altoFila), XStringFormats.Center);
                 gfx.DrawString(codigo,   fontCuerpo, XBrushes.Black, new XRect(xCodigo + 4,  y, anchoCodigo - 8, altoFila), XStringFormats.CenterLeft);
                 gfx.DrawString(desc,     fontCuerpo, XBrushes.Black, new XRect(xDesc + 4,    y, anchoDesc - 8,   altoFila), XStringFormats.CenterLeft);
-                gfx.DrawString(prod,     fontCuerpo, XBrushes.Black, new XRect(xProd + 4,    y, anchoProd - 8,   altoFila), XStringFormats.CenterLeft);
-                gfx.DrawString(fam,      fontCuerpo, XBrushes.Black, new XRect(xFam + 4,     y, anchoFam - 8,    altoFila), XStringFormats.CenterLeft);
                 gfx.DrawString(cantidad, fontCuerpo, XBrushes.Black, new XRect(xCantidad + 4, y, anchoCantidad - 8, altoFila), XStringFormats.CenterRight);
 
                 y += altoFila;
@@ -363,15 +355,11 @@ namespace WpfAppVba
                 gfx.DrawRectangle(penLinea, brushHeader, xN, y, anchoTabla, altoHeader);
                 gfx.DrawLine(penLinea, xCodigo,   y, xCodigo,   y + altoHeader);
                 gfx.DrawLine(penLinea, xDesc,     y, xDesc,     y + altoHeader);
-                gfx.DrawLine(penLinea, xProd,     y, xProd,     y + altoHeader);
-                gfx.DrawLine(penLinea, xFam,      y, xFam,      y + altoHeader);
                 gfx.DrawLine(penLinea, xCantidad, y, xCantidad, y + altoHeader);
 
                 gfx.DrawString("N°",          fontHeader, XBrushes.Black, new XRect(xN,           y, anchoN,          altoHeader), XStringFormats.Center);
                 gfx.DrawString("Código",      fontHeader, XBrushes.Black, new XRect(xCodigo + 4,  y, anchoCodigo - 8, altoHeader), XStringFormats.CenterLeft);
                 gfx.DrawString("Descripción", fontHeader, XBrushes.Black, new XRect(xDesc + 4,    y, anchoDesc - 8,   altoHeader), XStringFormats.CenterLeft);
-                gfx.DrawString("Producto",    fontHeader, XBrushes.Black, new XRect(xProd + 4,    y, anchoProd - 8,   altoHeader), XStringFormats.CenterLeft);
-                gfx.DrawString("Familia",     fontHeader, XBrushes.Black, new XRect(xFam + 4,     y, anchoFam - 8,    altoHeader), XStringFormats.CenterLeft);
                 gfx.DrawString("Cantidad",    fontHeader, XBrushes.Black, new XRect(xCantidad + 4, y, anchoCantidad - 8, altoHeader), XStringFormats.CenterRight);
 
                 y += altoHeader;
@@ -449,7 +437,7 @@ namespace WpfAppVba
                 {
                     AsegurarEspacio(altoFila);
                     n++;
-                    DibujarFilaDatos(n.ToString(), l.codigo, l.desc, l.prodDesc, l.famDesc, l.cantidad.ToString("#,##0.##"));
+                    DibujarFilaDatos(n.ToString(), l.codigo, l.desc, l.cantidad.ToString("#,##0.##"));
                 }
             }
 
@@ -530,13 +518,11 @@ namespace WpfAppVba
 
             ws.Cell(1, 1).Value = "N°";
             ws.Cell(1, 2).Value = "Código";
-            ws.Cell(1, 3).Value = "Producto";
-            ws.Cell(1, 4).Value = "Familia";
-            ws.Cell(1, 5).Value = "Descripción";
-            ws.Cell(1, 6).Value = "Cantidad";
+            ws.Cell(1, 3).Value = "Descripción";
+            ws.Cell(1, 4).Value = "Cantidad";
 
             int uf = Sql.InventariosObj.ContarFilas;
-            var lineas = new List<(string prodDesc, string famDesc, string codigo, string desc, double cantidad)>();
+            var lineas = new List<(string codigo, string desc, double cantidad)>();
 
             for (int i = 1; i <= uf; i++)
             {
@@ -546,44 +532,24 @@ namespace WpfAppVba
                 if (Sql.InventariosObj.ObtenerItem("documentoI", id)?.ToString() != fila.Id) continue;
 
                 string artId    = Sql.InventariosObj.ObtenerItem("articulo", id)?.ToString() ?? "";
-                string famId    = Sql.ArticulosObj.ObtenerItem("familia", artId)?.ToString() ?? "";
-                string prodId   = Sql.FamiliasObj.ObtenerItem("producto", famId)?.ToString() ?? "";
-                string prodDesc = Sql.ProductosObj.ObtenerItem("descripcion", prodId)?.ToString() ?? "";
-                string famDesc  = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString()  ?? "";
                 string codigo   = Sql.ArticulosObj.ObtenerItem("codigo",      artId)?.ToString()  ?? "";
                 string descArt  = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString()  ?? "";
                 double cantidad = Convert.ToDouble(Sql.InventariosObj.ObtenerItem("cantidad", id) ?? 0);
                 if (cantidad <= 0) continue;
 
-                lineas.Add((prodDesc, famDesc, codigo, descArt, cantidad));
+                lineas.Add((codigo, descArt, cantidad));
             }
-
-            var grupos = lineas
-                .GroupBy(l => (l.prodDesc, l.famDesc))
-                .OrderBy(g => g.Key.prodDesc, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(g => g.Key.famDesc, StringComparer.OrdinalIgnoreCase);
 
             int row = 2;
             int n = 0;
-            foreach (var grupo in grupos)
+            foreach (var l in lineas)
             {
-                ws.Cell(row, 1).Value = $"{grupo.Key.prodDesc} & {grupo.Key.famDesc}";
-                ws.Range(row, 1, row, 6).Merge();
-                ws.Range(row, 1, row, 6).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromArgb(191, 219, 254);
-                ws.Range(row, 1, row, 6).Style.Font.Bold = true;
+                n++;
+                ws.Cell(row, 1).Value = n;
+                ws.Cell(row, 2).Value = l.codigo;
+                ws.Cell(row, 3).Value = l.desc;
+                ws.Cell(row, 4).Value = l.cantidad;
                 row++;
-
-                foreach (var l in grupo)
-                {
-                    n++;
-                    ws.Cell(row, 1).Value = n;
-                    ws.Cell(row, 2).Value = l.codigo;
-                    ws.Cell(row, 3).Value = l.prodDesc;
-                    ws.Cell(row, 4).Value = l.famDesc;
-                    ws.Cell(row, 5).Value = l.desc;
-                    ws.Cell(row, 6).Value = l.cantidad;
-                    row++;
-                }
             }
 
             ws.Columns().AdjustToContents();
