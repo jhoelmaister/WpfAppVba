@@ -541,6 +541,9 @@ namespace VisorEmpresa
         private void GridItems_SelectionChanged(object sender, SelectionChangedEventArgs e)
             => CargarStock(GridItems.SelectedItem as CorreccionItemFila);
 
+        // StockCalculator.ContarStock (app principal) usa AppState.SucursalActiva/
+        // AperturaActiva/DataFechaFinal, que en el visor nunca se pueblan (ver
+        // ConsultasEmpresa.ObtenerStockEmpresaAlCierre) — habría dado siempre 0.
         private void CargarStock(CorreccionItemFila? fila)
         {
             if (fila == null || string.IsNullOrEmpty(fila.ArticuloId))
@@ -549,7 +552,9 @@ namespace VisorEmpresa
                 return;
             }
 
-            double stock = StockCalculator.ContarStock(fila.ArticuloId, AppState.DataFechaFinal);
+            var resultado = ConsultasEmpresa.ObtenerStockEmpresaAlCierre(AppState.EmpresaActiva, VisorState.AnioActivo);
+            resultado.Totales.TryGetValue(fila.ArticuloId, out var totales);
+            double stock = totales.Stock;
 
             GridStock.ItemsSource = new List<CorreccionStockFila>
             {

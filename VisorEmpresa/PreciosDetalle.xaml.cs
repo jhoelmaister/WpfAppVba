@@ -209,7 +209,7 @@ namespace VisorEmpresa
             try
             {
                 Mouse.OverrideCursor = Cursors.Wait;
-                var resultado = ConsultasEmpresa.ObtenerStockEmpresa(AppState.EmpresaActiva, forzarRecarga);
+                var resultado = ConsultasEmpresa.ObtenerStockEmpresa(AppState.EmpresaActiva, forzarRecarga: forzarRecarga);
                 _stockEmpresa     = resultado.Totales;
                 _stockPorSucursal = resultado.PorSucursal;
             }

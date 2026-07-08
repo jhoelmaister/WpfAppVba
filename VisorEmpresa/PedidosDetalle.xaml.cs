@@ -667,6 +667,11 @@ namespace VisorEmpresa
         }
 
         // ─── Stock y precios del artículo seleccionado ────────────────────────
+        // AppState.RegionActiva/SucursalActiva/AperturaActiva/DataFechaFinal no se
+        // pueblan nunca en el visor (no hay una única región/sucursal activa: es
+        // empresa completa) — el filtro de región se quita (se listan los precios
+        // vigentes de TODAS las regiones) y el stock usa
+        // ConsultasEmpresa.ObtenerStockEmpresa/AlCierre en vez de StockCalculator.
         private void CargarStockYPrecios(PedidoItemFila? fila)
         {
             GridPrecios.ItemsSource = null;
@@ -674,7 +679,7 @@ namespace VisorEmpresa
 
             if (fila == null || string.IsNullOrEmpty(fila.ArticuloId)) return;
 
-            // Precios
+            // Precios (de cualquier región: el visor no tiene una única región activa)
             var precios = new List<PrecioFila>();
             int uf = Sql.PreciosObj.ContarFilas;
             for (int i = uf; i >= 1; i--)
@@ -684,7 +689,6 @@ namespace VisorEmpresa
                 if (Sql.PreciosObj.ObtenerItem("articulo", pid)?.ToString() != fila.ArticuloId) continue;
                 string docLId = Sql.PreciosObj.ObtenerItem("documentoL", pid)?.ToString() ?? "";
                 if (docLId == "") continue;
-                if (Sql.DocumentosLObj.ObtenerItem("region", docLId)?.ToString() != AppState.RegionActiva) continue;
                 if (Sql.DocumentosLObj.ObtenerItem("estado", docLId)?.ToString() == "pendiente") continue;
                 double precioVal = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", pid) ?? 0);
                 if (precioVal <= 0) continue;
@@ -699,8 +703,12 @@ namespace VisorEmpresa
             GridPrecios.ItemsSource = precios;
 
             // Stock
-            double stockTotal = StockCalculator.ContarStock(fila.ArticuloId, AppState.DataFechaFinal);
-            double stockDisp  = StockCalculator.ContarStock(fila.ArticuloId, DateTime.Now);
+            var alCierre = ConsultasEmpresa.ObtenerStockEmpresaAlCierre(AppState.EmpresaActiva, VisorState.AnioActivo);
+            var ahora    = ConsultasEmpresa.ObtenerStockEmpresa(AppState.EmpresaActiva);
+            alCierre.Totales.TryGetValue(fila.ArticuloId, out var totalesCierre);
+            ahora.Totales.TryGetValue(fila.ArticuloId, out var totalesAhora);
+            double stockTotal = totalesCierre.Stock;
+            double stockDisp  = totalesAhora.Stock;
             GridStock.ItemsSource = new List<StockFila>
             {
                 new() { Codigo = fila.Codigo, Disponible = stockDisp.ToString("N0"), Stock = stockTotal.ToString("N0") }

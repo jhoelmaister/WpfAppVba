@@ -293,29 +293,39 @@ namespace VisorEmpresa
             return (Numero(r["cantidad"]), Entero(r["documentos"]));
         }
 
-        // ─── Stock/Disponible de TODA la empresa (para VisorEmpresa.PreciosDetalle) ─
+        // ─── Stock/Disponible de TODA la empresa (para PreciosDetalle y para el
+        //     panel "Stock" de Pedidos/Traspasos/Correcciones Detalle) ──────────
         //
-        // Mismo criterio que WpfAppVba.PreciosDetalle.CalcularStockEmpresa (5
-        // consultas SQL agregadas a nivel de empresa, reproduciendo la fórmula de
-        // StockCalculator.ContarStock/ContarStock2): la apertura de cada sucursal
-        // es la de su documentoI más reciente (o su fecha de creación si no tiene
-        // ninguno), y se acumula todo movimiento posterior hasta "ahora".
+        // Mismo criterio que WpfAppVba.StockCalculator.ContarStock/ContarStock2 (5
+        // consultas SQL agregadas a nivel de empresa en vez de una sola sucursal):
+        // la apertura de cada sucursal es la de su documentoI más reciente (o su
+        // fecha de creación si no tiene ninguno), y se acumula todo movimiento
+        // posterior hasta la fecha "hasta" pedida (por defecto, ahora mismo).
         //
-        // A diferencia de la versión de la app principal, el resultado queda en
-        // caché en memoria (por empresa) y se reutiliza entre aperturas de
-        // PreciosDetalle: evita recalcular con 5 consultas SQL cada vez que el
-        // usuario abre un documento distinto. Se invalida con forzarRecarga=true
-        // (botón "Actualizar" de PreciosDetalle).
-        private static string?               _stockEmpresaCacheKey;
-        private static StockEmpresaResultado? _stockEmpresaCache;
+        // IMPORTANTE: StockCalculator.ContarStock usa AppState.SucursalActiva/
+        // AperturaActiva/DataFechaFinal — ninguno de los tres se puebla nunca en
+        // VisorEmpresa (AppState.ActualizarBase, que los llena, es exclusivo del
+        // login de la app principal), así que llamarlo directamente desde el
+        // visor da 0 o valores incompletos siempre. Este método es el reemplazo
+        // real, no solo una optimización de caché.
+        //
+        // El resultado queda en caché en memoria (por empresa + fecha "hasta", al
+        // día) y se reutiliza entre aperturas de documentos: evita recalcular con
+        // 5 consultas SQL cada vez. Se invalida con forzarRecarga=true (botón
+        // "Actualizar" de PreciosDetalle).
+        private static readonly Dictionary<(string Empresa, DateTime Hasta), StockEmpresaResultado> _stockEmpresaCache = new();
 
-        public static StockEmpresaResultado ObtenerStockEmpresa(string empresa, bool forzarRecarga = false)
+        /// <param name="hasta">Fecha límite de la acumulación (default: ahora).</param>
+        public static StockEmpresaResultado ObtenerStockEmpresa(string empresa, DateTime? hasta = null, bool forzarRecarga = false)
         {
-            if (!forzarRecarga && _stockEmpresaCache != null && _stockEmpresaCacheKey == empresa)
-                return _stockEmpresaCache;
+            DateTime fechaHasta = hasta ?? DateTime.Now;
+            var clave = (empresa, fechaHasta.Date);
+
+            if (!forzarRecarga && _stockEmpresaCache.TryGetValue(clave, out var enCache))
+                return enCache;
 
             string emp = EmpresaSegura(empresa);
-            DateTime ahora = DateTime.Now;
+            DateTime ahora = fechaHasta;
 
             var aperturaFecha = new Dictionary<string, DateTime>();
             var porSucursal   = new Dictionary<string, StockAcumuladoInfo>();
@@ -462,9 +472,22 @@ namespace VisorEmpresa
             }
 
             var resultado = new StockEmpresaResultado { Totales = totales, PorSucursal = porSucursal };
-            _stockEmpresaCacheKey = empresa;
-            _stockEmpresaCache    = resultado;
+            _stockEmpresaCache[clave] = resultado;
             return resultado;
+        }
+
+        /// <summary>
+        /// Stock "al cierre del período activo" (equivalente a
+        /// StockCalculator.ContarStock(codigo, AppState.DataFechaFinal) de la app
+        /// principal): fin del año elegido en la top bar del visor, o "ahora" si
+        /// ese año todavía no terminó — mismo criterio que
+        /// AppState.ActualizarBase para el período activo.
+        /// </summary>
+        public static StockEmpresaResultado ObtenerStockEmpresaAlCierre(string empresa, int anio, bool forzarRecarga = false)
+        {
+            DateTime finDeAño = new DateTime(anio, 12, 31, 23, 59, 59);
+            DateTime hasta = finDeAño < DateTime.Now ? finDeAño : DateTime.Now;
+            return ObtenerStockEmpresa(empresa, hasta, forzarRecarga);
         }
 
         // ─── Cachés SqlData para Pedidos/Traspasos/Correcciones/FacturasGeneral ──
