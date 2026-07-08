@@ -286,6 +286,7 @@ namespace WpfAppVba
                 Fecha      = fecha,
                 FechaStr   = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                 RegionDesc = Sql.RegionesObj.ObtenerItem("descripcion", region)?.ToString() ?? "",
+                Referencia = Sql.DocumentosLObj.ObtenerItem("referencia", id)?.ToString() ?? "",
                 Estado      = esPendiente ? "pendiente" : "valido",
                 EstadoTexto = esPendiente ? "Pendiente"  : "Válido",
                 Lineas     = cantLineas
@@ -923,6 +924,7 @@ namespace WpfAppVba
         public DateTime Fecha      { get; set; }
         public string   FechaStr   { get; set; } = "";
         public string   RegionDesc { get; set; } = "";
+        public string   Referencia { get; set; } = "";
         public string   Estado     { get; set; } = "";
         public string   EstadoTexto { get; set; } = "";
         public int      Lineas     { get; set; }

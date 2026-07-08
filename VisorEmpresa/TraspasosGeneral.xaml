@@ -202,24 +202,8 @@
                                    Foreground="{DynamicResource ThemeTextoSec}"
                                    Margin="0,0,6,0"/>
                         <ComboBox x:Name="CmbSucursal"
-                                  Width="180" Height="28" FontSize="12" Margin="0,0,16,0"
+                                  Width="180" Height="28" FontSize="12"
                                   SelectionChanged="Filtro_SelectionChanged"/>
-                        <!-- El filtro Entradas/Salidas solo tiene sentido relativo a UNA
-                             sucursal puntual: con "Todas las sucursales" se deshabilita
-                             (ver ActualizarDisponibilidadMovimiento en el code-behind).
-                             Sin columna Movimiento en la grilla (Origen/Destino ya
-                             identifican la dirección sin ambigüedad). -->
-                        <TextBlock Text="Movimiento:"
-                                   FontSize="12" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource ThemeTextoSec}"
-                                   Margin="0,0,6,0"/>
-                        <ComboBox x:Name="CboTipoMovimiento"
-                                  Width="100" Height="28" FontSize="12"
-                                  SelectionChanged="CboTipoMovimiento_SelectionChanged">
-                            <ComboBoxItem Content="Todos" IsSelected="True"/>
-                            <ComboBoxItem Content="Entradas"/>
-                            <ComboBoxItem Content="Salidas"/>
-                        </ComboBox>
                     </StackPanel>
                 </Grid>
             </Border>

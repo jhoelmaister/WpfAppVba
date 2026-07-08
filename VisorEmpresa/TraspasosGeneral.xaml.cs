@@ -26,13 +26,10 @@ namespace VisorEmpresa
     ///    sentido con una única sucursal activa fija), pero "pendiente" se
     ///    MUESTRA como "pendiente al revisar" (ver TraspasoFila.EstadoTexto) —
     ///    solo cambia el texto, no el valor ni el filtro.
-    ///  - Sin columna "Movimiento" (salida/entrada) en la grilla: Origen+Destino
-    ///    ya identifican la dirección sin ambigüedad. El filtro Entradas/Salidas
-    ///    (CboTipoMovimiento) se conserva porque sigue siendo útil para acotar la
-    ///    grilla, pero solo tiene un punto de referencia válido cuando el combo
-    ///    de Sucursal apunta a UNA sucursal puntual (se calcula relativo a esa
-    ///    elección, igual que la app principal lo hace relativo a
-    ///    AppState.SucursalActiva); en modo "Todas las sucursales" se deshabilita.
+    ///  - Sin columna ni filtro de "Movimiento" (salida/entrada): Origen+Destino
+    ///    ya identifican la dirección sin ambigüedad, a pedido explícito del
+    ///    usuario (el concepto de movimiento no aplica bien sin una única
+    ///    sucursal de referencia fija como AppState.SucursalActiva).
     /// </summary>
     public partial class TraspasosGeneral : UserControl
     {
@@ -75,7 +72,6 @@ namespace VisorEmpresa
                 opciones.AddRange(sucursales.Select(s => new Opcion(s.Id, s.Descripcion)));
                 CmbSucursal.ItemsSource   = opciones;
                 CmbSucursal.SelectedIndex = 0;
-                ActualizarDisponibilidadMovimiento();
             }
             catch (Exception ex)
             {
@@ -129,20 +125,7 @@ namespace VisorEmpresa
         {
             if (_cargandoFiltros || !_iniciado) return;
             _sucursalFiltro = (CmbSucursal.SelectedItem as Opcion)?.Id ?? "";
-            ActualizarDisponibilidadMovimiento();
             await RecargarCacheYVistaAsync();
-        }
-
-        // El filtro Entradas/Salidas solo tiene sentido relativo a UNA sucursal
-        // puntual: en "Todas las sucursales" un mismo traspaso es a la vez salida
-        // de una y entrada de otra, sin una única referencia — se deshabilita
-        // (no hay columna Movimiento en la grilla: Origen/Destino ya alcanzan).
-        private void ActualizarDisponibilidadMovimiento()
-        {
-            bool haySucursalRef = !string.IsNullOrEmpty(_sucursalFiltro);
-            if (!haySucursalRef)
-                CboTipoMovimiento.SelectedIndex = 0; // "Todos"
-            CboTipoMovimiento.IsEnabled = haySucursalRef;
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
@@ -227,9 +210,6 @@ namespace VisorEmpresa
             string busqueda  = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
             string mesFiltro = _modoFiltro == "filtros"   ? _mesActivo : "";
 
-            bool haySucursalRef = !string.IsNullOrEmpty(_sucursalFiltro);
-            string tipoMov = haySucursalRef ? ObtenerFiltroTipo() : "";
-
             int uf = Sql.DocumentosTObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
             {
@@ -239,20 +219,6 @@ namespace VisorEmpresa
 
                 string origen  = Sql.DocumentosTObj.ObtenerItem("origen",  id)?.ToString() ?? "";
                 string destino = Sql.DocumentosTObj.ObtenerItem("destino", id)?.ToString() ?? "";
-
-                // Filtro Entradas/Salidas: solo se aplica relativo a una sucursal
-                // puntual elegida en CmbSucursal (ver ActualizarDisponibilidadMovimiento).
-                // Sin columna Movimiento en la grilla: Origen/Destino ya identifican
-                // la dirección, así que no hace falta guardar el resultado en la fila.
-                if (haySucursalRef)
-                {
-                    bool esSalida  = origen  == _sucursalFiltro;
-                    bool esEntrada = destino == _sucursalFiltro;
-
-                    if (tipoMov == "salida"  && !esSalida)  continue;
-                    if (tipoMov == "entrada" && !esEntrada) continue;
-                    if (tipoMov != "salida" && tipoMov != "entrada" && !esSalida && !esEntrada) continue;
-                }
 
                 // Filtro por mes (solo en modo "filtros", independiente de TxtBuscar)
                 if (!string.IsNullOrEmpty(mesFiltro))
@@ -305,14 +271,7 @@ namespace VisorEmpresa
             TxtTotalDocumentos.Text  = lista.Count.ToString("N0");
             TxtTotalPendientes.Text  = lista.Count(f => f.Estado == "pendiente").ToString();
             TxtTotalEntregados.Text  = lista.Count(f => f.Estado == "entregado").ToString();
-            LblTipoMovimiento.Text = !haySucursalRef
-                ? "Traspasos (Entradas y Salidas)"
-                : tipoMov switch
-                  {
-                      "salida"  => "Salidas de Productos",
-                      "entrada" => "Entradas de Productos",
-                      _         => "Traspasos (Entradas y Salidas)"
-                  };
+            LblTipoMovimiento.Text = "Traspasos";
             int año = VisorState.AnioActivo;
             LblSubtitulo.Text = string.IsNullOrEmpty(_mesActivo)
                 ? año.ToString()
@@ -320,16 +279,6 @@ namespace VisorEmpresa
 
             // Limpiar el panel de detalle al recargar
             OcultarDetalle();
-        }
-
-        private string ObtenerFiltroTipo()
-        {
-            return (CboTipoMovimiento?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() switch
-            {
-                "entradas" => "entrada",
-                "salidas"  => "salida",
-                _          => ""
-            };
         }
 
         // ─── Filtro de estado: solo pendiente/entregado ───────────────────────
@@ -484,9 +433,6 @@ namespace VisorEmpresa
         }
 
         private void FiltroEstado_Checked(object sender, RoutedEventArgs e)
-            => CargarTraspasos();
-
-        private void CboTipoMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
             => CargarTraspasos();
 
         // ─── Búsqueda (independiente del Tree1) ──────────────────────────────

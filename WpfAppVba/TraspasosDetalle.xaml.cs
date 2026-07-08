@@ -96,6 +96,18 @@ namespace WpfAppVba
             Box_Observaciones.IsEnabled     = false;
             PanelBotonesArticulos.IsEnabled = false;
             GridItems.IsReadOnly            = true;
+
+            // El campo "Sucursal" único (arriba) solo alcanza a mostrar un lado
+            // (origen o destino, según AppState.TipoMovimiento) — en modo solo
+            // lectura se reemplaza por los dos campos explícitos.
+            PanelSucursalCampo.Visibility       = Visibility.Collapsed;
+            PanelSucursalDescripcion.Visibility = Visibility.Collapsed;
+            PanelOrigenDestino.Visibility       = Visibility.Visible;
+
+            string origenId  = Sql.DocumentosTObj.ObtenerItem("origen",  _idEditar)?.ToString() ?? "";
+            string destinoId = Sql.DocumentosTObj.ObtenerItem("destino", _idEditar)?.ToString() ?? "";
+            Box_Origen_Descripcion.Text  = Sql.SucursalesObj.ObtenerItem("descripcion", origenId)?.ToString()  ?? origenId;
+            Box_Destino_Descripcion.Text = Sql.SucursalesObj.ObtenerItem("descripcion", destinoId)?.ToString() ?? destinoId;
         }
 
         // ─── Modo editar ──────────────────────────────────────────────────────

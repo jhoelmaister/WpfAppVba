@@ -170,8 +170,10 @@ namespace WpfAppVba
                 var fechaDocObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
                 DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
 
-                string origenDesc  = Sql.SucursalesObj.ObtenerItem("descripcion", origen)?.ToString()  ?? origen;
-                string destinoDesc = Sql.SucursalesObj.ObtenerItem("descripcion", destino)?.ToString() ?? destino;
+                // Columna Origen/Destino: la contraparte relativa a la sucursal activa —
+                // si la activa es el origen, se muestra el destino; caso contrario, el origen.
+                string contraparteId   = origen == AppState.SucursalActiva ? destino : origen;
+                string contraparteDesc = Sql.SucursalesObj.ObtenerItem("descripcion", contraparteId)?.ToString() ?? contraparteId;
 
                 string estado  = Sql.DocumentosTObj.ObtenerItem("estado", id)?.ToString() ?? "";
                 string emitido = Sql.DocumentosTObj.ObtenerItem("emitido", id)?.ToString() ?? "";
@@ -185,25 +187,24 @@ namespace WpfAppVba
                     !string.Equals(estado, filtroEstado, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                // Filtro por búsqueda (origen o destino, no solo "la otra sucursal")
+                // Filtro por búsqueda (la contraparte)
                 if (!string.IsNullOrEmpty(busqueda))
                     if (!id.Contains(busqueda) &&
-                        !origenDesc.ToLower().Contains(busqueda) &&
-                        !destinoDesc.ToLower().Contains(busqueda))
+                        !contraparteDesc.ToLower().Contains(busqueda))
                         continue;
 
                 double cant = CalcularCantidad(id);
                 lista.Add(new TraspasoFila
                 {
-                    Linea        = linea++,
-                    DocumentoT   = id,
-                    Codigo       = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
-                    FechaStr     = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
-                    Movimiento   = movActual,
-                    OrigenDesc   = origenDesc,
-                    DestinoDesc  = destinoDesc,
-                    Estado       = estado,
-                    Cantidad     = cant
+                    Linea           = linea++,
+                    DocumentoT      = id,
+                    Codigo          = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
+                    FechaStr        = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
+                    Movimiento      = movActual,
+                    ContraparteDesc = contraparteDesc,
+                    Referencia      = Sql.DocumentosTObj.ObtenerItem("referencia", id)?.ToString() ?? "",
+                    Estado          = estado,
+                    Cantidad        = cant
                 });
                 totalCant += cant;
             }
@@ -270,8 +271,10 @@ namespace WpfAppVba
             var fechaDocObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
             DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
 
-            string origenDesc  = Sql.SucursalesObj.ObtenerItem("descripcion", origen)?.ToString()  ?? origen;
-            string destinoDesc = Sql.SucursalesObj.ObtenerItem("descripcion", destino)?.ToString() ?? destino;
+            // Columna Origen/Destino: la contraparte relativa a la sucursal activa —
+            // si la activa es el origen, se muestra el destino; caso contrario, el origen.
+            string contraparteId   = origen == AppState.SucursalActiva ? destino : origen;
+            string contraparteDesc = Sql.SucursalesObj.ObtenerItem("descripcion", contraparteId)?.ToString() ?? contraparteId;
 
             string estado  = Sql.DocumentosTObj.ObtenerItem("estado",  id)?.ToString() ?? "";
             string emitido = Sql.DocumentosTObj.ObtenerItem("emitido", id)?.ToString() ?? "";
@@ -280,15 +283,15 @@ namespace WpfAppVba
 
             return new TraspasoFila
             {
-                Linea        = linea,
-                DocumentoT   = id,
-                Codigo       = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
-                FechaStr     = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
-                Movimiento   = esSalida ? "salida" : "entrada",
-                OrigenDesc   = origenDesc,
-                DestinoDesc  = destinoDesc,
-                Estado       = estado,
-                Cantidad     = CalcularCantidad(id)
+                Linea           = linea,
+                DocumentoT      = id,
+                Codigo          = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
+                FechaStr        = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
+                Movimiento      = esSalida ? "salida" : "entrada",
+                ContraparteDesc = contraparteDesc,
+                Referencia      = Sql.DocumentosTObj.ObtenerItem("referencia", id)?.ToString() ?? "",
+                Estado          = estado,
+                Cantidad        = CalcularCantidad(id)
             };
         }
 
@@ -629,15 +632,15 @@ namespace WpfAppVba
     // ─── Modelos ──────────────────────────────────────────────────────────────
     public class TraspasoFila
     {
-        public int    Linea       { get; set; }
-        public string DocumentoT  { get; set; } = "";
-        public string Codigo      { get; set; } = "";
-        public string FechaStr    { get; set; } = "";
-        public string Movimiento  { get; set; } = "";
-        public string OrigenDesc  { get; set; } = "";
-        public string DestinoDesc { get; set; } = "";
-        public string Estado      { get; set; } = "";
-        public double Cantidad    { get; set; }
+        public int    Linea           { get; set; }
+        public string DocumentoT      { get; set; } = "";
+        public string Codigo          { get; set; } = "";
+        public string FechaStr        { get; set; } = "";
+        public string Movimiento      { get; set; } = "";
+        public string ContraparteDesc { get; set; } = "";
+        public string Referencia      { get; set; } = "";
+        public string Estado          { get; set; } = "";
+        public double Cantidad        { get; set; }
     }
 
     public class TraspasoDetalleFila

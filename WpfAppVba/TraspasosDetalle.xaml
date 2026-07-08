@@ -218,7 +218,7 @@
                     </StackPanel>
 
                     <!-- Sucursal: label dinámica encima + código -->
-                    <StackPanel Grid.Column="6">
+                    <StackPanel Grid.Column="6" x:Name="PanelSucursalCampo">
                         <TextBlock x:Name="LblSucursalTipo" Text="Sucursal destino"
                                    Style="{StaticResource LblMuted}"/>
                         <TextBox x:Name="Box_Sucursal_Identificador"
@@ -235,7 +235,7 @@
                             Click="BtnBuscarSucursal_Click"/>
 
                     <!-- Descripción sucursal (readonly) -->
-                    <StackPanel Grid.Column="10">
+                    <StackPanel Grid.Column="10" x:Name="PanelSucursalDescripcion">
                         <TextBlock Text=" " Style="{StaticResource LblMuted}"/>
                         <Border Height="28"
                                 Background="{DynamicResource ThemeBgReadOnly}"
@@ -248,6 +248,41 @@
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis"/>
                         </Border>
+                    </StackPanel>
+
+                    <!-- Origen + Destino explícitos (solo lectura: VisorEmpresa) —
+                         reemplazan al campo "Sucursal" ambiguo de arriba, que solo
+                         alcanza a mostrar uno de los dos lados. -->
+                    <StackPanel Grid.Column="10" x:Name="PanelOrigenDestino" Visibility="Collapsed"
+                                Orientation="Horizontal">
+                        <StackPanel Margin="0,0,8,0">
+                            <TextBlock Text="Sucursal origen" Style="{StaticResource LblMuted}"/>
+                            <Border Height="28" Width="130"
+                                    Background="{DynamicResource ThemeBgReadOnly}"
+                                    BorderBrush="{DynamicResource ThemeBorde}"
+                                    BorderThickness="1" CornerRadius="6"
+                                    Padding="7,0">
+                                <TextBlock x:Name="Box_Origen_Descripcion"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource ThemeTextoMuted}"
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"/>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="Sucursal destino" Style="{StaticResource LblMuted}"/>
+                            <Border Height="28" Width="130"
+                                    Background="{DynamicResource ThemeBgReadOnly}"
+                                    BorderBrush="{DynamicResource ThemeBorde}"
+                                    BorderThickness="1" CornerRadius="6"
+                                    Padding="7,0">
+                                <TextBlock x:Name="Box_Destino_Descripcion"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource ThemeTextoMuted}"
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"/>
+                            </Border>
+                        </StackPanel>
                     </StackPanel>
 
                     <!-- Referencia -->

@@ -380,6 +380,10 @@
                                         Binding="{Binding RegionDesc}"
                                         Width="*"/>
 
+                    <DataGridTextColumn Header="Referencia"
+                                        Binding="{Binding Referencia}"
+                                        Width="150"/>
+
                     <DataGridTemplateColumn Header="Estado" Width="90"
                                              CellTemplate="{StaticResource BadgeEstadoPrecio}"/>
 
