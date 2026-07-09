@@ -22,10 +22,11 @@
     <AssemblyTitle>Sistema de Gestión</AssemblyTitle>
 
     <!-- Versión de la app. Velopack la usa para decidir si una release es "más nueva".
-         Reiniciada a 0.0.1 junto con el renombre del proyecto (WpfAppVba -> SistemaGestion):
-         sin usuarios reales instalados todavía, es un buen momento para arrancar limpio.
-         Súbela en cada publicación (0.0.1 -> 0.0.2 -> 0.1.0 ...) y pásala a `vpk pack`. -->
-    <Version>0.0.1</Version>
+         Arranca en 1.0.1: las releases viejas (v1.0.0-v1.1.4) se borraron del feed de
+         GitHub sin haber publicado ninguna versión nueva desde el renombre del proyecto
+         (WpfAppVba -> SistemaGestion), así que se reinicia la numeración desde acá.
+         Súbela en cada publicación (1.0.1 -> 1.0.2 -> 1.1.0 ...) y pásala a `vpk pack`. -->
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
