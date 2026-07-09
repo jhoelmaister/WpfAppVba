@@ -11,7 +11,7 @@
     <ApplicationIcon>..\WpfAppVba\icono.ico</ApplicationIcon>
 
     <!-- Versión del visor: independiente de la app principal. -->
-    <Version>0.5.0</Version>
+    <Version>0.5.1</Version>
 
     <!-- Símbolo de compilación exclusivo del visor: los formularios Detalle
          vinculados (PedidosDetalle, etc.) usan #if !VISOR alrededor de los
