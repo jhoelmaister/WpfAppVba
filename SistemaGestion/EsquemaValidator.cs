@@ -6,18 +6,6 @@ using Microsoft.Data.SqlClient;
 #pragma warning disable IDE0130
 namespace SistemaGestion.Data
 {
-    /// <summary>Familia de tipo SQL esperada para una columna (no el tipo exacto:
-    /// alcanza con la familia para detectar una base de datos incompatible sin
-    /// ser frágil ante diferencias de precisión/longitud sin importancia).</summary>
-    public enum TipoColumnaEsperado
-    {
-        Identificador, // uniqueidentifier
-        Texto,         // char/varchar/nchar/nvarchar/text/ntext
-        Fecha,         // date/datetime/datetime2/smalldatetime/datetimeoffset
-        Numero,        // cualquier tipo numérico (incluye enteros)
-        Entero,        // subconjunto de Numero: int/bigint/smallint/tinyint (secuencia/indice)
-    }
-
     public class ProblemaEsquema
     {
         public string  Tabla   { get; set; } = "";
@@ -33,158 +21,58 @@ namespace SistemaGestion.Data
 
     /// <summary>
     /// Verifica, ANTES de dejar usar una base de datos como conexión activa, que
-    /// tenga las tablas/columnas/tipos que la app necesita. El catálogo de abajo
-    /// se armó auditando todas las llamadas ObtenerItem/EstablecerItem (DataConsulta)
-    /// y las consultas de AppLoader.cs/ConsultasEmpresa.cs — ambas apps
-    /// (SistemaGestion y VisorEmpresa) comparten el mismo esquema de base de datos.
+    /// tenga las tablas/columnas que la app necesita para no fallar con un SQL
+    /// error ("Invalid object/column name") al conectar.
+    ///
+    /// Solo exige columnas referenciadas LITERALMENTE en el texto de las consultas
+    /// (WHERE/JOIN/ORDER BY/SELECT explícito) de AppLoader.cs y ConsultasEmpresa.cs —
+    /// las que de verdad rompen la conexión si faltan. NO exige las columnas que la
+    /// app solo lee/escribe vía DataConsulta.ObtenerItem/EstablecerItem: esas ya
+    /// degradan solas (DataConsulta las ignora en silencio si no existen), así que
+    /// no son requisito real para conectar.
+    ///
+    /// Tampoco valida TIPOS de columna: en la práctica el esquema real varía más de
+    /// lo que el código deja ver (ej. "codigo" es int en varias tablas maestras
+    /// aunque no en todas, o algunas columnas tipo "id" son nvarchar en vez de
+    /// uniqueidentifier) y como las consultas comparan contra literales de texto
+    /// entrecomillados, SQL Server los compara igual sin romperse. Validar tipos
+    /// daba muchos falsos positivos contra bases reales — mejor solo existencia.
     /// </summary>
     public static class EsquemaValidator
     {
-        private const TipoColumnaEsperado Id = TipoColumnaEsperado.Identificador;
-        private const TipoColumnaEsperado Tx = TipoColumnaEsperado.Texto;
-        private const TipoColumnaEsperado Fe = TipoColumnaEsperado.Fecha;
-        private const TipoColumnaEsperado Nu = TipoColumnaEsperado.Numero;
-        private const TipoColumnaEsperado En = TipoColumnaEsperado.Entero;
-
         // Columnas estructurales presentes en TODAS las tablas del esquema.
-        private static readonly (string nombre, TipoColumnaEsperado tipo)[] Base =
-        {
-            ("id", Id), ("estadof", Tx), ("secuencia", En),
-        };
+        private static readonly string[] Base = { "id", "estadof" };
 
-        // Tabla → columnas específicas (además de las de Base) que la app necesita.
-        private static readonly Dictionary<string, (string nombre, TipoColumnaEsperado tipo)[]> Manifiesto =
+        // Tabla → columnas específicas (además de las de Base) referenciadas en
+        // consultas SQL crudas (no solo vía ObtenerItem/EstablecerItem).
+        private static readonly Dictionary<string, string[]> Manifiesto =
             new(StringComparer.OrdinalIgnoreCase)
         {
-            ["usuarios"] = new[]
-            {
-                ("codigo", Tx), ("cuenta", Tx), ("llave", Tx), ("nombres", Tx), ("apellidos", Tx),
-                ("tipo", Tx), ("empresa", Id), ("sucursal", Id),
-                ("emision", Fe), ("edicion", Fe), ("usuario", Id), ("usuarioe", Id),
-            },
-            ["empresas"] = new[]
-            {
-                ("codigo", Tx), ("descripcion", Tx), ("signo", Tx), ("observacion", Tx), ("fecha", Fe),
-                ("emision", Fe), ("edicion", Fe), ("usuario", Id), ("usuarioe", Id),
-            },
-            ["articulos"] = new[]
-            {
-                ("codigo", Tx), ("descripcion", Tx), ("modelo", Tx), ("observacion", Tx), ("indice", En),
-                ("familia", Id), ("industria", Id), ("categoria", Id),
-                ("emision", Fe), ("edicion", Fe), ("usuario", Id), ("usuarioe", Id),
-            },
-            ["familias"] = new[]
-            {
-                ("codigo", Tx), ("descripcion", Tx), ("observacion", Tx), ("producto", Id),
-                ("emision", Fe), ("edicion", Fe), ("usuario", Id), ("usuarioe", Id),
-            },
-            ["productos"] = new[]
-            {
-                ("codigo", Tx), ("descripcion", Tx), ("empresa", Id),
-                ("emision", Fe), ("edicion", Fe), ("usuario", Id), ("usuarioe", Id),
-            },
-            ["Categorias"] = new[]
-            {
-                ("codigo", Tx), ("descripcion", Tx), ("empresa", Id),
-                ("emision", Fe), ("edicion", Fe), ("usuario", Id), ("usuarioe", Id),
-            },
-            ["industrias"] = new[]
-            {
-                ("codigo", Tx), ("descripcion", Tx), ("empresa", Id),
-                ("emision", Fe), ("edicion", Fe), ("usuario", Id), ("usuarioe", Id),
-            },
-            ["terceros"] = new[]
-            {
-                ("codigo", Tx), ("descripcion", Tx), ("direccion", Tx), ("nit", Tx),
-                ("telefono", Tx), ("telefono2", Tx), ("contacto", Tx), ("contacto2", Tx),
-                ("observacion", Tx), ("empresa", Id),
-                ("emision", Fe), ("edicion", Fe), ("usuario", Id), ("usuarioe", Id),
-            },
-            ["sucursales"] = new[]
-            {
-                ("codigo", Tx), ("descripcion", Tx), ("direccion", Tx), ("nit", Tx), ("telefono", Tx),
-                ("signo", Tx), ("tipo", Tx), ("observacion", Tx), ("empresa", Id), ("region", Id),
-                ("fecha", Fe), ("emision", Fe), ("edicion", Fe), ("usuario", Id), ("usuarioe", Id),
-            },
-            ["regiones"] = new[]
-            {
-                ("codigo", Tx), ("descripcion", Tx), ("empresa", Id),
-                ("emision", Fe), ("edicion", Fe), ("usuario", Id), ("usuarioe", Id),
-            },
-            ["documentosI"] = new[]
-            {
-                ("codigo", Tx), ("observacion", Tx), ("referencia", Tx), ("sucursal", Id),
-                ("fecha", Fe), ("emision", Fe), ("edicion", Fe), ("usuario", Id), ("usuarioe", Id),
-            },
-            ["inventarios"] = new[]
-            {
-                ("articulo", Id), ("documentoI", Id), ("cantidad", Nu),
-            },
-            ["documentosP"] = new[]
-            {
-                ("codigo", Tx), ("observacion", Tx), ("referencia", Tx), ("estado", Tx), ("estadoc", Tx),
-                ("movimiento", Tx), ("tipo", Tx), ("sucursal", Id), ("emitido", Id), ("tercero", Id),
-                ("fecha", Fe), ("emision", Fe), ("edicion", Fe), ("usuario", Id), ("usuarioe", Id),
-            },
-            ["pedidos"] = new[]
-            {
-                ("articulo", Id), ("documentoP", Id), ("cantidad", Nu), ("importe", Nu),
-                ("contable", Nu), ("tipo", Tx), ("forma", Tx), ("indice", En),
-            },
-            ["transacciones"] = new[]
-            {
-                ("articulo", Id), ("documentoP", Id), ("cantidad", Nu), ("importe", Nu),
-                ("forma", Tx), ("descripcion", Tx), ("fecha", Fe), ("indice", En),
-            },
-            ["entregas"] = new[]
-            {
-                ("articulo", Id), ("documentoP", Id), ("cantidad", Nu), ("fecha", Fe), ("indice", En),
-            },
-            ["documentosT"] = new[]
-            {
-                ("codigo", Tx), ("observacion", Tx), ("referencia", Tx), ("estado", Tx),
-                ("movimiento", Tx), ("origen", Id), ("destino", Id), ("emitido", Id), ("sucursal", Id),
-                ("fecha", Fe), ("emision", Fe), ("edicion", Fe), ("usuario", Id), ("usuarioe", Id),
-            },
-            ["traspasos"] = new[]
-            {
-                ("articulo", Id), ("documentoT", Id), ("cantidad", Nu), ("indice", En),
-            },
-            ["documentosC"] = new[]
-            {
-                ("codigo", Tx), ("observacion", Tx), ("referencia", Tx), ("motivo", Tx),
-                ("movimiento", Tx), ("sucursal", Id),
-                ("fecha", Fe), ("emision", Fe), ("edicion", Fe), ("usuario", Id), ("usuarioe", Id),
-            },
-            ["correcciones"] = new[]
-            {
-                ("articulo", Id), ("documentoC", Id), ("cantidad", Nu), ("indice", En),
-            },
-            ["documentosL"] = new[]
-            {
-                ("codigo", Tx), ("observacion", Tx), ("referencia", Tx), ("estado", Tx),
-                ("region", Id), ("empresa", Id),
-                ("fecha", Fe), ("emision", Fe), ("edicion", Fe), ("usuario", Id), ("usuarioe", Id),
-            },
-            ["precios"] = new[]
-            {
-                ("articulo", Id), ("documentoL", Id), ("precio", Nu),
-            },
-            ["documentosF"] = new[]
-            {
-                ("codigo", Tx), ("observacion", Tx), ("referencia", Tx), ("estado", Tx), ("estadoc", Tx),
-                ("movimiento", Tx), ("sucursal", Id), ("tercero", Id),
-                ("fecha", Fe), ("emision", Fe), ("edicion", Fe), ("usuario", Id), ("usuarioe", Id),
-            },
-            ["facturas"] = new[]
-            {
-                ("categoria", Id), ("concepto", Tx), ("documentoF", Id), ("importe", Nu), ("indice", En),
-            },
-            ["transaccionesF"] = new[]
-            {
-                ("descripcion", Tx), ("documentoF", Id), ("fecha", Fe), ("forma", Tx),
-                ("importe", Nu), ("indice", En),
-            },
+            ["usuarios"]       = new[] { "secuencia", "cuenta", "llave" },
+            ["empresas"]       = new[] { "secuencia" },
+            ["familias"]       = new[] { "descripcion", "producto" },
+            ["articulos"]      = new[] { "familia", "indice", "categoria" },
+            ["productos"]      = new[] { "descripcion", "empresa" },
+            ["Categorias"]     = new[] { "descripcion", "empresa" },
+            ["industrias"]     = new[] { "descripcion", "empresa" },
+            ["terceros"]       = new[] { "descripcion", "empresa" },
+            ["sucursales"]     = new[] { "descripcion", "empresa" },
+            ["regiones"]       = new[] { "descripcion", "empresa" },
+            ["documentosL"]    = new[] { "fecha", "empresa" },
+            ["precios"]        = new[] { "documentoL" },
+            ["documentosI"]    = new[] { "sucursal", "fecha" },
+            ["inventarios"]    = new[] { "documentoI", "articulo", "cantidad" },
+            ["documentosP"]    = new[] { "fecha", "sucursal", "movimiento", "estado" },
+            ["pedidos"]        = new[] { "documentoP", "indice", "articulo", "cantidad" },
+            ["transacciones"]  = new[] { "documentoP", "indice" },
+            ["entregas"]       = new[] { "documentoP", "indice" },
+            ["documentosT"]    = new[] { "fecha", "origen", "destino" },
+            ["traspasos"]      = new[] { "documentoT", "indice", "articulo", "cantidad" },
+            ["documentosC"]    = new[] { "fecha", "sucursal", "movimiento" },
+            ["correcciones"]   = new[] { "documentoC", "indice", "articulo", "cantidad" },
+            ["documentosF"]    = new[] { "fecha", "sucursal" },
+            ["facturas"]       = new[] { "documentoF", "indice" },
+            ["transaccionesF"] = new[] { "documentoF", "indice" },
         };
 
         // ─── Validar una conexión ya abierta ─────────────────────────────────
@@ -198,19 +86,18 @@ namespace SistemaGestion.Data
             using (var rd = cmd.ExecuteReader())
                 while (rd.Read()) tablasExistentes.Add(rd.GetString(0));
 
-            var columnasPorTabla = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+            var columnasPorTabla = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
             using (var cmd = new SqlCommand(
-                "SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS", conn))
+                "SELECT TABLE_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS", conn))
             using (var rd = cmd.ExecuteReader())
             {
                 while (rd.Read())
                 {
                     string tabla   = rd.GetString(0);
                     string columna = rd.GetString(1);
-                    string tipo    = rd.GetString(2);
                     if (!columnasPorTabla.TryGetValue(tabla, out var cols))
-                        columnasPorTabla[tabla] = cols = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                    cols[columna] = tipo;
+                        columnasPorTabla[tabla] = cols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    cols.Add(columna);
                 }
             }
 
@@ -227,29 +114,17 @@ namespace SistemaGestion.Data
                 }
 
                 columnasPorTabla.TryGetValue(tabla, out var columnasReales);
-                columnasReales ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                columnasReales ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                foreach (var (nombreCol, tipoEsperado) in Base.Concat(columnasEsperadas))
+                foreach (var nombreCol in Base.Concat(columnasEsperadas))
                 {
-                    if (!columnasReales.TryGetValue(nombreCol, out var tipoReal))
+                    if (!columnasReales.Contains(nombreCol))
                     {
                         resultado.Problemas.Add(new ProblemaEsquema
                         {
                             Tabla   = tabla,
                             Columna = nombreCol,
                             Detalle = $"{tabla}.{nombreCol}: falta la columna."
-                        });
-                        continue;
-                    }
-
-                    if (!TipoCompatible(tipoEsperado, tipoReal))
-                    {
-                        resultado.Problemas.Add(new ProblemaEsquema
-                        {
-                            Tabla   = tabla,
-                            Columna = nombreCol,
-                            Detalle = $"{tabla}.{nombreCol}: tipo \"{tipoReal}\" incompatible " +
-                                      $"(se esperaba {DescripcionTipo(tipoEsperado)})."
                         });
                     }
                 }
@@ -271,30 +146,6 @@ namespace SistemaGestion.Data
             conn.Open();
             return Validar(conn);
         }
-
-        private static bool TipoCompatible(TipoColumnaEsperado esperado, string tipoReal)
-        {
-            string t = tipoReal.ToLowerInvariant();
-            return esperado switch
-            {
-                TipoColumnaEsperado.Identificador => t == "uniqueidentifier",
-                TipoColumnaEsperado.Texto         => t is "char" or "varchar" or "nchar" or "nvarchar" or "text" or "ntext",
-                TipoColumnaEsperado.Fecha         => t is "date" or "datetime" or "datetime2" or "smalldatetime" or "datetimeoffset",
-                TipoColumnaEsperado.Numero        => t is "int" or "bigint" or "smallint" or "tinyint" or "decimal" or "numeric" or "float" or "real" or "money" or "smallmoney",
-                TipoColumnaEsperado.Entero        => t is "int" or "bigint" or "smallint" or "tinyint",
-                _ => true
-            };
-        }
-
-        private static string DescripcionTipo(TipoColumnaEsperado t) => t switch
-        {
-            TipoColumnaEsperado.Identificador => "uniqueidentifier",
-            TipoColumnaEsperado.Texto         => "texto (char/varchar/nvarchar)",
-            TipoColumnaEsperado.Fecha         => "fecha/hora (datetime)",
-            TipoColumnaEsperado.Numero        => "numérico",
-            TipoColumnaEsperado.Entero        => "entero",
-            _ => "desconocido"
-        };
 
         // ─── Texto legible para mostrar en un MessageBox (acotado) ───────────
         public static string DescribirProblemas(ResultadoValidacionEsquema resultado, int maxLineas = 20)
