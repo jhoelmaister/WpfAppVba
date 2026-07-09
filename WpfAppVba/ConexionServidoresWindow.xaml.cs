@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using WpfAppVba.Data;
 
 namespace WpfAppVba
@@ -117,7 +120,7 @@ namespace WpfAppVba
             RefrescarServidores();
         }
 
-        private void BtnConectarServidor_Click(object sender, RoutedEventArgs e)
+        private async void BtnConectarServidor_Click(object sender, RoutedEventArgs e)
         {
             var sel = ServidorSeleccionadoOUltimo();
             if (sel == null)
@@ -127,17 +130,54 @@ namespace WpfAppVba
                 return;
             }
 
-            // Marcar el servidor elegido como activo y reconfigurar la conexión
-            // global. El formulario permanece abierto; el login reconecta al cerrarlo.
-            ConexionConfig.EstablecerActivo(sel.Id);
             var s = ConexionConfig.ObtenerPorId(sel.Id);
-            if (s != null)
+            if (s == null) { RefrescarServidores(); return; }
+
+            // Antes de marcarlo activo: verifica que se puede conectar Y que la
+            // estructura de esa base de datos es compatible con la app. Si algo
+            // falla, no se toca la conexión activa actual.
+            BtnConectarServidor.IsEnabled = false;
+            Mouse.OverrideCursor = Cursors.Wait;
+            try
+            {
+                ResultadoValidacionEsquema esquema;
+                try
+                {
+                    esquema = await Task.Run(() =>
+                        EsquemaValidator.ValidarConexion(s.Servidor, s.BaseDatos, s.Usuario, s.Contrasena));
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"No se pudo conectar al servidor \"{sel.Nombre}\":\n{ex.Message}",
+                                    "Conectar", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                if (!esquema.EsCompatible)
+                {
+                    MessageBox.Show(
+                        $"La base de datos de \"{sel.Nombre}\" conectó, pero su estructura no es " +
+                        "compatible con la app. No se cambió la conexión activa.\n\n" +
+                        EsquemaValidator.DescribirProblemas(esquema),
+                        "Estructura incompatible", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Marcar el servidor elegido como activo y reconfigurar la conexión
+                // global. El formulario permanece abierto; el login reconecta al cerrarlo.
+                ConexionConfig.EstablecerActivo(sel.Id);
                 DatabaseConnection.Configurar(s.Servidor, s.BaseDatos, s.Usuario, s.Contrasena);
 
-            RefrescarServidores();
+                RefrescarServidores();
 
-            MessageBox.Show($"Servidor activo establecido: \"{sel.Nombre}\".", "Conectar",
-                            MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"Servidor activo establecido: \"{sel.Nombre}\".", "Conectar",
+                                MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+                BtnConectarServidor.IsEnabled = true;
+            }
         }
 
         private void BtnCerrar_Click(object sender, RoutedEventArgs e)

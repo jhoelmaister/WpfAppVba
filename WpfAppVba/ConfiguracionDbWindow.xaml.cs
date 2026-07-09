@@ -111,16 +111,34 @@ namespace WpfAppVba
             {
                 string cs = $"Server={servidor};Database={baseDatos};User Id={usuario};Password={contrasena};" +
                             "Connect Timeout=10;TrustServerCertificate=True;";
+
+                ResultadoValidacionEsquema? esquema = null;
                 await Task.Run(() =>
                 {
                     using var conn = new SqlConnection(cs);
                     conn.Open();
                     using var cmd = new SqlCommand("SELECT 1", conn);
                     cmd.ExecuteScalar();
+
+                    esquema = EsquemaValidator.Validar(conn);
                 });
-                _pruebaExitosa                = true;
-                LblEstadoConexion.Text        = "Conexión exitosa";
-                LblEstadoConexion.Foreground  = new SolidColorBrush(Color.FromRgb(16, 185, 129));
+
+                if (esquema != null && !esquema.EsCompatible)
+                {
+                    _pruebaExitosa                = false;
+                    LblEstadoConexion.Text        = "Estructura de la base de datos incompatible";
+                    LblEstadoConexion.Foreground  = new SolidColorBrush(Color.FromRgb(220, 38, 38));
+                    MessageBox.Show(
+                        "La base de datos conectó, pero su estructura no es compatible con la app:\n\n" +
+                        EsquemaValidator.DescribirProblemas(esquema),
+                        "Estructura incompatible", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+                else
+                {
+                    _pruebaExitosa                = true;
+                    LblEstadoConexion.Text        = "Conexión exitosa";
+                    LblEstadoConexion.Foreground  = new SolidColorBrush(Color.FromRgb(16, 185, 129));
+                }
             }
             catch
             {

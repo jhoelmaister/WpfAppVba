@@ -47,6 +47,7 @@
   <ItemGroup>
     <Compile Include="..\WpfAppVba\DatabaseConnection.cs" Link="Compartido\DatabaseConnection.cs" />
     <Compile Include="..\WpfAppVba\ConexionConfig.cs" Link="Compartido\ConexionConfig.cs" />
+    <Compile Include="..\WpfAppVba\EsquemaValidator.cs" Link="Compartido\EsquemaValidator.cs" />
     <Compile Include="..\WpfAppVba\ConexionEstado.cs" Link="Compartido\ConexionEstado.cs" />
     <Compile Include="..\WpfAppVba\PasswordHasher.cs" Link="Compartido\PasswordHasher.cs" />
     <Compile Include="..\WpfAppVba\WindowTheming.cs" Link="Compartido\WindowTheming.cs" />
