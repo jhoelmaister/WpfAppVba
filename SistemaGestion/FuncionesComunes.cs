@@ -153,6 +153,26 @@ namespace SistemaGestion
             return true;
         }
 
+        // ─── Restricción de entrada para código numérico (columna codigo es int) ──
+        /// <summary>
+        /// Bloquea el pegado (Ctrl+V, menú contextual, arrastrar y soltar) de texto no
+        /// numérico en un TextBox. Complementa ValidarSoloNumeros en PreviewTextInput,
+        /// que solo cubre la escritura tecla por tecla: pegar no dispara TextInput, así
+        /// que sin esto se podían pegar espacios u otros caracteres en el campo Código.
+        /// </summary>
+        public static void BloquearPegadoNoNumerico(TextBox tb)
+        {
+            DataObject.RemovePastingHandler(tb, SoloDigitosPasting);
+            DataObject.AddPastingHandler(tb, SoloDigitosPasting);
+        }
+
+        private static void SoloDigitosPasting(object sender, DataObjectPastingEventArgs e)
+        {
+            if (!e.DataObject.GetDataPresent(typeof(string))) { e.CancelCommand(); return; }
+            string pegado = (string)e.DataObject.GetData(typeof(string))!;
+            if (!pegado.All(char.IsDigit)) e.CancelCommand();
+        }
+
         // ─── Equivalente a UnirVariables(...) ────────────────────────────────
         /// <summary>
         /// Une valores no vacíos separados por espacio.

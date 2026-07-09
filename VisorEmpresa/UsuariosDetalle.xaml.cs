@@ -40,6 +40,7 @@ namespace VisorEmpresa
         public UsuariosDetalle(UsuariosGeneral? padre = null, string idEditar = "")
         {
             InitializeComponent();
+            FuncionesComunes.BloquearPegadoNoNumerico(Box_Codigo);
             _padre    = padre;
             _idEditar = idEditar;
             Loaded   += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };

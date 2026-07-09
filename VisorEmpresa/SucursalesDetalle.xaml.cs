@@ -26,6 +26,7 @@ namespace VisorEmpresa
         public SucursalesDetalle(SucursalesGeneral? padre = null, string idEditar = "")
         {
             InitializeComponent();
+            FuncionesComunes.BloquearPegadoNoNumerico(Box_Codigo);
             _padre     = padre;
             _idEditar  = idEditar;
             _tituloTab = string.IsNullOrEmpty(idEditar) ? "nueva-sucursal" : $"sucursal-{idEditar}";

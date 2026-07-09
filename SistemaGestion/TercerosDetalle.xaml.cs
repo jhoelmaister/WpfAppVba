@@ -22,6 +22,7 @@ namespace SistemaGestion
         public TercerosDetalle(string idEditar = "")
         {
             InitializeComponent();
+            FuncionesComunes.BloquearPegadoNoNumerico(Box_Codigo);
             _idEditar = idEditar;
             Loaded  += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
         }

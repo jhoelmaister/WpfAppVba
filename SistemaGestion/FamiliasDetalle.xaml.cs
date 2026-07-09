@@ -26,6 +26,7 @@ namespace SistemaGestion
         public FamiliasDetalle(FamiliasGeneral? padre = null, string idEditar = "", string tituloTab = "")
         {
             InitializeComponent();
+            FuncionesComunes.BloquearPegadoNoNumerico(Box_Codigo);
             _padre     = padre;
             _idEditar  = idEditar;
             _tituloTab = tituloTab;

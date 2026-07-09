@@ -26,6 +26,7 @@ namespace SistemaGestion
         public CategoriasDetalle(string idEditar = "", string tituloTab = "")
         {
             InitializeComponent();
+            FuncionesComunes.BloquearPegadoNoNumerico(Box_Codigo);
             _idEditar   = idEditar;
             _modoEditar = !string.IsNullOrEmpty(idEditar);
             _tituloTab  = tituloTab;
