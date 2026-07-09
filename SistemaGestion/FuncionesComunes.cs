@@ -155,15 +155,19 @@ namespace SistemaGestion
 
         // ─── Restricción de entrada para código numérico (columna codigo es int) ──
         /// <summary>
-        /// Bloquea el pegado (Ctrl+V, menú contextual, arrastrar y soltar) de texto no
-        /// numérico en un TextBox. Complementa ValidarSoloNumeros en PreviewTextInput,
-        /// que solo cubre la escritura tecla por tecla: pegar no dispara TextInput, así
-        /// que sin esto se podían pegar espacios u otros caracteres en el campo Código.
+        /// Refuerza un TextBox de solo dígitos contra dos vías que ValidarSoloNumeros en
+        /// PreviewTextInput no cubre: (1) pegar texto (Ctrl+V, menú contextual, arrastrar y
+        /// soltar) no dispara TextInput; (2) la barra espaciadora en WPF puede insertar el
+        /// espacio antes de que el TextInput llegue al filtro, así que se bloquea aparte en
+        /// PreviewKeyDown.
         /// </summary>
         public static void BloquearPegadoNoNumerico(TextBox tb)
         {
             DataObject.RemovePastingHandler(tb, SoloDigitosPasting);
             DataObject.AddPastingHandler(tb, SoloDigitosPasting);
+
+            tb.PreviewKeyDown -= BloquearEspacio;
+            tb.PreviewKeyDown += BloquearEspacio;
         }
 
         private static void SoloDigitosPasting(object sender, DataObjectPastingEventArgs e)
@@ -171,6 +175,11 @@ namespace SistemaGestion
             if (!e.DataObject.GetDataPresent(typeof(string))) { e.CancelCommand(); return; }
             string pegado = (string)e.DataObject.GetData(typeof(string))!;
             if (!pegado.All(char.IsDigit)) e.CancelCommand();
+        }
+
+        private static void BloquearEspacio(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Space) e.Handled = true;
         }
 
         // ─── Equivalente a UnirVariables(...) ────────────────────────────────
