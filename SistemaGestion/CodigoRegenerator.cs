@@ -70,13 +70,15 @@ namespace SistemaGestion.Data
         }
 
         // ─── Maestras: codigo = 1..N (orden por secuencia) ───────────────────
+        // codigo es INT en las tablas maestras (a diferencia de los documentos,
+        // donde es NVARCHAR por el prefijo de signo) — el CAST castea al tipo real.
         private static int RenumerarMaestra(SqlConnection conn, SqlTransaction tx, string tabla)
         {
             string sql =
                 $";WITH cte AS (" +
                 $"  SELECT codigo, ROW_NUMBER() OVER (ORDER BY secuencia, id) AS rn " +
                 $"  FROM {tabla}" +
-                $") UPDATE cte SET codigo = CAST(rn AS NVARCHAR(50));";
+                $") UPDATE cte SET codigo = CAST(rn AS INT);";
             return Ejecutar(conn, tx, sql);
         }
 

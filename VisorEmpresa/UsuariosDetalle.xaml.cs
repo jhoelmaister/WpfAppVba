@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using SistemaGestion;
 using SistemaGestion.Data;
 
@@ -167,6 +168,10 @@ namespace VisorEmpresa
             if (!_cargando) _hayCambios = true;
         }
 
+        // ─── Código: solo dígitos (columna codigo es int en la base) ─────────
+        private void Box_Numeros_PreviewTextInput(object sender, TextCompositionEventArgs e)
+            => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
+
         private void Campo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!_cargando) _hayCambios = true;
@@ -199,7 +204,6 @@ namespace VisorEmpresa
                 Sql.UsuariosObj.EstablecerItem("empresa",  id, (CmbEmpresa.SelectedItem  as EmpresaItem)?.Id  ?? "");
                 Sql.UsuariosObj.EstablecerItem("sucursal", id, (CmbSucursal.SelectedItem as SucursalItem)?.Id ?? "");
                 Sql.UsuariosObj.EstablecerItem("edicion",  id, DateTime.Now);
-                Sql.UsuariosObj.EstablecerItem("usuarioE", id, AppState.UsuarioActivo);
 
                 Sql.UsuariosObj.OrdenarData(("codigo", false));
                 Sql.UsuariosObj.ExportarItems();
@@ -237,8 +241,6 @@ namespace VisorEmpresa
                 Sql.UsuariosObj.EstablecerItem("estadof",  id, "normal");
                 Sql.UsuariosObj.EstablecerItem("emision",   id, DateTime.Now);
                 Sql.UsuariosObj.EstablecerItem("edicion",   id, DateTime.Now);
-                Sql.UsuariosObj.EstablecerItem("usuario",   id, AppState.UsuarioActivo);
-                Sql.UsuariosObj.EstablecerItem("usuarioE",  id, AppState.UsuarioActivo);
 
                 Sql.UsuariosObj.OrdenarData(("codigo", false));
                 Sql.UsuariosObj.ExportarItems();

@@ -138,6 +138,7 @@
                             <StackPanel Grid.Column="0">
                                 <TextBlock Style="{StaticResource SectionLabel}" Text="CÓDIGO"/>
                                 <TextBox x:Name="Box_Codigo" Style="{StaticResource ModernInput}"
+                                         PreviewTextInput="Box_Numeros_PreviewTextInput"
                                          TextChanged="Campo_TextChanged"/>
                             </StackPanel>
 

@@ -156,7 +156,6 @@ namespace VisorEmpresa
             try
             {
                 Sql.UsuariosObj.EstablecerItem("edicion",  fila.Id, DateTime.Now);
-                Sql.UsuariosObj.EstablecerItem("usuarioE", fila.Id, AppState.UsuarioActivo);
                 Sql.UsuariosObj.Ocultar(fila.Id);
                 Sql.UsuariosObj.ExportarItems();
 

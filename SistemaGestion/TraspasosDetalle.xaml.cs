@@ -760,7 +760,6 @@ namespace SistemaGestion
                 Sql.DocumentosTObj.EstablecerItem("codigo",      id, _codigoDocT);
                 Sql.DocumentosTObj.EstablecerItem("origen",      id, origenId);
                 Sql.DocumentosTObj.EstablecerItem("destino",     id, destinoId);
-                Sql.DocumentosTObj.EstablecerItem("sucursal",    id, AppState.SucursalActiva);
                 Sql.DocumentosTObj.EstablecerItem("fecha",       id, fechaFinal);
                 Sql.DocumentosTObj.EstablecerItem("estado",      id, estado);
                 Sql.DocumentosTObj.EstablecerItem("referencia",  id, Box_Referencia.Text.Trim());

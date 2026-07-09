@@ -152,6 +152,10 @@ namespace VisorEmpresa
             if (!_cargando) _hayCambios = true;
         }
 
+        // ─── Código: solo dígitos (columna codigo es int en la base) ─────────
+        private void Box_Numeros_PreviewTextInput(object sender, TextCompositionEventArgs e)
+            => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
+
         private void Box_Fecha_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!_cargando) _hayCambios = true;
