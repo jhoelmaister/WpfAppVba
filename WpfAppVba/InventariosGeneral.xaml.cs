@@ -395,13 +395,12 @@ namespace WpfAppVba
                 y += altoFila;
             }
 
-            // Línea de separación entre la lista de artículos y los totales por categoría.
+            // Espacio en blanco entre la lista de artículos y los totales por categoría
+            // (sin línea dibujada, solo separación vertical).
             const double altoSeparador = 16;
             void DibujarSeparador()
             {
-                y += altoSeparador / 2;
-                gfx.DrawLine(penLinea, xN, y, xN + anchoTabla, y);
-                y += altoSeparador / 2;
+                y += altoSeparador;
             }
 
             // Encabezado a redibujar al saltar de página: la tabla de artículos usa
@@ -586,8 +585,8 @@ namespace WpfAppVba
             ws.Cell(1, 2).Value = "Código";
             ws.Cell(1, 3).Value = "Producto";
             ws.Cell(1, 4).Value = "Familia";
-            ws.Cell(1, 5).Value = "Descripción";
-            ws.Cell(1, 6).Value = "Categoría";
+            ws.Cell(1, 5).Value = "Categoría";
+            ws.Cell(1, 6).Value = "Descripción";
             ws.Cell(1, 7).Value = "Cantidad";
 
             int uf = Sql.InventariosObj.ContarFilas;
@@ -625,8 +624,8 @@ namespace WpfAppVba
                 ws.Cell(row, 2).Value = l.codigo;
                 ws.Cell(row, 3).Value = l.prodDesc;
                 ws.Cell(row, 4).Value = l.famDesc;
-                ws.Cell(row, 5).Value = l.desc;
-                ws.Cell(row, 6).Value = l.catDesc;
+                ws.Cell(row, 5).Value = l.catDesc;
+                ws.Cell(row, 6).Value = l.desc;
                 ws.Cell(row, 7).Value = l.cantidad;
                 row++;
             }
@@ -637,8 +636,7 @@ namespace WpfAppVba
 
             if (ultimaFilaDatos >= primerFilaDatos)
             {
-                ws.Range(row, 1, row, 7).Style.Border.TopBorder = ClosedXML.Excel.XLBorderStyleValues.Medium;
-                row++;
+                row++; // fila en blanco: separa la lista de artículos de los totales por categoría
 
                 ws.Cell(row, 1).Value = "Totales por categoría";
                 ws.Range(row, 1, row, 7).Merge();
@@ -664,7 +662,7 @@ namespace WpfAppVba
                     ws.Range(row, 1, row, 6).Merge();
                     ws.Cell(row, 1).Value = categoria;
                     ws.Cell(row, 7).FormulaA1 =
-                        $"=SUMIF(F{primerFilaDatos}:F{ultimaFilaDatos},\"{catEscapada}\",G{primerFilaDatos}:G{ultimaFilaDatos})";
+                        $"=SUMIF(E{primerFilaDatos}:E{ultimaFilaDatos},\"{catEscapada}\",G{primerFilaDatos}:G{ultimaFilaDatos})";
                     row++;
                 }
 
