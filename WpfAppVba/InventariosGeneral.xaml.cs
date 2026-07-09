@@ -374,6 +374,37 @@ namespace WpfAppVba
                 y += altoGrupo;
             }
 
+            // Tabla de totales por categoría: 2 columnas (Categoría / Cantidad), alineada
+            // con el borde derecho de la columna Cantidad de la tabla de artículos.
+            void DibujarEncabezadoCategorias()
+            {
+                double anchoCatCol = xCantidad - xN;
+                gfx.DrawRectangle(penLinea, brushHeader, xN, y, anchoTabla, altoHeader);
+                gfx.DrawLine(penLinea, xCantidad, y, xCantidad, y + altoHeader);
+                gfx.DrawString("Categoría", fontHeader, XBrushes.Black, new XRect(xN + 4, y, anchoCatCol - 8, altoHeader), XStringFormats.CenterLeft);
+                gfx.DrawString("Cantidad",  fontHeader, XBrushes.Black, new XRect(xCantidad + 4, y, anchoCantidad - 8, altoHeader), XStringFormats.CenterRight);
+                y += altoHeader;
+            }
+
+            void DibujarFilaCategoria(string categoria, string cantidad, bool destacado = false)
+            {
+                double anchoCatCol = xCantidad - xN;
+                if (destacado) gfx.DrawRectangle(penLinea, brushCeleste, xN, y, anchoTabla, altoFila);
+                else           gfx.DrawRectangle(penLinea, xN, y, anchoTabla, altoFila);
+                gfx.DrawLine(penLinea, xCantidad, y, xCantidad, y + altoFila);
+
+                var font = destacado ? fontGrupo : fontCuerpo;
+                gfx.DrawString(categoria, font, XBrushes.Black, new XRect(xN + 4, y, anchoCatCol - 8, altoFila), XStringFormats.CenterLeft);
+                gfx.DrawString(cantidad,  font, XBrushes.Black, new XRect(xCantidad + 4, y, anchoCantidad - 8, altoFila), XStringFormats.CenterRight);
+
+                y += altoFila;
+            }
+
+            // Encabezado a redibujar al saltar de página: la tabla de artículos usa
+            // DibujarEncabezadoColumnas, la sección de totales por categoría pasa a usar
+            // DibujarEncabezadoCategorias una vez que empieza (ver más abajo).
+            Action dibujarEncabezadoPagina = DibujarEncabezadoColumnas;
+
             void NuevaPagina()
             {
                 gfx.Dispose();
@@ -381,7 +412,7 @@ namespace WpfAppVba
                 page.Size = PageSize.A4;
                 gfx = XGraphics.FromPdfPage(page);
                 y = margen;
-                DibujarEncabezadoColumnas();
+                dibujarEncabezadoPagina();
             }
 
             void AsegurarEspacio(double alto)
@@ -398,7 +429,7 @@ namespace WpfAppVba
 
             DibujarEncabezadoColumnas();
 
-            var lineas = new List<(string prodDesc, string famDesc, string codigo, string desc, double cantidad)>();
+            var lineas = new List<(string prodDesc, string famDesc, string codigo, string desc, double cantidad, string catDesc)>();
 
             int uf = Sql.InventariosObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -419,7 +450,10 @@ namespace WpfAppVba
                 double cantidad = Convert.ToDouble(Sql.InventariosObj.ObtenerItem("cantidad", id) ?? 0);
                 if (cantidad <= 0) continue;
 
-                lineas.Add((prodDesc, famDesc, codigo, descArt, cantidad));
+                string catId   = Sql.ArticulosObj.ObtenerItem("categoria", artId)?.ToString() ?? "";
+                string catDesc = string.IsNullOrEmpty(catId) ? "" : (Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "");
+
+                lineas.Add((prodDesc, famDesc, codigo, descArt, cantidad, catDesc));
             }
 
             var grupos = lineas
@@ -439,6 +473,33 @@ namespace WpfAppVba
                     n++;
                     DibujarFilaDatos(n.ToString(), l.codigo, l.desc, l.cantidad.ToString("#,##0.##"));
                 }
+            }
+
+            // ── Totales por categoría + total general, al final de la carga ──────
+            var totalesPorCategoria = lineas
+                .GroupBy(l => string.IsNullOrEmpty(l.catDesc) ? "Otros" : l.catDesc)
+                .Select(g => (categoria: g.Key, cantidad: g.Sum(x => x.cantidad)))
+                .OrderBy(x => x.categoria, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (totalesPorCategoria.Count > 0)
+            {
+                dibujarEncabezadoPagina = () => { };
+                AsegurarEspacio(altoGrupo + altoHeader);
+                DibujarBandaGrupo("Totales por categoría");
+                DibujarEncabezadoCategorias();
+                dibujarEncabezadoPagina = DibujarEncabezadoCategorias;
+
+                double totalGeneral = 0;
+                foreach (var (categoria, cantidad) in totalesPorCategoria)
+                {
+                    AsegurarEspacio(altoFila);
+                    DibujarFilaCategoria(categoria, cantidad.ToString("#,##0.##"));
+                    totalGeneral += cantidad;
+                }
+
+                AsegurarEspacio(altoFila);
+                DibujarFilaCategoria("Total general", totalGeneral.ToString("#,##0.##"), destacado: true);
             }
 
             // El último gfx de la generación de contenido sigue abierto: hay que

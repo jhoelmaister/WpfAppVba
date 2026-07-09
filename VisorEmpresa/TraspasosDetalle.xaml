@@ -183,6 +183,8 @@
                         <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="140"/>
                         <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="134"/>
@@ -212,48 +214,47 @@
                                  TextChanged="Campo_TextChanged"/>
                     </StackPanel>
 
-                    <!-- Origen + Destino (solo lectura) -->
-                    <StackPanel Grid.Column="6" x:Name="PanelOrigenDestino"
-                                Orientation="Horizontal">
-                        <StackPanel Margin="0,0,8,0">
-                            <TextBlock Text="Sucursal origen" Style="{StaticResource LblMuted}"/>
-                            <Border Height="28" Width="130"
-                                    Background="{DynamicResource ThemeBgReadOnly}"
-                                    BorderBrush="{DynamicResource ThemeBorde}"
-                                    BorderThickness="1" CornerRadius="6"
-                                    Padding="7,0">
-                                <TextBlock x:Name="Box_Origen_Descripcion"
-                                           FontSize="12"
-                                           Foreground="{DynamicResource ThemeTextoMuted}"
-                                           VerticalAlignment="Center"
-                                           TextTrimming="CharacterEllipsis"/>
-                            </Border>
-                        </StackPanel>
-                        <StackPanel>
-                            <TextBlock Text="Sucursal destino" Style="{StaticResource LblMuted}"/>
-                            <Border Height="28" Width="130"
-                                    Background="{DynamicResource ThemeBgReadOnly}"
-                                    BorderBrush="{DynamicResource ThemeBorde}"
-                                    BorderThickness="1" CornerRadius="6"
-                                    Padding="7,0">
-                                <TextBlock x:Name="Box_Destino_Descripcion"
-                                           FontSize="12"
-                                           Foreground="{DynamicResource ThemeTextoMuted}"
-                                           VerticalAlignment="Center"
-                                           TextTrimming="CharacterEllipsis"/>
-                            </Border>
-                        </StackPanel>
+                    <!-- Sucursal origen (solo lectura) -->
+                    <StackPanel Grid.Column="6">
+                        <TextBlock Text="Sucursal origen" Style="{StaticResource LblMuted}"/>
+                        <Border Height="28"
+                                Background="{DynamicResource ThemeBgReadOnly}"
+                                BorderBrush="{DynamicResource ThemeBorde}"
+                                BorderThickness="1" CornerRadius="6"
+                                Padding="7,0">
+                            <TextBlock x:Name="Box_Origen_Descripcion"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource ThemeTextoMuted}"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Sucursal destino (solo lectura) -->
+                    <StackPanel Grid.Column="8">
+                        <TextBlock Text="Sucursal destino" Style="{StaticResource LblMuted}"/>
+                        <Border Height="28"
+                                Background="{DynamicResource ThemeBgReadOnly}"
+                                BorderBrush="{DynamicResource ThemeBorde}"
+                                BorderThickness="1" CornerRadius="6"
+                                Padding="7,0">
+                            <TextBlock x:Name="Box_Destino_Descripcion"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource ThemeTextoMuted}"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </Border>
                     </StackPanel>
 
                     <!-- Referencia -->
-                    <StackPanel Grid.Column="8">
+                    <StackPanel Grid.Column="10">
                         <TextBlock Text="Referencia" Style="{StaticResource LblMuted}"/>
                         <TextBox x:Name="Box_Referencia" Style="{StaticResource ModernInput}"
                                  TextChanged="Campo_TextChanged"/>
                     </StackPanel>
 
                     <!-- Estado -->
-                    <StackPanel Grid.Column="10">
+                    <StackPanel Grid.Column="12">
                         <TextBlock Text="Estado" Style="{StaticResource LblMuted}"/>
                         <ComboBox x:Name="Box_Estado" Height="28" FontSize="12"
                                   SelectionChanged="Campo_SelectionChanged">
@@ -264,7 +265,7 @@
                     </StackPanel>
 
                     <!-- Tipo -->
-                    <StackPanel Grid.Column="12">
+                    <StackPanel Grid.Column="14">
                         <TextBlock Text="Movimiento" Style="{StaticResource LblMuted}"/>
                         <ComboBox x:Name="CboMovimiento" Height="28" FontSize="12"
                                   SelectionChanged="CboMovimiento_SelectionChanged">
