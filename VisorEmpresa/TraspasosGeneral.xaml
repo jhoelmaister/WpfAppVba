@@ -197,12 +197,20 @@
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal"
                                 VerticalAlignment="Center" Margin="0,0,0,0">
-                        <TextBlock Text="Sucursal:"
+                        <TextBlock Text="Origen:"
                                    FontSize="12" VerticalAlignment="Center"
                                    Foreground="{DynamicResource ThemeTextoSec}"
                                    Margin="0,0,6,0"/>
-                        <ComboBox x:Name="CmbSucursal"
-                                  Width="180" Height="28" FontSize="12"
+                        <ComboBox x:Name="CmbSucursalOrigen"
+                                  Width="160" Height="28" FontSize="12"
+                                  Margin="0,0,16,0"
+                                  SelectionChanged="Filtro_SelectionChanged"/>
+                        <TextBlock Text="Destino:"
+                                   FontSize="12" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource ThemeTextoSec}"
+                                   Margin="0,0,6,0"/>
+                        <ComboBox x:Name="CmbSucursalDestino"
+                                  Width="160" Height="28" FontSize="12"
                                   SelectionChanged="Filtro_SelectionChanged"/>
                     </StackPanel>
                 </Grid>

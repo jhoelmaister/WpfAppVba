@@ -813,11 +813,13 @@ namespace VisorEmpresa
 
             ws.Cell(1, 1).Value = "N°";
             ws.Cell(1, 2).Value = "Código";
-            ws.Cell(1, 3).Value = "Descripción";
-            ws.Cell(1, 4).Value = "Precio";
+            ws.Cell(1, 3).Value = "Producto";
+            ws.Cell(1, 4).Value = "Familia";
+            ws.Cell(1, 5).Value = "Descripción";
+            ws.Cell(1, 6).Value = "Precio";
 
             int uf = Sql.PreciosObj.ContarFilas;
-            var lineas = new List<(string codigo, string desc, double precio)>();
+            var lineas = new List<(string prodDesc, string famDesc, string codigo, string desc, double precio)>();
 
             for (int i = 1; i <= uf; i++)
             {
@@ -827,12 +829,16 @@ namespace VisorEmpresa
                 if (Sql.PreciosObj.ObtenerItem("documentoL", id)?.ToString() != fila.Id) continue;
 
                 string artId    = Sql.PreciosObj.ObtenerItem("articulo", id)?.ToString() ?? "";
+                string famId    = Sql.ArticulosObj.ObtenerItem("familia", artId)?.ToString() ?? "";
+                string prodId   = Sql.FamiliasObj.ObtenerItem("producto", famId)?.ToString() ?? "";
+                string prodDesc = Sql.ProductosObj.ObtenerItem("descripcion", prodId)?.ToString() ?? "";
+                string famDesc  = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString()  ?? "";
                 string codigo   = Sql.ArticulosObj.ObtenerItem("codigo",      artId)?.ToString()  ?? "";
                 string descArt  = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString()  ?? "";
                 double precio   = Convert.ToDouble(Sql.PreciosObj.ObtenerItem("precio", id) ?? 0);
                 if (precio <= 0) continue;
 
-                lineas.Add((codigo, descArt, precio));
+                lineas.Add((prodDesc, famDesc, codigo, descArt, precio));
             }
 
             int row = 2;
@@ -842,8 +848,10 @@ namespace VisorEmpresa
                 n++;
                 ws.Cell(row, 1).Value = n;
                 ws.Cell(row, 2).Value = l.codigo;
-                ws.Cell(row, 3).Value = l.desc;
-                ws.Cell(row, 4).Value = l.precio;
+                ws.Cell(row, 3).Value = l.prodDesc;
+                ws.Cell(row, 4).Value = l.famDesc;
+                ws.Cell(row, 5).Value = l.desc;
+                ws.Cell(row, 6).Value = l.precio;
                 row++;
             }
 

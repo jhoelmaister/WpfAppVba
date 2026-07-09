@@ -553,19 +553,26 @@ namespace VisorEmpresa
         /// se corta con la apertura de SU propia sucursal, igual con una sucursal
         /// puntual o con toda la empresa.
         /// </summary>
-        public static void ConectarCacheTraspasos(string empresa, int anio, string sucursalId)
+        public static void ConectarCacheTraspasos(string empresa, int anio, string origenId = "", string destinoId = "")
         {
             var (desde, hasta) = RangoAnio(anio);
             string aper = FechaLiteral(desde);
             string cier = FechaLiteral(hasta);
             string emp  = EmpresaSegura(empresa);
-            bool porSucursal = !string.IsNullOrEmpty(sucursalId);
+            bool porOrigen  = !string.IsNullOrEmpty(origenId);
+            bool porDestino = !string.IsNullOrEmpty(destinoId);
 
-            string condLado = porSucursal
-                ? $"AND ( (vg.origen = '{sucursalId}' AND vg.fecha >= COALESCE(apo.fecha, so.fecha)) " +
-                  $"   OR (vg.destino = '{sucursalId}' AND vg.fecha >= COALESCE(apd.fecha, sd.fecha)) ) "
-                : $"AND ( (so.empresa = '{emp}' AND vg.fecha >= COALESCE(apo.fecha, so.fecha)) " +
-                  $"   OR (sd.empresa = '{emp}' AND vg.fecha >= COALESCE(apd.fecha, sd.fecha)) ) ";
+            string condLado;
+            if (porOrigen && porDestino)
+                condLado = $"AND vg.origen = '{origenId}' AND vg.destino = '{destinoId}' " +
+                           "AND vg.fecha >= COALESCE(apo.fecha, so.fecha) AND vg.fecha >= COALESCE(apd.fecha, sd.fecha) ";
+            else if (porOrigen)
+                condLado = $"AND vg.origen = '{origenId}' AND vg.fecha >= COALESCE(apo.fecha, so.fecha) ";
+            else if (porDestino)
+                condLado = $"AND vg.destino = '{destinoId}' AND vg.fecha >= COALESCE(apd.fecha, sd.fecha) ";
+            else
+                condLado = $"AND ( (so.empresa = '{emp}' AND vg.fecha >= COALESCE(apo.fecha, so.fecha)) " +
+                           $"   OR (sd.empresa = '{emp}' AND vg.fecha >= COALESCE(apd.fecha, sd.fecha)) ) ";
 
             Sql.DocumentosTObj.Conectar("documentosT",
                 "SELECT vg.* FROM documentosT AS vg " +

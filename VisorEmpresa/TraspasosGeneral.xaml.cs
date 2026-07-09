@@ -14,10 +14,11 @@ namespace VisorEmpresa
     /// <summary>
     /// Duplicado de WpfAppVba.TraspasosGeneral para el visor: misma UI/lógica de
     /// listado (Tree1 de meses, filtros, grilla, detalle), pero de SOLO LECTURA
-    /// (sin Entregar todos/Nuevo/Editar/Eliminar) y con un combo de Sucursal
-    /// (Todas las sucursales o una puntual) en vez de depender de
-    /// AppState.SucursalActiva. La caché (Sql.DocumentosTObj/TraspasosObj) se
-    /// puebla vía ConsultasEmpresa.ConectarCacheTraspasos.
+    /// (sin Entregar todos/Nuevo/Editar/Eliminar) y con dos combos independientes
+    /// —Sucursal origen y Sucursal destino— (cada uno "Todas las sucursales" o
+    /// una puntual, combinables) en vez de depender de AppState.SucursalActiva.
+    /// La caché (Sql.DocumentosTObj/TraspasosObj) se puebla vía
+    /// ConsultasEmpresa.ConectarCacheTraspasos.
     ///
     /// Diferencias de fondo respecto al original, decididas explícitamente para
     /// el visor (no aplican a la app principal):
@@ -36,7 +37,8 @@ namespace VisorEmpresa
         private static SqlData Sql => SqlData.Instance;
         private string _mesActivo      = "";
         private string _modoFiltro     = "filtros"; // "filtros" = Tree1 | "busquedas" = TxtBuscar
-        private string _sucursalFiltro = "";         // "" = Todas las sucursales
+        private string _origenFiltro   = "";         // "" = Todas las sucursales
+        private string _destinoFiltro  = "";         // "" = Todas las sucursales
 
         private bool _iniciado;
         private bool _cargandoFiltros;
@@ -70,8 +72,10 @@ namespace VisorEmpresa
                 var sucursales = await Task.Run(() => ConsultasEmpresa.CargarSucursalesEmpresa(emp));
                 var opciones = new List<Opcion> { new("", "Todas las sucursales") };
                 opciones.AddRange(sucursales.Select(s => new Opcion(s.Id, s.Descripcion)));
-                CmbSucursal.ItemsSource   = opciones;
-                CmbSucursal.SelectedIndex = 0;
+                CmbSucursalOrigen.ItemsSource    = opciones;
+                CmbSucursalOrigen.SelectedIndex  = 0;
+                CmbSucursalDestino.ItemsSource   = new List<Opcion>(opciones);
+                CmbSucursalDestino.SelectedIndex = 0;
             }
             catch (Exception ex)
             {
@@ -100,13 +104,14 @@ namespace VisorEmpresa
 
         private async Task RecargarCacheYVistaAsync()
         {
-            string emp  = AppState.EmpresaActiva;
-            int    anio = VisorState.AnioActivo;
-            string suc  = _sucursalFiltro;
+            string emp     = AppState.EmpresaActiva;
+            int    anio    = VisorState.AnioActivo;
+            string origen  = _origenFiltro;
+            string destino = _destinoFiltro;
             try
             {
                 Mouse.OverrideCursor = Cursors.Wait;
-                await Task.Run(() => ConsultasEmpresa.ConectarCacheTraspasos(emp, anio, suc));
+                await Task.Run(() => ConsultasEmpresa.ConectarCacheTraspasos(emp, anio, origen, destino));
                 CargarMeses();
                 CargarTraspasos();
             }
@@ -124,7 +129,8 @@ namespace VisorEmpresa
         private async void Filtro_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_cargandoFiltros || !_iniciado) return;
-            _sucursalFiltro = (CmbSucursal.SelectedItem as Opcion)?.Id ?? "";
+            _origenFiltro  = (CmbSucursalOrigen.SelectedItem as Opcion)?.Id ?? "";
+            _destinoFiltro = (CmbSucursalDestino.SelectedItem as Opcion)?.Id ?? "";
             await RecargarCacheYVistaAsync();
         }
 
@@ -384,23 +390,22 @@ namespace VisorEmpresa
 
         // Abre TraspasosDetalle (formulario real de la app principal, vinculado) en
         // modo solo lectura, sin Guardar ni edición. TraspasosDetalle muestra un
-        // único campo "Sucursal" (la opuesta a AppState.TipoMovimiento): con una
-        // sucursal puntual elegida en CmbSucursal se usa como referencia (igual
-        // que la app principal usa AppState.SucursalActiva); en "Todas las
-        // sucursales" no hay una única referencia — se asume "salida" (el campo
-        // Sucursal del detalle mostrará el destino), ya que la grilla ya muestra
-        // Origen+Destino sin ambigüedad antes de abrir el detalle.
+        // único campo "Sucursal" (la opuesta a AppState.TipoMovimiento): con un
+        // filtro de Origen puntual, esa sucursal es la referencia (el filtro ya
+        // garantiza que coincide con el origen del documento) → "salida"; con un
+        // filtro de Destino puntual, la referencia es el destino → "entrada". Si
+        // ninguno está fijado no hay una única referencia — se asume "salida" (el
+        // campo Sucursal del detalle mostrará el destino), ya que la grilla ya
+        // muestra Origen+Destino sin ambigüedad antes de abrir el detalle.
         private void AbrirVerDetalle()
         {
             if (Grid1.SelectedItem is not TraspasoFila fila) return;
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
 
-            string origen = Sql.DocumentosTObj.ObtenerItem("origen", fila.DocumentoT)?.ToString() ?? "";
-            bool haySucursalRef = !string.IsNullOrEmpty(_sucursalFiltro);
-            AppState.TipoMovimiento = haySucursalRef
-                ? (origen == _sucursalFiltro ? "salida" : "entrada")
-                : "salida";
+            AppState.TipoMovimiento = !string.IsNullOrEmpty(_origenFiltro)  ? "salida"
+                                    : !string.IsNullOrEmpty(_destinoFiltro) ? "entrada"
+                                    : "salida";
             AppState.EventoFormularioM = "editar";
 
             string titulo = $"Traspaso {fila.Codigo}";
