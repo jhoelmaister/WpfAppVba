@@ -124,7 +124,7 @@ o ajustarlos).
        --packId SistemaGestion `
        --packVersion 1.0.1 `
        --packDir .\publish `
-       --mainExe WpfAppVba.exe `
+       --mainExe SistemaGestion.exe `
        --packTitle "Sistema de Gestión" `
        --icon WpfAppVba\icono.ico
    ```

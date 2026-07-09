@@ -12,14 +12,19 @@
          Agregar o quitar programas). Deliberadamente distinto del nombre del
          PROYECTO (carpeta/namespace/repo, que sigue siendo WpfAppVba) — evita
          la confusión de "mi proyecto y mi aplicación tienen el mismo nombre".
-         AssemblyName NO se toca: sigue siendo WpfAppVba.exe, que es el mainExe
-         configurado en .github/workflows/release.yml. -->
+         AssemblyName SÍ se toca (a diferencia de antes): el .exe pasa a llamarse
+         SistemaGestion.exe, que es el mainExe configurado en
+         .github/workflows/release.yml (coincide con el packId SistemaGestion,
+         ya usado ahí desde el principio). -->
+    <AssemblyName>SistemaGestion</AssemblyName>
     <Product>Sistema de Gestión</Product>
     <AssemblyTitle>Sistema de Gestión</AssemblyTitle>
 
     <!-- Versión de la app. Velopack la usa para decidir si una release es "más nueva".
-         Súbela en cada publicación (1.0.0 -> 1.0.1 -> 1.1.0 ...) y pásala a `vpk pack`. -->
-    <Version>1.1.4</Version>
+         Reiniciada a 0.0.1 junto con el renombre del .exe (WpfAppVba.exe -> SistemaGestion.exe):
+         sin usuarios reales instalados todavía, es un buen momento para arrancar limpio.
+         Súbela en cada publicación (0.0.1 -> 0.0.2 -> 0.1.0 ...) y pásala a `vpk pack`. -->
+    <Version>0.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>

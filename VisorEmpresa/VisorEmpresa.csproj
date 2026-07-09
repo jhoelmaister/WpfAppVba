@@ -10,8 +10,10 @@
     <AssemblyName>VisorEmpresa</AssemblyName>
     <ApplicationIcon>..\WpfAppVba\icono.ico</ApplicationIcon>
 
-    <!-- Versión del visor: independiente de la app principal. -->
-    <Version>0.5.1</Version>
+    <!-- Versión del visor: independiente de la app principal. Reiniciada a 0.0.1
+         junto con el renombre de WpfAppVba.exe -> SistemaGestion.exe: sin usuarios
+         reales instalados todavía, es un buen momento para arrancar limpio. -->
+    <Version>0.0.1</Version>
 
     <!-- Símbolo de compilación exclusivo del visor: los formularios Detalle
          vinculados (PedidosDetalle, etc.) usan #if !VISOR alrededor de los

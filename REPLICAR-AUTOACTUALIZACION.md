@@ -271,7 +271,7 @@ jobs:
         run: dotnet publish WpfAppVba/WpfAppVba.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=none -o ./publish
 
       - name: Pack
-        run: vpk pack --packId SistemaGestion --packVersion ${{ steps.ver.outputs.version }} --packDir ./publish --mainExe WpfAppVba.exe --packTitle "Sistema de Gestión" --icon WpfAppVba/icono.ico
+        run: vpk pack --packId SistemaGestion --packVersion ${{ steps.ver.outputs.version }} --packDir ./publish --mainExe SistemaGestion.exe --packTitle "Sistema de Gestión" --icon WpfAppVba/icono.ico
 
       - name: Upload
         run: vpk upload github --repoUrl https://github.com/jhoelmaister/wpfappvba --publish --releaseName "v${{ steps.ver.outputs.version }}" --tag "v${{ steps.ver.outputs.version }}" --token ${{ secrets.GITHUB_TOKEN }}

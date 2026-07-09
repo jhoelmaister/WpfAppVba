@@ -80,7 +80,7 @@ jobs:
           --packId SistemaGestion
           --packVersion ${{ steps.ver.outputs.version }}
           --packDir ./publish
-          --mainExe WpfAppVba.exe
+          --mainExe SistemaGestion.exe
           --packTitle "Sistema de Gestión"
           --icon WpfAppVba/icono.ico
 
