@@ -21,58 +21,60 @@ namespace SistemaGestion.Data
 
     /// <summary>
     /// Verifica, ANTES de dejar usar una base de datos como conexión activa, que
-    /// tenga las tablas/columnas que la app necesita para no fallar con un SQL
-    /// error ("Invalid object/column name") al conectar.
+    /// tenga las tablas/columnas que la app necesita.
     ///
-    /// Solo exige columnas referenciadas LITERALMENTE en el texto de las consultas
-    /// (WHERE/JOIN/ORDER BY/SELECT explícito) de AppLoader.cs y ConsultasEmpresa.cs —
-    /// las que de verdad rompen la conexión si faltan. NO exige las columnas que la
-    /// app solo lee/escribe vía DataConsulta.ObtenerItem/EstablecerItem: esas ya
-    /// degradan solas (DataConsulta las ignora en silencio si no existen), así que
-    /// no son requisito real para conectar.
-    ///
-    /// Tampoco valida TIPOS de columna: en la práctica el esquema real varía más de
-    /// lo que el código deja ver (ej. "codigo" es int en varias tablas maestras
-    /// aunque no en todas, o algunas columnas tipo "id" son nvarchar en vez de
-    /// uniqueidentifier) y como las consultas comparan contra literales de texto
-    /// entrecomillados, SQL Server los compara igual sin romperse. Validar tipos
-    /// daba muchos falsos positivos contra bases reales — mejor solo existencia.
+    /// Por ahora SOLO valida existencia de tabla y columna, sin tipos: la primera
+    /// versión validaba tipos de dato inferidos del código y dio falsos positivos
+    /// contra la base real (ej. "codigo" es int en varias tablas maestras aunque
+    /// el código sugería texto, o "documentosL.empresa" es nvarchar en vez de
+    /// uniqueidentifier pero igual funciona porque las consultas comparan contra
+    /// literales de texto entrecomillados). El catálogo de columnas por tabla es
+    /// un volcado del esquema real (script.sql de la base "edberBase" del
+    /// usuario), no una suposición — así que ya no debería haber falsos positivos
+    /// de columnas "faltantes" que en realidad nunca existieron a propósito (ej.
+    /// usuarios no tiene emision/edicion/usuario/usuarioE, documentosT no tiene
+    /// movimiento/sucursal).
     /// </summary>
     public static class EsquemaValidator
     {
         // Columnas estructurales presentes en TODAS las tablas del esquema.
         private static readonly string[] Base = { "id", "estadof" };
 
-        // Tabla → columnas específicas (además de las de Base) referenciadas en
-        // consultas SQL crudas (no solo vía ObtenerItem/EstablecerItem).
+        // Tabla → columnas específicas (además de las de Base). Volcado 1:1 del
+        // script real de la base de datos (script.sql, edberBase) — no son
+        // suposiciones: cada tabla lista exactamente las columnas que esa base
+        // tiene hoy. "usuarios" y "documentosT", por ejemplo, no tienen columnas
+        // emision/edicion/usuario/usuarioE ni movimiento/sucursal respectivamente
+        // aunque el código a veces las toque vía ObtenerItem/EstablecerItem (ese
+        // acceso ya degrada solo si la columna no existe, ver DataConsulta.cs).
         private static readonly Dictionary<string, string[]> Manifiesto =
             new(StringComparer.OrdinalIgnoreCase)
         {
-            ["usuarios"]       = new[] { "secuencia", "cuenta", "llave" },
-            ["empresas"]       = new[] { "secuencia" },
-            ["familias"]       = new[] { "descripcion", "producto" },
-            ["articulos"]      = new[] { "familia", "indice", "categoria" },
-            ["productos"]      = new[] { "descripcion", "empresa" },
-            ["Categorias"]     = new[] { "descripcion", "empresa" },
-            ["industrias"]     = new[] { "descripcion", "empresa" },
-            ["terceros"]       = new[] { "descripcion", "empresa" },
-            ["sucursales"]     = new[] { "descripcion", "empresa" },
-            ["regiones"]       = new[] { "descripcion", "empresa" },
-            ["documentosL"]    = new[] { "fecha", "empresa" },
-            ["precios"]        = new[] { "documentoL" },
-            ["documentosI"]    = new[] { "sucursal", "fecha" },
-            ["inventarios"]    = new[] { "documentoI", "articulo", "cantidad" },
-            ["documentosP"]    = new[] { "fecha", "sucursal", "movimiento", "estado" },
-            ["pedidos"]        = new[] { "documentoP", "indice", "articulo", "cantidad" },
-            ["transacciones"]  = new[] { "documentoP", "indice" },
-            ["entregas"]       = new[] { "documentoP", "indice" },
-            ["documentosT"]    = new[] { "fecha", "origen", "destino" },
-            ["traspasos"]      = new[] { "documentoT", "indice", "articulo", "cantidad" },
-            ["documentosC"]    = new[] { "fecha", "sucursal", "movimiento" },
-            ["correcciones"]   = new[] { "documentoC", "indice", "articulo", "cantidad" },
-            ["documentosF"]    = new[] { "fecha", "sucursal" },
-            ["facturas"]       = new[] { "documentoF", "indice" },
-            ["transaccionesF"] = new[] { "documentoF", "indice" },
+            ["usuarios"]       = new[] { "secuencia", "cuenta", "llave", "nombres", "apellidos", "tipo", "temaC", "codigo", "sucursal", "empresa" },
+            ["empresas"]       = new[] { "secuencia", "descripcion", "signo", "observacion", "fecha", "emision", "edicion", "usuario", "usuarioE", "codigo" },
+            ["articulos"]      = new[] { "secuencia", "descripcion", "indice", "modelo", "observacion", "estado", "emision", "edicion", "codigo", "categoria", "familia", "industria", "usuario", "usuarioE" },
+            ["familias"]       = new[] { "secuencia", "descripcion", "observacion", "emision", "edicion", "codigo", "producto", "usuario", "usuarioE" },
+            ["productos"]      = new[] { "secuencia", "descripcion", "emision", "edicion", "codigo", "usuario", "usuarioE", "empresa" },
+            ["Categorias"]     = new[] { "secuencia", "descripcion", "emision", "edicion", "codigo", "usuario", "usuarioE", "empresa" },
+            ["industrias"]     = new[] { "secuencia", "descripcion", "emision", "edicion", "codigo", "usuario", "usuarioE", "empresa" },
+            ["terceros"]       = new[] { "secuencia", "nit", "descripcion", "telefono", "contacto", "direccion", "contacto2", "telefono2", "observacion", "emision", "edicion", "codigo", "usuario", "usuarioE", "empresa" },
+            ["sucursales"]     = new[] { "secuencia", "nit", "descripcion", "direccion", "telefono", "observacion", "emision", "edicion", "fecha", "codigo", "region", "usuario", "usuarioE", "signo", "empresa", "tipo" },
+            ["regiones"]       = new[] { "secuencia", "descripcion", "emision", "edicion", "codigo", "usuario", "usuarioE", "signo", "empresa" },
+            ["documentosL"]    = new[] { "secuencia", "codigo", "fecha", "emision", "edicion", "observacion", "usuario", "usuarioE", "referencia", "region", "estado", "empresa" },
+            ["precios"]        = new[] { "secuencia", "precio", "articulo", "documentoL" },
+            ["documentosI"]    = new[] { "secuencia", "observacion", "fecha", "emision", "edicion", "codigo", "sucursal", "usuario", "usuarioE", "referencia" },
+            ["inventarios"]    = new[] { "secuencia", "cantidad", "documentoI", "articulo" },
+            ["documentosP"]    = new[] { "secuencia", "fecha", "estado", "tipo", "emision", "edicion", "referencia", "movimiento", "observacion", "estadoC", "codigo", "sucursal", "emitido", "usuario", "usuarioE", "tercero" },
+            ["pedidos"]        = new[] { "secuencia", "indice", "cantidad", "importe", "tipo", "forma", "contable", "documentoP", "articulo" },
+            ["transacciones"]  = new[] { "secuencia", "fecha", "descripcion", "indice", "importe", "forma", "documentoP" },
+            ["entregas"]       = new[] { "secuencia", "indice", "cantidad", "fecha", "documentoP", "articulo" },
+            ["documentosT"]    = new[] { "secuencia", "fecha", "estado", "emision", "edicion", "referencia", "observacion", "codigo", "origen", "destino", "emitido", "usuario", "usuarioE" },
+            ["traspasos"]      = new[] { "secuencia", "indice", "cantidad", "documentoT", "articulo" },
+            ["documentosC"]    = new[] { "secuencia", "fecha", "emision", "edicion", "referencia", "movimiento", "observacion", "motivo", "codigo", "sucursal", "usuario", "usuarioE" },
+            ["correcciones"]   = new[] { "secuencia", "indice", "cantidad", "documentoC", "articulo" },
+            ["documentosF"]    = new[] { "secuencia", "codigo", "fecha", "emision", "edicion", "observacion", "referencia", "sucursal", "usuario", "usuarioE", "estado", "estadoC", "movimiento", "tercero" },
+            ["facturas"]       = new[] { "secuencia", "indice", "concepto", "importe", "documentoF", "categoria" },
+            ["transaccionesF"] = new[] { "secuencia", "fecha", "descripcion", "indice", "importe", "forma", "documentoF" },
         };
 
         // ─── Validar una conexión ya abierta ─────────────────────────────────
