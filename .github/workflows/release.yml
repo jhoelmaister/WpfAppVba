@@ -1,4 +1,4 @@
-name: Publicar release (Velopack)
+name: Publicar release Sistema Gestion (Velopack)
 
 # Cómo se dispara:
 #   A) Empujando un tag vX.Y.Z   -> git tag v1.0.1 && git push origin v1.0.1
