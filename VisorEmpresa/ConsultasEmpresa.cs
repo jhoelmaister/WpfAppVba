@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using Microsoft.Data.SqlClient;
-using WpfAppVba.Data;
+using SistemaGestion.Data;
 
 namespace VisorEmpresa
 {
@@ -35,7 +35,7 @@ namespace VisorEmpresa
 
     /// <summary>Acumulador de movimientos de UNA sucursal + UN artículo, usado por
     /// <see cref="ConsultasEmpresa.ObtenerStockEmpresa"/>. Mismas fórmulas que
-    /// WpfAppVba.StockCalculator.ContarStock/ContarStock2.</summary>
+    /// SistemaGestion.StockCalculator.ContarStock/ContarStock2.</summary>
     public class StockAcumuladoInfo
     {
         public double Apertura, Entradas, Salidas, VentasTodas, ComprasTodas, VentasEnt, ComprasEnt, Ingresos, Descuentos;
@@ -306,7 +306,7 @@ namespace VisorEmpresa
         // ─── Stock/Disponible de TODA la empresa (para PreciosDetalle y para el
         //     panel "Stock" de Pedidos/Traspasos/Correcciones Detalle) ──────────
         //
-        // Mismo criterio que WpfAppVba.StockCalculator.ContarStock/ContarStock2 (5
+        // Mismo criterio que SistemaGestion.StockCalculator.ContarStock/ContarStock2 (5
         // consultas SQL agregadas a nivel de empresa en vez de una sola sucursal):
         // la apertura de cada sucursal es la de su documentoI más reciente (o su
         // fecha de creación si no tiene ninguno), y se acumula todo movimiento

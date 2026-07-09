@@ -6,13 +6,13 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using WpfAppVba;
-using WpfAppVba.Data;
+using SistemaGestion;
+using SistemaGestion.Data;
 
 namespace VisorEmpresa
 {
     /// <summary>
-    /// Duplicado de WpfAppVba.ArticulosGeneral para el visor: mismo catálogo
+    /// Duplicado de SistemaGestion.ArticulosGeneral para el visor: mismo catálogo
     /// (árbol de familias, búsqueda, grilla, métricas, Informe Excel), pero de
     /// SOLO LECTURA (sin Nuevo/Insertar/Editar/Eliminar). Disponible/Stock se
     /// calculan a nivel de EMPRESA vía ConsultasEmpresa.ObtenerStockEmpresa en
@@ -89,7 +89,7 @@ namespace VisorEmpresa
             CargarArticulos();
         }
 
-        // ─── Árbol de productos/familias (mismo patrón que WpfAppVba.ArticulosGeneral) ──
+        // ─── Árbol de productos/familias (mismo patrón que SistemaGestion.ArticulosGeneral) ──
         private void CargarArbol()
         {
             Tree1.Items.Clear();
@@ -353,7 +353,7 @@ namespace VisorEmpresa
     {
         public int    Linea       { get; set; }
         // Zebra de Grid1 calculado desde el dato (no desde AlternationIndex): ver
-        // nota equivalente en WpfAppVba.ArticuloFila.
+        // nota equivalente en SistemaGestion.ArticuloFila.
         public bool   FilaPar     => Linea % 2 == 0;
         public string Id          { get; set; } = "";
         public string Codigo      { get; set; } = "";

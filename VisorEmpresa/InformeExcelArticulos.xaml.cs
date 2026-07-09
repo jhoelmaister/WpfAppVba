@@ -5,13 +5,13 @@ using System.IO;
 using System.Windows;
 using ClosedXML.Excel;
 using Microsoft.Win32;
-using WpfAppVba;
-using WpfAppVba.Data;
+using SistemaGestion;
+using SistemaGestion.Data;
 
 namespace VisorEmpresa
 {
     /// <summary>
-    /// Duplicado de WpfAppVba.InformeExcelArticulos para el visor: mismo
+    /// Duplicado de SistemaGestion.InformeExcelArticulos para el visor: mismo
     /// informe (nombre + fecha/hora de corte), pero el stock se calcula con
     /// ConsultasEmpresa.ObtenerStockEmpresa (a nivel de EMPRESA) en vez de
     /// StockCalculator.ContarStock, que depende de AppState.SucursalActiva/

@@ -2,8 +2,8 @@ using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using WpfAppVba;
-using WpfAppVba.Data;
+using SistemaGestion;
+using SistemaGestion.Data;
 
 namespace VisorEmpresa
 {

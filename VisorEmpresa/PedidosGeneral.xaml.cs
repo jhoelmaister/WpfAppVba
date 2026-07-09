@@ -6,13 +6,13 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using WpfAppVba;
-using WpfAppVba.Data;
+using SistemaGestion;
+using SistemaGestion.Data;
 
 namespace VisorEmpresa
 {
     /// <summary>
-    /// Duplicado de WpfAppVba.PedidosGeneral para el visor: misma UI/lógica de
+    /// Duplicado de SistemaGestion.PedidosGeneral para el visor: misma UI/lógica de
     /// listado (Tree1 de meses, filtros, grilla, detalle), pero de SOLO LECTURA
     /// (sin Nuevo/Editar/Eliminar) y con un combo de Sucursal (Todas las
     /// sucursales o una puntual) en vez de depender de AppState.SucursalActiva.

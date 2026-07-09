@@ -47,7 +47,7 @@ jobs:
               $v = "${{ github.ref_name }}".TrimStart("v")
             } else {
               # Leer <Version> del csproj
-              $m = Select-String -Path WpfAppVba/WpfAppVba.csproj `
+              $m = Select-String -Path SistemaGestion/SistemaGestion.csproj `
                                   -Pattern '<Version>\s*([^<]+?)\s*</Version>' | Select-Object -First 1
               $v = $m.Matches[0].Groups[1].Value.Trim()
             }
@@ -58,7 +58,7 @@ jobs:
 
       - name: Publish (self-contained single-file)
         run: >
-          dotnet publish WpfAppVba/WpfAppVba.csproj
+          dotnet publish SistemaGestion/SistemaGestion.csproj
           -c Release -r win-x64 --self-contained true
           -p:PublishSingleFile=true -p:DebugType=none
           -o ./publish
@@ -82,7 +82,7 @@ jobs:
           --packDir ./publish
           --mainExe SistemaGestion.exe
           --packTitle "Sistema de Gestión"
-          --icon WpfAppVba/icono.ico
+          --icon SistemaGestion/icono.ico
 
       - name: Upload (publica la Release en este repo)
         run: >

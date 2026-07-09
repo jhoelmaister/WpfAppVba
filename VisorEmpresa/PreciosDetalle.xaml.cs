@@ -5,19 +5,19 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using WpfAppVba;
-using WpfAppVba.Data;
+using SistemaGestion;
+using SistemaGestion.Data;
 
 namespace VisorEmpresa
 {
     /// <summary>
     /// Detalle de lista de precios del visor: misma UI/lógica que la versión
-    /// original de WpfAppVba (árbol de familias, catálogo completo, panel de
+    /// original de SistemaGestion (árbol de familias, catálogo completo, panel de
     /// Stock por sucursal), pero el cálculo de Stock/Disponible de empresa usa
     /// ConsultasEmpresa.ObtenerStockEmpresa (cacheado en memoria) en vez de
     /// recalcular con 5 consultas SQL cada vez que se abre un documento — ver
     /// CalcularStockEmpresa() más abajo. Precios/Empresas/Sucursales/Regiones/
-    /// Usuarios ya no están vinculados a WpfAppVba: cada uno tiene su propia
+    /// Usuarios ya no están vinculados a SistemaGestion: cada uno tiene su propia
     /// copia física e independiente en este proyecto.
     /// </summary>
     public partial class PreciosDetalle : UserControl
@@ -202,7 +202,7 @@ namespace VisorEmpresa
         }
 
         // ─── Stock/Disponible de TODA la empresa (todas las sucursales) ───────
-        // A diferencia de WpfAppVba.PreciosDetalle (que recalcula con 5 consultas
+        // A diferencia de SistemaGestion.PreciosDetalle (que recalcula con 5 consultas
         // SQL cada vez), acá se reusa ConsultasEmpresa.ObtenerStockEmpresa: el
         // resultado queda cacheado en memoria entre aperturas de este formulario y
         // solo se recalcula de verdad al pedir "forzarRecarga" (BtnActualizar_Click).

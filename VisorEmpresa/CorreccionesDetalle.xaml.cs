@@ -5,13 +5,13 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using WpfAppVba;
-using WpfAppVba.Data;
+using SistemaGestion;
+using SistemaGestion.Data;
 
 namespace VisorEmpresa
 {
     /// <summary>
-    /// Duplicado de WpfAppVba.CorreccionesDetalle para el visor: siempre de SOLO
+    /// Duplicado de SistemaGestion.CorreccionesDetalle para el visor: siempre de SOLO
     /// LECTURA (sin Guardar ni edición), abierto desde
     /// VisorEmpresa.CorreccionesGeneral para "ver documento".
     /// </summary>

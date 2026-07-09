@@ -6,13 +6,13 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using WpfAppVba;
-using WpfAppVba.Data;
+using SistemaGestion;
+using SistemaGestion.Data;
 
 namespace VisorEmpresa
 {
     /// <summary>
-    /// Duplicado de WpfAppVba.TraspasosGeneral para el visor: misma UI/lógica de
+    /// Duplicado de SistemaGestion.TraspasosGeneral para el visor: misma UI/lógica de
     /// listado (Tree1 de meses, filtros, grilla, detalle), pero de SOLO LECTURA
     /// (sin Entregar todos/Nuevo/Editar/Eliminar) y con dos combos independientes
     /// —Sucursal origen y Sucursal destino— (cada uno "Todas las sucursales" o

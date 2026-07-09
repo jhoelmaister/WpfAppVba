@@ -6,13 +6,13 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using WpfAppVba;
-using WpfAppVba.Data;
+using SistemaGestion;
+using SistemaGestion.Data;
 
 namespace VisorEmpresa
 {
     /// <summary>
-    /// Duplicado de WpfAppVba.FacturasDetalle para el visor: siempre de SOLO
+    /// Duplicado de SistemaGestion.FacturasDetalle para el visor: siempre de SOLO
     /// LECTURA (sin Guardar ni edición), abierto desde VisorEmpresa.FacturasGeneral
     /// para "ver documento".
     /// </summary>

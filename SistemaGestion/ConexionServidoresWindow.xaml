@@ -1,0 +1,151 @@
+<Window x:Class="SistemaGestion.ConexionServidoresWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Conexión SQL Server" Height="560" Width="720"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="{DynamicResource ThemeBgPrincipal}">
+
+    <Window.Resources>
+        <Style x:Key="CardHeader" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#4F8EF7"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+        <Style x:Key="SelectorBtn" TargetType="Button">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="14,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeBgSurface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ══ ENCABEZADO ══════════════════════════════════════════════ -->
+        <Border Grid.Row="0" Background="{DynamicResource ThemeBgSurface}"
+                BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,0,0,1"
+                Padding="20,14">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Border Width="36" Height="36" CornerRadius="8"
+                        Background="#1A3A6B" Margin="0,0,12,0">
+                    <TextBlock Text="&#x1F5A5;" FontSize="18"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Conexión SQL Server" FontSize="14" FontWeight="Bold"
+                               Foreground="{DynamicResource ThemeTexto}"/>
+                    <TextBlock Text="Servidores de base de datos registrados" FontSize="11"
+                               Foreground="{DynamicResource ThemeTextoSec}" Margin="0,1,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- ══ CONTENIDO ══════════════════════════════════════════════ -->
+        <Grid Grid.Row="1" Margin="20,16,20,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Style="{StaticResource CardHeader}"
+                           Text="● CONEXIÓN SQL SERVER" Margin="0" VerticalAlignment="Center"/>
+                <Button Grid.Column="1" x:Name="BtnAgregarServidor" Content="＋ Agregar"
+                        Height="30" FontSize="12" FontWeight="SemiBold" Padding="14,0"
+                        Background="#1A73E8" Foreground="White"
+                        BorderThickness="0" Cursor="Hand"
+                        Click="BtnAgregarServidor_Click"/>
+            </Grid>
+
+            <Border Grid.Row="1" BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="1"
+                    CornerRadius="6">
+                <DataGrid x:Name="LstServidores" MinHeight="180"
+                          BorderThickness="0"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="Horizontal"
+                          Background="{DynamicResource ThemeInputBg}"
+                          Foreground="{DynamicResource ThemeTexto}"
+                          FontSize="12"
+                          MouseDoubleClick="LstServidores_MouseDoubleClick"
+                          SelectionChanged="LstServidores_SelectionChanged">
+                    <DataGrid.ColumnHeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="Background"      Value="{DynamicResource ThemeBgSurface}"/>
+                            <Setter Property="Foreground"      Value="{DynamicResource ThemeTextoSec}"/>
+                            <Setter Property="BorderBrush"     Value="{DynamicResource ThemeBorde}"/>
+                            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                            <Setter Property="Padding"         Value="6,5"/>
+                            <Setter Property="FontSize"        Value="11"/>
+                            <Setter Property="FontWeight"      Value="SemiBold"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                        </Style>
+                    </DataGrid.ColumnHeaderStyle>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header=""              Binding="{Binding Activo}"    Width="32"  IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Alias"         Binding="{Binding Nombre}"    Width="160" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Servidor"      Binding="{Binding Servidor}"  Width="200" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Base de datos" Binding="{Binding BaseDatos}" Width="*"   IsReadOnly="True"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0">
+                <Button x:Name="BtnConectarServidor" Content="🔌 Conectar"
+                        Height="32" FontSize="12" FontWeight="SemiBold" Padding="14,0"
+                        Background="#2E7D32" Foreground="White"
+                        BorderThickness="0" Cursor="Hand" Margin="0,0,8,0"
+                        Click="BtnConectarServidor_Click"/>
+                <Button x:Name="BtnEditarServidor" Content="✎ Editar"
+                        Style="{StaticResource SelectorBtn}"
+                        Click="BtnEditarServidor_Click"/>
+                <Button x:Name="BtnEliminarServidor" Content="🗑 Eliminar"
+                        Height="32" FontSize="12" Padding="14,0"
+                        Background="#D93025" Foreground="White"
+                        BorderThickness="0" Cursor="Hand"
+                        Click="BtnEliminarServidor_Click"/>
+            </StackPanel>
+
+            <TextBlock Grid.Row="3" FontSize="11" Foreground="{DynamicResource ThemeTextoMuted}"
+                       TextWrapping="Wrap" Margin="0,10,0,0"
+                       Text="Selecciona un servidor y pulsa Conectar para usarlo. Al editar no se muestran las credenciales guardadas."/>
+        </Grid>
+
+        <!-- ══ BARRA DE ACCIONES ══════════════════════════════════════ -->
+        <Border Grid.Row="2" Background="{DynamicResource ThemeBgSurface}"
+                BorderBrush="{DynamicResource ThemeBorde}" BorderThickness="0,1,0,0"
+                Padding="20,10">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="BtnCerrar" Content="Cerrar"
+                        Height="36" FontSize="13" FontWeight="SemiBold" Padding="18,0"
+                        Background="{DynamicResource ThemeBtnSecBg}"
+                        Foreground="{DynamicResource ThemeBtnSecFg}"
+                        BorderThickness="1" BorderBrush="{DynamicResource ThemeBorde}"
+                        Cursor="Hand"
+                        Click="BtnCerrar_Click"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

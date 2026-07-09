@@ -4,7 +4,7 @@
     Empaqueta en un solo comando: dotnet publish -> vpk pack -> vpk upload.
 
 .DESCRIPTION
-    La versión se lee automáticamente de <Version> en WpfAppVba\WpfAppVba.csproj,
+    La versión se lee automáticamente de <Version> en SistemaGestion\SistemaGestion.csproj,
     así que solo tienes que subir ese número antes de ejecutar este script.
 
 .PARAMETER Token
@@ -31,11 +31,11 @@ $ErrorActionPreference = "Stop"
 
 # ─── Configuración (ajústala una sola vez si cambia algo) ──────────────────────
 $PackId    = "SistemaGestion"
-$MainExe   = "WpfAppVba.exe"
+$MainExe   = "SistemaGestion.exe"
 $PackTitle = "Sistema de Gestión"
 $RepoUrl   = "https://github.com/jhoelmaister/wpfappvba"
-$Csproj    = "WpfAppVba\WpfAppVba.csproj"
-$Icon      = "WpfAppVba\icono.ico"
+$Csproj    = "SistemaGestion\SistemaGestion.csproj"
+$Icon      = "SistemaGestion\icono.ico"
 $PublishDir = ".\publish"
 
 # Trabajar siempre desde la carpeta del script (raíz del repo).

@@ -1,4 +1,4 @@
-<Window x:Class="WpfAppVba.ConsolaMovimientos"
+<Window x:Class="SistemaGestion.ConsolaMovimientos"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Visor Empresa"
@@ -9,7 +9,7 @@
         Closing="ConsolaVisor_Closing">
 
     <!-- NOTA: esta es la consola PROPIA del visor, pero declara la clase
-         WpfAppVba.ConsolaMovimientos a propósito: los formularios vinculados de la
+         SistemaGestion.ConsolaMovimientos a propósito: los formularios vinculados de la
          app principal (PreciosGeneral, SucursalesGeneral, etc.) abren sus pestañas
          haciendo `Window.GetWindow(this) as ConsolaMovimientos` — al compilar esta
          clase (y NO vincular la consola original) dentro del ensamblado del visor,

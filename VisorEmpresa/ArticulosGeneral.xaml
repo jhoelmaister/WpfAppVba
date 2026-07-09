@@ -261,7 +261,7 @@
                 </DataGrid.ColumnHeaderStyle>
 
                 <!-- Zebra calculado desde el dato (FilaPar), NO desde AlternationIndex: ver
-                     nota equivalente en WpfAppVba.ArticulosGeneral.xaml. -->
+                     nota equivalente en SistemaGestion.ArticulosGeneral.xaml. -->
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">
                         <Setter Property="Height" Value="34"/>

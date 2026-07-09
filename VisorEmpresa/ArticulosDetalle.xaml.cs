@@ -1,12 +1,12 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
-using WpfAppVba.Data;
+using SistemaGestion.Data;
 
 namespace VisorEmpresa
 {
     /// <summary>
-    /// Duplicado de WpfAppVba.ArticulosDetalle para el visor: mismo layout
+    /// Duplicado de SistemaGestion.ArticulosDetalle para el visor: mismo layout
     /// (IDENTIFICACIÓN/CLASIFICACIÓN/DETALLES/OBSERVACIONES), pero siempre de
     /// SOLO LECTURA — abierto desde VisorEmpresa.ArticulosGeneral con doble
     /// clic para "ver artículo". Sin selectores de Familia/Industria/Categoría

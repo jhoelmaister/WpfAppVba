@@ -83,7 +83,7 @@ jobs:
           --packDir ./publish
           --mainExe VisorEmpresa.exe
           --packTitle "Visor Empresa"
-          --icon WpfAppVba/icono.ico
+          --icon SistemaGestion/icono.ico
           --channel visor
 
       - name: Upload (publica la Release en este repo)

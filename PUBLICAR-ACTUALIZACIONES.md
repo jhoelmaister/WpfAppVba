@@ -14,7 +14,7 @@ así que **no necesitas tu PC ni un token manual**. Funciona incluso desde Claud
 > El bump de versión que se quede solo en una rama de trabajo NO cuenta.
 
 **Paso 1 — El cambio de versión llega a `master`.**
-Sube `<Version>` en `WpfAppVba/WpfAppVba.csproj` (ej. `1.0.0` → `1.0.1`) y haz que ese
+Sube `<Version>` en `SistemaGestion/SistemaGestion.csproj` (ej. `1.0.0` → `1.0.1`) y haz que ese
 cambio esté en `master` (commit directo o vía PR mergeado). Si trabajas con Claude:
 *"sube la versión a 1.0.1 en master"*.
 
@@ -47,7 +47,7 @@ dotnet tool install -g vpk
 ```
 
 El feed de actualización es el repo **público** `https://github.com/jhoelmaister/wpfappvba`
-(configurado en `WpfAppVba/ActualizadorApp.cs`). Para **subir** releases necesitas un
+(configurado en `SistemaGestion/ActualizadorApp.cs`). Para **subir** releases necesitas un
 token de GitHub con permiso sobre ese repo.
 
 ### Crear el token de GitHub (una sola vez)
@@ -93,7 +93,7 @@ los 3 pasos (publish → pack → upload):
 
 ```powershell
 $env:GITHUB_TOKEN = "ghp_xxxxxxxxxxxxxxxx"
-# 1) Sube <Version> en WpfAppVba\WpfAppVba.csproj (ej. 1.0.0 -> 1.0.1)
+# 1) Sube <Version> en SistemaGestion\SistemaGestion.csproj (ej. 1.0.0 -> 1.0.1)
 # 2) Ejecuta:
 .\publicar.ps1
 ```
@@ -105,14 +105,14 @@ o ajustarlos).
 
 ## Publicar una versión nueva — paso a paso (manual)
 
-1. **Sube el número de versión** en `WpfAppVba/WpfAppVba.csproj` (`<Version>`).
+1. **Sube el número de versión** en `SistemaGestion/SistemaGestion.csproj` (`<Version>`).
    Ej.: `1.0.0` → `1.0.1`. Velopack solo ofrece la actualización si la release es mayor
    que la instalada.
 
 2. **Publica** la app como ya lo haces (self-contained single-file):
 
    ```powershell
-   dotnet publish WpfAppVba/WpfAppVba.csproj -c Release -r win-x64 --self-contained true `
+   dotnet publish SistemaGestion/SistemaGestion.csproj -c Release -r win-x64 --self-contained true `
        -p:PublishSingleFile=true -p:DebugType=none `
        -o .\publish
    ```
@@ -126,7 +126,7 @@ o ajustarlos).
        --packDir .\publish `
        --mainExe SistemaGestion.exe `
        --packTitle "Sistema de Gestión" `
-       --icon WpfAppVba\icono.ico
+       --icon SistemaGestion\icono.ico
    ```
 
    > `--packVersion` debe coincidir con `<Version>` del csproj.

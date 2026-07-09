@@ -28,11 +28,11 @@ releases sin token).
 
 | Archivo | Rol |
 |---|---|
-| `WpfAppVba/WpfAppVba.csproj` | Paquete `Velopack` + `<Version>` |
-| `WpfAppVba/App.xaml.cs` | `VelopackApp.Build().Run()` al arrancar |
-| `WpfAppVba/ActualizadorApp.cs` | Servicio que envuelve Velopack (buscar/descargar/reiniciar) |
-| `WpfAppVba/ConsolaMovimientos.xaml` | Botón + barra de progreso en la top bar |
-| `WpfAppVba/ConsolaMovimientos.xaml.cs` | Lógica del flujo de actualización |
+| `SistemaGestion/SistemaGestion.csproj` | Paquete `Velopack` + `<Version>` |
+| `SistemaGestion/App.xaml.cs` | `VelopackApp.Build().Run()` al arrancar |
+| `SistemaGestion/ActualizadorApp.cs` | Servicio que envuelve Velopack (buscar/descargar/reiniciar) |
+| `SistemaGestion/ConsolaMovimientos.xaml` | Botón + barra de progreso en la top bar |
+| `SistemaGestion/ConsolaMovimientos.xaml.cs` | Lógica del flujo de actualización |
 | `.github/workflows/release.yml` | Compila en Windows y publica la release |
 | `publicar.ps1` | (Alternativa) publica desde una PC Windows en un comando |
 
@@ -82,7 +82,7 @@ using System.Threading.Tasks;
 using Velopack;
 using Velopack.Sources;
 
-namespace WpfAppVba
+namespace SistemaGestion
 {
     /// <summary>
     /// Auto-actualización con Velopack. Flujo manual/opt-in:
@@ -261,17 +261,17 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($v)) {
             if ("${{ github.ref_type }}" -eq "tag") { $v = "${{ github.ref_name }}".TrimStart("v") }
             else {
-              $m = Select-String -Path WpfAppVba/WpfAppVba.csproj -Pattern '<Version>\s*([^<]+?)\s*</Version>' | Select-Object -First 1
+              $m = Select-String -Path SistemaGestion/SistemaGestion.csproj -Pattern '<Version>\s*([^<]+?)\s*</Version>' | Select-Object -First 1
               $v = $m.Matches[0].Groups[1].Value.Trim()
             }
           }
           "version=$v" >> $env:GITHUB_OUTPUT
 
       - name: Publish
-        run: dotnet publish WpfAppVba/WpfAppVba.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=none -o ./publish
+        run: dotnet publish SistemaGestion/SistemaGestion.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=none -o ./publish
 
       - name: Pack
-        run: vpk pack --packId SistemaGestion --packVersion ${{ steps.ver.outputs.version }} --packDir ./publish --mainExe SistemaGestion.exe --packTitle "Sistema de Gestión" --icon WpfAppVba/icono.ico
+        run: vpk pack --packId SistemaGestion --packVersion ${{ steps.ver.outputs.version }} --packDir ./publish --mainExe SistemaGestion.exe --packTitle "Sistema de Gestión" --icon SistemaGestion/icono.ico
 
       - name: Upload
         run: vpk upload github --repoUrl https://github.com/jhoelmaister/wpfappvba --publish --releaseName "v${{ steps.ver.outputs.version }}" --tag "v${{ steps.ver.outputs.version }}" --token ${{ secrets.GITHUB_TOKEN }}
@@ -286,7 +286,7 @@ Sin esto, la app (sin token) no puede leer las releases y el botón nunca aparec
 
 ## 4. Cómo publicar una versión nueva (uso diario)
 
-1. Sube `<Version>` en `WpfAppVba/WpfAppVba.csproj` (ej. `1.0.1` → `1.0.2`) y llévalo a `master`.
+1. Sube `<Version>` en `SistemaGestion/SistemaGestion.csproj` (ej. `1.0.1` → `1.0.2`) y llévalo a `master`.
 2. Lanza el workflow: pestaña **Actions** → *Publicar release* → **Run workflow** → escribe la versión.
    - (Alternativa desde PC Windows: `git tag v1.0.2 && git push origin v1.0.2`.)
 3. GitHub compila y publica. Las apps instaladas verán **🔄 Actualizar** al reabrir.

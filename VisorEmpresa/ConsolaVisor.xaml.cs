@@ -8,13 +8,13 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using VisorEmpresa;
-using WpfAppVba.Data;   // AppState, SqlData, CodigoRegenerator, PedidosPrecioActualizador, AppsheetsSync
+using SistemaGestion.Data;   // AppState, SqlData, CodigoRegenerator, PedidosPrecioActualizador, AppsheetsSync
 
-namespace WpfAppVba
+namespace SistemaGestion
 {
     /// <summary>
     /// Consola del VISOR (ConsolaVisor.xaml). Declara la clase
-    /// WpfAppVba.ConsolaMovimientos a propósito — ver la nota en el XAML: los
+    /// SistemaGestion.ConsolaMovimientos a propósito — ver la nota en el XAML: los
     /// formularios vinculados de la app principal buscan esa clase para abrir sus
     /// pestañas (AbrirPestaña / CerrarPestaña / SeleccionarPestaña /
     /// CerrarPestañaPorClave / ConfirmarCierrePestañasRelacionadas), y al
@@ -54,7 +54,7 @@ namespace WpfAppVba
         private FacturasGeneral   _panelFacturas     = new();
         private PreciosGeneral    _panelPrecios      = new();
         private EmpresasGeneral   _panelEmpresas     = new();
-        // Calificado explícitamente: WpfAppVba también tiene su propia clase
+        // Calificado explícitamente: SistemaGestion también tiene su propia clase
         // SucursalesGeneral (reducida a selector para Traspasos) — sin calificar,
         // "mismo namespace gana sobre using" resolvería a esa por error.
         private VisorEmpresa.SucursalesGeneral _panelSucursales = new();
@@ -309,7 +309,7 @@ namespace WpfAppVba
         // El tema del visor es INDEPENDIENTE del de la app principal: se persiste
         // solo en %LOCALAPPDATA%\VisorEmpresa\theme.txt (TemaVisor), nunca en
         // usuarios.temaC — esa columna es la que usa/escribe la app principal
-        // (ConsolaMovimientos/Configuracion de WpfAppVba). Compartirla hacía que
+        // (ConsolaMovimientos/Configuracion de SistemaGestion). Compartirla hacía que
         // cambiar el tema en una app se reflejara también en la otra.
         private void BtnTema_Click(object sender, RoutedEventArgs e)
         {

@@ -1,4 +1,4 @@
-# CLAUDE.md — WpfAppVba-sistemaControl
+# CLAUDE.md — SistemaGestion-sistemaControl
 
 ## Reglas obligatorias de cada sesión
 
@@ -52,7 +52,7 @@ La app instalada detecta versiones nuevas y muestra un botón **🔄 Actualizar*
      pedido salta de más (ej. 1.0.1 → 1.5.0, o 1.0.1 → 3.0.0), CONFIRMA con el usuario antes
      de aplicarlo, por si fue un error de tecleo.
    - Ante cualquier duda con el número, pregunta; nunca apliques un número raro en silencio.
-1. Edita `<Version>` en `WpfAppVba/WpfAppVba.csproj` con el número indicado.
+1. Edita `<Version>` en `SistemaGestion/SistemaGestion.csproj` con el número indicado.
 2. Lleva ese cambio a la rama `master` (commit + PR + merge; el bump DEBE quedar en `master`,
    no solo en la rama de trabajo).
 3. Avisa al usuario que ya puede lanzar el release con **Run workflow**:

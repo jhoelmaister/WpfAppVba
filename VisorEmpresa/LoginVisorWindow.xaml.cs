@@ -5,8 +5,8 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using WpfAppVba;        // WindowHelper, ConfiguracionDbWindow, ConexionServidoresWindow
-using WpfAppVba.Data;   // DatabaseConnection, ConexionConfig
+using SistemaGestion;        // WindowHelper, ConfiguracionDbWindow, ConexionServidoresWindow
+using SistemaGestion.Data;   // DatabaseConnection, ConexionConfig
 
 namespace VisorEmpresa
 {

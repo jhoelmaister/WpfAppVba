@@ -8,11 +8,11 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>VisorEmpresa</RootNamespace>
     <AssemblyName>VisorEmpresa</AssemblyName>
-    <ApplicationIcon>..\WpfAppVba\icono.ico</ApplicationIcon>
+    <ApplicationIcon>..\SistemaGestion\icono.ico</ApplicationIcon>
 
     <!-- Versión del visor: independiente de la app principal. Reiniciada a 0.0.1
-         junto con el renombre de WpfAppVba.exe -> SistemaGestion.exe: sin usuarios
-         reales instalados todavía, es un buen momento para arrancar limpio. -->
+         junto con el renombre del proyecto principal (WpfAppVba -> SistemaGestion):
+         sin usuarios reales instalados todavía, es un buen momento para arrancar limpio. -->
     <Version>0.0.1</Version>
 
     <!-- Símbolo de compilación exclusivo del visor: los formularios Detalle
@@ -27,7 +27,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Resource Include="..\WpfAppVba\icono.ico" Link="icono.ico"/>
+    <Resource Include="..\SistemaGestion\icono.ico" Link="icono.ico"/>
   </ItemGroup>
 
   <ItemGroup>
@@ -41,47 +41,47 @@
   <!-- ══ Código compartido con la app principal por ARCHIVOS VINCULADOS ══
        Una sola fuente de verdad, sin copias. La consola original
        (ConsolaMovimientos.xaml/.cs) NO se vincula a propósito: el visor define
-       su propia clase WpfAppVba.ConsolaMovimientos (ConsolaVisor.xaml) con la
+       su propia clase SistemaGestion.ConsolaMovimientos (ConsolaVisor.xaml) con la
        misma API de pestañas, y así los formularios vinculados funcionan sin
        tocar la app principal. -->
 
   <!-- Conexión, configuración y utilidades base -->
   <ItemGroup>
-    <Compile Include="..\WpfAppVba\DatabaseConnection.cs" Link="Compartido\DatabaseConnection.cs" />
-    <Compile Include="..\WpfAppVba\ConexionConfig.cs" Link="Compartido\ConexionConfig.cs" />
-    <Compile Include="..\WpfAppVba\EsquemaValidator.cs" Link="Compartido\EsquemaValidator.cs" />
-    <Compile Include="..\WpfAppVba\ConexionEstado.cs" Link="Compartido\ConexionEstado.cs" />
-    <Compile Include="..\WpfAppVba\PasswordHasher.cs" Link="Compartido\PasswordHasher.cs" />
-    <Compile Include="..\WpfAppVba\WindowTheming.cs" Link="Compartido\WindowTheming.cs" />
-    <Compile Include="..\WpfAppVba\WindowHelper.cs" Link="Compartido\WindowHelper.cs" />
-    <Compile Include="..\WpfAppVba\GridFocusHelper.cs" Link="Compartido\GridFocusHelper.cs" />
-    <Compile Include="..\WpfAppVba\FuncionesComunes.cs" Link="Compartido\FuncionesComunes.cs" />
-    <Compile Include="..\WpfAppVba\SqlRetry.cs" Link="Compartido\SqlRetry.cs" />
+    <Compile Include="..\SistemaGestion\DatabaseConnection.cs" Link="Compartido\DatabaseConnection.cs" />
+    <Compile Include="..\SistemaGestion\ConexionConfig.cs" Link="Compartido\ConexionConfig.cs" />
+    <Compile Include="..\SistemaGestion\EsquemaValidator.cs" Link="Compartido\EsquemaValidator.cs" />
+    <Compile Include="..\SistemaGestion\ConexionEstado.cs" Link="Compartido\ConexionEstado.cs" />
+    <Compile Include="..\SistemaGestion\PasswordHasher.cs" Link="Compartido\PasswordHasher.cs" />
+    <Compile Include="..\SistemaGestion\WindowTheming.cs" Link="Compartido\WindowTheming.cs" />
+    <Compile Include="..\SistemaGestion\WindowHelper.cs" Link="Compartido\WindowHelper.cs" />
+    <Compile Include="..\SistemaGestion\GridFocusHelper.cs" Link="Compartido\GridFocusHelper.cs" />
+    <Compile Include="..\SistemaGestion\FuncionesComunes.cs" Link="Compartido\FuncionesComunes.cs" />
+    <Compile Include="..\SistemaGestion\SqlRetry.cs" Link="Compartido\SqlRetry.cs" />
   </ItemGroup>
 
   <!-- Capa de datos (cachés por empresa para los módulos de edición) -->
   <ItemGroup>
-    <Compile Include="..\WpfAppVba\SqlData.cs" Link="Compartido\SqlData.cs" />
-    <Compile Include="..\WpfAppVba\DataConsulta.cs" Link="Compartido\DataConsulta.cs" />
-    <Compile Include="..\WpfAppVba\AppLoader.cs" Link="Compartido\AppLoader.cs" />
-    <Compile Include="..\WpfAppVba\AppState.cs" Link="Compartido\AppState.cs" />
-    <Compile Include="..\WpfAppVba\StockCalculator.cs" Link="Compartido\StockCalculator.cs" />
+    <Compile Include="..\SistemaGestion\SqlData.cs" Link="Compartido\SqlData.cs" />
+    <Compile Include="..\SistemaGestion\DataConsulta.cs" Link="Compartido\DataConsulta.cs" />
+    <Compile Include="..\SistemaGestion\AppLoader.cs" Link="Compartido\AppLoader.cs" />
+    <Compile Include="..\SistemaGestion\AppState.cs" Link="Compartido\AppState.cs" />
+    <Compile Include="..\SistemaGestion\StockCalculator.cs" Link="Compartido\StockCalculator.cs" />
   </ItemGroup>
 
   <!-- Herramientas de administración (mismos botones de Configuracion.xaml de la
        app principal, duplicados en la top bar del visor — ver ConsolaVisor). -->
   <ItemGroup>
-    <Compile Include="..\WpfAppVba\CodigoRegenerator.cs" Link="Compartido\CodigoRegenerator.cs" />
-    <Compile Include="..\WpfAppVba\PedidosPrecioActualizador.cs" Link="Compartido\PedidosPrecioActualizador.cs" />
-    <Compile Include="..\WpfAppVba\AppsheetsSync.cs" Link="Compartido\AppsheetsSync.cs" />
+    <Compile Include="..\SistemaGestion\CodigoRegenerator.cs" Link="Compartido\CodigoRegenerator.cs" />
+    <Compile Include="..\SistemaGestion\PedidosPrecioActualizador.cs" Link="Compartido\PedidosPrecioActualizador.cs" />
+    <Compile Include="..\SistemaGestion\AppsheetsSync.cs" Link="Compartido\AppsheetsSync.cs" />
   </ItemGroup>
 
   <!-- Ventanas de configuración de servidores (misma conexion.dat cifrada) -->
   <ItemGroup>
-    <Compile Include="..\WpfAppVba\ConfiguracionDbWindow.xaml.cs" Link="Compartido\ConfiguracionDbWindow.xaml.cs" />
-    <Compile Include="..\WpfAppVba\ConexionServidoresWindow.xaml.cs" Link="Compartido\ConexionServidoresWindow.xaml.cs" />
-    <Page Include="..\WpfAppVba\ConfiguracionDbWindow.xaml" Link="Compartido\ConfiguracionDbWindow.xaml" />
-    <Page Include="..\WpfAppVba\ConexionServidoresWindow.xaml" Link="Compartido\ConexionServidoresWindow.xaml" />
+    <Compile Include="..\SistemaGestion\ConfiguracionDbWindow.xaml.cs" Link="Compartido\ConfiguracionDbWindow.xaml.cs" />
+    <Compile Include="..\SistemaGestion\ConexionServidoresWindow.xaml.cs" Link="Compartido\ConexionServidoresWindow.xaml.cs" />
+    <Page Include="..\SistemaGestion\ConfiguracionDbWindow.xaml" Link="Compartido\ConfiguracionDbWindow.xaml" />
+    <Page Include="..\SistemaGestion\ConexionServidoresWindow.xaml" Link="Compartido\ConexionServidoresWindow.xaml" />
   </ItemGroup>
 
   <!-- Los módulos de catálogo/gestión (Precios, Empresas, Sucursales, Regiones,
@@ -91,14 +91,14 @@
        gestión completa (catálogos) o solo lectura (documentos, sin el parámetro
        soloLectura — ya no hace falta, es el único modo que existe en la copia
        del visor). Se recogen automáticamente por el globbing implícito del SDK.
-       WpfAppVba conserva su propia copia, físicamente separada, de
+       SistemaGestion conserva su propia copia, físicamente separada, de
        SucursalesGeneral (reducida a un selector de sucursal para Traspasos) —
        no hay vínculo ni fuente compartida con la de acá. -->
 
   <!-- Temas (misma identidad visual que la app principal) -->
   <ItemGroup>
-    <Page Include="..\WpfAppVba\Themes\LightTheme.xaml" Link="Themes\LightTheme.xaml" />
-    <Page Include="..\WpfAppVba\Themes\DarkTheme.xaml" Link="Themes\DarkTheme.xaml" />
+    <Page Include="..\SistemaGestion\Themes\LightTheme.xaml" Link="Themes\LightTheme.xaml" />
+    <Page Include="..\SistemaGestion\Themes\DarkTheme.xaml" Link="Themes\DarkTheme.xaml" />
   </ItemGroup>
 
 </Project>

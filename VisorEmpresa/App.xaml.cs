@@ -10,7 +10,7 @@ namespace VisorEmpresa
     /// <summary>
     /// Visor Empresa: aplicación de SOLO LECTURA que muestra los totales de la
     /// empresa completa (todas las sucursales, sin filtro por sucursal activa).
-    /// Extensión de la app principal WpfAppVba; comparte conexión, temas y
+    /// Extensión de la app principal SistemaGestion; comparte conexión, temas y
     /// ventanas de configuración por archivos vinculados.
     /// </summary>
     public partial class App : Application
@@ -30,7 +30,7 @@ namespace VisorEmpresa
                     if (s is Window w)
                     {
                         w.Icon = appIcon;
-                        WpfAppVba.WindowTheming.AplicarModoOscuro(w, TemaVisor.EsOscuroActivo);
+                        SistemaGestion.WindowTheming.AplicarModoOscuro(w, TemaVisor.EsOscuroActivo);
                     }
                 }));
 
