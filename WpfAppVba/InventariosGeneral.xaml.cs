@@ -224,17 +224,12 @@ namespace WpfAppVba
         }
 
         // ─── Helper ───────────────────────────────────────────────────────────
+        // Abre InventariosDetalle para editar. Si no es la apertura más reciente,
+        // el propio InventariosDetalle detecta esto (AppState.AperturaIdActiva) y se
+        // muestra en modo solo lectura en vez de bloquear la apertura del documento.
         private void AbrirEditar()
         {
             if (Grid1.SelectedItem is not InventarioFila fila) return;
-
-            // Solo se puede editar la apertura más reciente
-            if (fila.Id != AppState.AperturaIdActiva)
-            {
-                MessageBox.Show("Solo se puede editar la última apertura.", "Consola",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
 
             string idSel = fila.Id;
             int    linea = fila.Linea;
@@ -400,6 +395,15 @@ namespace WpfAppVba
                 y += altoFila;
             }
 
+            // Línea de separación entre la lista de artículos y los totales por categoría.
+            const double altoSeparador = 16;
+            void DibujarSeparador()
+            {
+                y += altoSeparador / 2;
+                gfx.DrawLine(penLinea, xN, y, xN + anchoTabla, y);
+                y += altoSeparador / 2;
+            }
+
             // Encabezado a redibujar al saltar de página: la tabla de artículos usa
             // DibujarEncabezadoColumnas, la sección de totales por categoría pasa a usar
             // DibujarEncabezadoCategorias una vez que empieza (ver más abajo).
@@ -485,7 +489,8 @@ namespace WpfAppVba
             if (totalesPorCategoria.Count > 0)
             {
                 dibujarEncabezadoPagina = () => { };
-                AsegurarEspacio(altoGrupo + altoHeader);
+                AsegurarEspacio(altoSeparador + altoGrupo + altoHeader);
+                DibujarSeparador();
                 DibujarBandaGrupo("Totales por categoría");
                 DibujarEncabezadoCategorias();
                 dibujarEncabezadoPagina = DibujarEncabezadoCategorias;
@@ -582,10 +587,11 @@ namespace WpfAppVba
             ws.Cell(1, 3).Value = "Producto";
             ws.Cell(1, 4).Value = "Familia";
             ws.Cell(1, 5).Value = "Descripción";
-            ws.Cell(1, 6).Value = "Cantidad";
+            ws.Cell(1, 6).Value = "Categoría";
+            ws.Cell(1, 7).Value = "Cantidad";
 
             int uf = Sql.InventariosObj.ContarFilas;
-            var lineas = new List<(string prodDesc, string famDesc, string codigo, string desc, double cantidad)>();
+            var lineas = new List<(string prodDesc, string famDesc, string codigo, string desc, double cantidad, string catDesc)>();
 
             for (int i = 1; i <= uf; i++)
             {
@@ -604,7 +610,10 @@ namespace WpfAppVba
                 double cantidad = Convert.ToDouble(Sql.InventariosObj.ObtenerItem("cantidad", id) ?? 0);
                 if (cantidad <= 0) continue;
 
-                lineas.Add((prodDesc, famDesc, codigo, descArt, cantidad));
+                string catId   = Sql.ArticulosObj.ObtenerItem("categoria", artId)?.ToString() ?? "";
+                string catDesc = string.IsNullOrEmpty(catId) ? "Otros" : (Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "Otros");
+
+                lineas.Add((prodDesc, famDesc, codigo, descArt, cantidad, catDesc));
             }
 
             int row = 2;
@@ -617,8 +626,53 @@ namespace WpfAppVba
                 ws.Cell(row, 3).Value = l.prodDesc;
                 ws.Cell(row, 4).Value = l.famDesc;
                 ws.Cell(row, 5).Value = l.desc;
-                ws.Cell(row, 6).Value = l.cantidad;
+                ws.Cell(row, 6).Value = l.catDesc;
+                ws.Cell(row, 7).Value = l.cantidad;
                 row++;
+            }
+
+            // ── Separador + totales por categoría (con fórmulas SUMIF/SUM) ────────
+            int primerFilaDatos = 2;
+            int ultimaFilaDatos = row - 1;
+
+            if (ultimaFilaDatos >= primerFilaDatos)
+            {
+                ws.Range(row, 1, row, 7).Style.Border.TopBorder = ClosedXML.Excel.XLBorderStyleValues.Medium;
+                row++;
+
+                ws.Cell(row, 1).Value = "Totales por categoría";
+                ws.Range(row, 1, row, 7).Merge();
+                ws.Range(row, 1, row, 7).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromArgb(191, 219, 254);
+                ws.Range(row, 1, row, 7).Style.Font.Bold = true;
+                row++;
+
+                ws.Range(row, 1, row, 6).Merge();
+                ws.Cell(row, 1).Value = "Categoría";
+                ws.Cell(row, 7).Value = "Cantidad";
+                ws.Range(row, 1, row, 7).Style.Font.Bold = true;
+                ws.Range(row, 1, row, 7).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromArgb(241, 245, 249);
+                row++;
+
+                var categorias = lineas
+                    .Select(l => l.catDesc)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(c => c, StringComparer.OrdinalIgnoreCase);
+
+                foreach (var categoria in categorias)
+                {
+                    string catEscapada = categoria.Replace("\"", "\"\"");
+                    ws.Range(row, 1, row, 6).Merge();
+                    ws.Cell(row, 1).Value = categoria;
+                    ws.Cell(row, 7).FormulaA1 =
+                        $"=SUMIF(F{primerFilaDatos}:F{ultimaFilaDatos},\"{catEscapada}\",G{primerFilaDatos}:G{ultimaFilaDatos})";
+                    row++;
+                }
+
+                ws.Range(row, 1, row, 6).Merge();
+                ws.Cell(row, 1).Value = "Total general";
+                ws.Cell(row, 7).FormulaA1 = $"=SUM(G{primerFilaDatos}:G{ultimaFilaDatos})";
+                ws.Range(row, 1, row, 7).Style.Font.Bold = true;
+                ws.Range(row, 1, row, 7).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromArgb(191, 219, 254);
             }
 
             ws.Columns().AdjustToContents();

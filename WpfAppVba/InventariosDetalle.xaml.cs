@@ -15,9 +15,12 @@ namespace WpfAppVba
 
         private readonly InventariosGeneral? _padre;
         private readonly string _idEditar;
-        private bool _hayCambios = false;
-        private bool _cargando   = true;
-        private bool _iniciado   = false;
+        private bool _hayCambios   = false;
+        private bool _cargando     = true;
+        private bool _iniciado     = false;
+        // Solo la apertura más reciente (AppState.AperturaIdActiva) se puede editar/guardar;
+        // las anteriores se abren igual, pero en modo lectura (ver InventariosGeneral.AbrirEditar).
+        private bool _soloLectura  = false;
         private string _tituloTab = "";
         private string _codigoDocI = "";
         private List<InventarioItemFila> _items = new();
@@ -92,6 +95,21 @@ namespace WpfAppVba
             CargarItems(_idEditar);
             CargarArbol();
             RefrescarGrid();
+
+            _soloLectura = _idEditar != AppState.AperturaIdActiva;
+            if (_soloLectura) AplicarModoSoloLectura();
+        }
+
+        // ─── Modo lectura: aperturas anteriores a la activa se pueden ver, no editar ──
+        private void AplicarModoSoloLectura()
+        {
+            LblTitulo.Text            = "Ver Inventario (solo lectura)";
+            Box_Fecha.IsEnabled       = false;
+            Box_Hora.IsEnabled        = false;
+            Box_Referencia.IsEnabled  = false;
+            Box_Observacion.IsEnabled = false;
+            Grid1.IsReadOnly          = true;
+            BtnGuardar.IsEnabled      = false;
         }
 
         private void CargarParaNuevo()
