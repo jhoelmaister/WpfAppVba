@@ -4,7 +4,7 @@
         xmlns:local="clr-namespace:SistemaGestion"
         Title="Sistema de Gestión"
         WindowState="Maximized"
-        MinWidth="960" MinHeight="620"
+        MinWidth="700" MinHeight="620"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource ThemeBgPrincipal}"
         Icon="icono.ico"
