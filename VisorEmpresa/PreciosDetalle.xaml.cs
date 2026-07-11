@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using Microsoft.Win32;
 using SistemaGestion;
 using SistemaGestion.Data;
 
@@ -495,6 +497,145 @@ namespace VisorEmpresa
                 var fila = (Grid1.ItemsSource as List<PrecioItemFila>)?.Find(x => x.ArticuloId == artSelId);
                 if (fila != null) { Grid1.SelectedItem = fila; Grid1.ScrollIntoView(fila); }
             }
+        }
+
+        // ─── Plantilla Excel: catálogo completo con columna Precio en blanco ───
+        // Mismo formato que espera ImportarPreciosDesdeExcel: Código / Producto /
+        // Familia / Descripción / Precio. Producto/Familia/Descripción son solo
+        // referencia para completar el archivo a mano; el import solo lee Código y Precio.
+        private void BtnPlantillaExcel_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new SaveFileDialog
+            {
+                Title            = "Guardar plantilla de precios",
+                FileName         = $"{DateTime.Now:yyyyMMdd HHmmss} plantilla precios.xlsx",
+                DefaultExt       = ".xlsx",
+                Filter           = "Excel (*.xlsx)|*.xlsx",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            };
+            if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
+
+            try
+            {
+                Mouse.OverrideCursor = Cursors.Wait;
+                GenerarPlantillaExcel(dlg.FileName);
+                Process.Start(new ProcessStartInfo(dlg.FileName) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al generar la plantilla:\n{ex.Message}", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+            }
+        }
+
+        private void GenerarPlantillaExcel(string filePath)
+        {
+            using var wb = new ClosedXML.Excel.XLWorkbook();
+            var ws = wb.Worksheets.Add("Precios");
+
+            ws.Cell(1, 1).Value = "Código";
+            ws.Cell(1, 2).Value = "Producto";
+            ws.Cell(1, 3).Value = "Familia";
+            ws.Cell(1, 4).Value = "Descripción";
+            ws.Cell(1, 5).Value = "Precio";
+
+            int row = 2;
+            foreach (var item in _items.OrderBy(x => x.Codigo, StringComparer.OrdinalIgnoreCase))
+            {
+                string famId    = Sql.ArticulosObj.ObtenerItem("familia",     item.ArticuloId)?.ToString() ?? "";
+                string prodId   = Sql.FamiliasObj.ObtenerItem("producto",    famId)?.ToString() ?? "";
+                string prodDesc = Sql.ProductosObj.ObtenerItem("descripcion", prodId)?.ToString() ?? "";
+                string famDesc  = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString() ?? "";
+                string descArt  = Sql.ArticulosObj.ObtenerItem("descripcion", item.ArticuloId)?.ToString() ?? "";
+
+                ws.Cell(row, 1).Value = item.Codigo;
+                ws.Cell(row, 2).Value = prodDesc;
+                ws.Cell(row, 3).Value = famDesc;
+                ws.Cell(row, 4).Value = descArt;
+                // Precio: se deja en blanco a propósito, para que el usuario la complete.
+                row++;
+            }
+
+            ws.Columns().AdjustToContents();
+            wb.SaveAs(filePath);
+        }
+
+        // ─── Importar Excel: carga precios masivamente (mismo formato que la plantilla) ─
+        private void BtnImportarExcel_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Title  = "Importar precios desde Excel",
+                Filter = "Excel (*.xlsx)|*.xlsx"
+            };
+            if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
+
+            try
+            {
+                Grid1.CommitEdit(DataGridEditingUnit.Row, true);
+                Mouse.OverrideCursor = Cursors.Wait;
+
+                var (importados, noEncontrados) = ImportarPreciosDesdeExcel(dlg.FileName);
+
+                RefrescarGrid();
+                if (importados > 0) _hayCambios = true;
+
+                string mensaje = $"Se importaron {importados} precio(s).";
+                if (noEncontrados.Count > 0)
+                    mensaje += $"\n\nNo se encontraron {noEncontrados.Count} código(s) en el catálogo:\n"
+                             + string.Join(", ", noEncontrados.Take(20))
+                             + (noEncontrados.Count > 20 ? "…" : "");
+
+                MessageBox.Show(mensaje, "Importar Excel", MessageBoxButton.OK,
+                    noEncontrados.Count > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al importar el Excel:\n{ex.Message}", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+            }
+        }
+
+        // Lee Código (col. 1) y Precio (col. 5); Producto/Familia/Descripción (columnas
+        // 2-4) son solo referencia visual y se ignoran. Filas sin código o con la celda
+        // de precio en blanco se saltan sin error (permite dejar artículos sin cotizar).
+        private (int Importados, List<string> NoEncontrados) ImportarPreciosDesdeExcel(string filePath)
+        {
+            using var wb = new ClosedXML.Excel.XLWorkbook(filePath);
+            var ws = wb.Worksheet(1);
+
+            var porCodigo = _items.ToDictionary(x => x.Codigo, x => x, StringComparer.OrdinalIgnoreCase);
+            int importados = 0;
+            var noEncontrados = new List<string>();
+
+            int fila = 2; // fila 1 = encabezados
+            while (!ws.Cell(fila, 1).IsEmpty())
+            {
+                string codigo     = ws.Cell(fila, 1).GetString().Trim();
+                bool   tienePrecio = ws.Cell(fila, 5).TryGetValue(out double precio);
+                fila++;
+
+                if (string.IsNullOrEmpty(codigo) || !tienePrecio) continue;
+
+                if (!porCodigo.TryGetValue(codigo, out var item))
+                {
+                    noEncontrados.Add(codigo);
+                    continue;
+                }
+
+                item.Precio = precio;
+                importados++;
+            }
+
+            return (importados, noEncontrados);
         }
 
         // ─── Botones Guardar / Cancelar ───────────────────────────────────────
