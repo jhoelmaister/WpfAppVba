@@ -203,6 +203,13 @@ namespace SistemaGestion
             ActualizarBadges();
         }
 
+        // ─── Movimiento (Venta/Compra): ícono + color del encabezado ──────────
+        private void Box_Movimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_cargando) _hayCambios = true;
+            ActualizarBadges();
+        }
+
         // ─── Tercero ──────────────────────────────────────────────────────────
         private string ResolverTerceroId()
         {
@@ -339,6 +346,16 @@ namespace SistemaGestion
                                         new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Cta: Pendiente")
             };
 
+            // Ícono y color del encabezado según el movimiento (Venta/Compra).
+            bool esCompra = MovimientoSeleccionado == "compra";
+            LblIconoTipo.Text       = esCompra ? "CO" : "VE";
+            LblIconoTipo.Foreground = esCompra
+                ? new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46))
+                : new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B));
+            IconoBorde.Background   = esCompra
+                ? new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5))
+                : new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2));
+
             LblDocNum.Text = Box_DocumentoF.Text;
         }
 
@@ -349,11 +366,6 @@ namespace SistemaGestion
         }
 
         private void Campo_DateChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            if (!_cargando) _hayCambios = true;
-        }
-
-        private void Campo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!_cargando) _hayCambios = true;
         }

@@ -127,9 +127,11 @@
 
                     <StackPanel Grid.Column="0" Orientation="Horizontal"
                                 VerticalAlignment="Center" Margin="0,0,12,0">
-                        <Border Width="36" Height="36" CornerRadius="8"
-                                Background="#EDE9FE" Margin="0,0,10,0">
-                            <TextBlock Text="🧾" FontSize="15"
+                        <Border x:Name="IconoBorde" Width="36" Height="36" CornerRadius="8"
+                                Background="#FEE2E2" Margin="0,0,10,0">
+                            <TextBlock x:Name="LblIconoTipo"
+                                       Text="VE" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="#991B1B"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
                         </Border>
@@ -267,7 +269,7 @@
                     <StackPanel Grid.Column="14">
                         <TextBlock Text="Movimiento" Style="{StaticResource LblMuted}"/>
                         <ComboBox x:Name="Box_Movimiento" Height="28" FontSize="12"
-                                  SelectionChanged="Campo_SelectionChanged">
+                                  SelectionChanged="Box_Movimiento_SelectionChanged">
                             <ComboBoxItem Content="Venta"/>
                             <ComboBoxItem Content="Compra"/>
                         </ComboBox>
