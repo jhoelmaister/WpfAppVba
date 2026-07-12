@@ -552,10 +552,11 @@ namespace VisorEmpresa
             CargarListas();
         }
 
-        // ─── Plantilla Excel: catálogo completo con columna Precio en blanco ───
+        // ─── Plantilla Excel: catálogo completo con columna Precio en 0 ────────
         // Mismo formato que espera PreciosDetalle.ImportarPreciosDesdeExcel: Código /
         // Producto / Familia / Descripción / Precio. Producto/Familia/Descripción son
-        // solo referencia para completar el archivo a mano; el import solo lee Código y Precio.
+        // solo referencia para completar el archivo a mano; el import solo lee Código y
+        // Precio, y trata 0 igual que blanco (fila sin cotizar, se ignora al importar).
         private void BtnPlantillaExcel_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new SaveFileDialog
@@ -621,7 +622,7 @@ namespace VisorEmpresa
                 ws.Cell(row, 2).Value = a.prodDesc;
                 ws.Cell(row, 3).Value = a.famDesc;
                 ws.Cell(row, 4).Value = a.desc;
-                // Precio: se deja en blanco a propósito, para que el usuario la complete.
+                ws.Cell(row, 5).Value = 0; // Precio: arranca en 0 para que el usuario la complete.
                 row++;
             }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -528,6 +529,13 @@ namespace VisorEmpresa
                 MessageBox.Show(mensaje, "Importar Excel", MessageBoxButton.OK,
                     noEncontrados.Count > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
             }
+            catch (IOException)
+            {
+                MessageBox.Show(
+                    "No se pudo abrir el archivo: está abierto en Excel u otro programa.\n" +
+                    "Cerralo y volvé a intentar.",
+                    "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error al importar el Excel:\n{ex.Message}", "Consola",
@@ -540,8 +548,9 @@ namespace VisorEmpresa
         }
 
         // Lee Código (col. 1) y Precio (col. 5); Producto/Familia/Descripción (columnas
-        // 2-4) son solo referencia visual y se ignoran. Filas sin código o con la celda
-        // de precio en blanco se saltan sin error (permite dejar artículos sin cotizar).
+        // 2-4) son solo referencia visual y se ignoran. Filas sin código, o con precio en
+        // blanco o en 0 (valor de la plantilla sin completar), se saltan sin error — permite
+        // dejar artículos sin cotizar sin pisar a 0 un precio ya existente al editar.
         private (int Importados, List<string> NoEncontrados) ImportarPreciosDesdeExcel(string filePath)
         {
             using var wb = new ClosedXML.Excel.XLWorkbook(filePath);
@@ -555,7 +564,7 @@ namespace VisorEmpresa
             while (!ws.Cell(fila, 1).IsEmpty())
             {
                 string codigo     = ws.Cell(fila, 1).GetString().Trim();
-                bool   tienePrecio = ws.Cell(fila, 5).TryGetValue(out double precio);
+                bool   tienePrecio = ws.Cell(fila, 5).TryGetValue(out double precio) && precio > 0;
                 fila++;
 
                 if (string.IsNullOrEmpty(codigo) || !tienePrecio) continue;
