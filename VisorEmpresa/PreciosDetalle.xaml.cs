@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -499,72 +498,8 @@ namespace VisorEmpresa
             }
         }
 
-        // ─── Plantilla Excel: catálogo completo con columna Precio en blanco ───
-        // Mismo formato que espera ImportarPreciosDesdeExcel: Código / Producto /
-        // Familia / Descripción / Precio. Producto/Familia/Descripción son solo
-        // referencia para completar el archivo a mano; el import solo lee Código y Precio.
-        private void BtnPlantillaExcel_Click(object sender, RoutedEventArgs e)
-        {
-            var dlg = new SaveFileDialog
-            {
-                Title            = "Guardar plantilla de precios",
-                FileName         = $"{DateTime.Now:yyyyMMdd HHmmss} plantilla precios.xlsx",
-                DefaultExt       = ".xlsx",
-                Filter           = "Excel (*.xlsx)|*.xlsx",
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-            };
-            if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
-
-            try
-            {
-                Mouse.OverrideCursor = Cursors.Wait;
-                GenerarPlantillaExcel(dlg.FileName);
-                Process.Start(new ProcessStartInfo(dlg.FileName) { UseShellExecute = true });
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error al generar la plantilla:\n{ex.Message}", "Consola",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                Mouse.OverrideCursor = null;
-            }
-        }
-
-        private void GenerarPlantillaExcel(string filePath)
-        {
-            using var wb = new ClosedXML.Excel.XLWorkbook();
-            var ws = wb.Worksheets.Add("Precios");
-
-            ws.Cell(1, 1).Value = "Código";
-            ws.Cell(1, 2).Value = "Producto";
-            ws.Cell(1, 3).Value = "Familia";
-            ws.Cell(1, 4).Value = "Descripción";
-            ws.Cell(1, 5).Value = "Precio";
-
-            int row = 2;
-            foreach (var item in _items.OrderBy(x => x.Codigo, StringComparer.OrdinalIgnoreCase))
-            {
-                string famId    = Sql.ArticulosObj.ObtenerItem("familia",     item.ArticuloId)?.ToString() ?? "";
-                string prodId   = Sql.FamiliasObj.ObtenerItem("producto",    famId)?.ToString() ?? "";
-                string prodDesc = Sql.ProductosObj.ObtenerItem("descripcion", prodId)?.ToString() ?? "";
-                string famDesc  = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString() ?? "";
-                string descArt  = Sql.ArticulosObj.ObtenerItem("descripcion", item.ArticuloId)?.ToString() ?? "";
-
-                ws.Cell(row, 1).Value = item.Codigo;
-                ws.Cell(row, 2).Value = prodDesc;
-                ws.Cell(row, 3).Value = famDesc;
-                ws.Cell(row, 4).Value = descArt;
-                // Precio: se deja en blanco a propósito, para que el usuario la complete.
-                row++;
-            }
-
-            ws.Columns().AdjustToContents();
-            wb.SaveAs(filePath);
-        }
-
-        // ─── Importar Excel: carga precios masivamente (mismo formato que la plantilla) ─
+        // ─── Importar Excel: carga precios masivamente (mismo formato que la plantilla
+        // "Plantilla Excel" de PreciosGeneral) ──────────────────────────────────────
         private void BtnImportarExcel_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new OpenFileDialog

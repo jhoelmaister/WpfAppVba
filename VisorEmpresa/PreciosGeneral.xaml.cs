@@ -552,6 +552,83 @@ namespace VisorEmpresa
             CargarListas();
         }
 
+        // ─── Plantilla Excel: catálogo completo con columna Precio en blanco ───
+        // Mismo formato que espera PreciosDetalle.ImportarPreciosDesdeExcel: Código /
+        // Producto / Familia / Descripción / Precio. Producto/Familia/Descripción son
+        // solo referencia para completar el archivo a mano; el import solo lee Código y Precio.
+        private void BtnPlantillaExcel_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new SaveFileDialog
+            {
+                Title            = "Guardar plantilla de precios",
+                FileName         = $"{DateTime.Now:yyyyMMdd HHmmss} plantilla precios.xlsx",
+                DefaultExt       = ".xlsx",
+                Filter           = "Excel (*.xlsx)|*.xlsx",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            };
+            if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
+
+            try
+            {
+                Mouse.OverrideCursor = Cursors.Wait;
+                GenerarPlantillaExcel(dlg.FileName);
+                Process.Start(new ProcessStartInfo(dlg.FileName) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al generar la plantilla:\n{ex.Message}", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+            }
+        }
+
+        private void GenerarPlantillaExcel(string filePath)
+        {
+            using var wb = new ClosedXML.Excel.XLWorkbook();
+            var ws = wb.Worksheets.Add("Precios");
+
+            ws.Cell(1, 1).Value = "Código";
+            ws.Cell(1, 2).Value = "Producto";
+            ws.Cell(1, 3).Value = "Familia";
+            ws.Cell(1, 4).Value = "Descripción";
+            ws.Cell(1, 5).Value = "Precio";
+
+            var articulos = new List<(string codigo, string prodDesc, string famDesc, string desc)>();
+            int uf = Sql.ArticulosObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.ArticulosObj.Mover(i);
+                if (idObj == null) continue;
+                string artId = idObj.ToString()!;
+
+                string famId    = Sql.ArticulosObj.ObtenerItem("familia",     artId)?.ToString() ?? "";
+                string prodId   = Sql.FamiliasObj.ObtenerItem("producto",    famId)?.ToString() ?? "";
+                string prodDesc = Sql.ProductosObj.ObtenerItem("descripcion", prodId)?.ToString() ?? "";
+                string famDesc  = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString() ?? "";
+                string codigo   = Sql.ArticulosObj.ObtenerItem("codigo",      artId)?.ToString() ?? "";
+                string desc     = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString() ?? "";
+
+                articulos.Add((codigo, prodDesc, famDesc, desc));
+            }
+
+            int row = 2;
+            foreach (var a in articulos.OrderBy(x => x.codigo, StringComparer.OrdinalIgnoreCase))
+            {
+                ws.Cell(row, 1).Value = a.codigo;
+                ws.Cell(row, 2).Value = a.prodDesc;
+                ws.Cell(row, 3).Value = a.famDesc;
+                ws.Cell(row, 4).Value = a.desc;
+                // Precio: se deja en blanco a propósito, para que el usuario la complete.
+                row++;
+            }
+
+            ws.Columns().AdjustToContents();
+            wb.SaveAs(filePath);
+        }
+
         // ─── PDF de la lista de precios (botón "Acciones" por fila) ──────────
         private void BtnPdfFila_Click(object sender, RoutedEventArgs e)
         {
