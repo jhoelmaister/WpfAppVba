@@ -181,6 +181,9 @@ namespace SistemaGestion
             ws.Cell(2, 13).FormulaA1                = "=COUNTIFS(Tabla1[estado],\"NO REVISADO\")";
             ws.Cell(2, 14).FormulaA1                = "=COUNTIFS(Tabla1[estado],\"ERROR\")";
 
+            AplicarCuadricula(ws.Range(1, 1, 2, 3));   // FECHA / INFORME / ESTADO
+            AplicarCuadricula(ws.Range(1, 13, 2, 14)); // NO REVISADOS / ERRORES
+
             // ── Totales por categoría (todas las categorías registradas actualmente,
             // no una lista fija) ────────────────────────────────────────────────
             var categorias = new List<(string Id, string Desc)>();
@@ -226,6 +229,10 @@ namespace SistemaGestion
             ws.Cell(filaTotalCat, 12).FormulaA1 = "=SUMIF(Tabla1[diferencia],\"FALTA\",Tabla1[cantidad])";
             ws.Cell(filaTotalCat, 13).FormulaA1 = "=SUMIF(Tabla1[diferencia],\"SOBRA\",Tabla1[cantidad])";
             ws.Cell(filaTotalCat, 14).FormulaA1 = $"=M{filaTotalCat}-L{filaTotalCat}";
+
+            AplicarCuadricula(ws.Range(filaEncabezadoCat, 1, filaTotalCat, 3)); // CATEGORÍA / SISTEMA / INVENTARIO
+            if (ultimaCat >= primeraCat)
+                AplicarCuadricula(ws.Range(ultimaCat, 12, filaTotalCat, 14));   // FALTA / SOBRA / TOTAL
 
             // ── Tabla de artículos ──────────────────────────────────────────────
             // "linea" (antes "id"): número de línea secuencial desde 1.
@@ -311,7 +318,15 @@ namespace SistemaGestion
             if (filaDatosFin >= filaDatosInicio)
             {
                 var rangoTabla = ws.Range(filaHeaders, 1, filaDatosFin, encabezados.Length);
-                rangoTabla.CreateTable("Tabla1");
+                var tabla = rangoTabla.CreateTable("Tabla1");
+
+                // ── Fila de totales, igual que la plantilla: Total (etiqueta) en
+                // "articulo", conteo de filas en "categoria", suma en sistema/inventario.
+                tabla.ShowTotalsRow = true;
+                tabla.Field("articulo").TotalsRowLabel      = "Total";
+                tabla.Field("categoria").TotalsRowFunction  = XLTotalsRowFunction.Count;
+                tabla.Field("sistema").TotalsRowFunction    = XLTotalsRowFunction.Sum;
+                tabla.Field("inventario").TotalsRowFunction = XLTotalsRowFunction.Sum;
 
                 // ── Formatos condicionales (estado + hoja), igual que la plantilla:
                 // ERROR en rojo negrita, NO REVISADO con relleno violeta.
@@ -327,6 +342,15 @@ namespace SistemaGestion
 
             ws.Columns().AdjustToContents();
             wb.SaveAs(filePath);
+        }
+
+        // ─── Bordes finos en todas las celdas del rango (igual que el resumen de
+        // la plantilla: fecha/informe/estado, no revisados/errores, categorías,
+        // falta/sobra/total) ────────────────────────────────────────────────────
+        private static void AplicarCuadricula(IXLRange range)
+        {
+            range.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            range.Style.Border.InsideBorder  = XLBorderStyleValues.Thin;
         }
     }
 }
