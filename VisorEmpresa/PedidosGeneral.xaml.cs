@@ -101,7 +101,7 @@ namespace VisorEmpresa
             try
             {
                 Mouse.OverrideCursor = Cursors.Wait;
-                await Task.Run(() => ConsultasEmpresa.ConectarCachePedidos(emp, anio, ""));
+                await Task.Run(() => ConsultasEmpresa.ConectarCachePedidos(emp, anio));
                 CargarMeses();
                 CargarPedidos();
             }

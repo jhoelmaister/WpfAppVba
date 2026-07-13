@@ -599,10 +599,10 @@ namespace VisorEmpresa
         // fieles de los de la app principal: mismo código de UI (Tree1 de meses,
         // filtros, grilla, detalle) que lee de Sql.DocumentosXObj/Sql.XObj
         // (DataConsulta), igual que AppLoader.ConectarDocumentos. En vez de
-        // reescribir esa lógica de lectura, se puebla la MISMA caché con SQL
-        // scoped a UNA sucursal (sucursalId) o a TODA la empresa (sucursalId
-        // vacío), siempre con el corte por apertura de CADA sucursal
-        // (SubconsultaApertura) — mismo criterio que las antiguas CargarDocsXxx.
+        // reescribir esa lógica de lectura, se puebla la MISMA caché con UNA
+        // consulta para TODA la empresa (todas las sucursales), siempre con el
+        // corte por apertura de CADA sucursal (SubconsultaApertura) — cada
+        // pantalla filtra por sucursal en memoria (ver sus CargarMeses/CargarXxx).
 
         private const string SubconsultaApertura =
             "(SELECT sucursal, MAX(fecha) AS fecha FROM documentosI " +
@@ -611,29 +611,26 @@ namespace VisorEmpresa
         private static string FechaLiteral(DateTime dt) => dt.ToString("yyyyMMdd HH:mm:ss");
 
         // Memoización de las 4 cachés de abajo: al loguear (y al cambiar de
-        // empresa/año) se precargan para TODA la empresa (sucursalId=""), y las
-        // pantallas Pedidos/Traspasos/Correcciones/FacturasGeneral llaman a estos
-        // mismos métodos cada vez que se abren o cambia el año — sin esta
-        // memoización, esa segunda llamada repetiría la consulta SQL con los
-        // mismos parámetros. Con ella, esa segunda llamada es un no-op y la
-        // pantalla filtra por sucursal directamente en memoria (ver CargarMeses/
-        // CargarPedidos de cada una), sin volver a golpear la base de datos.
-        private static (string Empresa, int Anio, string Sucursal)? _pedidosCacheCargada;
-        private static (string Empresa, int Anio, string Origen, string Destino)? _traspasosCacheCargada;
-        private static (string Empresa, int Anio, string Sucursal)? _correccionesCacheCargada;
-        private static (string Empresa, int Anio, string Sucursal)? _facturasCacheCargada;
+        // empresa/año) se precargan para TODA la empresa, y las pantallas
+        // Pedidos/Traspasos/Correcciones/FacturasGeneral llaman a estos mismos
+        // métodos cada vez que se abren o cambia el año — sin esta memoización,
+        // esa segunda llamada repetiría la consulta SQL con los mismos
+        // parámetros. Con ella, esa segunda llamada es un no-op.
+        private static (string Empresa, int Anio)? _pedidosCacheCargada;
+        private static (string Empresa, int Anio)? _traspasosCacheCargada;
+        private static (string Empresa, int Anio)? _correccionesCacheCargada;
+        private static (string Empresa, int Anio)? _facturasCacheCargada;
 
-        /// <summary>Puebla Sql.DocumentosPObj + Sql.PedidosObj (una sucursal o toda la empresa).</summary>
-        public static void ConectarCachePedidos(string empresa, int anio, string sucursalId)
+        /// <summary>Puebla Sql.DocumentosPObj + Sql.PedidosObj para TODA la empresa.</summary>
+        public static void ConectarCachePedidos(string empresa, int anio)
         {
-            var clave = (empresa, anio, sucursalId);
+            var clave = (empresa, anio);
             if (_pedidosCacheCargada == clave) return;
 
             var (desde, hasta) = RangoAnio(anio);
             string aper = FechaLiteral(desde);
             string cier = FechaLiteral(hasta);
             string emp  = EmpresaSegura(empresa);
-            string filtroSuc = string.IsNullOrEmpty(sucursalId) ? "" : $" AND vg.sucursal = '{sucursalId}'";
 
             Sql.DocumentosPObj.Conectar("documentosP",
                 "SELECT vg.* FROM documentosP AS vg " +
@@ -642,7 +639,6 @@ namespace VisorEmpresa
                 "WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
                 "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
-                filtroSuc +
                 " ORDER BY vg.fecha ASC");
 
             Sql.PedidosObj.Conectar("pedidos",
@@ -653,40 +649,27 @@ namespace VisorEmpresa
                 "WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
                 "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
-                filtroSuc +
                 " ORDER BY vd.documentoP ASC, vd.indice ASC");
 
             _pedidosCacheCargada = clave;
         }
 
         /// <summary>
-        /// Puebla Sql.DocumentosTObj + Sql.TraspasosObj. Cada lado (origen/destino)
-        /// se corta con la apertura de SU propia sucursal, igual con una sucursal
-        /// puntual o con toda la empresa.
+        /// Puebla Sql.DocumentosTObj + Sql.TraspasosObj para TODA la empresa. Cada
+        /// lado (origen/destino) se corta con la apertura de SU propia sucursal.
         /// </summary>
-        public static void ConectarCacheTraspasos(string empresa, int anio, string origenId = "", string destinoId = "")
+        public static void ConectarCacheTraspasos(string empresa, int anio)
         {
-            var clave = (empresa, anio, origenId, destinoId);
+            var clave = (empresa, anio);
             if (_traspasosCacheCargada == clave) return;
 
             var (desde, hasta) = RangoAnio(anio);
             string aper = FechaLiteral(desde);
             string cier = FechaLiteral(hasta);
             string emp  = EmpresaSegura(empresa);
-            bool porOrigen  = !string.IsNullOrEmpty(origenId);
-            bool porDestino = !string.IsNullOrEmpty(destinoId);
 
-            string condLado;
-            if (porOrigen && porDestino)
-                condLado = $"AND vg.origen = '{origenId}' AND vg.destino = '{destinoId}' " +
-                           "AND vg.fecha >= COALESCE(apo.fecha, so.fecha) AND vg.fecha >= COALESCE(apd.fecha, sd.fecha) ";
-            else if (porOrigen)
-                condLado = $"AND vg.origen = '{origenId}' AND vg.fecha >= COALESCE(apo.fecha, so.fecha) ";
-            else if (porDestino)
-                condLado = $"AND vg.destino = '{destinoId}' AND vg.fecha >= COALESCE(apd.fecha, sd.fecha) ";
-            else
-                condLado = $"AND ( (so.empresa = '{emp}' AND vg.fecha >= COALESCE(apo.fecha, so.fecha)) " +
-                           $"   OR (sd.empresa = '{emp}' AND vg.fecha >= COALESCE(apd.fecha, sd.fecha)) ) ";
+            string condLado = $"AND ( (so.empresa = '{emp}' AND vg.fecha >= COALESCE(apo.fecha, so.fecha)) " +
+                               $"   OR (sd.empresa = '{emp}' AND vg.fecha >= COALESCE(apd.fecha, sd.fecha)) ) ";
 
             Sql.DocumentosTObj.Conectar("documentosT",
                 "SELECT vg.* FROM documentosT AS vg " +
@@ -714,17 +697,16 @@ namespace VisorEmpresa
             _traspasosCacheCargada = clave;
         }
 
-        /// <summary>Puebla Sql.DocumentosCObj + Sql.CorreccionesObj (una sucursal o toda la empresa).</summary>
-        public static void ConectarCacheCorrecciones(string empresa, int anio, string sucursalId)
+        /// <summary>Puebla Sql.DocumentosCObj + Sql.CorreccionesObj para TODA la empresa.</summary>
+        public static void ConectarCacheCorrecciones(string empresa, int anio)
         {
-            var clave = (empresa, anio, sucursalId);
+            var clave = (empresa, anio);
             if (_correccionesCacheCargada == clave) return;
 
             var (desde, hasta) = RangoAnio(anio);
             string aper = FechaLiteral(desde);
             string cier = FechaLiteral(hasta);
             string emp  = EmpresaSegura(empresa);
-            string filtroSuc = string.IsNullOrEmpty(sucursalId) ? "" : $" AND vg.sucursal = '{sucursalId}'";
 
             Sql.DocumentosCObj.Conectar("documentosC",
                 "SELECT vg.* FROM documentosC AS vg " +
@@ -733,7 +715,6 @@ namespace VisorEmpresa
                 "WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
                 "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
-                filtroSuc +
                 " ORDER BY vg.fecha ASC");
 
             Sql.CorreccionesObj.Conectar("correcciones",
@@ -744,28 +725,26 @@ namespace VisorEmpresa
                 "WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
                 "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
-                filtroSuc +
                 " ORDER BY vd.documentoC ASC, vd.indice ASC");
 
             _correccionesCacheCargada = clave;
         }
 
         /// <summary>
-        /// Puebla Sql.DocumentosFObj + Sql.FacturasObj (una sucursal o toda la
-        /// empresa). Al usar SELECT vg.*/vd.* (no columnas nombradas) no hace falta
-        /// verificar existencia de columnas: se adapta sola al esquema real, igual
-        /// que AppLoader.ConectarDocumentos.
+        /// Puebla Sql.DocumentosFObj + Sql.FacturasObj para TODA la empresa. Al usar
+        /// SELECT vg.*/vd.* (no columnas nombradas) no hace falta verificar
+        /// existencia de columnas: se adapta sola al esquema real, igual que
+        /// AppLoader.ConectarDocumentos.
         /// </summary>
-        public static void ConectarCacheFacturas(string empresa, int anio, string sucursalId)
+        public static void ConectarCacheFacturas(string empresa, int anio)
         {
-            var clave = (empresa, anio, sucursalId);
+            var clave = (empresa, anio);
             if (_facturasCacheCargada == clave) return;
 
             var (desde, hasta) = RangoAnio(anio);
             string aper = FechaLiteral(desde);
             string cier = FechaLiteral(hasta);
             string emp  = EmpresaSegura(empresa);
-            string filtroSuc = string.IsNullOrEmpty(sucursalId) ? "" : $" AND vg.sucursal = '{sucursalId}'";
 
             Sql.DocumentosFObj.Conectar("documentosF",
                 "SELECT vg.* FROM documentosF AS vg " +
@@ -774,7 +753,6 @@ namespace VisorEmpresa
                 "WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
                 "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
-                filtroSuc +
                 " ORDER BY vg.fecha ASC");
 
             Sql.FacturasObj.Conectar("facturas",
@@ -785,7 +763,6 @@ namespace VisorEmpresa
                 "WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
                 "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
-                filtroSuc +
                 " ORDER BY vd.documentoF ASC, vd.indice ASC");
 
             _facturasCacheCargada = clave;

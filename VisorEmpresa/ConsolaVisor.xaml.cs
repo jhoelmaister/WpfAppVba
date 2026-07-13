@@ -148,10 +148,10 @@ namespace SistemaGestion
                     int añoPrevio = VisorState.AnioActivo;
                     await Task.Run(() =>
                     {
-                        ConsultasEmpresa.ConectarCachePedidos(opciones[0].Id, añoPrevio, "");
-                        ConsultasEmpresa.ConectarCacheTraspasos(opciones[0].Id, añoPrevio, "", "");
-                        ConsultasEmpresa.ConectarCacheCorrecciones(opciones[0].Id, añoPrevio, "");
-                        ConsultasEmpresa.ConectarCacheFacturas(opciones[0].Id, añoPrevio, "");
+                        ConsultasEmpresa.ConectarCachePedidos(opciones[0].Id, añoPrevio);
+                        ConsultasEmpresa.ConectarCacheTraspasos(opciones[0].Id, añoPrevio);
+                        ConsultasEmpresa.ConectarCacheCorrecciones(opciones[0].Id, añoPrevio);
+                        ConsultasEmpresa.ConectarCacheFacturas(opciones[0].Id, añoPrevio);
                     });
                     ActualizarInfoUsuario();
                     RefrescarPanelesDatos();
@@ -231,10 +231,10 @@ namespace SistemaGestion
                 int añoNuevo = VisorState.AnioActivo;
                 await Task.Run(() =>
                 {
-                    ConsultasEmpresa.ConectarCachePedidos(nueva, añoNuevo, "");
-                    ConsultasEmpresa.ConectarCacheTraspasos(nueva, añoNuevo, "", "");
-                    ConsultasEmpresa.ConectarCacheCorrecciones(nueva, añoNuevo, "");
-                    ConsultasEmpresa.ConectarCacheFacturas(nueva, añoNuevo, "");
+                    ConsultasEmpresa.ConectarCachePedidos(nueva, añoNuevo);
+                    ConsultasEmpresa.ConectarCacheTraspasos(nueva, añoNuevo);
+                    ConsultasEmpresa.ConectarCacheCorrecciones(nueva, añoNuevo);
+                    ConsultasEmpresa.ConectarCacheFacturas(nueva, añoNuevo);
                 });
 
                 RecargarPaneles();

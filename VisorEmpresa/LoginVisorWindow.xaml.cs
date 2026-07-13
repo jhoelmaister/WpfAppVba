@@ -282,10 +282,10 @@ namespace VisorEmpresa
                 int añoActivo = VisorState.AnioActivo;
                 await Task.Run(() =>
                 {
-                    ConsultasEmpresa.ConectarCachePedidos(usuario.Empresa, añoActivo, "");
-                    ConsultasEmpresa.ConectarCacheTraspasos(usuario.Empresa, añoActivo, "", "");
-                    ConsultasEmpresa.ConectarCacheCorrecciones(usuario.Empresa, añoActivo, "");
-                    ConsultasEmpresa.ConectarCacheFacturas(usuario.Empresa, añoActivo, "");
+                    ConsultasEmpresa.ConectarCachePedidos(usuario.Empresa, añoActivo);
+                    ConsultasEmpresa.ConectarCacheTraspasos(usuario.Empresa, añoActivo);
+                    ConsultasEmpresa.ConectarCacheCorrecciones(usuario.Empresa, añoActivo);
+                    ConsultasEmpresa.ConectarCacheFacturas(usuario.Empresa, añoActivo);
                 });
 
                 var main = new ConsolaMovimientos();   // la consola del visor (ConsolaVisor.xaml)
