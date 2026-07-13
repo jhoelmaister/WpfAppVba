@@ -82,22 +82,21 @@ namespace VisorEmpresa
         /// </summary>
         public static UsuarioVisor? ValidarLogin(string cuenta, string contrasena)
         {
-            using var conn = new SqlConnection(CadenaConexion());
-            conn.Open();
-
-            string id = "", llave = "", tipo = "", empresa = "";
-            using (var cmd = new SqlCommand(
-                "SELECT id, llave, tipo, empresa FROM usuarios " +
-                "WHERE cuenta = @cuenta AND estadof = 'normal'", conn))
+            // Parte SQL con reintentos ante fallos transitorios (timeout de handshake,
+            // conexión rota) — igual que DataConsulta; acá antes no estaba conectado.
+            var (id, llave, tipo, empresa) = SqlRetry.Ejecutar(() =>
             {
+                using var conn = new SqlConnection(CadenaConexion());
+                conn.Open();
+
+                using var cmd = new SqlCommand(
+                    "SELECT id, llave, tipo, empresa FROM usuarios " +
+                    "WHERE cuenta = @cuenta AND estadof = 'normal'", conn);
                 cmd.Parameters.AddWithValue("@cuenta", cuenta);
                 using var reader = cmd.ExecuteReader();
-                if (!reader.Read()) return null;
-                id      = Texto(reader["id"]);
-                llave   = Texto(reader["llave"]);
-                tipo    = Texto(reader["tipo"]);
-                empresa = Texto(reader["empresa"]);
-            }
+                if (!reader.Read()) return ("", "", "", "");
+                return (Texto(reader["id"]), Texto(reader["llave"]), Texto(reader["tipo"]), Texto(reader["empresa"]));
+            });
 
             if (string.IsNullOrEmpty(id)) return null;
 
@@ -688,8 +687,12 @@ namespace VisorEmpresa
                    "Connect Retry Count=3;Connect Retry Interval=10;Pooling=true;";
         }
 
+        // Reintentos ante fallos transitorios (timeout de handshake, conexión rota,
+        // deadlock) — igual que DataConsulta.ObtenerDatos. Cubre implícitamente casi
+        // todos los métodos de esta clase (CargarSucursalesEmpresa, ObtenerStockEmpresa,
+        // CargarResumenPedidos, etc.), todos pasan por acá.
         private static DataTable EjecutarConsulta(
-            string sql, params (string Nombre, object Valor)[] parametros)
+            string sql, params (string Nombre, object Valor)[] parametros) => SqlRetry.Ejecutar(() =>
         {
             var tabla = new DataTable();
             using var conn = new SqlConnection(CadenaConexion());
@@ -700,7 +703,7 @@ namespace VisorEmpresa
             using var adaptador = new SqlDataAdapter(cmd);
             adaptador.Fill(tabla);
             return tabla;
-        }
+        });
 
         private static string Texto(object? v) =>
             v is null or DBNull ? "" : v.ToString() ?? "";
