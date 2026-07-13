@@ -553,10 +553,11 @@ namespace VisorEmpresa
         }
 
         // ─── Plantilla Excel: catálogo completo con columna Precio en 0 ────────
-        // Mismo formato que espera PreciosDetalle.ImportarPreciosDesdeExcel: Código /
-        // Producto / Familia / Descripción / Precio. Producto/Familia/Descripción son
-        // solo referencia para completar el archivo a mano; el import solo lee Código y
-        // Precio, y trata 0 igual que blanco (fila sin cotizar, se ignora al importar).
+        // Columnas: N° / Código / Producto / Familia / Descripción / Precio. N°/Producto/
+        // Familia/Descripción son solo referencia para completar el archivo a mano; el
+        // import (PreciosDetalle.ImportarPreciosDesdeExcel) busca Código y Precio por
+        // encabezado, no por posición, así que el orden de columnas no le afecta.
+        // Precio 0 se trata igual que blanco (fila sin cotizar, se ignora al importar).
         private void BtnPlantillaExcel_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new SaveFileDialog
@@ -591,16 +592,18 @@ namespace VisorEmpresa
             using var wb = new ClosedXML.Excel.XLWorkbook();
             var ws = wb.Worksheets.Add("Precios");
 
-            ws.Cell(1, 1).Value = "Código";
-            ws.Cell(1, 2).Value = "Producto";
-            ws.Cell(1, 3).Value = "Familia";
-            ws.Cell(1, 4).Value = "Descripción";
-            ws.Cell(1, 5).Value = "Precio";
+            ws.Cell(1, 1).Value = "N°";
+            ws.Cell(1, 2).Value = "Código";
+            ws.Cell(1, 3).Value = "Producto";
+            ws.Cell(1, 4).Value = "Familia";
+            ws.Cell(1, 5).Value = "Descripción";
+            ws.Cell(1, 6).Value = "Precio";
 
             // Sin reordenar: Sql.ArticulosObj ya viene cargado en cascada Producto →
             // Familia → Índice (ver AppLoader.cs, ORDER BY p.descripcion, f.descripcion,
             // a.indice), el mismo orden que usan PreciosDetalle y ArticulosGeneral.
             int row = 2;
+            int numero = 1;
             int uf = Sql.ArticulosObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
             {
@@ -615,12 +618,14 @@ namespace VisorEmpresa
                 string codigo   = Sql.ArticulosObj.ObtenerItem("codigo",      artId)?.ToString() ?? "";
                 string desc     = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString() ?? "";
 
-                ws.Cell(row, 1).Value = codigo;
-                ws.Cell(row, 2).Value = prodDesc;
-                ws.Cell(row, 3).Value = famDesc;
-                ws.Cell(row, 4).Value = desc;
-                ws.Cell(row, 5).Value = 0; // Precio: arranca en 0 para que el usuario la complete.
+                ws.Cell(row, 1).Value = numero;
+                ws.Cell(row, 2).Value = codigo;
+                ws.Cell(row, 3).Value = prodDesc;
+                ws.Cell(row, 4).Value = famDesc;
+                ws.Cell(row, 5).Value = desc;
+                ws.Cell(row, 6).Value = 0; // Precio: arranca en 0 para que el usuario la complete.
                 row++;
+                numero++;
             }
 
             ws.Columns().AdjustToContents();
