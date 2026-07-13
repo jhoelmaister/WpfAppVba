@@ -351,6 +351,9 @@
                     <Button x:Name="BtnInformeExcel" Content="Informe Excel"
                             Style="{StaticResource BtnSecundario}"
                             Margin="0,0,8,0" Click="BtnInformeExcel_Click"/>
+                    <Button x:Name="BtnArqueoExcel" Content="Arqueo Excel"
+                            Style="{StaticResource BtnSecundario}"
+                            Margin="0,0,8,0" Click="BtnArqueoExcel_Click"/>
                     <!-- Panel exportar (oculto por defecto) -->
                     <StackPanel x:Name="PanelExportar" Orientation="Horizontal"
                                 Visibility="Collapsed" VerticalAlignment="Center">
