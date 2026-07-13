@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -547,26 +549,28 @@ namespace VisorEmpresa
             }
         }
 
-        // Lee Código (col. 1) y Precio (col. 5); Producto/Familia/Descripción (columnas
-        // 2-4) son solo referencia visual y se ignoran. Reemplaza el precio de todo
-        // artículo que tenga un valor numérico en el Excel, incluido 0 (para poder
-        // dejarlo explícitamente en 0). Solo se saltan filas sin código o con la celda
-        // de precio realmente en blanco.
+        // Busca las columnas "Código" y "Precio" por su encabezado (fila 1), sin
+        // importar en qué posición estén ni cuántas otras columnas de referencia
+        // (Producto/Familia/Descripción, etc.) haya entre medio. Reemplaza el precio
+        // de todo artículo que tenga un valor numérico en el Excel, incluido 0 (para
+        // poder dejarlo explícitamente en 0). Solo se saltan filas sin código o con la
+        // celda de precio realmente en blanco.
         private (int Importados, List<string> NoEncontrados) ImportarPreciosDesdeExcel(string filePath)
         {
             using var wb = new ClosedXML.Excel.XLWorkbook(filePath);
             var ws = wb.Worksheet(1);
 
+            var (colCodigo, colPrecio) = DetectarColumnas(ws);
+
             var porCodigo = _items.ToDictionary(x => x.Codigo, x => x, StringComparer.OrdinalIgnoreCase);
             int importados = 0;
             var noEncontrados = new List<string>();
 
-            int fila = 2; // fila 1 = encabezados
-            while (!ws.Cell(fila, 1).IsEmpty())
+            int ultimaFila = ws.LastRowUsed()?.RowNumber() ?? 1;
+            for (int fila = 2; fila <= ultimaFila; fila++) // fila 1 = encabezados
             {
-                string codigo     = ws.Cell(fila, 1).GetString().Trim();
-                bool   tienePrecio = ws.Cell(fila, 5).TryGetValue(out double precio);
-                fila++;
+                string codigo      = ws.Cell(fila, colCodigo).GetString().Trim();
+                bool   tienePrecio = ws.Cell(fila, colPrecio).TryGetValue(out double precio);
 
                 if (string.IsNullOrEmpty(codigo) || !tienePrecio) continue;
 
@@ -581,6 +585,47 @@ namespace VisorEmpresa
             }
 
             return (importados, noEncontrados);
+        }
+
+        // Recorre los encabezados de la fila 1 buscando la columna de "Código" y la
+        // de "Precio", comparando sin tildes/mayúsculas y por coincidencia parcial
+        // (p. ej. "Cód. Artículo" o "Precio Venta" también matchean). No asume ningún
+        // orden ni cantidad fija de columnas.
+        private static (int Codigo, int Precio) DetectarColumnas(ClosedXML.Excel.IXLWorksheet ws)
+        {
+            int ultimaCol = ws.LastColumnUsed()?.ColumnNumber() ?? 0;
+            int colCodigo = 0, colPrecio = 0;
+
+            for (int col = 1; col <= ultimaCol; col++)
+            {
+                string encabezado = NormalizarEncabezado(ws.Cell(1, col).GetString());
+
+                if (colCodigo == 0 && encabezado.Contains("codigo"))
+                    colCodigo = col;
+                else if (colPrecio == 0 && encabezado.Contains("precio"))
+                    colPrecio = col;
+            }
+
+            if (colCodigo == 0 || colPrecio == 0)
+            {
+                var faltantes = new List<string>();
+                if (colCodigo == 0) faltantes.Add("\"Código\"");
+                if (colPrecio == 0) faltantes.Add("\"Precio\"");
+                throw new InvalidOperationException(
+                    $"No se encontró la columna {string.Join(" ni ", faltantes)} en la fila de encabezados del Excel.");
+            }
+
+            return (colCodigo, colPrecio);
+        }
+
+        // Quita tildes y pasa a minúsculas/recortado, para que "Código", "CODIGO" o
+        // "código " (con espacios) comparen todos igual contra "codigo".
+        private static string NormalizarEncabezado(string texto)
+        {
+            string sinTildes = string.Concat(
+                texto.Normalize(NormalizationForm.FormD)
+                     .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark));
+            return sinTildes.Trim().ToLowerInvariant();
         }
 
         // ─── Botones Guardar / Cancelar ───────────────────────────────────────
