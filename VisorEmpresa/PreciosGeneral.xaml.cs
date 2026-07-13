@@ -597,7 +597,10 @@ namespace VisorEmpresa
             ws.Cell(1, 4).Value = "Descripción";
             ws.Cell(1, 5).Value = "Precio";
 
-            var articulos = new List<(string codigo, string prodDesc, string famDesc, string desc)>();
+            // Sin reordenar: Sql.ArticulosObj ya viene cargado en cascada Producto →
+            // Familia → Índice (ver AppLoader.cs, ORDER BY p.descripcion, f.descripcion,
+            // a.indice), el mismo orden que usan PreciosDetalle y ArticulosGeneral.
+            int row = 2;
             int uf = Sql.ArticulosObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
             {
@@ -612,16 +615,10 @@ namespace VisorEmpresa
                 string codigo   = Sql.ArticulosObj.ObtenerItem("codigo",      artId)?.ToString() ?? "";
                 string desc     = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString() ?? "";
 
-                articulos.Add((codigo, prodDesc, famDesc, desc));
-            }
-
-            int row = 2;
-            foreach (var a in articulos.OrderBy(x => x.codigo, StringComparer.OrdinalIgnoreCase))
-            {
-                ws.Cell(row, 1).Value = a.codigo;
-                ws.Cell(row, 2).Value = a.prodDesc;
-                ws.Cell(row, 3).Value = a.famDesc;
-                ws.Cell(row, 4).Value = a.desc;
+                ws.Cell(row, 1).Value = codigo;
+                ws.Cell(row, 2).Value = prodDesc;
+                ws.Cell(row, 3).Value = famDesc;
+                ws.Cell(row, 4).Value = desc;
                 ws.Cell(row, 5).Value = 0; // Precio: arranca en 0 para que el usuario la complete.
                 row++;
             }
