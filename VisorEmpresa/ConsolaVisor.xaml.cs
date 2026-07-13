@@ -140,6 +140,9 @@ namespace SistemaGestion
                     VisorState.EmpresaActiva = opciones[0].Id;
                     Mouse.OverrideCursor = Cursors.Wait;
                     await Task.Run(() => AppLoader.ConectarProductos());
+                    // Precalienta stock + pedidos/traspasos/correcciones del Dashboard
+                    // para esta empresa (mismo motivo que en LoginVisorWindow).
+                    await Task.Run(() => ConsultasEmpresa.ObtenerStockEmpresa(opciones[0].Id));
                     ActualizarInfoUsuario();
                     RefrescarPanelesDatos();
                 }
@@ -201,6 +204,12 @@ namespace SistemaGestion
 
                 // Recargar las cachés empresa-scoped de los módulos de edición.
                 await Task.Run(() => AppLoader.ConectarProductos());
+
+                // Precalienta stock + pedidos/traspasos/correcciones del Dashboard
+                // para la nueva empresa (mismo motivo que en LoginVisorWindow): sin
+                // esto, la primera consulta del Dashboard tras el cambio de empresa
+                // dispara la recarga completa de la caché en ese momento.
+                await Task.Run(() => ConsultasEmpresa.ObtenerStockEmpresa(nueva));
 
                 await RepoblarAniosTopAsync();
                 RecargarPaneles();

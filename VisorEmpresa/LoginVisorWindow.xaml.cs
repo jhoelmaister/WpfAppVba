@@ -261,11 +261,15 @@ namespace VisorEmpresa
                 MostrarEstado("Cargando catálogos de la empresa...", Colors.Green);
                 await Task.Run(() => AppLoader.ConectarProductos());
 
-                // Precalienta la caché de stock/disponible (ConsultasEmpresa.ObtenerStockEmpresa):
-                // sin esto, las 5 consultas SQL que arma se disparaban recién al abrir la primera
-                // pestaña (Artículos/Precios/Dashboard), sintiéndose como una demora "sin motivo"
-                // con latencia de red alta. Al precalentarla acá, esa demora queda en el login
-                // (donde ya se muestra progreso) y las pestañas abren instantáneas después.
+                // Precalienta la caché de stock/disponible (ConsultasEmpresa.ObtenerStockEmpresa),
+                // que de paso puebla ConectarCacheDashboardEmpresa (pedidos/traspasos/
+                // correcciones/aperturas de TODA la empresa, sin filtro de sucursal ni
+                // período): sin esto, esas consultas se disparaban recién al abrir la
+                // primera pestaña (Artículos/Precios/Dashboard), sintiéndose como una
+                // demora "sin motivo" con latencia de red alta. Al precalentarlas acá, esa
+                // demora queda en el login (donde ya se muestra progreso) y las pestañas
+                // (incluido el Dashboard: CargarMovimientos/CargarResumenPedidos/
+                // CargarTraspasosInternos) abren instantáneas después.
                 MostrarEstado("Calculando stock de la empresa...", Colors.Green);
                 await Task.Run(() => ConsultasEmpresa.ObtenerStockEmpresa(usuario.Empresa));
 
