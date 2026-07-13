@@ -210,22 +210,34 @@ namespace SistemaGestion
                 ws.Cell(filaCat, 3).FormulaA1 = $"=SUMIFS(Tabla1[inventario],Tabla1[categoria],A{filaCat})";
                 filaCat++;
             }
-            int ultimaCat = filaCat - 1;
+            int ultimaCat    = filaCat - 1;
+            int filaTotalCat = filaCat; // = ultimaCat + 1
 
+            // La lista de categorías es también una tabla, con su fila de totales
+            // (Total / suma / suma) activada igual que Tabla1. Esto hay que hacerlo
+            // ANTES de escribir nada en filaTotalCat en adelante: activar
+            // ShowTotalsRow inserta una fila nueva justo debajo de la tabla, y
+            // necesitamos que esa fila sea exactamente filaTotalCat (todavía vacía
+            // en este punto) para no desplazar el resto del layout (FALTA/SOBRA/TOTAL
+            // y la tabla de artículos, que se escriben después).
             if (ultimaCat >= primeraCat)
             {
+                var rangoCategorias = ws.Range(filaEncabezadoCat, 1, ultimaCat, 3);
+                var tablaCategorias = rangoCategorias.CreateTable("TablaCategorias");
+                tablaCategorias.ShowTotalsRow = true;
+                tablaCategorias.Field("CATEGORÍA").TotalsRowLabel     = "Total";
+                tablaCategorias.Field("SISTEMA").TotalsRowFunction    = XLTotalsRowFunction.Sum;
+                tablaCategorias.Field("INVENTARIO").TotalsRowFunction = XLTotalsRowFunction.Sum;
+
                 ws.Cell(ultimaCat, 12).Value = "FALTA";
                 ws.Cell(ultimaCat, 13).Value = "SOBRA";
                 ws.Cell(ultimaCat, 14).Value = "TOTAL";
             }
-
-            int filaTotalCat = filaCat;
-            ws.Cell(filaTotalCat, 1).Value = "TOTAL";
-            if (ultimaCat >= primeraCat)
+            else
             {
-                ws.Cell(filaTotalCat, 2).FormulaA1 = $"=SUM(B{primeraCat}:B{ultimaCat})";
-                ws.Cell(filaTotalCat, 3).FormulaA1 = $"=SUM(C{primeraCat}:C{ultimaCat})";
+                ws.Cell(filaTotalCat, 1).Value = "TOTAL";
             }
+
             ws.Cell(filaTotalCat, 12).FormulaA1 = "=SUMIF(Tabla1[diferencia],\"FALTA\",Tabla1[cantidad])";
             ws.Cell(filaTotalCat, 13).FormulaA1 = "=SUMIF(Tabla1[diferencia],\"SOBRA\",Tabla1[cantidad])";
             ws.Cell(filaTotalCat, 14).FormulaA1 = $"=M{filaTotalCat}-L{filaTotalCat}";
