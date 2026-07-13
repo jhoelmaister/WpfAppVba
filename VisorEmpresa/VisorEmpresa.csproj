@@ -38,67 +38,35 @@
     <PackageReference Include="Velopack" Version="1.2.0" />
   </ItemGroup>
 
-  <!-- ══ Código compartido con la app principal por ARCHIVOS VINCULADOS ══
-       Una sola fuente de verdad, sin copias. La consola original
-       (ConsolaMovimientos.xaml/.cs) NO se vincula a propósito: el visor define
-       su propia clase SistemaGestion.ConsolaMovimientos (ConsolaVisor.xaml) con la
-       misma API de pestañas, y así los formularios vinculados funcionan sin
-       tocar la app principal. -->
+  <!-- ══ Código 100% independiente de la app principal ══
+       Ya NO hay archivos vinculados (<Compile Link=.../>): la capa de datos
+       (DataConsulta/SqlData/AppLoader/AppState/StockCalculator), la conexión/
+       configuración (DatabaseConnection/ConexionConfig/EsquemaValidator/
+       ConexionEstado/SqlRetry/PasswordHasher), las utilidades (WindowHelper/
+       WindowTheming/GridFocusHelper/FuncionesComunes), las herramientas de
+       administración (CodigoRegenerator/PedidosPrecioActualizador/
+       AppsheetsSync) y las ventanas de configuración de servidores
+       (ConfiguracionDbWindow/ConexionServidoresWindow) tienen acá su propia
+       copia física (namespace VisorEmpresa/VisorEmpresa.Data), recogida
+       automáticamente por el globbing implícito del SDK — editar cualquiera
+       de estos archivos ya NO afecta a SistemaGestion, y viceversa. Es la
+       misma independencia física que ya tenían los módulos de catálogo
+       (Precios, Empresas, Sucursales, Regiones, Usuarios) y los formularios
+       de Pedidos/Traspasos/Correcciones/Facturas.
 
-  <!-- Conexión, configuración y utilidades base -->
-  <ItemGroup>
-    <Compile Include="..\SistemaGestion\DatabaseConnection.cs" Link="Compartido\DatabaseConnection.cs" />
-    <Compile Include="..\SistemaGestion\ConexionConfig.cs" Link="Compartido\ConexionConfig.cs" />
-    <Compile Include="..\SistemaGestion\EsquemaValidator.cs" Link="Compartido\EsquemaValidator.cs" />
-    <Compile Include="..\SistemaGestion\ConexionEstado.cs" Link="Compartido\ConexionEstado.cs" />
-    <Compile Include="..\SistemaGestion\PasswordHasher.cs" Link="Compartido\PasswordHasher.cs" />
-    <Compile Include="..\SistemaGestion\WindowTheming.cs" Link="Compartido\WindowTheming.cs" />
-    <Compile Include="..\SistemaGestion\WindowHelper.cs" Link="Compartido\WindowHelper.cs" />
-    <Compile Include="..\SistemaGestion\GridFocusHelper.cs" Link="Compartido\GridFocusHelper.cs" />
-    <Compile Include="..\SistemaGestion\FuncionesComunes.cs" Link="Compartido\FuncionesComunes.cs" />
-    <Compile Include="..\SistemaGestion\SqlRetry.cs" Link="Compartido\SqlRetry.cs" />
-  </ItemGroup>
+       Único punto en común entre las dos apps: el archivo de conexión cifrado
+       en disco (%AppData%\SistemaGestion\conexion.dat, ver ConexionConfig.cs)
+       sigue usando ese nombre de carpeta a propósito, para que un servidor ya
+       configurado en una app aparezca también en la otra — es una convención
+       de almacenamiento compartida, no código compartido.
 
-  <!-- Capa de datos (cachés por empresa para los módulos de edición) -->
-  <ItemGroup>
-    <Compile Include="..\SistemaGestion\SqlData.cs" Link="Compartido\SqlData.cs" />
-    <Compile Include="..\SistemaGestion\DataConsulta.cs" Link="Compartido\DataConsulta.cs" />
-    <Compile Include="..\SistemaGestion\AppLoader.cs" Link="Compartido\AppLoader.cs" />
-    <Compile Include="..\SistemaGestion\AppState.cs" Link="Compartido\AppState.cs" />
-    <Compile Include="..\SistemaGestion\StockCalculator.cs" Link="Compartido\StockCalculator.cs" />
-  </ItemGroup>
-
-  <!-- Herramientas de administración (mismos botones de Configuracion.xaml de la
-       app principal, duplicados en la top bar del visor — ver ConsolaVisor). -->
-  <ItemGroup>
-    <Compile Include="..\SistemaGestion\CodigoRegenerator.cs" Link="Compartido\CodigoRegenerator.cs" />
-    <Compile Include="..\SistemaGestion\PedidosPrecioActualizador.cs" Link="Compartido\PedidosPrecioActualizador.cs" />
-    <Compile Include="..\SistemaGestion\AppsheetsSync.cs" Link="Compartido\AppsheetsSync.cs" />
-  </ItemGroup>
-
-  <!-- Ventanas de configuración de servidores (misma conexion.dat cifrada) -->
-  <ItemGroup>
-    <Compile Include="..\SistemaGestion\ConfiguracionDbWindow.xaml.cs" Link="Compartido\ConfiguracionDbWindow.xaml.cs" />
-    <Compile Include="..\SistemaGestion\ConexionServidoresWindow.xaml.cs" Link="Compartido\ConexionServidoresWindow.xaml.cs" />
-    <Page Include="..\SistemaGestion\ConfiguracionDbWindow.xaml" Link="Compartido\ConfiguracionDbWindow.xaml" />
-    <Page Include="..\SistemaGestion\ConexionServidoresWindow.xaml" Link="Compartido\ConexionServidoresWindow.xaml" />
-  </ItemGroup>
-
-  <!-- Los módulos de catálogo/gestión (Precios, Empresas, Sucursales, Regiones,
-       Usuarios) y los formularios de detalle de Pedidos/Traspasos/Correcciones/
-       Facturas ya NO están vinculados: cada uno tiene su propia copia física en
-       este proyecto (VisorEmpresa\PreciosGeneral.xaml[.cs], etc.), siempre de
-       gestión completa (catálogos) o solo lectura (documentos, sin el parámetro
-       soloLectura — ya no hace falta, es el único modo que existe en la copia
-       del visor). Se recogen automáticamente por el globbing implícito del SDK.
-       SistemaGestion conserva su propia copia, físicamente separada, de
-       SucursalesGeneral (reducida a un selector de sucursal para Traspasos) —
-       no hay vínculo ni fuente compartida con la de acá. -->
-
-  <!-- Temas (misma identidad visual que la app principal) -->
-  <ItemGroup>
-    <Page Include="..\SistemaGestion\Themes\LightTheme.xaml" Link="Themes\LightTheme.xaml" />
-    <Page Include="..\SistemaGestion\Themes\DarkTheme.xaml" Link="Themes\DarkTheme.xaml" />
-  </ItemGroup>
+       La consola original (ConsolaMovimientos.xaml/.cs) sigue sin vincularse
+       a propósito: el visor define su propia clase SistemaGestion.
+       ConsolaMovimientos (ConsolaVisor.xaml, namespace SistemaGestion nada
+       más por ese nombre de clase) con la misma API de pestañas, para que los
+       formularios de Pedidos/Traspasos/Correcciones/Facturas/Precios/etc.
+       (que hacen `Window.GetWindow(this) as ConsolaMovimientos`) funcionen
+       sin cambios. Esto es independiente del punto anterior: ninguno de esos
+       formularios comparte archivo con SistemaGestion, solo imitan el nombre. -->
 
 </Project>

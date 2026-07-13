@@ -4,7 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using SistemaGestion;
-using SistemaGestion.Data;
+using VisorEmpresa.Data;
 
 namespace VisorEmpresa
 {

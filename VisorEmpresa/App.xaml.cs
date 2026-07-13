@@ -10,8 +10,9 @@ namespace VisorEmpresa
     /// <summary>
     /// Visor Empresa: aplicación de SOLO LECTURA que muestra los totales de la
     /// empresa completa (todas las sucursales, sin filtro por sucursal activa).
-    /// Extensión de la app principal SistemaGestion; comparte conexión, temas y
-    /// ventanas de configuración por archivos vinculados.
+    /// Código 100% independiente de SistemaGestion (sin archivos vinculados,
+    /// ver el comentario en VisorEmpresa.csproj); solo comparte con esa app la
+    /// convención de dónde vive en disco el archivo de conexión cifrado.
     /// </summary>
     public partial class App : Application
     {
@@ -30,7 +31,7 @@ namespace VisorEmpresa
                     if (s is Window w)
                     {
                         w.Icon = appIcon;
-                        SistemaGestion.WindowTheming.AplicarModoOscuro(w, TemaVisor.EsOscuroActivo);
+                        VisorEmpresa.WindowTheming.AplicarModoOscuro(w, TemaVisor.EsOscuroActivo);
                     }
                 }));
 

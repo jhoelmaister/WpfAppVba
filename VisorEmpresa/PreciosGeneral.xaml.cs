@@ -12,7 +12,7 @@ using PdfSharp.Drawing;
 using PdfSharp.Fonts;
 using PdfSharp.Pdf;
 using SistemaGestion;
-using SistemaGestion.Data;
+using VisorEmpresa.Data;
 
 namespace VisorEmpresa
 {

@@ -5,8 +5,8 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using SistemaGestion;        // WindowHelper, ConfiguracionDbWindow, ConexionServidoresWindow
-using SistemaGestion.Data;   // DatabaseConnection, ConexionConfig
+using SistemaGestion;        // ConsolaMovimientos (nombre de clase de ConsolaVisor.xaml.cs)
+using VisorEmpresa.Data;   // DatabaseConnection, ConexionConfig
 
 namespace VisorEmpresa
 {

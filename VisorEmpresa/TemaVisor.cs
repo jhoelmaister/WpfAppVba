@@ -54,7 +54,7 @@ namespace VisorEmpresa
             VisorState.TemaActivo = normalizado;
 
             // Actualizar barra de título de todas las ventanas abiertas
-            SistemaGestion.WindowTheming.AplicarModoOscuroATodas(normalizado == TemaOscuro);
+            VisorEmpresa.WindowTheming.AplicarModoOscuroATodas(normalizado == TemaOscuro);
 
             // Guardar como último tema usado (para arrancar la próxima sesión con el mismo)
             GuardarTemaLocal(normalizado);

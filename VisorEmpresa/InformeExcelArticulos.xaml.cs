@@ -6,7 +6,7 @@ using System.Windows;
 using ClosedXML.Excel;
 using Microsoft.Win32;
 using SistemaGestion;
-using SistemaGestion.Data;
+using VisorEmpresa.Data;
 
 namespace VisorEmpresa
 {

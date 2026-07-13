@@ -8,7 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using VisorEmpresa;
-using SistemaGestion.Data;   // AppState, SqlData, CodigoRegenerator, PedidosPrecioActualizador, AppsheetsSync
+using VisorEmpresa.Data;   // AppState, SqlData, CodigoRegenerator, PedidosPrecioActualizador, AppsheetsSync
 
 namespace SistemaGestion
 {

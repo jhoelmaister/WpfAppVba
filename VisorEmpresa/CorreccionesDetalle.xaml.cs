@@ -6,7 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using SistemaGestion;
-using SistemaGestion.Data;
+using VisorEmpresa.Data;
 
 namespace VisorEmpresa
 {

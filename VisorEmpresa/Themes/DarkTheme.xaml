@@ -1,0 +1,44 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ── Fondos ───────────────────────────────────────────────────── -->
+    <SolidColorBrush x:Key="ThemeBgPrincipal"  Color="#1A1D2E"/>
+    <SolidColorBrush x:Key="ThemeBgSurface"    Color="#252A40"/>
+    <SolidColorBrush x:Key="ThemeBgContenido"  Color="#1A1D2E"/>
+    <SolidColorBrush x:Key="ThemeBgReadOnly"   Color="#2D3152"/>
+    <SolidColorBrush x:Key="ThemeInputBg"      Color="#2D3152"/>
+    <SolidColorBrush x:Key="ThemeBgTopBar"     Color="#252A40"/>
+    <SolidColorBrush x:Key="ThemeBgSidebar"    Color="#1A1E2E"/>
+
+    <!-- ── Texto ────────────────────────────────────────────────────── -->
+    <SolidColorBrush x:Key="ThemeTexto"        Color="#E8EAED"/>
+    <SolidColorBrush x:Key="ThemeTextoSec"     Color="#9AA3B8"/>
+    <SolidColorBrush x:Key="ThemeTextoMuted"   Color="#6B7280"/>
+
+    <!-- ── Bordes ───────────────────────────────────────────────────── -->
+    <SolidColorBrush x:Key="ThemeBorde"        Color="#3A3F5C"/>
+    <SolidColorBrush x:Key="ThemeBordeInput"   Color="#3A3F5C"/>
+
+    <!-- ── Botones secundarios ─────────────────────────────────────── -->
+    <SolidColorBrush x:Key="ThemeBtnSecBg"     Color="#2D3152"/>
+    <SolidColorBrush x:Key="ThemeBtnSecFg"     Color="#9AA3B8"/>
+
+    <!-- ── Tabs ─────────────────────────────────────────────────────── -->
+    <SolidColorBrush x:Key="ThemeTabSelBg"     Color="#252A40"/>
+    <SolidColorBrush x:Key="ThemeTabHoverBg"   Color="#2D3152"/>
+    <SolidColorBrush x:Key="ThemeNavActivoBg"  Color="#2A4A7A"/>
+    <SolidColorBrush x:Key="ThemeNavHoverBg"   Color="#2D3152"/>
+    <SolidColorBrush x:Key="ThemeNavActivoFg"  Color="#E8EAED"/>
+
+    <!-- ── DataGrid ─────────────────────────────────────────────────── -->
+    <SolidColorBrush x:Key="ThemeDataGridBg"      Color="#252A40"/>
+    <SolidColorBrush x:Key="ThemeDataGridAltBg"   Color="#2D3152"/>
+    <SolidColorBrush x:Key="ThemeFilaSeleccionada" Color="#1B3A2B"/>
+    <SolidColorBrush x:Key="ThemeFilaSelGrid"      Color="#33426B"/>
+
+    <!-- ── ScrollBar ────────────────────────────────────────────────── -->
+    <SolidColorBrush x:Key="ThemeScrollBg"          Color="#252A3A"/>
+    <SolidColorBrush x:Key="ThemeScrollThumb"       Color="#4A5070"/>
+    <SolidColorBrush x:Key="ThemeScrollThumbHover"  Color="#6A75A0"/>
+
+</ResourceDictionary>

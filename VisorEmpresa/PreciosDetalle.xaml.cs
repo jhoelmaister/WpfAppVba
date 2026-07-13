@@ -8,7 +8,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.Win32;
 using SistemaGestion;
-using SistemaGestion.Data;
+using VisorEmpresa.Data;
 
 namespace VisorEmpresa
 {
