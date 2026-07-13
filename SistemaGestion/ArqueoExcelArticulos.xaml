@@ -1,0 +1,124 @@
+<Window x:Class="SistemaGestion.ArqueoExcelArticulos"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Generar Arqueo Excel — Artículos"
+        Width="420" Height="310"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        Background="{DynamicResource ThemeBgPrincipal}">
+
+    <Window.Resources>
+
+        <Style x:Key="ModernInput" TargetType="TextBox">
+            <Setter Property="Height"                   Value="30"/>
+            <Setter Property="FontSize"                 Value="12"/>
+            <Setter Property="Padding"                  Value="8,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush"              Value="{DynamicResource ThemeBordeInput}"/>
+            <Setter Property="BorderThickness"          Value="1"/>
+            <Setter Property="Background"               Value="{DynamicResource ThemeInputBg}"/>
+            <Setter Property="Foreground"               Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="BtnPrimario" TargetType="Button">
+            <Setter Property="Height"          Value="32"/>
+            <Setter Property="FontSize"        Value="13"/>
+            <Setter Property="Background"      Value="#1A73E8"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Nombre del arqueo -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="Nombre del arqueo:" FontSize="12" Margin="0,0,0,5"
+                       Foreground="{DynamicResource ThemeTextoSec}"/>
+            <TextBox x:Name="TxtNombre" Style="{StaticResource ModernInput}"
+                     TextChanged="TxtNombre_TextChanged"/>
+        </StackPanel>
+
+        <!-- Fecha y hora de corte -->
+        <Grid Grid.Row="1" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="120"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Fecha de corte (dd/mm/aaaa):" FontSize="12" Margin="0,0,0,5"
+                           Foreground="{DynamicResource ThemeTextoSec}"/>
+                <TextBox x:Name="TxtFecha" Style="{StaticResource ModernInput}"
+                         TextChanged="TxtFechaHora_TextChanged"
+                         ToolTip="Ingrese la fecha de corte en formato dd/mm/aaaa"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="Hora (HH:mm:ss):" FontSize="12" Margin="0,0,0,5"
+                           Foreground="{DynamicResource ThemeTextoSec}"/>
+                <TextBox x:Name="TxtHora" Style="{StaticResource ModernInput}"
+                         TextChanged="TxtFechaHora_TextChanged"
+                         ToolTip="Hora de corte en formato HH:mm:ss"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Vista previa + Botón crear -->
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock x:Name="TxtNombrePreview" Grid.Row="0"
+                       FontSize="10" Foreground="{DynamicResource ThemeTextoSec}"
+                       Margin="0,0,0,10" TextWrapping="Wrap"/>
+
+            <Button Grid.Row="1" x:Name="BtnCrearArqueo" Content="Crear Arqueo"
+                    Style="{StaticResource BtnPrimario}"
+                    Click="BtnCrearArqueo_Click"/>
+        </Grid>
+    </Grid>
+</Window>

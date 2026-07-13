@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using Microsoft.Win32;
 using SistemaGestion.Data;
 
 namespace SistemaGestion
@@ -673,194 +671,13 @@ namespace SistemaGestion
         }
 
         // ─── Arqueo Excel: catálogo completo listo para conteo físico ─────────
-        // Columna "sistema" = stock actual (StockCalculator, igual que Informe Excel);
-        // "revicion"/"hoja"/"referecia"/"observacion" quedan en blanco para completar
-        // a mano durante el conteo. El resto de columnas son fórmulas de la tabla
-        // "Tabla1" que comparan sistema vs. lo contado y arman los totales.
         private void BtnArqueoExcel_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new SaveFileDialog
+            var dlg = new ArqueoExcelArticulos
             {
-                Title            = "Guardar arqueo Excel",
-                FileName         = $"{DateTime.Now:yyyyMMdd HHmmss} arqueo.xlsx",
-                DefaultExt       = ".xlsx",
-                Filter           = "Excel (*.xlsx)|*.xlsx",
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+                Owner = Window.GetWindow(this)
             };
-            if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
-
-            try
-            {
-                Mouse.OverrideCursor = Cursors.Wait;
-                GenerarArqueoExcel(dlg.FileName);
-                Process.Start(new ProcessStartInfo(dlg.FileName) { UseShellExecute = true });
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error al generar el arqueo:\n{ex.Message}", "Consola",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                Mouse.OverrideCursor = null;
-            }
-        }
-
-        private void GenerarArqueoExcel(string filePath)
-        {
-            using var wb = new ClosedXML.Excel.XLWorkbook();
-            var ws = wb.Worksheets.Add("Arqueo");
-
-            // ── Resumen (fecha / informe / estado / no revisados / errores) ────
-            ws.Cell(1, 1).Value  = "FECHA";
-            ws.Cell(1, 2).Value  = "INFORME";
-            ws.Cell(1, 3).Value  = "ESTADO ";
-            ws.Cell(1, 13).Value = "NO REVISADOS";
-            ws.Cell(1, 14).Value = "ERRORES";
-
-            string empresaDesc  = Sql.EmpresasObj.ObtenerItem("descripcion",  AppState.EmpresaActiva)?.ToString() ?? "";
-            string sucursalDesc = Sql.SucursalesObj.ObtenerItem("descripcion", AppState.SucursalActiva)?.ToString() ?? "";
-            string informe = string.IsNullOrEmpty(sucursalDesc) ? empresaDesc : $"{empresaDesc} - {sucursalDesc}";
-
-            ws.Cell(2, 1).Value               = DateTime.Now.Date;
-            ws.Cell(2, 1).Style.DateFormat.Format = "dd/mm/yyyy";
-            ws.Cell(2, 2).Value                = informe;
-            ws.Cell(2, 3).FormulaA1            = "=IF(AND(M2=0,N2=0),\"COMPLETADO\",\"PENDIENTE\")";
-            ws.Cell(2, 13).FormulaA1           = "=COUNTIFS(Tabla1[estado],\"NO REVISADO\")";
-            ws.Cell(2, 14).FormulaA1           = "=COUNTIFS(Tabla1[estado],\"ERROR\")";
-
-            // ── Totales por categoría ───────────────────────────────────────────
-            var categorias = new List<(string Id, string Desc)>();
-            int ufCat = Sql.CategoriasObj.ContarFilas;
-            for (int i = 1; i <= ufCat; i++)
-            {
-                var idObj = Sql.CategoriasObj.Mover(i);
-                if (idObj == null) continue;
-                string id = idObj.ToString()!;
-                categorias.Add((id, Sql.CategoriasObj.ObtenerItem("descripcion", id)?.ToString() ?? ""));
-            }
-
-            const int filaEncabezadoCat = 4;
-            ws.Cell(filaEncabezadoCat, 1).Value = "CATEGORÍA";
-            ws.Cell(filaEncabezadoCat, 2).Value = "SISTEMA";
-            ws.Cell(filaEncabezadoCat, 3).Value = "INVENTARIO";
-
-            int primeraCat = filaEncabezadoCat + 1;
-            int filaCat    = primeraCat;
-            foreach (var cat in categorias)
-            {
-                ws.Cell(filaCat, 1).Value    = cat.Desc;
-                ws.Cell(filaCat, 2).FormulaA1 = $"=SUMIFS(Tabla1[sistema],Tabla1[categoria],A{filaCat})";
-                ws.Cell(filaCat, 3).FormulaA1 = $"=SUMIFS(Tabla1[inventario],Tabla1[categoria],A{filaCat})";
-                filaCat++;
-            }
-            int ultimaCat = filaCat - 1;
-
-            if (ultimaCat >= primeraCat)
-            {
-                ws.Cell(ultimaCat, 12).Value = "FALTA";
-                ws.Cell(ultimaCat, 13).Value = "SOBRA";
-                ws.Cell(ultimaCat, 14).Value = "TOTAL";
-            }
-
-            int filaTotalCat = filaCat;
-            ws.Cell(filaTotalCat, 1).Value = "TOTAL";
-            if (ultimaCat >= primeraCat)
-            {
-                ws.Cell(filaTotalCat, 2).FormulaA1 = $"=SUM(B{primeraCat}:B{ultimaCat})";
-                ws.Cell(filaTotalCat, 3).FormulaA1 = $"=SUM(C{primeraCat}:C{ultimaCat})";
-            }
-            ws.Cell(filaTotalCat, 12).FormulaA1 = "=SUMIF(Tabla1[diferencia],\"FALTA\",Tabla1[cantidad])";
-            ws.Cell(filaTotalCat, 13).FormulaA1 = "=SUMIF(Tabla1[diferencia],\"SOBRA\",Tabla1[cantidad])";
-            ws.Cell(filaTotalCat, 14).FormulaA1 = $"=M{filaTotalCat}-L{filaTotalCat}";
-
-            // ── Tabla de artículos ──────────────────────────────────────────────
-            int filaHeaders = filaTotalCat + 2;
-            string[] encabezados =
-            {
-                "id", "articulo", "categoria", "familia", "descripcion", "sistema",
-                "revicion", "inventario", "estado", "hoja", "referecia", "observacion",
-                "diferencia", "cantidad"
-            };
-            for (int c = 0; c < encabezados.Length; c++)
-                ws.Cell(filaHeaders, c + 1).Value = encabezados[c];
-
-            // Mismo criterio de recolección/orden que Informe Excel (Producto → Familia → Id).
-            int uf = Sql.ArticulosObj.ContarFilas;
-            var datos = new List<(string Id, string Codigo, string ProdDesc, string FamDesc, string CatDesc, string DescCompleta, double Stock)>();
-            for (int i = 1; i <= uf; i++)
-            {
-                var idObj = Sql.ArticulosObj.Mover(i);
-                if (idObj == null) continue;
-                string id = idObj.ToString()!;
-
-                string codigo = Sql.ArticulosObj.ObtenerItem("codigo",      id)?.ToString() ?? "";
-                string desc   = Sql.ArticulosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
-                string modelo = Sql.ArticulosObj.ObtenerItem("modelo",      id)?.ToString() ?? "";
-                string famId  = Sql.ArticulosObj.ObtenerItem("familia",     id)?.ToString() ?? "";
-                string catId  = Sql.ArticulosObj.ObtenerItem("Categoria",   id)?.ToString() ?? "";
-
-                string famDesc  = Sql.FamiliasObj.ObtenerItem("descripcion",   famId)?.ToString() ?? "";
-                string prodId   = Sql.FamiliasObj.ObtenerItem("producto",      famId)?.ToString() ?? "";
-                string prodDesc = Sql.ProductosObj.ObtenerItem("descripcion",  prodId)?.ToString() ?? "";
-                string catDesc  = Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "";
-
-                string descCompleta = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
-                double stock         = StockCalculator.ContarStock(id, DateTime.Now);
-
-                datos.Add((id, codigo, prodDesc, famDesc, catDesc, descCompleta, stock));
-            }
-
-            datos.Sort((a, b) =>
-            {
-                int cmp = string.Compare(a.ProdDesc, b.ProdDesc, StringComparison.OrdinalIgnoreCase);
-                if (cmp != 0) return cmp;
-                cmp = string.Compare(a.FamDesc, b.FamDesc, StringComparison.OrdinalIgnoreCase);
-                if (cmp != 0) return cmp;
-                return string.Compare(a.Id, b.Id, StringComparison.OrdinalIgnoreCase);
-            });
-
-            int filaDatosInicio = filaHeaders + 1;
-            int filaActual = filaDatosInicio;
-            int n = 0;
-            foreach (var item in datos)
-            {
-                n++;
-                ws.Cell(filaActual, 1).Value = item.Codigo;      // id
-                ws.Cell(filaActual, 2).Value = n;                // articulo (índice secuencial)
-                ws.Cell(filaActual, 3).Value = item.CatDesc;     // categoria
-                ws.Cell(filaActual, 4).Value = item.FamDesc;     // familia
-                ws.Cell(filaActual, 5).Value = item.DescCompleta; // descripcion
-                ws.Cell(filaActual, 6).Value = item.Stock;       // sistema
-                // G (revicion), J (hoja), K (referecia), L (observacion): en blanco a
-                // propósito — los completa quien hace el conteo físico.
-                ws.Cell(filaActual, 8).FormulaA1 =
-                    $"=IF(AND(Tabla1[[#This Row],[sistema]]=\"\",Tabla1[[#This Row],[revicion]]=\"\"),\"\"," +
-                    $"IF(AND(Tabla1[[#This Row],[sistema]]=0,Tabla1[[#This Row],[revicion]]=\"\"),0," +
-                    $"IF(G{filaActual}=\"X\",F{filaActual},IF(G{filaActual}<>\"X\",G{filaActual}))))";
-                ws.Cell(filaActual, 9).FormulaA1 =
-                    $"=IF(AND(G{filaActual}=\"\",F{filaActual}=\"\"),\"\"," +
-                    $"IF(AND(G{filaActual}=\"\",F{filaActual}=0),\"IGUALA\"," +
-                    $"IF(AND(G{filaActual}=\"\",F{filaActual}<>\"\"),\"NO REVISADO\"," +
-                    $"IF(AND(G{filaActual}=\"X\",F{filaActual}<>\"\"),\"IGUALA\",\"ERROR\"))))";
-                ws.Cell(filaActual, 13).FormulaA1 =
-                    "=IF(OR(Tabla1[[#This Row],[estado]]=\"\",Tabla1[[#This Row],[estado]]=\"NO REVISADO\"),\"\"," +
-                    "IF(Tabla1[[#This Row],[inventario]]<Tabla1[[#This Row],[sistema]],\"FALTA\"," +
-                    "IF(Tabla1[[#This Row],[inventario]]>Tabla1[[#This Row],[sistema]],\"SOBRA\",\"\")))";
-                ws.Cell(filaActual, 14).FormulaA1 =
-                    "=IF(Tabla1[[#This Row],[diferencia]]<>\"\",ABS(Tabla1[[#This Row],[sistema]]-Tabla1[[#This Row],[inventario]]),\"\")";
-                filaActual++;
-            }
-            int filaDatosFin = filaActual - 1;
-
-            if (filaDatosFin >= filaDatosInicio)
-            {
-                var rango = ws.Range(filaHeaders, 1, filaDatosFin, encabezados.Length);
-                rango.CreateTable("Tabla1");
-            }
-
-            ws.Columns().AdjustToContents();
-            wb.SaveAs(filePath);
+            dlg.ShowDialog();
         }
 
         private void BtnExportar_Click(object sender, RoutedEventArgs e)
