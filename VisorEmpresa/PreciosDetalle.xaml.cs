@@ -548,9 +548,10 @@ namespace VisorEmpresa
         }
 
         // Lee Código (col. 1) y Precio (col. 5); Producto/Familia/Descripción (columnas
-        // 2-4) son solo referencia visual y se ignoran. Filas sin código, o con precio en
-        // blanco o en 0 (valor de la plantilla sin completar), se saltan sin error — permite
-        // dejar artículos sin cotizar sin pisar a 0 un precio ya existente al editar.
+        // 2-4) son solo referencia visual y se ignoran. Reemplaza el precio de todo
+        // artículo que tenga un valor numérico en el Excel, incluido 0 (para poder
+        // dejarlo explícitamente en 0). Solo se saltan filas sin código o con la celda
+        // de precio realmente en blanco.
         private (int Importados, List<string> NoEncontrados) ImportarPreciosDesdeExcel(string filePath)
         {
             using var wb = new ClosedXML.Excel.XLWorkbook(filePath);
@@ -564,7 +565,7 @@ namespace VisorEmpresa
             while (!ws.Cell(fila, 1).IsEmpty())
             {
                 string codigo     = ws.Cell(fila, 1).GetString().Trim();
-                bool   tienePrecio = ws.Cell(fila, 5).TryGetValue(out double precio) && precio > 0;
+                bool   tienePrecio = ws.Cell(fila, 5).TryGetValue(out double precio);
                 fila++;
 
                 if (string.IsNullOrEmpty(codigo) || !tienePrecio) continue;

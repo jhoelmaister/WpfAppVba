@@ -174,8 +174,8 @@ namespace SistemaGestion
             string sucursalDesc = Sql.SucursalesObj.ObtenerItem("descripcion", AppState.SucursalActiva)?.ToString() ?? "";
             string informe = string.IsNullOrEmpty(sucursalDesc) ? empresaDesc : $"{empresaDesc} - {sucursalDesc}";
 
-            ws.Cell(2, 1).Value                    = fechaCorte.Date;
-            ws.Cell(2, 1).Style.DateFormat.Format   = "dd/mm/yyyy";
+            ws.Cell(2, 1).Value                    = fechaCorte;
+            ws.Cell(2, 1).Style.DateFormat.Format   = "dd/mm/yyyy hh:mm:ss";
             ws.Cell(2, 2).Value                     = informe;
             ws.Cell(2, 3).FormulaA1                 = "=IF(AND(M2=0,N2=0),\"COMPLETADO\",\"PENDIENTE\")";
             ws.Cell(2, 13).FormulaA1                = "=COUNTIFS(Tabla1[estado],\"NO REVISADO\")";
@@ -340,9 +340,9 @@ namespace SistemaGestion
                 tabla.Field("sistema").TotalsRowFunction    = XLTotalsRowFunction.Sum;
                 tabla.Field("inventario").TotalsRowFunction = XLTotalsRowFunction.Sum;
 
-                // ── Formatos condicionales (estado + hoja), igual que la plantilla:
+                // ── Formatos condicionales (solo columna estado), igual que la plantilla:
                 // ERROR en rojo negrita, NO REVISADO con relleno violeta.
-                var rangoEstado = ws.Range(filaDatosInicio, 9, filaDatosFin, 10); // I:J
+                var rangoEstado = ws.Range(filaDatosInicio, 9, filaDatosFin, 9); // solo I (estado)
                 rangoEstado.AddConditionalFormat()
                     .WhenIsTrue($"NOT(ISERROR(SEARCH(\"ERROR\",$I{filaDatosInicio})))")
                     .Font.SetFontColor(XLColor.Red).Font.SetBold();
