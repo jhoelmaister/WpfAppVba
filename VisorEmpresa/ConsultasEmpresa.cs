@@ -610,9 +610,25 @@ namespace VisorEmpresa
 
         private static string FechaLiteral(DateTime dt) => dt.ToString("yyyyMMdd HH:mm:ss");
 
+        // Memoización de las 4 cachés de abajo: al loguear (y al cambiar de
+        // empresa/año) se precargan para TODA la empresa (sucursalId=""), y las
+        // pantallas Pedidos/Traspasos/Correcciones/FacturasGeneral llaman a estos
+        // mismos métodos cada vez que se abren o cambia el año — sin esta
+        // memoización, esa segunda llamada repetiría la consulta SQL con los
+        // mismos parámetros. Con ella, esa segunda llamada es un no-op y la
+        // pantalla filtra por sucursal directamente en memoria (ver CargarMeses/
+        // CargarPedidos de cada una), sin volver a golpear la base de datos.
+        private static (string Empresa, int Anio, string Sucursal)? _pedidosCacheCargada;
+        private static (string Empresa, int Anio, string Origen, string Destino)? _traspasosCacheCargada;
+        private static (string Empresa, int Anio, string Sucursal)? _correccionesCacheCargada;
+        private static (string Empresa, int Anio, string Sucursal)? _facturasCacheCargada;
+
         /// <summary>Puebla Sql.DocumentosPObj + Sql.PedidosObj (una sucursal o toda la empresa).</summary>
         public static void ConectarCachePedidos(string empresa, int anio, string sucursalId)
         {
+            var clave = (empresa, anio, sucursalId);
+            if (_pedidosCacheCargada == clave) return;
+
             var (desde, hasta) = RangoAnio(anio);
             string aper = FechaLiteral(desde);
             string cier = FechaLiteral(hasta);
@@ -639,6 +655,8 @@ namespace VisorEmpresa
                 "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
                 filtroSuc +
                 " ORDER BY vd.documentoP ASC, vd.indice ASC");
+
+            _pedidosCacheCargada = clave;
         }
 
         /// <summary>
@@ -648,6 +666,9 @@ namespace VisorEmpresa
         /// </summary>
         public static void ConectarCacheTraspasos(string empresa, int anio, string origenId = "", string destinoId = "")
         {
+            var clave = (empresa, anio, origenId, destinoId);
+            if (_traspasosCacheCargada == clave) return;
+
             var (desde, hasta) = RangoAnio(anio);
             string aper = FechaLiteral(desde);
             string cier = FechaLiteral(hasta);
@@ -689,11 +710,16 @@ namespace VisorEmpresa
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
                 condLado +
                 "ORDER BY vd.documentoT ASC, vd.indice ASC");
+
+            _traspasosCacheCargada = clave;
         }
 
         /// <summary>Puebla Sql.DocumentosCObj + Sql.CorreccionesObj (una sucursal o toda la empresa).</summary>
         public static void ConectarCacheCorrecciones(string empresa, int anio, string sucursalId)
         {
+            var clave = (empresa, anio, sucursalId);
+            if (_correccionesCacheCargada == clave) return;
+
             var (desde, hasta) = RangoAnio(anio);
             string aper = FechaLiteral(desde);
             string cier = FechaLiteral(hasta);
@@ -720,6 +746,8 @@ namespace VisorEmpresa
                 "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
                 filtroSuc +
                 " ORDER BY vd.documentoC ASC, vd.indice ASC");
+
+            _correccionesCacheCargada = clave;
         }
 
         /// <summary>
@@ -730,6 +758,9 @@ namespace VisorEmpresa
         /// </summary>
         public static void ConectarCacheFacturas(string empresa, int anio, string sucursalId)
         {
+            var clave = (empresa, anio, sucursalId);
+            if (_facturasCacheCargada == clave) return;
+
             var (desde, hasta) = RangoAnio(anio);
             string aper = FechaLiteral(desde);
             string cier = FechaLiteral(hasta);
@@ -756,6 +787,8 @@ namespace VisorEmpresa
                 "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
                 filtroSuc +
                 " ORDER BY vd.documentoF ASC, vd.indice ASC");
+
+            _facturasCacheCargada = clave;
         }
 
         // ─── Helpers ──────────────────────────────────────────────────────────

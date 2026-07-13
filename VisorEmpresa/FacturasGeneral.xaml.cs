@@ -16,7 +16,9 @@ namespace VisorEmpresa
     /// listado, pero de SOLO LECTURA (sin Nueva/Editar/Eliminar) y con un combo
     /// de Sucursal (Todas las sucursales o una puntual) en vez de depender de
     /// AppState.SucursalActiva. La caché (Sql.DocumentosFObj/FacturasObj) se
-    /// puebla vía ConsultasEmpresa.ConectarCacheFacturas.
+    /// puebla vía ConsultasEmpresa.ConectarCacheFacturas para TODA la empresa
+    /// (precalentada al loguear); el combo de Sucursal filtra en memoria, sin
+    /// volver a SQL.
     /// </summary>
     public partial class FacturasGeneral : UserControl
     {
@@ -85,15 +87,20 @@ namespace VisorEmpresa
             await RecargarCacheYVistaAsync();
         }
 
+        // Siempre carga TODA la empresa (sin filtro de sucursal): al loguear ya se
+        // precalienta con esta misma clave (empresa, año) — ver LoginVisorWindow —
+        // así que, salvo la primerísima vez, esto es un no-op (memoización en
+        // ConsultasEmpresa) y solo faltan CargarMeses/CargarFacturas. El combo de
+        // Sucursal ya NO dispara esta recarga (ver Filtro_SelectionChanged):
+        // filtra en memoria sobre los datos de toda la empresa ya cargados.
         private async Task RecargarCacheYVistaAsync()
         {
             string emp  = AppState.EmpresaActiva;
             int    anio = VisorState.AnioActivo;
-            string suc  = _sucursalFiltro;
             try
             {
                 Mouse.OverrideCursor = Cursors.Wait;
-                await Task.Run(() => ConsultasEmpresa.ConectarCacheFacturas(emp, anio, suc));
+                await Task.Run(() => ConsultasEmpresa.ConectarCacheFacturas(emp, anio, ""));
                 CargarMeses();
                 CargarFacturas();
             }
@@ -108,11 +115,16 @@ namespace VisorEmpresa
             }
         }
 
-        private async void Filtro_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        // Cambiar el combo de Sucursal ya NO vuelve a consultar SQL:
+        // Sql.DocumentosFObj ya tiene TODA la empresa cargada, así que solo hace
+        // falta refiltrar en memoria (CargarMeses/CargarFacturas ya consideran
+        // _sucursalFiltro).
+        private void Filtro_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_cargandoFiltros || !_iniciado) return;
             _sucursalFiltro = (CmbSucursal.SelectedItem as Opcion)?.Id ?? "";
-            await RecargarCacheYVistaAsync();
+            CargarMeses();
+            CargarFacturas();
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
@@ -133,6 +145,11 @@ namespace VisorEmpresa
                 var idObj = Sql.DocumentosFObj.Mover(i);
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
+
+                if (!string.IsNullOrEmpty(_sucursalFiltro) &&
+                    Sql.DocumentosFObj.ObtenerItem("sucursal", id)?.ToString() != _sucursalFiltro)
+                    continue;
+
                 var fechaObj = Sql.DocumentosFObj.ObtenerItem("fecha", id);
                 if (fechaObj == null) continue;
                 mesesConDatos.Add(Convert.ToDateTime(fechaObj).Month);
@@ -206,13 +223,17 @@ namespace VisorEmpresa
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
 
-                // Filtrar por tipo de movimiento (la sucursal ya viene filtrada desde SQL:
-                // ver ConsultasEmpresa.ConectarCacheFacturas).
+                // Filtrar por tipo de movimiento
                 string movDoc = (Sql.DocumentosFObj.ObtenerItem("movimiento", id)?.ToString() ?? "venta").ToLower();
                 if (!string.IsNullOrEmpty(filtroTipo) &&
                     !string.Equals(movDoc, filtroTipo, StringComparison.OrdinalIgnoreCase)) continue;
 
-                string suc     = Sql.DocumentosFObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
+                string suc = Sql.DocumentosFObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
+
+                // Filtro por sucursal (Sql.DocumentosFObj trae TODA la empresa: ver
+                // ConsultasEmpresa.ConectarCacheFacturas y RecargarCacheYVistaAsync).
+                if (!string.IsNullOrEmpty(_sucursalFiltro) && suc != _sucursalFiltro) continue;
+
                 string sucDesc = Sql.SucursalesObj.ObtenerItem("descripcion", suc)?.ToString() ?? suc;
 
                 // Filtro por mes (solo en modo "filtros", independiente de TxtBuscar)

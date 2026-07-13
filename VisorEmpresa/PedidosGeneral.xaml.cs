@@ -17,7 +17,8 @@ namespace VisorEmpresa
     /// (sin Nuevo/Editar/Eliminar) y con un combo de Sucursal (Todas las
     /// sucursales o una puntual) en vez de depender de AppState.SucursalActiva.
     /// La caché (Sql.DocumentosPObj/PedidosObj) se puebla vía
-    /// ConsultasEmpresa.ConectarCachePedidos, scoped a la sucursal elegida.
+    /// ConsultasEmpresa.ConectarCachePedidos para TODA la empresa (precalentada
+    /// al loguear); el combo de Sucursal filtra en memoria, sin volver a SQL.
     /// </summary>
     public partial class PedidosGeneral : UserControl
     {
@@ -87,15 +88,20 @@ namespace VisorEmpresa
             await RecargarCacheYVistaAsync();
         }
 
+        // Siempre carga TODA la empresa (sin filtro de sucursal): al loguear ya se
+        // precalienta con esta misma clave (empresa, año) — ver LoginVisorWindow —
+        // así que, salvo la primerísima vez, esto es un no-op (memoización en
+        // ConsultasEmpresa) y solo faltan CargarMeses/CargarPedidos. El combo de
+        // Sucursal ya NO dispara esta recarga (ver Filtro_SelectionChanged):
+        // filtra en memoria sobre los datos de toda la empresa ya cargados.
         private async Task RecargarCacheYVistaAsync()
         {
             string emp  = AppState.EmpresaActiva;
             int    anio = VisorState.AnioActivo;
-            string suc  = _sucursalFiltro;
             try
             {
                 Mouse.OverrideCursor = Cursors.Wait;
-                await Task.Run(() => ConsultasEmpresa.ConectarCachePedidos(emp, anio, suc));
+                await Task.Run(() => ConsultasEmpresa.ConectarCachePedidos(emp, anio, ""));
                 CargarMeses();
                 CargarPedidos();
             }
@@ -110,11 +116,15 @@ namespace VisorEmpresa
             }
         }
 
-        private async void Filtro_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        // Cambiar el combo de Sucursal ya NO vuelve a consultar SQL: Sql.DocumentosPObj
+        // ya tiene TODA la empresa cargada, así que solo hace falta refiltrar en
+        // memoria (CargarMeses/CargarPedidos ya consideran _sucursalFiltro).
+        private void Filtro_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_cargandoFiltros || !_iniciado) return;
             _sucursalFiltro = (CmbSucursal.SelectedItem as Opcion)?.Id ?? "";
-            await RecargarCacheYVistaAsync();
+            CargarMeses();
+            CargarPedidos();
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
@@ -130,7 +140,8 @@ namespace VisorEmpresa
 
             int año = VisorState.AnioActivo;
 
-            // Solo los meses que tienen documentos cargados.
+            // Solo los meses que tienen documentos cargados (de la sucursal filtrada,
+            // o de toda la empresa si _sucursalFiltro está vacío).
             var mesesConDatos = new SortedSet<int>();
             int uf = Sql.DocumentosPObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -138,6 +149,11 @@ namespace VisorEmpresa
                 var idObj = Sql.DocumentosPObj.Mover(i);
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
+
+                if (!string.IsNullOrEmpty(_sucursalFiltro) &&
+                    Sql.DocumentosPObj.ObtenerItem("sucursal", id)?.ToString() != _sucursalFiltro)
+                    continue;
+
                 var fechaObj = Sql.DocumentosPObj.ObtenerItem("fecha", id);
                 if (fechaObj == null) continue;
                 mesesConDatos.Add(Convert.ToDateTime(fechaObj).Month);
@@ -218,13 +234,17 @@ namespace VisorEmpresa
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
 
-                // Filtrar por tipo de movimiento (la sucursal ya viene filtrada desde SQL:
-                // ver ConsultasEmpresa.ConectarCachePedidos).
+                // Filtrar por tipo de movimiento
                 string movDoc = Sql.DocumentosPObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
                 if (!string.IsNullOrEmpty(tipoMov) &&
                     !string.Equals(movDoc, tipoMov, StringComparison.OrdinalIgnoreCase)) continue;
 
-                string sucursal     = Sql.DocumentosPObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
+                string sucursal = Sql.DocumentosPObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
+
+                // Filtro por sucursal (Sql.DocumentosPObj trae TODA la empresa: ver
+                // ConsultasEmpresa.ConectarCachePedidos y RecargarCacheYVistaAsync).
+                if (!string.IsNullOrEmpty(_sucursalFiltro) && sucursal != _sucursalFiltro) continue;
+
                 string sucursalDesc = Sql.SucursalesObj.ObtenerItem("descripcion", sucursal)?.ToString() ?? sucursal;
 
                 // Filtro por mes (solo en modo "filtros", independiente de TxtBuscar)

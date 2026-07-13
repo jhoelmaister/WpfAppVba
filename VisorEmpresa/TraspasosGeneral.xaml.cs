@@ -18,7 +18,8 @@ namespace VisorEmpresa
     /// —Sucursal origen y Sucursal destino— (cada uno "Todas las sucursales" o
     /// una puntual, combinables) en vez de depender de AppState.SucursalActiva.
     /// La caché (Sql.DocumentosTObj/TraspasosObj) se puebla vía
-    /// ConsultasEmpresa.ConectarCacheTraspasos.
+    /// ConsultasEmpresa.ConectarCacheTraspasos para TODA la empresa (precalentada
+    /// al loguear); los combos de Origen/Destino filtran en memoria, sin volver a SQL.
     ///
     /// Diferencias de fondo respecto al original, decididas explícitamente para
     /// el visor (no aplican a la app principal):
@@ -102,16 +103,21 @@ namespace VisorEmpresa
             await RecargarCacheYVistaAsync();
         }
 
+        // Siempre carga TODA la empresa (sin filtro de origen/destino): al loguear
+        // ya se precalienta con esta misma clave (empresa, año) — ver
+        // LoginVisorWindow — así que, salvo la primerísima vez, esto es un no-op
+        // (memoización en ConsultasEmpresa) y solo faltan CargarMeses/CargarTraspasos.
+        // Los combos de Origen/Destino ya NO disparan esta recarga (ver
+        // Filtro_SelectionChanged): filtran en memoria sobre los datos de toda la
+        // empresa ya cargados.
         private async Task RecargarCacheYVistaAsync()
         {
-            string emp     = AppState.EmpresaActiva;
-            int    anio    = VisorState.AnioActivo;
-            string origen  = _origenFiltro;
-            string destino = _destinoFiltro;
+            string emp  = AppState.EmpresaActiva;
+            int    anio = VisorState.AnioActivo;
             try
             {
                 Mouse.OverrideCursor = Cursors.Wait;
-                await Task.Run(() => ConsultasEmpresa.ConectarCacheTraspasos(emp, anio, origen, destino));
+                await Task.Run(() => ConsultasEmpresa.ConectarCacheTraspasos(emp, anio, "", ""));
                 CargarMeses();
                 CargarTraspasos();
             }
@@ -126,12 +132,17 @@ namespace VisorEmpresa
             }
         }
 
-        private async void Filtro_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        // Cambiar los combos de Origen/Destino ya NO vuelve a consultar SQL:
+        // Sql.DocumentosTObj ya tiene TODA la empresa cargada, así que solo hace
+        // falta refiltrar en memoria (CargarMeses/CargarTraspasos ya consideran
+        // _origenFiltro/_destinoFiltro).
+        private void Filtro_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_cargandoFiltros || !_iniciado) return;
             _origenFiltro  = (CmbSucursalOrigen.SelectedItem as Opcion)?.Id ?? "";
             _destinoFiltro = (CmbSucursalDestino.SelectedItem as Opcion)?.Id ?? "";
-            await RecargarCacheYVistaAsync();
+            CargarMeses();
+            CargarTraspasos();
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
@@ -152,6 +163,9 @@ namespace VisorEmpresa
                 var idObj = Sql.DocumentosTObj.Mover(i);
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
+
+                if (!CumpleFiltroOrigenDestino(id)) continue;
+
                 var fechaObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
                 if (fechaObj == null) continue;
                 mesesConDatos.Add(Convert.ToDateTime(fechaObj).Month);
@@ -222,6 +236,10 @@ namespace VisorEmpresa
                 var idObj = Sql.DocumentosTObj.Mover(i);
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
+
+                // Filtro por origen/destino (Sql.DocumentosTObj trae TODA la empresa:
+                // ver ConsultasEmpresa.ConectarCacheTraspasos y RecargarCacheYVistaAsync).
+                if (!CumpleFiltroOrigenDestino(id)) continue;
 
                 string origen  = Sql.DocumentosTObj.ObtenerItem("origen",  id)?.ToString() ?? "";
                 string destino = Sql.DocumentosTObj.ObtenerItem("destino", id)?.ToString() ?? "";
@@ -301,6 +319,25 @@ namespace VisorEmpresa
             string[] meses = { "Enero","Febrero","Marzo","Abril","Mayo","Junio",
                                 "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre" };
             return mes >= 1 && mes <= 12 ? meses[mes - 1] : "";
+        }
+
+        // ─── Filtro de origen/destino en memoria (mismo criterio que el condLado
+        //     que armaba ConsultasEmpresa.ConectarCacheTraspasos por SQL) ───────
+        //     Ambos combos fijados  → el documento debe cumplir los dos.
+        //     Solo uno fijado       → el documento debe cumplir ese lado.
+        //     Ninguno fijado        → toda la empresa, sin filtro.
+        private bool CumpleFiltroOrigenDestino(string documentoT)
+        {
+            bool porOrigen  = !string.IsNullOrEmpty(_origenFiltro);
+            bool porDestino = !string.IsNullOrEmpty(_destinoFiltro);
+            if (!porOrigen && !porDestino) return true;
+
+            string origen  = Sql.DocumentosTObj.ObtenerItem("origen",  documentoT)?.ToString() ?? "";
+            string destino = Sql.DocumentosTObj.ObtenerItem("destino", documentoT)?.ToString() ?? "";
+
+            if (porOrigen && origen != _origenFiltro) return false;
+            if (porDestino && destino != _destinoFiltro) return false;
+            return true;
         }
 
         // ─── Sumar cantidad de artículos del documentoT ───────────────────────

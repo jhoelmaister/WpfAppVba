@@ -143,6 +143,16 @@ namespace SistemaGestion
                     // Precalienta stock + pedidos/traspasos/correcciones del Dashboard
                     // para esta empresa (mismo motivo que en LoginVisorWindow).
                     await Task.Run(() => ConsultasEmpresa.ObtenerStockEmpresa(opciones[0].Id));
+                    // Ídem Pedidos/Traspasos/Correcciones/FacturasGeneral (toda la
+                    // empresa, año activo — ver el mismo comentario en LoginVisorWindow).
+                    int añoPrevio = VisorState.AnioActivo;
+                    await Task.Run(() =>
+                    {
+                        ConsultasEmpresa.ConectarCachePedidos(opciones[0].Id, añoPrevio, "");
+                        ConsultasEmpresa.ConectarCacheTraspasos(opciones[0].Id, añoPrevio, "", "");
+                        ConsultasEmpresa.ConectarCacheCorrecciones(opciones[0].Id, añoPrevio, "");
+                        ConsultasEmpresa.ConectarCacheFacturas(opciones[0].Id, añoPrevio, "");
+                    });
                     ActualizarInfoUsuario();
                     RefrescarPanelesDatos();
                 }
@@ -212,6 +222,21 @@ namespace SistemaGestion
                 await Task.Run(() => ConsultasEmpresa.ObtenerStockEmpresa(nueva));
 
                 await RepoblarAniosTopAsync();
+
+                // Precalienta Pedidos/Traspasos/Correcciones/FacturasGeneral (toda la
+                // empresa, ya con el año correcto para la nueva empresa que acaba de
+                // fijar RepoblarAniosTopAsync). Las 4 pantallas quedan con la misma
+                // clave (empresa, año) al recrearse en RecargarPaneles(), así que su
+                // propia carga inicial es un no-op (ver memoización en ConsultasEmpresa).
+                int añoNuevo = VisorState.AnioActivo;
+                await Task.Run(() =>
+                {
+                    ConsultasEmpresa.ConectarCachePedidos(nueva, añoNuevo, "");
+                    ConsultasEmpresa.ConectarCacheTraspasos(nueva, añoNuevo, "", "");
+                    ConsultasEmpresa.ConectarCacheCorrecciones(nueva, añoNuevo, "");
+                    ConsultasEmpresa.ConectarCacheFacturas(nueva, añoNuevo, "");
+                });
+
                 RecargarPaneles();
                 ActualizarInfoUsuario();
             }

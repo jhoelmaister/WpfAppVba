@@ -16,7 +16,9 @@ namespace VisorEmpresa
     /// de listado, pero de SOLO LECTURA (sin Nueva/Editar/Eliminar) y con un
     /// combo de Sucursal (Todas las sucursales o una puntual) en vez de depender
     /// de AppState.SucursalActiva. La caché (Sql.DocumentosCObj/CorreccionesObj)
-    /// se puebla vía ConsultasEmpresa.ConectarCacheCorrecciones.
+    /// se puebla vía ConsultasEmpresa.ConectarCacheCorrecciones para TODA la
+    /// empresa (precalentada al loguear); el combo de Sucursal filtra en
+    /// memoria, sin volver a SQL.
     /// </summary>
     public partial class CorreccionesGeneral : UserControl
     {
@@ -85,15 +87,20 @@ namespace VisorEmpresa
             await RecargarCacheYVistaAsync();
         }
 
+        // Siempre carga TODA la empresa (sin filtro de sucursal): al loguear ya se
+        // precalienta con esta misma clave (empresa, año) — ver LoginVisorWindow —
+        // así que, salvo la primerísima vez, esto es un no-op (memoización en
+        // ConsultasEmpresa) y solo faltan CargarMeses/CargarCorrecciones. El combo
+        // de Sucursal ya NO dispara esta recarga (ver Filtro_SelectionChanged):
+        // filtra en memoria sobre los datos de toda la empresa ya cargados.
         private async Task RecargarCacheYVistaAsync()
         {
             string emp  = AppState.EmpresaActiva;
             int    anio = VisorState.AnioActivo;
-            string suc  = _sucursalFiltro;
             try
             {
                 Mouse.OverrideCursor = Cursors.Wait;
-                await Task.Run(() => ConsultasEmpresa.ConectarCacheCorrecciones(emp, anio, suc));
+                await Task.Run(() => ConsultasEmpresa.ConectarCacheCorrecciones(emp, anio, ""));
                 CargarMeses();
                 CargarCorrecciones();
             }
@@ -108,11 +115,16 @@ namespace VisorEmpresa
             }
         }
 
-        private async void Filtro_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        // Cambiar el combo de Sucursal ya NO vuelve a consultar SQL:
+        // Sql.DocumentosCObj ya tiene TODA la empresa cargada, así que solo hace
+        // falta refiltrar en memoria (CargarMeses/CargarCorrecciones ya consideran
+        // _sucursalFiltro).
+        private void Filtro_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_cargandoFiltros || !_iniciado) return;
             _sucursalFiltro = (CmbSucursal.SelectedItem as Opcion)?.Id ?? "";
-            await RecargarCacheYVistaAsync();
+            CargarMeses();
+            CargarCorrecciones();
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
@@ -133,6 +145,11 @@ namespace VisorEmpresa
                 var idObj = Sql.DocumentosCObj.Mover(i);
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
+
+                if (!string.IsNullOrEmpty(_sucursalFiltro) &&
+                    Sql.DocumentosCObj.ObtenerItem("sucursal", id)?.ToString() != _sucursalFiltro)
+                    continue;
+
                 var fechaObj = Sql.DocumentosCObj.ObtenerItem("fecha", id);
                 if (fechaObj == null) continue;
                 mesesConDatos.Add(Convert.ToDateTime(fechaObj).Month);
@@ -204,8 +221,12 @@ namespace VisorEmpresa
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
 
-                // La sucursal ya viene filtrada desde SQL (ConsultasEmpresa.ConectarCacheCorrecciones).
-                string suc     = Sql.DocumentosCObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
+                string suc = Sql.DocumentosCObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
+
+                // Filtro por sucursal (Sql.DocumentosCObj trae TODA la empresa: ver
+                // ConsultasEmpresa.ConectarCacheCorrecciones y RecargarCacheYVistaAsync).
+                if (!string.IsNullOrEmpty(_sucursalFiltro) && suc != _sucursalFiltro) continue;
+
                 string sucDesc = Sql.SucursalesObj.ObtenerItem("descripcion", suc)?.ToString() ?? suc;
 
                 // Filtrar por tipo de movimiento (ingreso / egreso)
