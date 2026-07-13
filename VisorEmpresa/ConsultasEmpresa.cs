@@ -162,16 +162,26 @@ namespace VisorEmpresa
             return anios;
         }
 
-        /// <summary>Sucursales activas de la empresa (para el combo de filtro).</summary>
+        /// <summary>
+        /// Sucursales activas de la empresa (para el combo de filtro). Lee de
+        /// Sql.SucursalesObj — el catálogo que AppLoader.ConectarProductos ya
+        /// carga al loguear (mismo filtro exacto: estadof='normal' AND empresa=X)
+        /// — en vez de repetir la consulta en vivo. Sin esto, cada pantalla que la
+        /// llama en su primer Loaded (Pedidos/Traspasos/Correcciones/
+        /// FacturasGeneral, Articulos, Dashboard) disparaba su propio viaje a SQL
+        /// por separado, aunque las 6 pidieran la misma lista.
+        /// </summary>
         public static List<(string Id, string Descripcion)> CargarSucursalesEmpresa(string empresa)
         {
             var lista = new List<(string, string)>();
-            var tabla = EjecutarConsulta(
-                "SELECT id, descripcion FROM sucursales " +
-                "WHERE estadof = 'normal' AND empresa = @emp ORDER BY descripcion ASC",
-                ("@emp", EmpresaSegura(empresa)));
-            foreach (DataRow fila in tabla.Rows)
-                lista.Add((Texto(fila["id"]), Texto(fila["descripcion"])));
+            int uf = Sql.SucursalesObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.SucursalesObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                lista.Add((id, Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? ""));
+            }
             return lista;
         }
 
