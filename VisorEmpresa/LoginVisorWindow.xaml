@@ -130,7 +130,42 @@
                            HorizontalAlignment="Center" TextWrapping="Wrap"
                            TextAlignment="Center" Margin="0,0,0,22"/>
 
-                <!-- ── Formulario de login ─────────────────────────────────── -->
+                <!-- ── Actualización obligatoria (Velopack) ───────────────────── -->
+                <!-- Mientras haya una versión nueva pendiente, reemplaza el formulario
+                     de login: el usuario debe actualizar antes de poder ingresar. -->
+                <StackPanel x:Name="BloqueActualizar" Visibility="Collapsed">
+                    <TextBlock Text="⚠ Actualización requerida" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeTexto}"
+                               HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                    <TextBlock x:Name="LblVersionNueva" FontSize="11" TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               Foreground="{DynamicResource ThemeTextoSec}"
+                               HorizontalAlignment="Center" Margin="0,0,0,16"/>
+
+                    <!-- Estado A: hay versión nueva (el usuario decide cuándo) -->
+                    <Button x:Name="BtnActualizar" Content="🔄  Actualizar ahora"
+                            Style="{StaticResource BtnPrimario}" Background="#6C4AE3"
+                            Click="BtnActualizar_Click"/>
+
+                    <!-- Estado B: descargando en segundo plano -->
+                    <StackPanel x:Name="PanelDescarga" Visibility="Collapsed">
+                        <TextBlock x:Name="LblDescarga" Text="Descargando…" FontSize="11"
+                                   Foreground="{DynamicResource ThemeTextoSec}"
+                                   HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                        <ProgressBar x:Name="BarraDescarga" Height="8"
+                                     Minimum="0" Maximum="100" Value="0"
+                                     Background="{DynamicResource ThemeInputBg}"
+                                     Foreground="#6C4AE3" BorderThickness="0"/>
+                    </StackPanel>
+
+                    <!-- Estado C: lista para reiniciar (el usuario decide cuándo) -->
+                    <Button x:Name="BtnReiniciar" Visibility="Collapsed"
+                            Content="✅  Reiniciar para actualizar"
+                            Style="{StaticResource BtnPrimario}" Background="#2E7D32"
+                            Click="BtnReiniciar_Click"/>
+                </StackPanel>
+
+                <!-- ── Formulario de login (oculto mientras haya actualización pendiente) ── -->
                 <StackPanel x:Name="PanelLogin">
 
                     <!-- Usuario -->

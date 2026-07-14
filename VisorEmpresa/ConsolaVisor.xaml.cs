@@ -31,6 +31,9 @@ namespace SistemaGestion
     {
         private Button? _btnActivo;
 
+        // Auto-actualización (Velopack). Flujo manual: aviso → descarga → reiniciar.
+        private readonly ActualizadorApp _actualizador = new();
+
         // Filtros globales de la top bar (empresa / año).
         private bool _iniciadoFiltros;
         private bool _cargandoFiltros;
@@ -105,6 +108,10 @@ namespace SistemaGestion
             ActualizarLabelConexion(ConexionEstado.EnLinea);
             ConexionEstado.Cambio += OnConexionCambio;
             ConexionEstado.Iniciar(Dispatcher);
+
+            // Buscar actualizaciones en segundo plano (no bloquea el arranque).
+            // Si hay una nueva versión, aparece el botón "🔄 Actualizar" en la top bar.
+            _ = BuscarActualizacionesAsync();
 
             // Filtros globales (empresa/año) de la top bar. Los paneles cargan solos
             // con los valores por defecto (empresa del login + año actual), así que
@@ -308,6 +315,67 @@ namespace SistemaGestion
             Title = v == null
                 ? "Visor Empresa"
                 : $"Visor Empresa  v{v.Major}.{v.Minor}.{v.Build}";
+        }
+
+        // ─── Auto-actualización (Velopack) ────────────────────────────────────
+        private async Task BuscarActualizacionesAsync()
+        {
+            try
+            {
+                if (await _actualizador.HayActualizacionAsync())
+                {
+                    BloqueActualizar.Visibility = Visibility.Visible;
+                    BtnActualizar.Visibility    = Visibility.Visible;
+                    BtnActualizar.ToolTip       = $"Nueva versión disponible: {_actualizador.VersionNueva}";
+                }
+            }
+            catch
+            {
+                // Sin red o sin feed accesible: silencioso. Se reintenta al próximo arranque.
+            }
+        }
+
+        // Estado A → B: el usuario pulsa "Actualizar". Descarga en segundo plano con barra.
+        private async void BtnActualizar_Click(object sender, RoutedEventArgs e)
+        {
+            BtnActualizar.Visibility = Visibility.Collapsed;
+            PanelDescarga.Visibility = Visibility.Visible;
+            LblDescarga.Text         = "Descargando…";
+            BarraDescarga.Value      = 0;
+
+            double totalMB = _actualizador.TamañoDescargaMB;
+
+            var progreso = new Progress<int>(p =>
+            {
+                BarraDescarga.Value = p;
+                double bajadoMB = totalMB * p / 100.0;
+                LblDescarga.Text = totalMB > 0
+                    ? $"Descargando… {bajadoMB:0.0} / {totalMB:0.0} MB ({p}%)"
+                    : $"Descargando… {p}%";
+            });
+
+            try
+            {
+                await _actualizador.DescargarAsync(progreso);
+                // Estado B → C: lista. El usuario decide cuándo reiniciar.
+                PanelDescarga.Visibility = Visibility.Collapsed;
+                BtnReiniciar.Visibility  = Visibility.Visible;
+            }
+            catch
+            {
+                // Falló la descarga: volver al estado A para poder reintentar.
+                PanelDescarga.Visibility = Visibility.Collapsed;
+                BtnActualizar.Visibility = Visibility.Visible;
+                MessageBox.Show(
+                    "No se pudo descargar la actualización. Revisa tu conexión e inténtalo de nuevo.",
+                    "Actualización", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        // Estado C: aplica lo descargado y reinicia la app ya actualizada.
+        private void BtnReiniciar_Click(object sender, RoutedEventArgs e)
+        {
+            _actualizador.AplicarYReiniciar();
         }
 
         // ─── Estado de conexión (top bar) ─────────────────────────────────────

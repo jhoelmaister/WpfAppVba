@@ -136,6 +136,46 @@
 
                     <Rectangle Width="1" Height="24" Fill="{DynamicResource ThemeBorde}" Margin="10,0"/>
 
+                    <!-- ── Actualización de la app (manual / opt-in) ──────────── -->
+                    <!-- Oculto mientras no haya versión nueva. 3 estados visuales. -->
+                    <Border x:Name="BloqueActualizar" Visibility="Collapsed"
+                            VerticalAlignment="Center" Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+
+                            <!-- Estado A: hay versión nueva (el usuario decide) -->
+                            <Button x:Name="BtnActualizar" Visibility="Collapsed"
+                                    Content="🔄  Actualizar"
+                                    Height="30" FontSize="11" FontWeight="SemiBold" Padding="10,0"
+                                    Background="#6C4AE3" Foreground="White"
+                                    BorderThickness="0" Cursor="Hand"
+                                    ToolTip="Hay una nueva versión disponible"
+                                    Click="BtnActualizar_Click"/>
+
+                            <!-- Estado B: descargando en segundo plano -->
+                            <StackPanel x:Name="PanelDescarga" Orientation="Horizontal"
+                                        Visibility="Collapsed" VerticalAlignment="Center">
+                                <TextBlock x:Name="LblDescarga" Text="Descargando…"
+                                           FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"
+                                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <ProgressBar x:Name="BarraDescarga" Width="120" Height="8"
+                                             Minimum="0" Maximum="100" Value="0"
+                                             Background="{DynamicResource ThemeInputBg}" Foreground="#6C4AE3"
+                                             BorderThickness="0" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- Estado C: lista para reiniciar (el usuario decide cuándo) -->
+                            <Button x:Name="BtnReiniciar" Visibility="Collapsed"
+                                    Content="✅  Reiniciar para actualizar"
+                                    Height="30" FontSize="11" FontWeight="SemiBold" Padding="10,0"
+                                    Background="#2E7D32" Foreground="White"
+                                    BorderThickness="0" Cursor="Hand"
+                                    ToolTip="La actualización está lista"
+                                    Click="BtnReiniciar_Click"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Rectangle Width="1" Height="24" Fill="{DynamicResource ThemeBorde}" Margin="10,0"/>
+
                     <Button x:Name="BtnTema" Content="🌙"
                             Width="36" Height="30" FontSize="13"
                             Background="{DynamicResource ThemeBtnSecBg}"

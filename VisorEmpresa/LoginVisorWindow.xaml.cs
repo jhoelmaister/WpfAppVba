@@ -21,6 +21,8 @@ namespace VisorEmpresa
         // Reintenta la conexión automáticamente mientras no haya internet.
         private DispatcherTimer? _reintentoTimer;
 
+        private readonly ActualizadorApp _actualizador = new();
+
         public LoginVisorWindow()
         {
             InitializeComponent();
@@ -28,10 +30,24 @@ namespace VisorEmpresa
             Loaded += LoginVisorWindow_Loaded;
         }
 
-        // ─── Al abrir: verificar configuración de conexión y sondear la base ──
+        // ─── Al abrir: si hay actualización pendiente, bloquear el login hasta
+        //     que se actualice; si no, verificar config y sondear la base ──────
         private async void LoginVisorWindow_Loaded(object sender, RoutedEventArgs e)
         {
             HabilitarControles(false);
+
+            try
+            {
+                if (await _actualizador.HayActualizacionAsync())
+                {
+                    MostrarBloqueActualizacionObligatoria();
+                    return; // no continuar con el login hasta que se actualice
+                }
+            }
+            catch
+            {
+                // Sin red o sin feed accesible: no bloquear el login por esto solo.
+            }
 
             if (!ConexionConfig.HayConfiguracion())
             {
@@ -111,6 +127,59 @@ namespace VisorEmpresa
         }
 
         private void DetenerReintentos() => _reintentoTimer?.Stop();
+
+        // ─── Actualización obligatoria antes de loguear (Velopack) ────────────
+        private void MostrarBloqueActualizacionObligatoria()
+        {
+            PanelLogin.Visibility       = Visibility.Collapsed;
+            BloqueActualizar.Visibility = Visibility.Visible;
+            LblVersionNueva.Text        =
+                $"Hay una nueva versión disponible ({_actualizador.VersionNueva}). " +
+                "Debes actualizar para continuar.";
+        }
+
+        // Estado A → B: el usuario pulsa "Actualizar". Descarga en segundo plano con barra.
+        private async void BtnActualizar_Click(object sender, RoutedEventArgs e)
+        {
+            BtnActualizar.Visibility = Visibility.Collapsed;
+            PanelDescarga.Visibility = Visibility.Visible;
+            LblDescarga.Text         = "Descargando…";
+            BarraDescarga.Value      = 0;
+
+            double totalMB = _actualizador.TamañoDescargaMB;
+
+            var progreso = new Progress<int>(p =>
+            {
+                BarraDescarga.Value = p;
+                double bajadoMB = totalMB * p / 100.0;
+                LblDescarga.Text = totalMB > 0
+                    ? $"Descargando… {bajadoMB:0.0} / {totalMB:0.0} MB ({p}%)"
+                    : $"Descargando… {p}%";
+            });
+
+            try
+            {
+                await _actualizador.DescargarAsync(progreso);
+                // Estado B → C: lista. El usuario decide cuándo reiniciar.
+                PanelDescarga.Visibility = Visibility.Collapsed;
+                BtnReiniciar.Visibility  = Visibility.Visible;
+            }
+            catch
+            {
+                // Falló la descarga: volver al estado A para poder reintentar.
+                PanelDescarga.Visibility = Visibility.Collapsed;
+                BtnActualizar.Visibility = Visibility.Visible;
+                MessageBox.Show(
+                    "No se pudo descargar la actualización. Revisa tu conexión e inténtalo de nuevo.",
+                    "Actualización", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        // Estado C: aplica lo descargado y reinicia la app ya actualizada.
+        private void BtnReiniciar_Click(object sender, RoutedEventArgs e)
+        {
+            _actualizador.AplicarYReiniciar();
+        }
 
         // ─── Enter en contraseña dispara el login ─────────────────────────────
         private void TxtContrasena_KeyDown(object sender, KeyEventArgs e)
