@@ -8,21 +8,13 @@
     <UseWPF>true</UseWPF>
     <ApplicationIcon>icono.ico</ApplicationIcon>
 
-    <!-- Nombre de la APLICACIÓN (lo que ve el usuario: propiedades del .exe,
-         Agregar o quitar programas). Coincide con el nombre del PROYECTO
-         (carpeta/namespace/csproj), que también es SistemaGestion — antes
-         (proyecto "WpfAppVba") se mantenían separados a propósito; ahora que
-         se unificó el nombre en todas las capas, ya no hace falta esa
-         distinción. AssemblyName = SistemaGestion.exe, que es el mainExe
-         configurado en .github/workflows/release.yml (coincide con el packId
-         SistemaGestion, ya usado ahí desde el principio). El repo de GitHub
-         (jhoelmaister/WpfAppVba) NO se renombró todavía. -->
+    
     <AssemblyName>SistemaGestion</AssemblyName>
     <Product>Sistema de Gestión</Product>
     <AssemblyTitle>Sistema de Gestión</AssemblyTitle>
 
 
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
   </PropertyGroup>
 
   <ItemGroup>
