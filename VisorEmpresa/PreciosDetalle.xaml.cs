@@ -520,11 +520,14 @@ namespace VisorEmpresa
                 var (importados, noEncontrados) = ImportarPreciosDesdeExcel(dlg.FileName);
 
                 RefrescarGrid();
-                if (importados > 0) _hayCambios = true;
+                _hayCambios = true;
 
                 string mensaje = $"Se importaron {importados} precio(s).";
+                int reseteados = _items.Count - importados;
+                if (reseteados > 0)
+                    mensaje += $"\n{reseteados} artículo(s) del catálogo no estaban en el Excel y quedaron en 0.";
                 if (noEncontrados.Count > 0)
-                    mensaje += $"\n\nNo se encontraron {noEncontrados.Count} código(s) en el catálogo:\n"
+                    mensaje += $"\n\nNo se encontraron {noEncontrados.Count} código(s) del Excel en el catálogo:\n"
                              + string.Join(", ", noEncontrados.Take(20))
                              + (noEncontrados.Count > 20 ? "…" : "");
 
@@ -551,10 +554,11 @@ namespace VisorEmpresa
 
         // Busca las columnas "Código" y "Precio" por su encabezado (fila 1), sin
         // importar en qué posición estén ni cuántas otras columnas de referencia
-        // (Producto/Familia/Descripción, etc.) haya entre medio. Reemplaza el precio
-        // de todo artículo que tenga un valor numérico en el Excel, incluido 0 (para
-        // poder dejarlo explícitamente en 0). Solo se saltan filas sin código o con la
-        // celda de precio realmente en blanco.
+        // (Producto/Familia/Descripción, etc.) haya entre medio. Reemplaza el precio de
+        // TODO el catálogo (_items), no solo de las filas presentes en el Excel: el
+        // artículo cuyo código aparece en el Excel con un precio numérico toma ese valor
+        // (incluido 0 explícito); cualquier otro artículo del catálogo — código ausente
+        // del Excel, o presente pero con la celda de precio en blanco — queda en 0.
         private (int Importados, List<string> NoEncontrados) ImportarPreciosDesdeExcel(string filePath)
         {
             using var wb = new ClosedXML.Excel.XLWorkbook(filePath);
@@ -562,9 +566,9 @@ namespace VisorEmpresa
 
             var (colCodigo, colPrecio) = DetectarColumnas(ws);
 
-            var porCodigo = _items.ToDictionary(x => x.Codigo, x => x, StringComparer.OrdinalIgnoreCase);
-            int importados = 0;
-            var noEncontrados = new List<string>();
+            var porCodigoCatalogo = _items.ToDictionary(x => x.Codigo, x => x, StringComparer.OrdinalIgnoreCase);
+            var preciosDelExcel   = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+            var noEncontrados     = new List<string>();
 
             int ultimaFila = ws.LastRowUsed()?.RowNumber() ?? 1;
             for (int fila = 2; fila <= ultimaFila; fila++) // fila 1 = encabezados
@@ -574,14 +578,23 @@ namespace VisorEmpresa
 
                 if (string.IsNullOrEmpty(codigo) || !tienePrecio) continue;
 
-                if (!porCodigo.TryGetValue(codigo, out var item))
-                {
+                preciosDelExcel[codigo] = precio;
+                if (!porCodigoCatalogo.ContainsKey(codigo))
                     noEncontrados.Add(codigo);
-                    continue;
-                }
+            }
 
-                item.Precio = precio;
-                importados++;
+            int importados = 0;
+            foreach (var item in _items)
+            {
+                if (preciosDelExcel.TryGetValue(item.Codigo, out double precio))
+                {
+                    item.Precio = precio;
+                    importados++;
+                }
+                else
+                {
+                    item.Precio = 0;
+                }
             }
 
             return (importados, noEncontrados);
