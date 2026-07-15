@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -642,17 +643,17 @@ namespace VisorEmpresa
         }
 
         // ─── Botones Guardar / Cancelar ───────────────────────────────────────
-        private void BtnGuardar_Click(object sender, RoutedEventArgs e)
+        private async void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
             Grid1.CommitEdit(DataGridEditingUnit.Row, true);
-            bool ok = Guardar();
+            bool ok = await GuardarAsync();
             if (ok) { _hayCambios = false; Cerrando?.Invoke(); }
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
         { _hayCambios = false; Cerrando?.Invoke(); }
 
-        public void IntentarCerrar()
+        public async void IntentarCerrar()
         {
             Grid1.CommitEdit(DataGridEditingUnit.Row, true);
             if (!_hayCambios) { Cerrando?.Invoke(); return; }
@@ -660,18 +661,18 @@ namespace VisorEmpresa
             var res = MessageBox.Show("¿Guardar cambios?", "Consola",
                 MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
 
-            if (res == MessageBoxResult.Yes && Guardar()) Cerrando?.Invoke();
+            if (res == MessageBoxResult.Yes && await GuardarAsync()) Cerrando?.Invoke();
             else if (res == MessageBoxResult.No) Cerrando?.Invoke();
         }
 
         // ─── Guardar ─────────────────────────────────────────────────────────
-        private bool Guardar()
+        private async Task<bool> GuardarAsync()
         {
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
 
             return !string.IsNullOrEmpty(_idEditar)
-                ? GuardarEditar()
-                : GuardarNuevo();
+                ? await GuardarEditarAsync()
+                : await GuardarNuevoAsync();
         }
 
         private bool ValidarCabecera()
@@ -691,10 +692,11 @@ namespace VisorEmpresa
             return true;
         }
 
-        private bool GuardarNuevo()
+        private async Task<bool> GuardarNuevoAsync()
         {
             if (!ValidarCabecera()) return false;
 
+            var ventana = Window.GetWindow(this);
             try
             {
                 string docId = Guid.NewGuid().ToString();
@@ -715,8 +717,26 @@ namespace VisorEmpresa
 
                 CrearLineas(docId);
 
-                Sql.PreciosObj.OrdenarData(("documentoL", false));
-                Sql.DocumentosLObj.OrdenarData(("fecha", false));
+                // Único tramo que habla con SQL Server (OrdenarData -> ExportarItems).
+                // Se manda a un hilo de fondo para no congelar la ventana, y mientras
+                // dura se deshabilita TODA la ventana (no solo este control): _tabla es
+                // un DataTable compartido por toda la app y no es thread-safe, así que
+                // ninguna otra pestaña puede tocarlo en paralelo durante el guardado.
+                if (ventana != null) ventana.IsEnabled = false;
+                Mouse.OverrideCursor = Cursors.Wait;
+                try
+                {
+                    await Task.Run(() =>
+                    {
+                        Sql.PreciosObj.OrdenarData(("documentoL", false));
+                        Sql.DocumentosLObj.OrdenarData(("fecha", false));
+                    });
+                }
+                finally
+                {
+                    if (ventana != null) ventana.IsEnabled = true;
+                    Mouse.OverrideCursor = null;
+                }
 
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 ItemCreadoId = docId;
@@ -729,11 +749,12 @@ namespace VisorEmpresa
             }
         }
 
-        private bool GuardarEditar()
+        private async Task<bool> GuardarEditarAsync()
         {
             if (!ValidarCabecera()) return false;
 
             string docId = _idEditar;
+            var ventana = Window.GetWindow(this);
             try
             {
                 DateTime fecha = CombinarFechaHora();
@@ -748,8 +769,21 @@ namespace VisorEmpresa
 
                 CrearLineas(docId);
 
-                Sql.PreciosObj.OrdenarData(("documentoL", false));
-                Sql.DocumentosLObj.OrdenarData(("fecha", false));
+                if (ventana != null) ventana.IsEnabled = false;
+                Mouse.OverrideCursor = Cursors.Wait;
+                try
+                {
+                    await Task.Run(() =>
+                    {
+                        Sql.PreciosObj.OrdenarData(("documentoL", false));
+                        Sql.DocumentosLObj.OrdenarData(("fecha", false));
+                    });
+                }
+                finally
+                {
+                    if (ventana != null) ventana.IsEnabled = true;
+                    Mouse.OverrideCursor = null;
+                }
 
                 MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
