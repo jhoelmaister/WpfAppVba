@@ -51,6 +51,10 @@ namespace SistemaGestion
         // empresa (mismo criterio que RecargarContexto en la app principal).
         private DashboardVisor    _panelDashboard    = new();
         private ArticulosGeneral  _panelArticulos    = new();
+        private FamiliasGeneral   _panelFamilias     = new();
+        private ProductosGeneral  _panelProductos    = new();
+        private IndustriasGeneral _panelIndustrias   = new();
+        private CategoriasGeneral _panelCategorias   = new();
         private PedidosGeneral    _panelPedidos      = new();
         private TraspasosGeneral  _panelTraspasos    = new();
         private CorreccionesGeneral _panelCorrecciones = new();
@@ -70,6 +74,10 @@ namespace SistemaGestion
         {
             ["dashboard"]    = new List<TabItem>(),
             ["articulos"]    = new List<TabItem>(),
+            ["familias"]     = new List<TabItem>(),
+            ["productos"]    = new List<TabItem>(),
+            ["industrias"]   = new List<TabItem>(),
+            ["categorias"]   = new List<TabItem>(),
             ["pedidos"]      = new List<TabItem>(),
             ["traspasos"]    = new List<TabItem>(),
             ["correcciones"] = new List<TabItem>(),
@@ -84,6 +92,10 @@ namespace SistemaGestion
         {
             ["dashboard"]    = null,
             ["articulos"]    = null,
+            ["familias"]     = null,
+            ["productos"]    = null,
+            ["industrias"]   = null,
+            ["categorias"]   = null,
             ["pedidos"]      = null,
             ["traspasos"]    = null,
             ["correcciones"] = null,
@@ -294,6 +306,10 @@ namespace SistemaGestion
 
             _panelDashboard    = new();
             _panelArticulos    = new();
+            _panelFamilias     = new();
+            _panelProductos    = new();
+            _panelIndustrias   = new();
+            _panelCategorias   = new();
             _panelPedidos      = new();
             _panelTraspasos    = new();
             _panelCorrecciones = new();
@@ -474,6 +490,10 @@ namespace SistemaGestion
             {
                 case "dashboard":    TabFijoContenido.Content = _panelDashboard;    TabFijoTitulo.Text = "Dashboard";    break;
                 case "articulos":    TabFijoContenido.Content = _panelArticulos;    TabFijoTitulo.Text = "Artículos";    break;
+                case "familias":     TabFijoContenido.Content = _panelFamilias;     TabFijoTitulo.Text = "Familias";     break;
+                case "productos":    TabFijoContenido.Content = _panelProductos;    TabFijoTitulo.Text = "Productos";    break;
+                case "industrias":   TabFijoContenido.Content = _panelIndustrias;   TabFijoTitulo.Text = "Industrias";   break;
+                case "categorias":   TabFijoContenido.Content = _panelCategorias;   TabFijoTitulo.Text = "Categorías";   break;
                 case "pedidos":      TabFijoContenido.Content = _panelPedidos;      TabFijoTitulo.Text = "Pedidos";      break;
                 case "traspasos":    TabFijoContenido.Content = _panelTraspasos;    TabFijoTitulo.Text = "Traspasos";    break;
                 case "correcciones": TabFijoContenido.Content = _panelCorrecciones; TabFijoTitulo.Text = "Correcciones"; break;
@@ -617,6 +637,30 @@ namespace SistemaGestion
         {
             MostrarPanel("articulos");
             MarcarActivo(BtnNav_Articulos);
+        }
+
+        private void BtnNav_Familias_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("familias");
+            MarcarActivo(BtnNav_Familias);
+        }
+
+        private void BtnNav_Productos_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("productos");
+            MarcarActivo(BtnNav_Productos);
+        }
+
+        private void BtnNav_Industrias_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("industrias");
+            MarcarActivo(BtnNav_Industrias);
+        }
+
+        private void BtnNav_Categorias_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("categorias");
+            MarcarActivo(BtnNav_Categorias);
         }
 
         private void BtnNav_Pedidos_Click(object sender, RoutedEventArgs e)

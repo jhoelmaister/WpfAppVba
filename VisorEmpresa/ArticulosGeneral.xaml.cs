@@ -13,8 +13,12 @@ namespace VisorEmpresa
 {
     /// <summary>
     /// Duplicado de SistemaGestion.ArticulosGeneral para el visor: mismo catálogo
-    /// (árbol de familias, búsqueda, grilla, métricas, Informe Excel), pero de
-    /// SOLO LECTURA (sin Nuevo/Insertar/Editar/Eliminar). Disponible/Stock se
+    /// (árbol de familias, búsqueda, grilla, métricas, Informe Excel), con
+    /// Nuevo/Insertar/Editar/Eliminar habilitados (a diferencia de Pedidos/
+    /// Traspasos/Correcciones/Facturas, que siguen de solo lectura). Sin "Ver
+    /// Movimientos" ni "Arqueo Excel": el primero depende de MovimientosGeneral
+    /// (AppState.SucursalActiva/AperturaActiva, nunca poblados en VisorEmpresa),
+    /// el segundo quedó fuera de alcance a propósito. Disponible/Stock se
     /// calculan a nivel de EMPRESA vía ConsultasEmpresa.ObtenerStockEmpresa en
     /// vez de StockCalculator (que depende de AppState.SucursalActiva/
     /// AperturaActiva/DataFechaFinal, nunca poblados en VisorEmpresa — ver la
@@ -268,30 +272,148 @@ namespace VisorEmpresa
             CargarArticulos();
         }
 
-        // ─── Doble clic / Enter → ver artículo (solo lectura) ─────────────────
+        // ─── Doble clic / Enter → editar artículo ─────────────────────────────
         private void Grid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             e.Handled = true;
-            AbrirVerDetalle();
+            AbrirEditar();
         }
 
         private void Grid1_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key != Key.Enter) return;
             e.Handled = true;
-            AbrirVerDetalle();
+            AbrirEditar();
         }
 
-        private void AbrirVerDetalle()
+        // ─── Botones Nuevo / Insertar / Editar / Eliminar ─────────────────────
+        private void BtnNuevo_Click(object sender, RoutedEventArgs e)
         {
-            if (Grid1.SelectedItem is not ArticuloFila fila) return;
+            AppState.EventoFormularioA = "nuevo";
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
+            string titulo = "Nuevo Artículo";
+            var dlg = new ArticulosDetalle(this, tituloTab: titulo);
+            dlg.Cerrando += () =>
+            {
+                consola.CerrarPestaña(dlg);
+                if (dlg.ItemCreadoId == null) return; // cancelado
+                CargarArticulos();
+            };
+            consola.AbrirPestaña(titulo, dlg, "nuevo-articulo");
+        }
 
+        private void BtnInsertar_Click(object sender, RoutedEventArgs e)
+        {
+            if (Grid1.SelectedItem is not ArticuloFila fila) return;
+            AppState.EventoFormularioA = "insertar";
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+            string titulo = "Insertar Artículo";
+            var dlg = new ArticulosDetalle(this, fila.Id, tituloTab: titulo);
+            dlg.Cerrando += () =>
+            {
+                consola.CerrarPestaña(dlg);
+                if (dlg.ItemCreadoId == null) return; // cancelado
+                CargarArticulos();
+            };
+            consola.AbrirPestaña(titulo, dlg, "insertar-articulo");
+        }
+
+        private void BtnEditar_Click(object sender, RoutedEventArgs e) => AbrirEditar();
+
+        private void AbrirEditar()
+        {
+            if (Grid1.SelectedItem is not ArticuloFila fila) return;
+            AppState.EventoFormularioA = "modificar";
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
             string titulo = $"Artículo {fila.Codigo}";
-            var dlg = new ArticulosDetalle(fila.Id);
-            dlg.Cerrando += () => consola.CerrarPestaña(dlg);
+            var dlg = new ArticulosDetalle(this, fila.Id, tituloTab: titulo);
+            dlg.Cerrando += () =>
+            {
+                consola.CerrarPestaña(dlg);
+                CargarArticulos();
+            };
             consola.AbrirPestaña(titulo, dlg, $"articulo-{fila.Id}");
+        }
+
+        private void BtnEliminar_Click(object sender, RoutedEventArgs e)
+        {
+            if (Grid1.SelectedItem is not ArticuloFila fila) return;
+
+            // Verificación de conexión en 2 capas antes de persistir el borrado.
+            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
+
+            var res = MessageBox.Show("¿Eliminar este artículo?", "Consola",
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (res != MessageBoxResult.Yes) return;
+
+            // Ocultar el artículo: su índice queda RESERVADO y NO se reutiliza, por lo
+            // que NO se corren los índices de los demás artículos de la familia.
+            Sql.ArticulosObj.EstablecerItem("edicion",  fila.Id, DateTime.Now);
+            Sql.ArticulosObj.EstablecerItem("usuarioE", fila.Id, AppState.UsuarioActivo);
+            Sql.ArticulosObj.Ocultar(fila.Id);
+
+            Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
+
+            CargarArticulos();
+
+            // Artículo eliminado → sincronizar AppSheets (todas las sucursales).
+            SincronizarAppsheetsTrasCambio();
+        }
+
+        /// <summary>
+        /// Renumera los artículos ACTIVOS de una familia por su orden de índice actual,
+        /// saltando los índices ya ocupados por artículos eliminados/ocultos de esa familia
+        /// (que NO se reutilizan). No persiste: el llamador hace OrdenarData/ExportarItems.
+        /// Mismo criterio que SistemaGestion.ArticulosGeneral.RenumerarFamilia.
+        /// </summary>
+        public static void RenumerarFamilia(string famId)
+        {
+            if (string.IsNullOrEmpty(famId)) return;
+            var sql = SqlData.Instance;
+            var reservados = sql.ArticulosObj.IndicesNoNormales("familia", famId);
+
+            var activos = new List<(string id, int ind)>();
+            int uf = sql.ArticulosObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = sql.ArticulosObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                if (sql.ArticulosObj.ObtenerItem("familia", id)?.ToString() != famId) continue;
+                int ind = Convert.ToInt32(sql.ArticulosObj.ObtenerItem("indice", id) ?? 0);
+                activos.Add((id, ind));
+            }
+            activos.Sort((a, b) => a.ind.CompareTo(b.ind));
+
+            int next = 1;
+            foreach (var (id, _) in activos)
+            {
+                while (reservados.Contains(next)) next++;
+                sql.ArticulosObj.EstablecerItem("indice", id, next);
+                next++;
+            }
+        }
+
+        /// <summary>
+        /// Re-sincroniza la tabla appsheets (todas las sucursales de la empresa activa)
+        /// tras agregar o eliminar un artículo. Un fallo aquí NO revierte el cambio del
+        /// artículo (ya persistido): solo se informa con una advertencia.
+        /// </summary>
+        public static void SincronizarAppsheetsTrasCambio()
+        {
+            try
+            {
+                AppsheetsSync.SincronizarTodasLasSucursales();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"El artículo se guardó, pero falló la sincronización de AppSheets:\n{ex.Message}",
+                    "AppSheets", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         // ─── Informe Excel ──────────────────────────────────────────────────────

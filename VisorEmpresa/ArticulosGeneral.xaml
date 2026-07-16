@@ -42,6 +42,14 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush"   Value="{DynamicResource ThemeBorde}"/>
         </Style>
+        <Style x:Key="BtnPrimario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="#3B82F6"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style x:Key="BtnPeligro" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="#EF4444"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
 
         <!-- ── Tarjeta métrica ── -->
         <Style x:Key="MetricCard" TargetType="Border">
@@ -227,6 +235,28 @@
                     </Border>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button x:Name="BtnNuevo"
+                                Content="Nuevo Artículo"
+                                Style="{StaticResource BtnPrimario}"
+                                Margin="0,0,6,0"
+                                Click="BtnNuevo_Click"/>
+                        <Button x:Name="BtnInsertar"
+                                Content="Insertar Artículo"
+                                Style="{StaticResource BtnPrimario}"
+                                Margin="0,0,6,0"
+                                Click="BtnInsertar_Click"/>
+                        <Rectangle Width="1" Fill="{DynamicResource ThemeBorde}"
+                                   VerticalAlignment="Stretch" Margin="2,4,8,4"/>
+                        <Button x:Name="BtnEditar"
+                                Content="Editar"
+                                Style="{StaticResource BtnSecundario}"
+                                Margin="0,0,6,0"
+                                Click="BtnEditar_Click"/>
+                        <Button x:Name="BtnEliminar"
+                                Content="Eliminar"
+                                Style="{StaticResource BtnPeligro}"
+                                Margin="0,0,6,0"
+                                Click="BtnEliminar_Click"/>
                         <Button Content="Actualizar"
                                 Style="{StaticResource BtnSecundario}"
                                 Click="BtnActualizar_Click"/>
