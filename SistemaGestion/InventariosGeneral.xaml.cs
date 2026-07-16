@@ -254,6 +254,264 @@ namespace SistemaGestion
             consola.AbrirPestaña($"Inventario {fila.Codigo}", detalle, $"inventario-{idSel}");
         }
 
+        // ─── Crear Plantilla: elige Excel o PDF, después guarda y abre el archivo ──
+        // Mismo patrón que VisorEmpresa/PreciosGeneral.BtnCrearPlantilla_Click. Excel:
+        // catálogo completo, sin agrupar, con columnas Producto y Familia (N° / Código /
+        // Producto / Familia / Descripción / Cantidad) — el import (InventariosDetalle.
+        // ImportarCantidadesDesdeExcel) busca Código y Cantidad por encabezado, no por
+        // posición. PDF: catálogo completo agrupado por Producto & Familia (banda de
+        // grupo en vez de columnas propias). En ambos casos Cantidad arranca en 0.
+        private void BtnCrearPlantilla_Click(object sender, RoutedEventArgs e)
+        {
+            var dlgFormato = new SeleccionarFormatoWindow { Owner = Window.GetWindow(this) };
+            if (dlgFormato.ShowDialog() != true) return;
+
+            bool esExcel = dlgFormato.FormatoElegido == "excel";
+
+            var dlg = new SaveFileDialog
+            {
+                Title            = "Guardar plantilla de inventario",
+                FileName         = $"{DateTime.Now:yyyyMMdd HHmmss} plantilla inventario.{(esExcel ? "xlsx" : "pdf")}",
+                DefaultExt       = esExcel ? ".xlsx" : ".pdf",
+                Filter           = esExcel ? "Excel (*.xlsx)|*.xlsx" : "PDF (*.pdf)|*.pdf",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            };
+            if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
+
+            try
+            {
+                Mouse.OverrideCursor = Cursors.Wait;
+                if (esExcel) GenerarPlantillaExcel(dlg.FileName);
+                else         GenerarPlantillaPdf(dlg.FileName);
+                Process.Start(new ProcessStartInfo(dlg.FileName) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al generar la plantilla:\n{ex.Message}", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+            }
+        }
+
+        private void GenerarPlantillaExcel(string filePath)
+        {
+            using var wb = new ClosedXML.Excel.XLWorkbook();
+            var ws = wb.Worksheets.Add("Inventario");
+
+            ws.Cell(1, 1).Value = "N°";
+            ws.Cell(1, 2).Value = "Código";
+            ws.Cell(1, 3).Value = "Producto";
+            ws.Cell(1, 4).Value = "Familia";
+            ws.Cell(1, 5).Value = "Descripción";
+            ws.Cell(1, 6).Value = "Cantidad";
+
+            // Sin reordenar: Sql.ArticulosObj ya viene cargado en cascada Producto →
+            // Familia → Índice (ver AppLoader.cs), el mismo orden que usan
+            // InventariosDetalle y ArticulosGeneral.
+            int row = 2;
+            int numero = 1;
+            int uf = Sql.ArticulosObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.ArticulosObj.Mover(i);
+                if (idObj == null) continue;
+                string artId = idObj.ToString()!;
+
+                string famId    = Sql.ArticulosObj.ObtenerItem("familia",     artId)?.ToString() ?? "";
+                string prodId   = Sql.FamiliasObj.ObtenerItem("producto",    famId)?.ToString() ?? "";
+                string prodDesc = Sql.ProductosObj.ObtenerItem("descripcion", prodId)?.ToString() ?? "";
+                string famDesc  = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString() ?? "";
+                string codigo   = Sql.ArticulosObj.ObtenerItem("codigo",      artId)?.ToString() ?? "";
+                string desc     = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString() ?? "";
+                string modelo   = Sql.ArticulosObj.ObtenerItem("modelo",      artId)?.ToString() ?? "";
+                string descCompleta = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
+
+                ws.Cell(row, 1).Value = numero;
+                ws.Cell(row, 2).Value = codigo;
+                ws.Cell(row, 3).Value = prodDesc;
+                ws.Cell(row, 4).Value = famDesc;
+                ws.Cell(row, 5).Value = descCompleta;
+                ws.Cell(row, 6).Value = 0; // Cantidad: arranca en 0 para que el usuario la complete.
+                row++;
+                numero++;
+            }
+
+            ws.Columns().AdjustToContents();
+            wb.SaveAs(filePath);
+        }
+
+        // Plantilla en PDF: catálogo completo agrupado por Producto & Familia (misma
+        // banda celeste y estilo de tabla que GenerarPdfInventario más abajo), con
+        // Cantidad en 0 para completar a mano. A diferencia del Excel, acá Producto/
+        // Familia NO son columnas de datos: van en la banda que encabeza cada grupo.
+        private void GenerarPlantillaPdf(string filePath)
+        {
+            GlobalFontSettings.UseWindowsFontsUnderWindows = true;
+
+            var fontTitulo = new XFont("Arial", 14, XFontStyleEx.Bold);
+            var fontHeader = new XFont("Arial", 9,  XFontStyleEx.Bold);
+            var fontGrupo  = new XFont("Arial", 10, XFontStyleEx.Bold);
+            var fontCuerpo = new XFont("Arial", 9,  XFontStyleEx.Regular);
+
+            var brushCeleste = new XSolidBrush(XColor.FromArgb(191, 219, 254));
+            var brushHeader  = new XSolidBrush(XColor.FromArgb(241, 245, 249));
+            var penLinea     = new XPen(XColors.Black, 0.6);
+
+            const double margen        = 40;
+            const double altoHeader    = 20;
+            const double altoGrupo     = 18;
+            const double altoFila      = 16;
+            const double anchoN        = 28;
+            const double anchoCodigo   = 80;
+            const double anchoCantidad = 75;
+
+            var document = new PdfDocument();
+            PdfPage page = document.AddPage();
+            page.Size = PageSize.A4;
+            XGraphics gfx = XGraphics.FromPdfPage(page);
+
+            double anchoTabla = page.Width - margen * 2;
+            double anchoDesc  = anchoTabla - anchoN - anchoCodigo - anchoCantidad;
+            double xN        = margen;
+            double xCodigo   = xN + anchoN;
+            double xDesc     = xCodigo + anchoCodigo;
+            double xCantidad = xDesc + anchoDesc;
+
+            double y = margen;
+
+            void DibujarFilaDatos(string n, string codigo, string desc, string cantidad)
+            {
+                gfx.DrawRectangle(penLinea, xN, y, anchoTabla, altoFila);
+                gfx.DrawLine(penLinea, xCodigo,   y, xCodigo,   y + altoFila);
+                gfx.DrawLine(penLinea, xDesc,     y, xDesc,     y + altoFila);
+                gfx.DrawLine(penLinea, xCantidad, y, xCantidad, y + altoFila);
+
+                gfx.DrawString(n,        fontCuerpo, XBrushes.Black, new XRect(xN,           y, anchoN,          altoFila), XStringFormats.Center);
+                gfx.DrawString(codigo,   fontCuerpo, XBrushes.Black, new XRect(xCodigo + 4,  y, anchoCodigo - 8, altoFila), XStringFormats.CenterLeft);
+                gfx.DrawString(desc,     fontCuerpo, XBrushes.Black, new XRect(xDesc + 4,    y, anchoDesc - 8,   altoFila), XStringFormats.CenterLeft);
+                gfx.DrawString(cantidad, fontCuerpo, XBrushes.Black, new XRect(xCantidad + 4, y, anchoCantidad - 8, altoFila), XStringFormats.CenterRight);
+
+                y += altoFila;
+            }
+
+            void DibujarEncabezadoColumnas()
+            {
+                gfx.DrawRectangle(penLinea, brushHeader, xN, y, anchoTabla, altoHeader);
+                gfx.DrawLine(penLinea, xCodigo,   y, xCodigo,   y + altoHeader);
+                gfx.DrawLine(penLinea, xDesc,     y, xDesc,     y + altoHeader);
+                gfx.DrawLine(penLinea, xCantidad, y, xCantidad, y + altoHeader);
+
+                gfx.DrawString("N°",          fontHeader, XBrushes.Black, new XRect(xN,           y, anchoN,          altoHeader), XStringFormats.Center);
+                gfx.DrawString("Código",      fontHeader, XBrushes.Black, new XRect(xCodigo + 4,  y, anchoCodigo - 8, altoHeader), XStringFormats.CenterLeft);
+                gfx.DrawString("Descripción", fontHeader, XBrushes.Black, new XRect(xDesc + 4,    y, anchoDesc - 8,   altoHeader), XStringFormats.CenterLeft);
+                gfx.DrawString("Cantidad",    fontHeader, XBrushes.Black, new XRect(xCantidad + 4, y, anchoCantidad - 8, altoHeader), XStringFormats.CenterRight);
+
+                y += altoHeader;
+            }
+
+            void DibujarBandaGrupo(string texto)
+            {
+                gfx.DrawRectangle(penLinea, brushCeleste, xN, y, anchoTabla, altoGrupo);
+                gfx.DrawString(texto, fontGrupo, XBrushes.Black, new XRect(xN + 6, y, anchoTabla - 12, altoGrupo), XStringFormats.CenterLeft);
+                y += altoGrupo;
+            }
+
+            void NuevaPagina()
+            {
+                gfx.Dispose();
+                page = document.AddPage();
+                page.Size = PageSize.A4;
+                gfx = XGraphics.FromPdfPage(page);
+                y = margen;
+                DibujarEncabezadoColumnas();
+            }
+
+            void AsegurarEspacio(double alto)
+            {
+                if (y + alto > page.Height - margen) NuevaPagina();
+            }
+
+            gfx.DrawString("Plantilla de Inventario", fontTitulo, XBrushes.Black, new XPoint(margen, y + 12));
+            y += 28;
+
+            DibujarEncabezadoColumnas();
+
+            var lineas = new List<(string prodDesc, string famDesc, string codigo, string desc)>();
+
+            int uf = Sql.ArticulosObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.ArticulosObj.Mover(i);
+                if (idObj == null) continue;
+                string artId = idObj.ToString()!;
+
+                string famId    = Sql.ArticulosObj.ObtenerItem("familia",     artId)?.ToString() ?? "";
+                string prodId   = Sql.FamiliasObj.ObtenerItem("producto",    famId)?.ToString() ?? "";
+                string prodDesc = Sql.ProductosObj.ObtenerItem("descripcion", prodId)?.ToString() ?? "";
+                string famDesc  = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString() ?? "";
+                string codigo   = Sql.ArticulosObj.ObtenerItem("codigo",      artId)?.ToString() ?? "";
+                string desc     = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString() ?? "";
+                string modelo   = Sql.ArticulosObj.ObtenerItem("modelo",      artId)?.ToString() ?? "";
+                string descCompleta = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
+
+                lineas.Add((prodDesc, famDesc, codigo, descCompleta));
+            }
+
+            var grupos = lineas
+                .GroupBy(l => (l.prodDesc, l.famDesc))
+                .OrderBy(g => g.Key.prodDesc, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(g => g.Key.famDesc, StringComparer.OrdinalIgnoreCase);
+
+            int n = 0;
+            foreach (var grupo in grupos)
+            {
+                AsegurarEspacio(altoGrupo + altoFila);
+                DibujarBandaGrupo($"{grupo.Key.prodDesc} & {grupo.Key.famDesc}");
+
+                foreach (var l in grupo)
+                {
+                    AsegurarEspacio(altoFila);
+                    n++;
+                    DibujarFilaDatos(n.ToString(), l.codigo, l.desc, (0.0).ToString("#,##0.##"));
+                }
+            }
+
+            // El último gfx de la generación de contenido sigue abierto: hay que
+            // cerrarlo antes de poder volver a abrir un XGraphics sobre esa misma
+            // página en la segunda pasada de abajo.
+            gfx.Dispose();
+
+            // ── Encabezado (empresa / fecha de emisión) y pie de página (páginas), en
+            // todas las páginas. Se hace en una segunda pasada porque el total de
+            // páginas recién se conoce una vez generado todo el contenido.
+            string empresaDesc     = Sql.EmpresasObj.ObtenerItem("descripcion", AppState.EmpresaActiva)?.ToString() ?? "";
+            string sucursalDesc    = Sql.SucursalesObj.ObtenerItem("descripcion", AppState.SucursalActiva)?.ToString() ?? "";
+            string encabezadoIzq   = string.IsNullOrEmpty(sucursalDesc) ? empresaDesc : $"{empresaDesc} - {sucursalDesc}";
+            DateTime fechaEmision  = DateTime.Now;
+            string fechaEmisionStr = $"{fechaEmision:d} {fechaEmision:HH:mm:ss}";
+            int totalPaginas       = document.PageCount;
+
+            for (int p = 0; p < totalPaginas; p++)
+            {
+                var paginaActual = document.Pages[p];
+                using var gfxPagina = XGraphics.FromPdfPage(paginaActual);
+                double anchoMedio = (paginaActual.Width - margen * 2) / 2;
+
+                gfxPagina.DrawString(encabezadoIzq, fontCuerpo, XBrushes.Black,
+                    new XRect(margen, 16, anchoMedio, 16), XStringFormats.CenterLeft);
+                gfxPagina.DrawString($"Fecha de emisión: {fechaEmisionStr}", fontCuerpo, XBrushes.Black,
+                    new XRect(margen + anchoMedio, 16, anchoMedio, 16), XStringFormats.CenterRight);
+
+                gfxPagina.DrawString($"Páginas {p + 1}-{totalPaginas}", fontCuerpo, XBrushes.Black,
+                    new XRect(margen, paginaActual.Height - margen + 10, paginaActual.Width - margen * 2, 16), XStringFormats.CenterRight);
+            }
+
+            document.Save(filePath);
+        }
+
         // ─── PDF del inventario (botón "Acciones" por fila, mismo formato que PreciosGeneral) ─
         private void BtnPdfFila_Click(object sender, RoutedEventArgs e)
         {
@@ -450,13 +708,15 @@ namespace SistemaGestion
                 string famDesc      = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString()  ?? "";
                 string codigo       = Sql.ArticulosObj.ObtenerItem("codigo",      artId)?.ToString()  ?? "";
                 string descArt  = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString()  ?? "";
+                string modelo   = Sql.ArticulosObj.ObtenerItem("modelo",      artId)?.ToString()  ?? "";
                 double cantidad = Convert.ToDouble(Sql.InventariosObj.ObtenerItem("cantidad", id) ?? 0);
                 if (cantidad <= 0) continue;
 
                 string catId   = Sql.ArticulosObj.ObtenerItem("categoria", artId)?.ToString() ?? "";
                 string catDesc = string.IsNullOrEmpty(catId) ? "" : (Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "");
+                string descCompleta = FuncionesComunes.UnirVariables(descArt, famDesc, modelo);
 
-                lineas.Add((prodDesc, famDesc, codigo, descArt, cantidad, catDesc));
+                lineas.Add((prodDesc, famDesc, codigo, descCompleta, cantidad, catDesc));
             }
 
             var grupos = lineas
@@ -606,13 +866,15 @@ namespace SistemaGestion
                 string famDesc  = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString()  ?? "";
                 string codigo   = Sql.ArticulosObj.ObtenerItem("codigo",      artId)?.ToString()  ?? "";
                 string descArt  = Sql.ArticulosObj.ObtenerItem("descripcion", artId)?.ToString()  ?? "";
+                string modelo   = Sql.ArticulosObj.ObtenerItem("modelo",      artId)?.ToString()  ?? "";
                 double cantidad = Convert.ToDouble(Sql.InventariosObj.ObtenerItem("cantidad", id) ?? 0);
                 if (cantidad <= 0) continue;
 
                 string catId   = Sql.ArticulosObj.ObtenerItem("categoria", artId)?.ToString() ?? "";
                 string catDesc = string.IsNullOrEmpty(catId) ? "Otros" : (Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "Otros");
+                string descCompleta = FuncionesComunes.UnirVariables(descArt, famDesc, modelo);
 
-                lineas.Add((prodDesc, famDesc, codigo, descArt, cantidad, catDesc));
+                lineas.Add((prodDesc, famDesc, codigo, descCompleta, cantidad, catDesc));
             }
 
             int row = 2;
