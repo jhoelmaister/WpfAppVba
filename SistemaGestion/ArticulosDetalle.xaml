@@ -344,10 +344,19 @@
                                      TextChanged="Campo_TextChanged"/>
                         </StackPanel>
 
-                        <StackPanel>
+                        <StackPanel Margin="0,0,0,12">
                             <TextBlock Style="{StaticResource SectionLabel}" Text="MODELO"/>
                             <TextBox x:Name="Box_Modelo" Style="{StaticResource ModernInput}"
                                      TextChanged="Campo_TextChanged"/>
+                        </StackPanel>
+
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionLabel}" Text="VISIBLE EN PLANTILLAS"/>
+                            <ComboBox x:Name="CboEstadoV" Height="36" FontSize="13"
+                                      SelectionChanged="CboEstadoV_SelectionChanged">
+                                <ComboBoxItem Content="Mostrar"/>
+                                <ComboBoxItem Content="Ocultar"/>
+                            </ComboBox>
                         </StackPanel>
                     </StackPanel>
                 </Border>

@@ -254,6 +254,17 @@ namespace SistemaGestion
             consola.AbrirPestaña($"Inventario {fila.Codigo}", detalle, $"inventario-{idSel}");
         }
 
+        // articulos.estadoV ("mostrar"/"ocultar", cargada por el usuario en
+        // ArticulosDetalle) filtra qué artículos entran en las plantillas Excel/PDF.
+        // Solo se excluye si quedó explícitamente en "ocultar"; null/vacío/cualquier
+        // otro valor (artículos guardados antes de que existiera esta columna) cuenta
+        // como visible, para no vaciar de golpe las plantillas ya existentes.
+        private static bool EsVisibleEnPlantillas(string artId)
+        {
+            string estadoV = Sql.ArticulosObj.ObtenerItem("estadoV", artId)?.ToString()?.Trim().ToLowerInvariant() ?? "";
+            return estadoV != "ocultar";
+        }
+
         // ─── Crear Plantilla: elige Excel o PDF, después guarda y abre el archivo ──
         // Mismo patrón que VisorEmpresa/PreciosGeneral.BtnCrearPlantilla_Click. Excel:
         // catálogo completo, sin agrupar, con columnas Producto y Familia (N° / Código /
@@ -319,6 +330,7 @@ namespace SistemaGestion
                 var idObj = Sql.ArticulosObj.Mover(i);
                 if (idObj == null) continue;
                 string artId = idObj.ToString()!;
+                if (!EsVisibleEnPlantillas(artId)) continue;
 
                 string famId    = Sql.ArticulosObj.ObtenerItem("familia",     artId)?.ToString() ?? "";
                 string prodId   = Sql.FamiliasObj.ObtenerItem("producto",    famId)?.ToString() ?? "";
@@ -447,6 +459,7 @@ namespace SistemaGestion
                 var idObj = Sql.ArticulosObj.Mover(i);
                 if (idObj == null) continue;
                 string artId = idObj.ToString()!;
+                if (!EsVisibleEnPlantillas(artId)) continue;
 
                 string famId    = Sql.ArticulosObj.ObtenerItem("familia",     artId)?.ToString() ?? "";
                 string prodId   = Sql.FamiliasObj.ObtenerItem("producto",    famId)?.ToString() ?? "";
@@ -475,7 +488,7 @@ namespace SistemaGestion
                 {
                     AsegurarEspacio(altoFila);
                     n++;
-                    DibujarFilaDatos(n.ToString(), l.codigo, l.desc, (0.0).ToString("#,##0.##"));
+                    DibujarFilaDatos(n.ToString(), l.codigo, l.desc, ""); // Cantidad en blanco para completar a mano.
                 }
             }
 

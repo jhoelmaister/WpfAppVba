@@ -86,12 +86,20 @@ namespace SistemaGestion
             Box_Descripcion.Text = Sql.ArticulosObj.ObtenerItem("descripcion", id)?.ToString() ?? "";
             Box_Modelo.Text      = Sql.ArticulosObj.ObtenerItem("modelo",      id)?.ToString() ?? "";
             Box_Observacion.Text = Sql.ArticulosObj.ObtenerItem("observacion", id)?.ToString() ?? "";
+
+            // "Ocultar" solo si quedó explícitamente así; cualquier otro valor (incluido
+            // null, de artículos guardados antes de que existiera esta columna) cuenta
+            // como "Mostrar" — para que agregar esta columna no vacíe de golpe las
+            // plantillas de artículos ya cargados.
+            string estadoV = Sql.ArticulosObj.ObtenerItem("estadoV", id)?.ToString()?.Trim().ToLowerInvariant() ?? "";
+            CboEstadoV.SelectedIndex = estadoV == "ocultar" ? 1 : 0;
         }
 
         private void CargarParaNuevo()
         {
             Box_Identificador.Text = Guid.NewGuid().ToString();
             Box_Indice.Text        = "1";
+            CboEstadoV.SelectedIndex = 0; // Mostrar, por defecto.
         }
 
         private void CargarParaInsertar()
@@ -105,6 +113,7 @@ namespace SistemaGestion
             Box_Identificador_Familia.Text = Sql.FamiliasObj.ObtenerItem("codigo", famRefId)?.ToString() ?? "";
             Box_Indice.Text                = indRef;
             ActualizarDescripcionFamilia();
+            CboEstadoV.SelectedIndex = 0; // Mostrar, por defecto.
 
             // Bloquear campos que no se deben cambiar en modo insertar
             Box_Identificador_Familia.IsEnabled = false;
@@ -216,6 +225,11 @@ namespace SistemaGestion
             ActualizarDescripcionCategoria();
         }
 
+        private void CboEstadoV_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_cargando) _hayCambios = true;
+        }
+
         // ─── Validación de entrada ────────────────────────────────────────────
         private void Box_Numeros_PreviewTextInput(object sender, TextCompositionEventArgs e)
             => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
@@ -261,6 +275,11 @@ namespace SistemaGestion
         }
 
         // ─── Guardar ─────────────────────────────────────────────────────────
+        // "Mostrar"/"Ocultar" (CboEstadoV) -> "mostrar"/"ocultar" para la columna
+        // articulos.estadoV: filtra qué artículos entran en las plantillas Excel/PDF
+        // (VisorEmpresa/PreciosGeneral y SistemaGestion/InventariosGeneral).
+        private string EstadoVSeleccionado => CboEstadoV.SelectedIndex == 1 ? "ocultar" : "mostrar";
+
         private bool Guardar()
         {
             if (!SinPestañasRelacionadas()) return false;
@@ -299,6 +318,7 @@ namespace SistemaGestion
                 Sql.ArticulosObj.EstablecerItem("Categoria",  id, ResolverCategoriaId());
                 Sql.ArticulosObj.EstablecerItem("descripcion",id, Box_Descripcion.Text);
                 Sql.ArticulosObj.EstablecerItem("modelo",     id, Box_Modelo.Text);
+                Sql.ArticulosObj.EstablecerItem("estadoV",    id, EstadoVSeleccionado);
                 Sql.ArticulosObj.EstablecerItem("observacion",id, Box_Observacion.Text);
                 Sql.ArticulosObj.EstablecerItem("edicion",    id, DateTime.Now);
                 Sql.ArticulosObj.EstablecerItem("usuarioE",   id, AppState.UsuarioActivo);
@@ -341,6 +361,7 @@ namespace SistemaGestion
                 Sql.ArticulosObj.EstablecerItem("Categoria",  id, ResolverCategoriaId());
                 Sql.ArticulosObj.EstablecerItem("descripcion",id, Box_Descripcion.Text);
                 Sql.ArticulosObj.EstablecerItem("modelo",     id, Box_Modelo.Text);
+                Sql.ArticulosObj.EstablecerItem("estadoV",    id, EstadoVSeleccionado);
                 Sql.ArticulosObj.EstablecerItem("observacion",id, Box_Observacion.Text);
                 Sql.ArticulosObj.EstablecerItem("emision",    id, DateTime.Now);
                 Sql.ArticulosObj.EstablecerItem("edicion",    id, DateTime.Now);
@@ -411,6 +432,7 @@ namespace SistemaGestion
                 Sql.ArticulosObj.EstablecerItem("Categoria",  id, ResolverCategoriaId());
                 Sql.ArticulosObj.EstablecerItem("descripcion",id, Box_Descripcion.Text);
                 Sql.ArticulosObj.EstablecerItem("modelo",     id, Box_Modelo.Text);
+                Sql.ArticulosObj.EstablecerItem("estadoV",    id, EstadoVSeleccionado);
                 Sql.ArticulosObj.EstablecerItem("observacion",id, Box_Observacion.Text);
                 Sql.ArticulosObj.EstablecerItem("emision",    id, DateTime.Now);
                 Sql.ArticulosObj.EstablecerItem("edicion",    id, DateTime.Now);
