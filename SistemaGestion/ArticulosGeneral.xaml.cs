@@ -65,11 +65,17 @@ namespace SistemaGestion
             string clave = esMulti
                 ? $"importar-articulos|{contexto}"
                 : $"buscar-articulo|{contexto}";
+            // La otra variante (Importar ↔ Buscar) para el mismo contexto: se cierra
+            // también, para que como mucho quede una sola de las dos pestañas abierta.
+            string claveOtra = esMulti
+                ? $"buscar-articulo|{contexto}"
+                : $"importar-articulos|{contexto}";
 
             var ctrl = new ArticulosGeneral(callbackExportar, callbackSingle);
             ctrl.Cerrando += () => { consola.CerrarPestaña(ctrl); consola.SeleccionarPestaña(llamador); };
 
             consola.CerrarPestañaPorClave(clave);
+            consola.CerrarPestañaPorClave(claveOtra);
             consola.AbrirPestaña(titulo, ctrl, clave);
         }
 

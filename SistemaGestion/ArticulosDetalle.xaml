@@ -228,9 +228,8 @@
 
                             <StackPanel Grid.Column="2">
                                 <TextBlock Style="{StaticResource SectionLabel}" Text="ÍNDICE"/>
-                                <TextBox x:Name="Box_Indice" Style="{StaticResource ModernInput}"
-                                         TextChanged="Campo_TextChanged"
-                                         PreviewTextInput="Box_Numeros_PreviewTextInput"/>
+                                <TextBox x:Name="Box_Indice" Style="{StaticResource ReadOnlyInput}"
+                                         TextChanged="Campo_TextChanged"/>
                             </StackPanel>
                         </Grid>
                     </StackPanel>
