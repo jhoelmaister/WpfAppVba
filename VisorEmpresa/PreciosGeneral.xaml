@@ -291,11 +291,11 @@
 
                     <!-- Botones de acción -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <Button x:Name="BtnPlantillaExcel"
-                                Content="📄 Plantilla Excel"
+                        <Button x:Name="BtnCrearPlantilla"
+                                Content="📄 Crear Plantilla"
                                 Style="{StaticResource BtnSecundario}"
                                 Margin="0,0,6,0"
-                                Click="BtnPlantillaExcel_Click"/>
+                                Click="BtnCrearPlantilla_Click"/>
                         <Button x:Name="BtnNuevo"
                                 Content="Nueva Lista"
                                 Style="{StaticResource BtnPrimario}"
