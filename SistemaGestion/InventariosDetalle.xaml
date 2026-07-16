@@ -270,6 +270,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
                         <Border Grid.Column="0"
@@ -306,7 +307,12 @@
 
                         <Button Grid.Column="1" Content="Actualizar"
                                 Style="{StaticResource BtnSecundario}"
+                                Margin="0,0,8,0"
                                 Click="BtnActualizar_Click"/>
+
+                        <Button Grid.Column="2" Content="📥 Importar Excel"
+                                Style="{StaticResource BtnSecundario}"
+                                Click="BtnImportarExcel_Click"/>
                     </Grid>
                 </Border>
 

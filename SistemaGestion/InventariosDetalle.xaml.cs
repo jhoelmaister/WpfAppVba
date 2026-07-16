@@ -1,10 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using Microsoft.Win32;
 using SistemaGestion.Data;
 
 namespace SistemaGestion
@@ -449,6 +453,146 @@ namespace SistemaGestion
                 var fila = (Grid1.ItemsSource as List<InventarioItemFila>)?.Find(x => x.ArticuloId == artSelId);
                 if (fila != null) { Grid1.SelectedItem = fila; Grid1.ScrollIntoView(fila); }
             }
+        }
+
+        // ─── Importar Excel: carga cantidades masivamente (misma plantilla que
+        // "Crear Plantilla" de InventariosGeneral) ─────────────────────────────
+        private void BtnImportarExcel_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Title  = "Importar cantidades desde Excel",
+                Filter = "Excel (*.xlsx)|*.xlsx"
+            };
+            if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
+
+            try
+            {
+                Grid1.CommitEdit(DataGridEditingUnit.Row, true);
+                Mouse.OverrideCursor = Cursors.Wait;
+
+                var (importados, noEncontrados) = ImportarCantidadesDesdeExcel(dlg.FileName);
+
+                RefrescarGrid();
+                _hayCambios = true;
+
+                string mensaje = $"Se importaron {importados} cantidad(es).";
+                int reseteados = _items.Count - importados;
+                if (reseteados > 0)
+                    mensaje += $"\n{reseteados} artículo(s) del catálogo no estaban en el Excel y quedaron en 0.";
+                if (noEncontrados.Count > 0)
+                    mensaje += $"\n\nNo se encontraron {noEncontrados.Count} código(s) del Excel en el catálogo:\n"
+                             + string.Join(", ", noEncontrados.Take(20))
+                             + (noEncontrados.Count > 20 ? "…" : "");
+
+                MessageBox.Show(mensaje, "Importar Excel", MessageBoxButton.OK,
+                    noEncontrados.Count > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
+            }
+            catch (IOException)
+            {
+                MessageBox.Show(
+                    "No se pudo abrir el archivo: está abierto en Excel u otro programa.\n" +
+                    "Cerralo y volvé a intentar.",
+                    "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al importar el Excel:\n{ex.Message}", "Consola",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+            }
+        }
+
+        // Busca las columnas "Código" y "Cantidad" por su encabezado (fila 1), sin
+        // importar en qué posición estén ni cuántas otras columnas de referencia
+        // (Producto/Familia/Descripción, etc.) haya entre medio. Reemplaza la cantidad
+        // de TODO el catálogo (_items), no solo de las filas presentes en el Excel: el
+        // artículo cuyo código aparece en el Excel con un valor numérico toma ese valor
+        // (incluido 0 explícito); cualquier otro artículo del catálogo — código ausente
+        // del Excel, o presente pero con la celda de cantidad en blanco — queda en 0.
+        private (int Importados, List<string> NoEncontrados) ImportarCantidadesDesdeExcel(string filePath)
+        {
+            using var wb = new ClosedXML.Excel.XLWorkbook(filePath);
+            var ws = wb.Worksheet(1);
+
+            var (colCodigo, colCantidad) = DetectarColumnas(ws);
+
+            var porCodigoCatalogo  = _items.ToDictionary(x => x.Codigo, x => x, StringComparer.OrdinalIgnoreCase);
+            var cantidadesDelExcel = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+            var noEncontrados      = new List<string>();
+
+            int ultimaFila = ws.LastRowUsed()?.RowNumber() ?? 1;
+            for (int fila = 2; fila <= ultimaFila; fila++) // fila 1 = encabezados
+            {
+                string codigo       = ws.Cell(fila, colCodigo).GetString().Trim();
+                bool   tieneCantidad = ws.Cell(fila, colCantidad).TryGetValue(out double cantidad);
+
+                if (string.IsNullOrEmpty(codigo) || !tieneCantidad) continue;
+
+                cantidadesDelExcel[codigo] = cantidad;
+                if (!porCodigoCatalogo.ContainsKey(codigo))
+                    noEncontrados.Add(codigo);
+            }
+
+            int importados = 0;
+            foreach (var item in _items)
+            {
+                if (cantidadesDelExcel.TryGetValue(item.Codigo, out double cantidad))
+                {
+                    item.Cantidad = cantidad;
+                    importados++;
+                }
+                else
+                {
+                    item.Cantidad = 0;
+                }
+            }
+
+            return (importados, noEncontrados);
+        }
+
+        // Recorre los encabezados de la fila 1 buscando la columna de "Código" y la
+        // de "Cantidad", comparando sin tildes/mayúsculas y por coincidencia parcial
+        // (p. ej. "Cód. Artículo" o "Cantidad Física" también matchean). No asume
+        // ningún orden ni cantidad fija de columnas.
+        private static (int Codigo, int Cantidad) DetectarColumnas(ClosedXML.Excel.IXLWorksheet ws)
+        {
+            int ultimaCol = ws.LastColumnUsed()?.ColumnNumber() ?? 0;
+            int colCodigo = 0, colCantidad = 0;
+
+            for (int col = 1; col <= ultimaCol; col++)
+            {
+                string encabezado = NormalizarEncabezado(ws.Cell(1, col).GetString());
+
+                if (colCodigo == 0 && encabezado.Contains("codigo"))
+                    colCodigo = col;
+                else if (colCantidad == 0 && encabezado.Contains("cantidad"))
+                    colCantidad = col;
+            }
+
+            if (colCodigo == 0 || colCantidad == 0)
+            {
+                var faltantes = new List<string>();
+                if (colCodigo == 0) faltantes.Add("\"Código\"");
+                if (colCantidad == 0) faltantes.Add("\"Cantidad\"");
+                throw new InvalidOperationException(
+                    $"No se encontró la columna {string.Join(" ni ", faltantes)} en la fila de encabezados del Excel.");
+            }
+
+            return (colCodigo, colCantidad);
+        }
+
+        // Quita tildes y pasa a minúsculas/recortado, para que "Código", "CODIGO" o
+        // "código " (con espacios) comparen todos igual contra "codigo".
+        private static string NormalizarEncabezado(string texto)
+        {
+            string sinTildes = string.Concat(
+                texto.Normalize(NormalizationForm.FormD)
+                     .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark));
+            return sinTildes.Trim().ToLowerInvariant();
         }
 
         // ─── Botones Guardar / Cancelar ───────────────────────────────────────
