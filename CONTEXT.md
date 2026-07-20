@@ -153,7 +153,7 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 
 App WPF separada (`VisorEmpresa/VisorEmpresa.csproj`, símbolo de compilación `VISOR`) que visualiza la **empresa completa** (todas las sucursales a la vez), a diferencia de la app principal que siempre trabaja filtrada por `AppState.SucursalActiva`. Login propio (`LoginVisorWindow`), ventana propia (`ConsolaVisor.xaml`), tema propio (`TemaVisor`).
 
-De solo lectura salvo en los módulos de catálogo/edición a nivel de empresa: **Precios, Empresas, Sucursales, Usuarios, Regiones** sí permiten Nuevo/Editar/Eliminar (gateado por `AppState.EsAdmin`, igual que la app principal). Los documentos transaccionales (**Pedidos, Traspasos, Correcciones, Facturas**) son de solo lectura ("ver documento" desde la grilla, sin Nuevo/Editar/Eliminar/Guardar).
+De solo lectura únicamente para los documentos transaccionales (**Pedidos, Traspasos, Correcciones, Facturas** — "ver documento" desde la grilla, sin Nuevo/Editar/Eliminar/Guardar). Todo el resto del catálogo permite Nuevo/Editar/Eliminar (gateado por `AppState.EsAdmin`, igual que la app principal): **Precios, Empresas, Sucursales, Usuarios, Regiones** (desde antes), y desde la sesión 2026-07-20 también **Artículos, Familias, Productos, Industrias, Categorías** — catálogo completo editable, ver detalle en el historial de esa sesión.
 
 ### Código 100% independiente de SistemaGestion (desde sesión 2026-07-12/13)
 `VisorEmpresa.csproj` **ya no tiene ningún archivo vinculado** (`<Compile Link=.../>`). Los ~22 archivos que antes se compartían por link con `SistemaGestion/` tienen ahora copia física propia en `VisorEmpresa/`, con su namespace renombrado:
@@ -185,10 +185,14 @@ Consultas SQL agregadas a nivel de EMPRESA (todas las sucursales), con conexión
 - [x] **CorreccionesDetalle → lógica de pestañas**: migrado a UserControl con `Cerrando` + `IntentarCerrar`; selectores usan `OpenAsTab`.
 - [x] **ArticulosDetalle → lógica de pestañas**: migrado a UserControl con `Cerrando` + `IntentarCerrar`; selectores usan `OpenAsTab`.
 - [ ] Verificar compilación y prueba completa del sistema (no hay herramientas de build en el entorno cloud — debe hacerse en máquina local).
+- [ ] Verificar en máquina local el catálogo editable nuevo de VisorEmpresa (Familias/Productos/Industrias/Categorías + Articulos) — sesión 2026-07-20, sin compilar en la nube.
+- [ ] Confirmar con el usuario el criterio de `estadoV` (opt-out vs opt-in) tras probarlo — sesión 2026-07-20.
 
 ### Media prioridad
 - [x] Botón X de las pestañas dinámicas llama `IntentarCerrar()` si el contenido lo implementa (via reflexión), en vez de cerrar directamente.
 - [ ] Exportación de datos en otras secciones (actualmente solo ArticulosGeneral tiene "Informe Excel").
+- [ ] Replicar el guardado async (Task.Run + deshabilitar ventana) de VisorEmpresa/PreciosDetalle al resto de los ~34 archivos/81 llamados a `OrdenarData()` — piloto hecho en sesión 2026-07-20, rollout pendiente de confirmación.
+- [ ] Migrar la conexión a SQL Server a Application Roles + token de sesión (en vez de credencial fija cifrada por DPAPI) — dirección elegida en sesión 2026-07-20 (ver historial), sin implementar; prompt de arranque ya preparado para la próxima sesión.
 
 ### Baja prioridad / Futuro
 - [ ] Reportes adicionales en Excel
@@ -201,6 +205,53 @@ Consultas SQL agregadas a nivel de EMPRESA (todas las sucursales), con conexión
 - **`CorreccionesDetalle` ya es pestaña**: usa `OpenAsTab` de ArticulosGeneral para buscar artículos, igual que Pedidos/Traspasos.
 
 ## Historial de Cambios por Sesión
+
+### Sesión 2026-07-20 — VisorEmpresa: import inteligente de Excel, guardado async (piloto), "Crear Plantilla" Excel/PDF en Precios e Inventarios, columna articulos.estadoV, y catálogo completo editable (Familias/Productos/Industrias/Categorías); SistemaGestion: fixes de pestañas e Índice automático (rama `master`)
+
+> Sesión muy larga, pedidos numerados turno a turno ("problema1", "problema2"...) sobre VisorEmpresa y SistemaGestion. Se documenta de una sola vez, agrupada por bloque temático en el orden en que se pidió.
+
+#### VisorEmpresa/PreciosDetalle — Importar Excel: detección inteligente de columnas
+- El import ya no depende de la posición fija de columnas (antes: Código=col.1, Precio=col.5). Ahora `DetectarColumnas` busca en la fila de encabezados el texto "código"/"precio" (sin tildes, sin importar mayúsculas, por coincidencia parcial — "Cód. Artículo" o "Precio Venta" también matchean) vía `NormalizarEncabezado` (quita diacríticos con `NormalizationForm.FormD`).
+- Decisión de comportamiento (pedida explícitamente, revertida de una idea intermedia): el import **reemplaza el precio de TODO el catálogo**, no solo de las filas presentes en el Excel — el artículo cuyo código aparece con un valor numérico toma ese valor (incluido 0 explícito); cualquier otro artículo (ausente del Excel, o con la celda de precio en blanco) queda en 0.
+
+#### VisorEmpresa/PreciosGeneral y SistemaGestion/InventariosGeneral — botón "Crear Plantilla" (Excel/PDF)
+- El botón "Plantilla Excel" de Precios se renombra a **"Crear Plantilla"**; al hacer clic abre un diálogo nuevo (`SeleccionarFormatoWindow`, copia propia por proyecto) para elegir Excel o PDF.
+  - Excel: catálogo completo sin agrupar, con columnas Producto y Familia (sin cambios de fondo).
+  - PDF (nuevo `GenerarPlantillaPdf`): catálogo completo agrupado por Producto & Familia (banda celeste, mismo estilo que `GenerarPdfListaPrecios`) — Producto/Familia van en la banda de grupo, no como columnas de datos. Precio/Cantidad arranca en blanco en el PDF (no "0" — pedido explícito), pero sigue en 0 en el Excel (sin cambios, tal como se pidió).
+- Mismo patrón replicado en **SistemaGestion/InventariosGeneral** (nuevo botón "Crear Plantilla", Excel con Cantidad, PDF agrupado) y nuevo botón **"Importar Excel"** en **SistemaGestion/InventariosDetalle**, mismo mecanismo de detección inteligente de columnas (Código/Cantidad) que Precios.
+
+#### Fix: Descripción incompleta en 5 exportaciones Excel/PDF
+- Auditoría (agente Explore) encontró que `VisorEmpresa/PreciosGeneral` (`GenerarPlantillaExcel`, `GenerarPdfListaPrecios`, `GenerarExcelListaPrecios`) y `SistemaGestion/InventariosGeneral` (`GenerarPdfInventario`, `GenerarExcelInventario`) escribían la Descripción cruda del artículo (sin familia ni modelo) en vez de la descripción completa. Las 5 corregidas para usar `FuncionesComunes.UnirVariables(desc, famDesc, modelo)`, igual que ya hacían correctamente `InformeExcelArticulos`/`ArqueoExcelArticulos`.
+
+#### Nueva columna `articulos.estadoV` ("mostrar"/"ocultar") — filtro para las plantillas
+- El usuario agregó la columna en SQL Server (`SELECT a.*` en `AppLoader` ya la trae sola, sin cambios de query). Se agregó un combo **"VISIBLE EN PLANTILLAS"** en `SistemaGestion/ArticulosDetalle` (Mostrar/Ocultar), que se carga y guarda junto al resto del artículo.
+- Decisión de diseño explícita (comunicada al usuario, no confirmada aún): el filtro es "opt-out", no "opt-in" — se excluye SOLO lo explícitamente en "ocultar"; `NULL`/vacío/"mostrar" cuentan como visible, para que agregar la columna no vacíe de golpe las plantillas de artículos ya cargados. Si el usuario prefiere lo contrario (arrancar todo oculto hasta marcar "Mostrar" a mano), es un cambio de una línea en `EsVisibleEnPlantillas` (duplicado en `VisorEmpresa/PreciosGeneral.xaml.cs` y `SistemaGestion/InventariosGeneral.xaml.cs`).
+- El filtro se aplica solo en las 4 generadoras de "Crear Plantilla" (no en Informe Excel/Arqueo/exports de un documento ya guardado), por pedido explícito ("al crear una plantilla").
+
+#### VisorEmpresa — instancia única + auto-actualización
+- `SistemaGestion/App.xaml.cs` y `VisorEmpresa/App.xaml.cs`: `Mutex` nombrado por app (`SistemaGestion.InstanciaUnica`/`VisorEmpresa.InstanciaUnica`) — si ya hay una ventana abierta de la misma app en la misma sesión de Windows, la segunda instancia avisa y se cierra sola. Las dos apps entre sí siguen pudiendo correr juntas (son ejecutables distintos).
+- VisorEmpresa nunca había tenido código de auto-actualización (a diferencia de SistemaGestion), pese a que su release ya se publica en el canal Velopack "visor" del mismo repo. Se agregó `VisorEmpresa/ActualizadorApp.cs` (mismo patrón que `SistemaGestion/ActualizadorApp.cs`) y se conectó a `LoginVisorWindow` (bloqueo de login si hay versión nueva) y `ConsolaVisor` (botón "🔄 Actualizar" en la top bar).
+
+#### VisorEmpresa/PreciosDetalle — guardado async (piloto, no rollout completo)
+- Diagnóstico: `Guardar()`/`GuardarNuevo()`/`GuardarEditar()` corrían síncrono en el hilo de UI, y el único tramo que habla con SQL Server (`DataConsulta.OrdenarData()` → `ExportarItems()`) congelaba la ventana durante el round-trip de red.
+- Fix aplicado (piloto, solo este archivo): los 3 métodos pasan a `async`, el tramo de red se manda a `Task.Run`, y mientras dura se deshabilita TODA la ventana (no solo la pestaña) — `_tabla` de `DataConsulta` es compartida por toda la app y no es thread-safe, así que ninguna otra pestaña puede tocarla en paralelo durante el guardado.
+- **Pendiente, explícitamente no resuelto**: el mismo cuello de botella se repite en **~34 archivos / 81 llamados** a `OrdenarData()` en ambos proyectos (todos los módulos con botón Guardar). Replicar el patrón al resto queda pendiente de confirmación del usuario, dado el tamaño del cambio y que no se puede compilar en este entorno para verificarlo masivamente.
+
+#### Fixes chicos en SistemaGestion
+- **Pedidos/Traspasos/CorreccionesDetalle**: "Importar Artículos" y "Buscar Artículo" podían quedar abiertos los dos a la vez (dos pestañas selectoras distintas para el mismo documento). Fix en el único método compartido, `ArticulosGeneral.OpenAsTab`: ahora también cierra la variante contraria para el mismo contexto antes de abrir la nueva, así queda como mucho una abierta.
+- **ArticulosDetalle**: el campo Índice pasa de editable a solo lectura (`ReadOnlyInput`) — siempre se calcula solo (`RecalcularIndicePorFamilia` al elegir/cambiar familia, o heredado del artículo de referencia en modo insertar), ya no se puede tipear a mano.
+
+#### VisorEmpresa — catálogo completo editable (Familias/Productos/Industrias/Categorías + Artículos)
+- Hasta esta sesión, VisorEmpresa era de solo lectura para todo el catálogo de artículos: Familias/Productos/Industrias/Categorías no existían ni como pantallas propias, y `ArticulosDetalle` era un visor de 73 líneas sin Guardar. Ahora:
+  - 4 módulos nuevos, copias editables de sus equivalentes en SistemaGestion, adaptadas al namespace/using de VisorEmpresa (mismo patrón que ya usaban Precios/Empresas/Sucursales/Usuarios/Regiones): `FamiliasGeneral`/`Detalle`, `IndustriasGeneral`/`Detalle`, `ProductosGeneral`/`Detalle`, `CategoriasGeneral`/`Detalle`. Cada uno con su propio `OpenAsTab` (selector en pestaña) y dedup key propia (`seleccionar-familia|...`, etc.). Sin dependencia de `AppState.SucursalActiva`/`AperturaActiva`/`RegionActiva` (confirmado en la auditoría previa — estos 4 módulos no los tocan).
+  - `VisorEmpresa/ArticulosGeneral`: se agregan Nuevo/Insertar/Editar/Eliminar (antes de solo lectura, doble clic abría un detalle no editable). Se agregan los helpers estáticos `RenumerarFamilia`/`SincronizarAppsheetsTrasCambio` (ya existían en `SistemaGestion.ArticulosGeneral`, necesarios para Guardar). "Arqueo Excel" queda explícitamente fuera de alcance (no existe `ArqueoExcelArticulos` en VisorEmpresa, y el usuario confirmó no portarlo).
+  - `VisorEmpresa/ArticulosDetalle`: reconstruido de cero como formulario editable completo (antes solo mostraba datos), con selectores de Familia/Industria/Categoría apuntando a los 4 módulos nuevos, y el combo `CboEstadoV` incluido. **Sin "Ver Movimientos"**: depende de `MovimientosGeneral`, que usa `AppState.SucursalActiva`/`AperturaActiva` — nunca pobladas en VisorEmpresa (mismo problema ya documentado con `StockCalculator`); el usuario confirmó explícitamente no portarlo en vez de portarlo mal.
+  - `ConsolaVisor`: 4 secciones nuevas en la barra lateral (agrupadas junto a Artículos), con sus paneles fijos, entradas en `_pestañasPorSeccion`/`_pestañaSeleccionadaPorSeccion`, `AsignarPanelFijo` y `BtnNav_Xxx_Click`. `RecargarPaneles()` (se dispara al cambiar de Empresa en la top bar) también recrea los 4 paneles nuevos — si no, cambiar de empresa dejaría datos de la empresa anterior en pantalla (riesgo real señalado por la auditoría previa, en el mismo espíritu que la trampa de `SucursalActiva`).
+  - Un agente en background (para reconstruir `ArticulosDetalle`) falló por límite de uso de la sesión a mitad de tarea; se rehizo a mano con el mismo material fuente, sin pérdida de trabajo.
+
+#### Discusión de seguridad: credenciales de SQL Server (sin cambios de código)
+- El usuario preguntó (vía `/critico` y `/ideas`) si convenía embeber/automatizar la conexión a SQL Server del VPS nuevo en vez del flujo actual (config manual cifrada con DPAPI por PC/usuario, `ConexionConfig.cs`). Se descartó embeber la credencial en el binario (la app se distribuye desde un repo público de GitHub, necesario para que Velopack lea releases sin token — cualquiera podría decompilar el .exe y sacarla) y también se descartó mover el repo al VPS propio (no resuelve nada: el binario compilado igual llega a cada PC, y rompería el pipeline de releases que depende del repo público).
+- Dirección elegida para una sesión futura: **SQL Server Application Roles** (`sp_setapprole`) — conexión inicial con login de privilegios mínimos (puede ser compartido), login real de la app (tabla `usuarios`) activa el rol con permisos reales, usando un token de sesión de corta duración en vez de una contraseña fija. Sin cambios de código todavía; se preparó un prompt de arranque para la próxima sesión (pide investigar el flujo actual antes de tocar nada, y proponer un plan con el script SQL exacto — la creación del Application Role en el VPS es un paso manual del usuario, no ejecutable desde este entorno).
 
 ### Sesión 2026-07-12/13 — Rename WpfAppVba→SistemaGestion, funciones Excel (Plantilla/Importar Precios, Arqueo Excel), y VisorEmpresa: caché completa al loguear + independencia total de código (rama `master`)
 
