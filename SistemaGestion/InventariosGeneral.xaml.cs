@@ -254,14 +254,14 @@ namespace SistemaGestion
             consola.AbrirPestaña($"Inventario {fila.Codigo}", detalle, $"inventario-{idSel}");
         }
 
-        // articulos.estadoV ("mostrar"/"ocultar", cargada por el usuario en
+        // articulos.estado ("mostrar"/"ocultar", cargada por el usuario en
         // ArticulosDetalle) filtra qué artículos entran en las plantillas Excel/PDF.
         // Solo se excluye si quedó explícitamente en "ocultar"; null/vacío/cualquier
         // otro valor (artículos guardados antes de que existiera esta columna) cuenta
         // como visible, para no vaciar de golpe las plantillas ya existentes.
         private static bool EsVisibleEnPlantillas(string artId)
         {
-            string estadoV = Sql.ArticulosObj.ObtenerItem("estadoV", artId)?.ToString()?.Trim().ToLowerInvariant() ?? "";
+            string estadoV = Sql.ArticulosObj.ObtenerItem("estado", artId)?.ToString()?.Trim().ToLowerInvariant() ?? "";
             return estadoV != "ocultar";
         }
 

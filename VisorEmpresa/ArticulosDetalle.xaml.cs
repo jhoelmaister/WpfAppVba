@@ -100,7 +100,7 @@ namespace VisorEmpresa
             // null, de artículos guardados antes de que existiera esta columna) cuenta
             // como "Mostrar" — para que agregar esta columna no vacíe de golpe las
             // plantillas de artículos ya cargados.
-            string estadoV = Sql.ArticulosObj.ObtenerItem("estadoV", id)?.ToString()?.Trim().ToLowerInvariant() ?? "";
+            string estadoV = Sql.ArticulosObj.ObtenerItem("estado", id)?.ToString()?.Trim().ToLowerInvariant() ?? "";
             CboEstadoV.SelectedIndex = estadoV == "ocultar" ? 1 : 0;
         }
 
@@ -279,7 +279,7 @@ namespace VisorEmpresa
 
         // ─── Guardar ─────────────────────────────────────────────────────────
         // "Mostrar"/"Ocultar" (CboEstadoV) -> "mostrar"/"ocultar" para la columna
-        // articulos.estadoV: filtra qué artículos entran en las plantillas Excel/PDF
+        // articulos.estado: filtra qué artículos entran en las plantillas Excel/PDF
         // (VisorEmpresa/PreciosGeneral y SistemaGestion/InventariosGeneral).
         private string EstadoVSeleccionado => CboEstadoV.SelectedIndex == 1 ? "ocultar" : "mostrar";
 
@@ -321,7 +321,7 @@ namespace VisorEmpresa
                 Sql.ArticulosObj.EstablecerItem("Categoria",  id, ResolverCategoriaId());
                 Sql.ArticulosObj.EstablecerItem("descripcion",id, Box_Descripcion.Text);
                 Sql.ArticulosObj.EstablecerItem("modelo",     id, Box_Modelo.Text);
-                Sql.ArticulosObj.EstablecerItem("estadoV",    id, EstadoVSeleccionado);
+                Sql.ArticulosObj.EstablecerItem("estado",    id, EstadoVSeleccionado);
                 Sql.ArticulosObj.EstablecerItem("observacion",id, Box_Observacion.Text);
                 Sql.ArticulosObj.EstablecerItem("edicion",    id, DateTime.Now);
                 Sql.ArticulosObj.EstablecerItem("usuarioE",   id, AppState.UsuarioActivo);
@@ -364,7 +364,7 @@ namespace VisorEmpresa
                 Sql.ArticulosObj.EstablecerItem("Categoria",  id, ResolverCategoriaId());
                 Sql.ArticulosObj.EstablecerItem("descripcion",id, Box_Descripcion.Text);
                 Sql.ArticulosObj.EstablecerItem("modelo",     id, Box_Modelo.Text);
-                Sql.ArticulosObj.EstablecerItem("estadoV",    id, EstadoVSeleccionado);
+                Sql.ArticulosObj.EstablecerItem("estado",    id, EstadoVSeleccionado);
                 Sql.ArticulosObj.EstablecerItem("observacion",id, Box_Observacion.Text);
                 Sql.ArticulosObj.EstablecerItem("emision",    id, DateTime.Now);
                 Sql.ArticulosObj.EstablecerItem("edicion",    id, DateTime.Now);
@@ -435,7 +435,7 @@ namespace VisorEmpresa
                 Sql.ArticulosObj.EstablecerItem("Categoria",  id, ResolverCategoriaId());
                 Sql.ArticulosObj.EstablecerItem("descripcion",id, Box_Descripcion.Text);
                 Sql.ArticulosObj.EstablecerItem("modelo",     id, Box_Modelo.Text);
-                Sql.ArticulosObj.EstablecerItem("estadoV",    id, EstadoVSeleccionado);
+                Sql.ArticulosObj.EstablecerItem("estado",    id, EstadoVSeleccionado);
                 Sql.ArticulosObj.EstablecerItem("observacion",id, Box_Observacion.Text);
                 Sql.ArticulosObj.EstablecerItem("emision",    id, DateTime.Now);
                 Sql.ArticulosObj.EstablecerItem("edicion",    id, DateTime.Now);
