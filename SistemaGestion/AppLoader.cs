@@ -27,7 +27,7 @@ namespace SistemaGestion.Data
         public static void ConectarUsuarios()
         {
             Sql.UsuariosObj.Conectar("usuarios",
-                "SELECT * FROM usuarios WHERE estadof = 'normal' ORDER BY secuencia ASC");
+                "SELECT * FROM usuarios WHERE estadof = 'normal' ORDER BY apellidos ASC, nombres ASC");
             // Tabla de empresas (sin filtro de empresa).
             Sql.EmpresasObj.Conectar("empresas",
                 "SELECT * FROM empresas WHERE estadof = 'normal' ORDER BY descripcion ASC");
@@ -109,7 +109,7 @@ namespace SistemaGestion.Data
 
             // usuarios: NO se filtra por empresa (necesario para el login).
             Sql.UsuariosObj.Conectar("usuarios",
-                "SELECT * FROM usuarios WHERE estadof = 'normal' ORDER BY secuencia ASC");
+                "SELECT * FROM usuarios WHERE estadof = 'normal' ORDER BY apellidos ASC, nombres ASC");
 
             // 'familia' es uniqueidentifier: ordenar por ese GUID no respeta el orden de
             // familias. Se hace JOIN para ordenar por la 'secuencia' de la familia.

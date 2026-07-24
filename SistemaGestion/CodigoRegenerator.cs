@@ -7,7 +7,7 @@ namespace SistemaGestion.Data
     /// <summary>
     /// Regenera la columna <c>codigo</c> de las tablas del sistema:
     ///   • Maestras  → numeración secuencial 1..N, ordenada por 'descripcion'
-    ///     (excepto 'usuarios', que no tiene esa columna y sigue por 'secuencia').
+    ///     (excepto 'usuarios', que no tiene esa columna y usa 'apellidos, nombres').
     ///   • documentosI/P/C → signo de la sucursal + correlativo por sucursal,
     ///     ordenado por fecha dentro de cada sucursal.
     ///   • documentosT (traspasos) → signo de la empresa + correlativo por empresa
@@ -21,12 +21,11 @@ namespace SistemaGestion.Data
     public static class CodigoRegenerator
     {
         // Tablas maestras → código entero secuencial, ordenadas por 'descripcion'.
-        // "usuarios" es la única sin columna 'descripcion' (tiene nombres/apellidos)
-        // así que por ahora se queda ordenada por 'secuencia' hasta que se defina
-        // qué columna usar en su lugar.
+        // "usuarios" es la única sin columna 'descripcion' (tiene nombres/apellidos
+        // en su lugar) así que se ordena por "apellidos, nombres".
         private static readonly (string tabla, string colOrden)[] Maestras =
         {
-            ("usuarios",   "secuencia"),
+            ("usuarios",   "apellidos, nombres"),
             ("familias",   "descripcion"),
             ("productos",  "descripcion"),
             ("Categorias", "descripcion"),
