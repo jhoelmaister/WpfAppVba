@@ -64,7 +64,7 @@ namespace VisorEmpresa.Data
             ["precios"]        = new[] { "secuencia", "precio", "articulo", "documentoL" },
             ["documentosI"]    = new[] { "secuencia", "observacion", "fecha", "emision", "edicion", "codigo", "sucursal", "usuario", "usuarioE", "referencia" },
             ["inventarios"]    = new[] { "secuencia", "cantidad", "documentoI", "articulo" },
-            ["documentosP"]    = new[] { "secuencia", "fecha", "estado", "tipo", "emision", "edicion", "referencia", "movimiento", "observacion", "estadoC", "codigo", "sucursal", "emitido", "usuario", "usuarioE", "tercero" },
+            ["documentosP"]    = new[] { "secuencia", "fecha", "estado", "tipo", "emision", "edicion", "referencia", "movimiento", "observacion", "estadoC", "codigo", "sucursal", "usuario", "usuarioE", "tercero" },
             ["pedidos"]        = new[] { "secuencia", "indice", "cantidad", "importe", "tipo", "forma", "contable", "documentoP", "articulo" },
             ["transacciones"]  = new[] { "secuencia", "fecha", "descripcion", "indice", "importe", "forma", "documentoP" },
             ["entregas"]       = new[] { "secuencia", "indice", "cantidad", "fecha", "documentoP", "articulo" },

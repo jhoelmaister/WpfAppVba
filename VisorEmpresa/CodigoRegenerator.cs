@@ -6,7 +6,8 @@ namespace VisorEmpresa.Data
 {
     /// <summary>
     /// Regenera la columna <c>codigo</c> de las tablas del sistema:
-    ///   • Maestras  → numeración secuencial 1..N, ordenada por 'secuencia'.
+    ///   • Maestras  → numeración secuencial 1..N, ordenada por 'descripcion'
+    ///     (excepto 'usuarios', que no tiene esa columna y sigue por 'secuencia').
     ///   • documentosI/P/C → signo de la sucursal + correlativo por sucursal,
     ///     ordenado por fecha dentro de cada sucursal.
     ///   • documentosT (traspasos) → signo de la empresa + correlativo por empresa
@@ -19,11 +20,21 @@ namespace VisorEmpresa.Data
     /// </summary>
     public static class CodigoRegenerator
     {
-        // Tablas maestras → código entero secuencial, ordenadas por 'secuencia'.
-        private static readonly string[] Maestras =
+        // Tablas maestras → código entero secuencial, ordenadas por 'descripcion'.
+        // "usuarios" es la única sin columna 'descripcion' (tiene nombres/apellidos)
+        // así que por ahora se queda ordenada por 'secuencia' hasta que se defina
+        // qué columna usar en su lugar.
+        private static readonly (string tabla, string colOrden)[] Maestras =
         {
-            "usuarios", "familias", "productos", "Categorias", "industrias",
-            "terceros", "sucursales", "regiones", "empresas"
+            ("usuarios",   "secuencia"),
+            ("familias",   "descripcion"),
+            ("productos",  "descripcion"),
+            ("Categorias", "descripcion"),
+            ("industrias", "descripcion"),
+            ("terceros",   "descripcion"),
+            ("sucursales", "descripcion"),
+            ("regiones",   "descripcion"),
+            ("empresas",   "descripcion"),
         };
 
         // Documentos con columna 'sucursal' → signo de la sucursal + correlativo
@@ -48,8 +59,8 @@ namespace VisorEmpresa.Data
             using var tx = conn.BeginTransaction();
             try
             {
-                foreach (var t in Maestras)
-                    resumen.AppendLine($"{t}: {RenumerarMaestra(conn, tx, t)}");
+                foreach (var (t, colOrden) in Maestras)
+                    resumen.AppendLine($"{t}: {RenumerarMaestra(conn, tx, t, colOrden)}");
 
                 foreach (var (tabla, colSucursal) in Documentos)
                     resumen.AppendLine($"{tabla}: {RenumerarDocumentoPorSucursal(conn, tx, tabla, colSucursal)}");
@@ -69,14 +80,14 @@ namespace VisorEmpresa.Data
             return resumen.ToString().TrimEnd();
         }
 
-        // ─── Maestras: codigo = 1..N (orden por secuencia) ───────────────────
+        // ─── Maestras: codigo = 1..N (orden por colOrden) ─────────────────────
         // codigo es INT en las tablas maestras (a diferencia de los documentos,
         // donde es NVARCHAR por el prefijo de signo) — el CAST castea al tipo real.
-        private static int RenumerarMaestra(SqlConnection conn, SqlTransaction tx, string tabla)
+        private static int RenumerarMaestra(SqlConnection conn, SqlTransaction tx, string tabla, string colOrden)
         {
             string sql =
                 $";WITH cte AS (" +
-                $"  SELECT codigo, ROW_NUMBER() OVER (ORDER BY secuencia, id) AS rn " +
+                $"  SELECT codigo, ROW_NUMBER() OVER (ORDER BY {colOrden}, id) AS rn " +
                 $"  FROM {tabla}" +
                 $") UPDATE cte SET codigo = CAST(rn AS INT);";
             return Ejecutar(conn, tx, sql);

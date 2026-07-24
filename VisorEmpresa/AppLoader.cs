@@ -30,7 +30,7 @@ namespace VisorEmpresa.Data
                 "SELECT * FROM usuarios WHERE estadof = 'normal' ORDER BY secuencia ASC");
             // Tabla de empresas (sin filtro de empresa).
             Sql.EmpresasObj.Conectar("empresas",
-                "SELECT * FROM empresas WHERE estadof = 'normal' ORDER BY secuencia ASC");
+                "SELECT * FROM empresas WHERE estadof = 'normal' ORDER BY descripcion ASC");
         }
 
         // ─── ValidarLogin ─────────────────────────────────────────────────────

@@ -1510,7 +1510,6 @@ namespace VisorEmpresa
                 Sql.DocumentosPObj.EstablecerItem("tipo",        id, tipoPed);
                 Sql.DocumentosPObj.EstablecerItem("emision",     id, DateTime.Now);
                 Sql.DocumentosPObj.EstablecerItem("edicion",     id, DateTime.Now);
-                Sql.DocumentosPObj.EstablecerItem("emitido",     id, AppState.SucursalActiva);
                 Sql.DocumentosPObj.EstablecerItem("usuario",     id, AppState.UsuarioActivo);
                 Sql.DocumentosPObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
 

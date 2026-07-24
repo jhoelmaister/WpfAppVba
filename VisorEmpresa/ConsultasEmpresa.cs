@@ -115,7 +115,7 @@ namespace VisorEmpresa
             var lista = new List<(string, string)>();
             var tabla = EjecutarConsulta(
                 "SELECT id, descripcion FROM empresas " +
-                "WHERE estadof = 'normal' ORDER BY secuencia ASC");
+                "WHERE estadof = 'normal' ORDER BY descripcion ASC");
             foreach (DataRow fila in tabla.Rows)
                 lista.Add((Texto(fila["id"]), Texto(fila["descripcion"])));
             return lista;
