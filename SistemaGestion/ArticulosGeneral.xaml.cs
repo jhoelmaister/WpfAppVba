@@ -747,6 +747,16 @@ namespace SistemaGestion
             consola.AbrirPestaña(titulo, dlg, $"articulo-{idSel}");
         }
 
+        // Un solo click en el checkbox marca/desmarca la fila (antes hacía
+        // falta doble clic o Enter, vía EjecutarAccionFila).
+        private void ChkSeleccionado_Click(object sender, RoutedEventArgs e)
+        {
+            e.Handled = true;
+            if (sender is CheckBox chk && chk.DataContext is ArticuloFila fila)
+                Grid1.SelectedItem = fila;
+            ToggleSeleccion();
+        }
+
         private void ToggleSeleccion()
         {
             if (Grid1.SelectedItem is not ArticuloFila fila) return;

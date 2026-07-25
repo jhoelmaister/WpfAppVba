@@ -309,12 +309,12 @@
                 </DataGrid.RowStyle>
 
                 <DataGrid.Columns>
-                    <!-- Checkbox visual (solo lectura) -->
+                    <!-- Checkbox: un click alcanza para marcar/desmarcar la fila -->
                     <DataGridTemplateColumn Header="✓" Width="34">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <CheckBox IsChecked="{Binding Seleccionado, Mode=OneWay}"
-                                          IsHitTestVisible="False" Focusable="False"
+                                          Click="ChkSeleccionado_Click"
                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>

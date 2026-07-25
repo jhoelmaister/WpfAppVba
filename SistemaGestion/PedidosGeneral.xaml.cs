@@ -126,8 +126,9 @@ namespace SistemaGestion
             int linea = 1;
             double totalCant = 0, totalImporte = 0;
 
-            string filtroEstado = ObtenerFiltroEstado();
-            string filtroCuenta = ObtenerFiltroCuenta();
+            string filtroEstado  = ObtenerFiltroEstado();
+            string filtroCuenta  = ObtenerFiltroCuenta();
+            string filtroFactura = ObtenerFiltroFactura();
             // Cada modo aplica solo su propio filtro de contenido (igual que VBA llaveActualisar)
             string busqueda = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
             string mesFiltro = _modoFiltro == "filtros"  ? _mesActivo : "";
@@ -168,6 +169,7 @@ namespace SistemaGestion
 
                 // ── Usar estadoC (campo correcto en VBA) para cuenta ──────────
                 string estadoC = (Sql.DocumentosPObj.ObtenerItem("estadoC", id)?.ToString() ?? "").ToLower();
+                string estadoA = (Sql.DocumentosPObj.ObtenerItem("estadoA", id)?.ToString() ?? "sin factura").ToLower();
 
                 // Filtro por estado
                 if (!string.IsNullOrEmpty(filtroEstado) &&
@@ -177,6 +179,11 @@ namespace SistemaGestion
                 // Filtro por cuenta (estadoC)
                 if (!string.IsNullOrEmpty(filtroCuenta) &&
                     !string.Equals(estadoC, filtroCuenta, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // Filtro por factura (estadoA)
+                if (!string.IsNullOrEmpty(filtroFactura) &&
+                    !string.Equals(estadoA, filtroFactura, StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 // Filtro por búsqueda
@@ -198,6 +205,7 @@ namespace SistemaGestion
                     Referencia  = Sql.DocumentosPObj.ObtenerItem("referencia", id)?.ToString() ?? "",
                     Estado      = estado,
                     Cuenta      = estadoC,
+                    Factura     = estadoA,
                     Cantidad    = cant,
                     Importe     = importe
                 });
@@ -250,6 +258,13 @@ namespace SistemaGestion
             return "";
         }
 
+        private string ObtenerFiltroFactura()
+        {
+            if (BtnFacturaConFactura?.IsChecked == true) return "con factura";
+            if (BtnFacturaSinFactura?.IsChecked == true) return "sin factura";
+            return "";
+        }
+
         private string ObtenerFiltroTipo()
         {
             return (CboTipoMovimiento?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() switch
@@ -280,6 +295,7 @@ namespace SistemaGestion
             string terceroDesc = Sql.TercerosObj.ObtenerItem("descripcion", terceroId)?.ToString() ?? terceroId;
             string estado  = (Sql.DocumentosPObj.ObtenerItem("estado",  id)?.ToString() ?? "").ToLower();
             string estadoC = (Sql.DocumentosPObj.ObtenerItem("estadoC", id)?.ToString() ?? "").ToLower();
+            string estadoA = (Sql.DocumentosPObj.ObtenerItem("estadoA", id)?.ToString() ?? "sin factura").ToLower();
             string movDoc  = Sql.DocumentosPObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
 
             return new PedidoFila
@@ -293,6 +309,7 @@ namespace SistemaGestion
                 Referencia  = Sql.DocumentosPObj.ObtenerItem("referencia", id)?.ToString() ?? "",
                 Estado      = estado,
                 Cuenta      = estadoC,
+                Factura     = estadoA,
                 Cantidad    = CalcularCantidad(id),
                 Importe     = CalcularImporte(id)
             };
@@ -423,6 +440,9 @@ namespace SistemaGestion
             => CargarPedidos();
 
         private void FiltroCuenta_Checked(object sender, RoutedEventArgs e)
+            => CargarPedidos();
+
+        private void FiltroFactura_Checked(object sender, RoutedEventArgs e)
             => CargarPedidos();
 
         private void CboTipoMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -610,6 +630,7 @@ namespace SistemaGestion
         public string Referencia  { get; set; } = "";
         public string Estado      { get; set; } = "";
         public string Cuenta      { get; set; } = "";
+        public string Factura     { get; set; } = "";
         public double Cantidad    { get; set; }
         public double Importe     { get; set; }
     }

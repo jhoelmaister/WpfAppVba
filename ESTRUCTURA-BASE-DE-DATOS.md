@@ -63,9 +63,9 @@
   pasó a ser una línea más colgada directamente de `documentosP`, igual que
   `pedidos`/`transacciones`/`entregas`. `facturas.documentoF` se renombró a
   `facturas.documentoP`. Las pantallas `FacturasGeneral`/`FacturasDetalle`
-  (ambos proyectos) se eliminaron; ahora hay una pestaña "Facturas" dentro de
-  `PedidosDetalle` — siempre la **primera** pestaña, a la izquierda de
-  "Artículos del pedido".
+  (ambos proyectos) se eliminaron; ahora hay una pestaña "Facturas del
+  pedido" dentro de `PedidosDetalle`, ubicada a la derecha de "Artículos del
+  pedido".
 - **`facturas.forma` renombrada a `facturas.estado`** (`nvarchar(100)`),
   valores "con deuda"/"sin deuda". Una factura "con deuda" suma su importe al
   Saldo del pedido; "sin deuda" no. Nuevo botón **"Facturar pedido"** en esa
@@ -73,6 +73,14 @@
   una línea de factura por categoría (concepto = descripción de la categoría,
   importe = suma de esa categoría) con estado "sin deuda" — se puede volver a
   presionar para recalcular; no toca las líneas "con deuda" agregadas a mano.
+- **`documentosP.estadoA`**: agregada (`nvarchar(100)`, "sin factura"/"con
+  factura"). Es un estado más para el pedido, igual que `estado` (entrega) y
+  `estadoC` (cuenta): se recalcula solo, sin intervención manual, según si el
+  pedido tiene alguna línea cargada en la pestaña "Facturas del pedido" (con
+  factura) o ninguna (sin factura). Se muestra como badge "Estado de factura"
+  en el encabezado de `PedidosDetalle`. En `PedidosGeneral`, reemplaza a la
+  columna "Referencia" en `Grid1` (badge "Factura") y suma un nuevo filtro
+  lateral ("Todos"/"Con factura"/"Sin factura").
 
 ## Tablas
 
@@ -209,7 +217,8 @@ Cabecera de pedidos (ventas/compras).
 | estadof     | nvarchar(100)       | sí   | |
 | movimiento  | nvarchar(255)       | sí   | |
 | observacion | nvarchar(255)       | sí   | |
-| estadoC     | nvarchar(100)       | sí   | |
+| estadoC     | nvarchar(100)       | sí   | "pendiente"/"cancelado"/"pendiente parcial" — estado de cuenta |
+| estadoA     | nvarchar(100)       | sí   | "sin factura"/"con factura" — se recalcula solo según si el pedido tiene líneas en la pestaña Facturas |
 | codigo      | nvarchar(100)       | sí   | |
 | id          | uniqueidentifier    | NO   | |
 | sucursal    | uniqueidentifier    | sí   | sucursal emisora (única columna de sucursal; `emitido` se eliminó por ser duplicada) |

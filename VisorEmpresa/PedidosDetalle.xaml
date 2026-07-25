@@ -181,6 +181,12 @@
                             <TextBlock x:Name="TxtBadgeCuenta"
                                        FontSize="11" FontWeight="SemiBold"/>
                         </Border>
+                        <TextBlock Text="Estado de factura:" Style="{StaticResource LblMuted}" Margin="12,0,4,0"/>
+                        <Border x:Name="BadgeFactura"
+                                CornerRadius="10" Padding="8,3">
+                            <TextBlock x:Name="TxtBadgeFactura"
+                                       FontSize="11" FontWeight="SemiBold"/>
+                        </Border>
                     </StackPanel>
 
                     <!-- Guardar / Cancelar (siempre visibles aquí) -->
@@ -307,6 +313,7 @@
                     <!-- Ocultos: usados por code-behind, visualmente en badges -->
                     <TextBox x:Name="Box_Estado" Visibility="Collapsed" IsReadOnly="True"/>
                     <TextBox x:Name="Box_Cuenta" Visibility="Collapsed" IsReadOnly="True"/>
+                    <TextBox x:Name="Box_EstadoA" Visibility="Collapsed" IsReadOnly="True"/>
                 </StackPanel>
 
             </StackPanel>
@@ -556,7 +563,7 @@
             <!-- ──────────────────────────────────────────────────────── -->
             <!-- TAB 2: FACTURAS                                          -->
             <!-- ──────────────────────────────────────────────────────── -->
-            <TabItem x:Name="TabFacturas" Header="Facturas">
+            <TabItem x:Name="TabFacturas" Header="Facturas del pedido">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>

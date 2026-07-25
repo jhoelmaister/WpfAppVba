@@ -528,6 +528,7 @@ namespace VisorEmpresa
             CargarTotalesEntregas();
             CargarTotalesDivisas();
             CargarEstadosCuenta();
+            CargarEstadoFactura();
             CargarTotalesCategoria();
             CargarTotalesCategoriaEntregas();
             if (AppState.TipoPedido.ToLower() == "normal")
@@ -605,6 +606,18 @@ namespace VisorEmpresa
             ActualizarBadges();
         }
 
+        // Estado de factura: se deduce directamente de si el pedido tiene
+        // líneas cargadas en la pestaña Facturas (no depende del campo
+        // "estado" de cada línea, sino de si existe al menos una).
+        private void CargarEstadoFactura()
+        {
+            bool prev = _cargando;
+            _cargando = true;
+            Box_EstadoA.Text = _facturas.Count > 0 ? "con factura" : "sin factura";
+            _cargando = prev;
+            ActualizarBadges();
+        }
+
         private void ActualizarBadges()
         {
             // Badge Estado
@@ -635,6 +648,18 @@ namespace VisorEmpresa
                 _                   => (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
                                         new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)),
                                         "Cta: Pendiente")
+            };
+
+            // Badge Factura
+            string estadoA = Box_EstadoA.Text.ToLower();
+            (BadgeFactura.Background, TxtBadgeFactura.Foreground, TxtBadgeFactura.Text) = estadoA switch
+            {
+                "con factura" => (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
+                                  new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)),
+                                  "Con factura"),
+                _             => (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
+                                  new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)),
+                                  "Sin factura")
             };
 
             // Ícono y color del encabezado según tipo de movimiento
@@ -1566,6 +1591,7 @@ namespace VisorEmpresa
             RefrescarGridFacturas();
             CargarTotalesDivisas();
             CargarEstadosCuenta();
+            CargarEstadoFactura();
             int lastIdx = GridFacturas.Items.Count - 1;
             if (lastIdx >= 0)
             {
@@ -1586,6 +1612,7 @@ namespace VisorEmpresa
             RefrescarGridFacturas();
             CargarTotalesDivisas();
             CargarEstadosCuenta();
+            CargarEstadoFactura();
             if (idx < GridFacturas.Items.Count)
             {
                 GridFacturas.SelectedIndex = idx;
@@ -1608,6 +1635,7 @@ namespace VisorEmpresa
             RefrescarGridFacturas();
             CargarTotalesDivisas();
             CargarEstadosCuenta();
+            CargarEstadoFactura();
             GridFacturas.SelectedItem = copia;
             GridFacturas.ScrollIntoView(copia);
             GridFocusHelper.EnfocarCeldaSeleccionada(GridFacturas);
@@ -1628,6 +1656,7 @@ namespace VisorEmpresa
                 RefrescarGridFacturas();
                 CargarTotalesDivisas();
                 CargarEstadosCuenta();
+                CargarEstadoFactura();
                 if (_facturas.Count > 0)
                 {
                     var siguiente = _facturas[Math.Min(idx, _facturas.Count - 1)];
@@ -1679,6 +1708,7 @@ namespace VisorEmpresa
             RefrescarGridFacturas();
             CargarTotalesDivisas();
             CargarEstadosCuenta();
+            CargarEstadoFactura();
         }
 
         // ─── Guardar ──────────────────────────────────────────────────────────
@@ -1708,6 +1738,7 @@ namespace VisorEmpresa
                 DateTime fechaFinal = CombinarFechaHora(Box_Fecha.SelectedDate ?? DateTime.Today, Box_Hora.Text);
                 string estado  = Box_Estado.Text;
                 string cuenta  = Box_Cuenta.Text;
+                string estadoA = Box_EstadoA.Text;
                 string tipoPed = AppState.TipoPedido.ToLower();
 
                 Sql.DocumentosPObj.Nuevo(id);
@@ -1720,6 +1751,7 @@ namespace VisorEmpresa
                 Sql.DocumentosPObj.EstablecerItem("referencia",  id, Box_Referencia.Text.Trim());
                 Sql.DocumentosPObj.EstablecerItem("observacion", id, _observaciones);
                 Sql.DocumentosPObj.EstablecerItem("estadoC",     id, cuenta);
+                Sql.DocumentosPObj.EstablecerItem("estadoA",     id, estadoA);
                 Sql.DocumentosPObj.EstablecerItem("tipo",        id, tipoPed);
                 Sql.DocumentosPObj.EstablecerItem("emision",     id, DateTime.Now);
                 Sql.DocumentosPObj.EstablecerItem("edicion",     id, DateTime.Now);
@@ -1747,8 +1779,9 @@ namespace VisorEmpresa
             try
             {
                 DateTime fechaFinal = CombinarFechaHora(Box_Fecha.SelectedDate ?? DateTime.Today, Box_Hora.Text);
-                string estado = Box_Estado.Text;
-                string cuenta = Box_Cuenta.Text;
+                string estado  = Box_Estado.Text;
+                string cuenta  = Box_Cuenta.Text;
+                string estadoA = Box_EstadoA.Text;
 
                 Sql.DocumentosPObj.EstablecerItem("tercero",     docP, ResolverTerceroId());
                 Sql.DocumentosPObj.EstablecerItem("fecha",       docP, fechaFinal);
@@ -1756,6 +1789,7 @@ namespace VisorEmpresa
                 Sql.DocumentosPObj.EstablecerItem("referencia",  docP, Box_Referencia.Text.Trim());
                 Sql.DocumentosPObj.EstablecerItem("observacion", docP, _observaciones);
                 Sql.DocumentosPObj.EstablecerItem("estadoC",     docP, cuenta);
+                Sql.DocumentosPObj.EstablecerItem("estadoA",     docP, estadoA);
                 Sql.DocumentosPObj.EstablecerItem("edicion",     docP, DateTime.Now);
                 Sql.DocumentosPObj.EstablecerItem("usuario",     docP, AppState.UsuarioActivo);
                 Sql.DocumentosPObj.EstablecerItem("usuarioE",    docP, AppState.UsuarioActivo);
