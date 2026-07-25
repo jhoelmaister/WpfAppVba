@@ -66,7 +66,7 @@ namespace SistemaGestion.Data
             ["documentosI"]    = new[] { "observacion", "fecha", "emision", "edicion", "codigo", "sucursal", "usuario", "usuarioE", "referencia" },
             ["inventarios"]    = new[] { "cantidad", "documentoI", "articulo" },
             ["documentosP"]    = new[] { "fecha", "estado", "tipo", "emision", "edicion", "referencia", "movimiento", "observacion", "estadoC", "codigo", "sucursal", "usuario", "usuarioE", "tercero" },
-            ["pedidos"]        = new[] { "indice", "cantidad", "importe", "tipo", "forma", "contable", "documentoP", "articulo" },
+            ["pedidos"]        = new[] { "indice", "cantidad", "importe", "tipo", "documentoP", "articulo" },
             ["transacciones"]  = new[] { "fecha", "descripcion", "indice", "importe", "forma", "documentoP" },
             ["entregas"]       = new[] { "indice", "cantidad", "fecha", "documentoP", "articulo" },
             ["documentosT"]    = new[] { "fecha", "estado", "emision", "edicion", "referencia", "observacion", "codigo", "origen", "destino", "emitido", "usuario", "usuarioE" },

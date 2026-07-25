@@ -45,7 +45,6 @@ namespace SistemaGestion
         public string? DocumentoCreadoId { get; private set; }
 
         // Listas estáticas para ComboBox dentro de DataGrid
-        public static List<string> FormasPedido     = new() { "sin factura", "con factura" };
         public static List<string> FormasTrasaccion = new() { "cheque", "efectivo", "transferencia", "pago Qr" };
 
         private bool HayCambios => _cambioDocumento || _cambioPedido || _cambioTrasaccion || _cambioEntrega;
@@ -190,8 +189,6 @@ namespace SistemaGestion
                 string codigo  = Sql.ArticulosObj.ObtenerItem("codigo",   artId)?.ToString() ?? "";
                 double cant    = Convert.ToDouble(Sql.PedidosObj.ObtenerItem("cantidad",  id) ?? 0);
                 double importe = Convert.ToDouble(Sql.PedidosObj.ObtenerItem("importe",   id) ?? 0);
-                string forma   = Sql.PedidosObj.ObtenerItem("forma",     id)?.ToString() ?? "sin factura";
-                double contable= Convert.ToDouble(Sql.PedidosObj.ObtenerItem("contable",  id) ?? 0);
                 string tipo    = Sql.PedidosObj.ObtenerItem("tipo",      id)?.ToString() ?? "automatico";
                 double precio  = cant > 0 ? importe / cant : 0;
 
@@ -203,8 +200,6 @@ namespace SistemaGestion
                     Codigo      = codigo,
                     Descripcion = ObtenerDescripcionArticulo(artId),
                     Cantidad    = cant,
-                    Forma       = forma,
-                    Contable    = contable,
                     Precio      = precio,
                     Importe     = importe,
                     Tipo        = tipo
@@ -1572,8 +1567,6 @@ namespace SistemaGestion
                 Sql.PedidosObj.EstablecerItem("articulo", id, item.ArticuloId);
                 Sql.PedidosObj.EstablecerItem("cantidad", id, item.Cantidad);
                 Sql.PedidosObj.EstablecerItem("importe",  id, item.Importe);
-                Sql.PedidosObj.EstablecerItem("forma",    id, item.Forma);
-                Sql.PedidosObj.EstablecerItem("contable", id, item.Contable);
                 Sql.PedidosObj.EstablecerItem("tipo",     id, item.Tipo);
             }
             _pedidosOrig = new HashSet<string>(_pedidos.Select(p => p.PedidoId));
@@ -1714,8 +1707,6 @@ namespace SistemaGestion
         public string Codigo      { get; set; } = "";
         public string Descripcion { get; set; } = "";
         public double Cantidad    { get; set; }
-        public string Forma       { get; set; } = "sin factura";
-        public double Contable    { get; set; } = 0;
         public double Precio      { get; set; }
         public double Importe     { get; set; }
         public string Tipo        { get; set; } = "automatico";

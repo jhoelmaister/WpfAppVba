@@ -423,33 +423,6 @@
                                                 Width="70"
                                                 ElementStyle="{StaticResource CeldaNumero}"
                                                 EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
-                            <!-- Forma (ComboBox) -->
-                            <DataGridTemplateColumn Header="Forma" Width="96">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Border Background="{DynamicResource ThemeBgReadOnly}"
-                                                CornerRadius="4" Padding="5,1"
-                                                HorizontalAlignment="Left" Margin="4,0">
-                                            <TextBlock Text="{Binding Forma}"
-                                                       FontSize="11"
-                                                       Foreground="{DynamicResource ThemeTextoSec}"
-                                                       VerticalAlignment="Center"/>
-                                        </Border>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                                <DataGridTemplateColumn.CellEditingTemplate>
-                                    <DataTemplate>
-                                        <ComboBox SelectedItem="{Binding Forma, UpdateSourceTrigger=PropertyChanged}"
-                                                  ItemsSource="{x:Static local:PedidosDetalle.FormasPedido}"
-                                                  FontSize="12"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellEditingTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="Contable"
-                                                Binding="{Binding Contable, StringFormat=#\,##0.##}"
-                                                Width="70"
-                                                ElementStyle="{StaticResource CeldaNumero}"
-                                                EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
                             <DataGridTextColumn Header="Precio"
                                                 Binding="{Binding Precio, StringFormat=#\,##0.##}"
                                                 Width="76"

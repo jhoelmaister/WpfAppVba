@@ -103,9 +103,7 @@ namespace SistemaGestion
                     Estado     = "-",
                     Cantidad   = item.Cantidad,
                     Unitario   = "-",
-                    SubTotal   = "-",
-                    Forma      = "-",
-                    Contable   = "-"
+                    SubTotal   = "-"
                 });
             }
 
@@ -139,9 +137,7 @@ namespace SistemaGestion
                     Estado     = estado,
                     Cantidad   = cantidad,
                     Unitario   = unitario.ToString("N2"),
-                    SubTotal   = importe.ToString("N2"),
-                    Forma      = Sql.PedidosObj.ObtenerItem("forma",    id)?.ToString() ?? "-",
-                    Contable   = Sql.PedidosObj.ObtenerItem("contable", id)?.ToString() ?? "-"
+                    SubTotal   = importe.ToString("N2")
                 });
             }
 
@@ -181,9 +177,7 @@ namespace SistemaGestion
                     Estado     = estado,
                     Cantidad   = cantidad,
                     Unitario   = "-",
-                    SubTotal   = "-",
-                    Forma      = "-",
-                    Contable   = "-"
+                    SubTotal   = "-"
                 });
             }
 
@@ -214,9 +208,7 @@ namespace SistemaGestion
                     Estado     = motivo,
                     Cantidad   = cantidad,
                     Unitario   = "-",
-                    SubTotal   = "-",
-                    Forma      = "-",
-                    Contable   = "-"
+                    SubTotal   = "-"
                 });
             }
 
@@ -249,8 +241,6 @@ namespace SistemaGestion
                                  ? d.Movimiento
                                  : $"{(string.IsNullOrEmpty(d.DocumentoCodigo) ? d.Documento : d.DocumentoCodigo)}-{d.Movimiento}",
                     Estado     = d.Estado,
-                    Forma      = d.Forma,
-                    Contable   = d.Contable,
                     Cantidad   = d.Cantidad,
                     Unitario   = d.Unitario,
                     SubTotal   = d.SubTotal,
@@ -304,8 +294,6 @@ namespace SistemaGestion
         public double   Cantidad        { get; set; }
         public string   Unitario        { get; set; } = "";
         public string   SubTotal        { get; set; } = "";
-        public string   Forma           { get; set; } = "";
-        public string   Contable        { get; set; } = "";
     }
 
     // ─── Fila del DataGrid ────────────────────────────────────────────────────
@@ -315,8 +303,6 @@ namespace SistemaGestion
         public string FechaStr   { get; set; } = "";
         public string Movimiento { get; set; } = "";
         public string Estado     { get; set; } = "";
-        public string Forma      { get; set; } = "";
-        public string Contable   { get; set; } = "";
         public double Cantidad   { get; set; }
         public string Unitario   { get; set; } = "";
         public string SubTotal   { get; set; } = "";
