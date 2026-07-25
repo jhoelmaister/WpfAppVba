@@ -62,11 +62,17 @@
   de ser un documento propio (con cabecera, tercero, fecha, estado, etc.) y
   pasó a ser una línea más colgada directamente de `documentosP`, igual que
   `pedidos`/`transacciones`/`entregas`. `facturas.documentoF` se renombró a
-  `facturas.documentoP`, y se agregó `facturas.forma` (`nvarchar(100)`,
-  reemplaza lo que antes cubría `transaccionesF.forma`). Las pantallas
-  `FacturasGeneral`/`FacturasDetalle` (ambos proyectos) se eliminaron; ahora
-  hay una pestaña "Facturas" dentro de `PedidosDetalle`, igual que las
-  pestañas de "Transacciones"/"Entregas" que ya existían.
+  `facturas.documentoP`. Las pantallas `FacturasGeneral`/`FacturasDetalle`
+  (ambos proyectos) se eliminaron; ahora hay una pestaña "Facturas" dentro de
+  `PedidosDetalle` — siempre la **primera** pestaña, a la izquierda de
+  "Artículos del pedido".
+- **`facturas.forma` renombrada a `facturas.estado`** (`nvarchar(100)`),
+  valores "con deuda"/"sin deuda". Una factura "con deuda" suma su importe al
+  Saldo del pedido; "sin deuda" no. Nuevo botón **"Facturar pedido"** en esa
+  pestaña: agrupa las líneas de artículos del pedido por categoría y genera
+  una línea de factura por categoría (concepto = descripción de la categoría,
+  importe = suma de esa categoría) con estado "sin deuda" — se puede volver a
+  presionar para recalcular; no toca las líneas "con deuda" agregadas a mano.
 
 ## Tablas
 
@@ -273,7 +279,7 @@ Línea colgada directamente de `documentosP` (como `pedidos`/`transacciones`/
 | estadof     | nvarchar(100)       | sí   | |
 | documentoP  | uniqueidentifier    | sí   | FK → documentosP (antes `documentoF` → `documentosF`, eliminada) |
 | categoria   | uniqueidentifier    | sí   | FK → categorias |
-| forma       | nvarchar(100)       | sí   | agregada en esta sesión |
+| estado      | nvarchar(100)       | sí   | "con deuda"/"sin deuda" — "con deuda" suma al Saldo del pedido; "sin deuda" no (p. ej. las líneas que genera el botón "Facturar pedido") |
 
 ### `familias`
 

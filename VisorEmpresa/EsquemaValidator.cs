@@ -73,7 +73,7 @@ namespace VisorEmpresa.Data
             ["traspasos"]      = new[] { "indice", "cantidad", "documentoT", "articulo" },
             ["documentosC"]    = new[] { "fecha", "emision", "edicion", "referencia", "movimiento", "observacion", "motivo", "codigo", "sucursal", "usuario", "usuarioE" },
             ["correcciones"]   = new[] { "indice", "cantidad", "documentoC", "articulo" },
-            ["facturas"]       = new[] { "indice", "concepto", "importe", "forma", "documentoP", "categoria" },
+            ["facturas"]       = new[] { "indice", "concepto", "importe", "estado", "documentoP", "categoria" },
         };
 
         // ─── Validar una conexión ya abierta ─────────────────────────────────

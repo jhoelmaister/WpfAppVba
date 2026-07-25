@@ -50,6 +50,7 @@ namespace VisorEmpresa
 
         // Listas estáticas para ComboBox dentro de DataGrid
         public static List<string> FormasTrasaccion = new() { "cheque", "efectivo", "transferencia", "pago Qr" };
+        public static List<string> EstadosFactura    = new() { "con deuda", "sin deuda" };
 
         // ─── Categoría: lista para el ComboBox del GridFacturas ───────────────
         public static List<CategoriaComboItem> CategoriasCombo
@@ -333,7 +334,7 @@ namespace VisorEmpresa
                     Linea       = lineaF++,
                     Concepto    = Sql.FacturasObj.ObtenerItem("concepto",  id)?.ToString() ?? "",
                     CategoriaId = Sql.FacturasObj.ObtenerItem("categoria", id)?.ToString() ?? "",
-                    Forma       = Sql.FacturasObj.ObtenerItem("forma",     id)?.ToString() ?? "efectivo",
+                    Estado      = Sql.FacturasObj.ObtenerItem("estado",    id)?.ToString() ?? "con deuda",
                     Importe     = Convert.ToDouble(Sql.FacturasObj.ObtenerItem("importe", id) ?? 0)
                 });
             }
@@ -573,7 +574,11 @@ namespace VisorEmpresa
             else
                 totalCuenta = _trasacciones.Sum(t => t.Importe);
 
-            double saldo = totalImporte - totalCuenta;
+            // Facturas "con deuda" son cargos adicionales al pedido que todavía no
+            // se cobraron — se suman al saldo pendiente. Las "sin deuda" (p. ej.
+            // las que genera "Facturar pedido") no lo afectan.
+            double facturasConDeuda = _facturas.Where(f => f.Estado == "con deuda").Sum(f => f.Importe);
+            double saldo = totalImporte - totalCuenta + facturasConDeuda;
 
             TxtTotalImporte.Text = totalImporte.ToString("N2");
             TxtTotalCuenta.Text  = totalCuenta.ToString("N2");
@@ -1531,6 +1536,8 @@ namespace VisorEmpresa
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 RefrescarGridFacturas();
+                CargarTotalesDivisas();
+                CargarEstadosCuenta();
                 GridFocusHelper.EnfocarCeldaSeleccionada(GridFacturas);
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
@@ -1545,9 +1552,11 @@ namespace VisorEmpresa
         // ─── Botones Facturas ─────────────────────────────────────────────────
         private void BtnNuevaLineaFactura_Click(object sender, RoutedEventArgs e)
         {
-            _facturas.Add(new FacturaItemFila { FacturaId = "", Concepto = "", CategoriaId = PrimeraCategoriaId(), Forma = "efectivo", Importe = 0 });
+            _facturas.Add(new FacturaItemFila { FacturaId = "", Concepto = "", CategoriaId = PrimeraCategoriaId(), Estado = "con deuda", Importe = 0 });
             _cambioFactura = true;
             RefrescarGridFacturas();
+            CargarTotalesDivisas();
+            CargarEstadosCuenta();
             int lastIdx = GridFacturas.Items.Count - 1;
             if (lastIdx >= 0)
             {
@@ -1563,9 +1572,11 @@ namespace VisorEmpresa
                       ? _facturas.IndexOf(sel) : _facturas.Count;
             if (idx < 0) idx = _facturas.Count;
 
-            _facturas.Insert(idx, new FacturaItemFila { FacturaId = "", Concepto = "", CategoriaId = PrimeraCategoriaId(), Forma = "efectivo", Importe = 0 });
+            _facturas.Insert(idx, new FacturaItemFila { FacturaId = "", Concepto = "", CategoriaId = PrimeraCategoriaId(), Estado = "con deuda", Importe = 0 });
             _cambioFactura = true;
             RefrescarGridFacturas();
+            CargarTotalesDivisas();
+            CargarEstadosCuenta();
             if (idx < GridFacturas.Items.Count)
             {
                 GridFacturas.SelectedIndex = idx;
@@ -1581,11 +1592,13 @@ namespace VisorEmpresa
             var copia = new FacturaItemFila
             {
                 FacturaId = "", Concepto = fila.Concepto, CategoriaId = fila.CategoriaId,
-                Forma = fila.Forma, Importe = fila.Importe
+                Estado = fila.Estado, Importe = fila.Importe
             };
             _facturas.Add(copia);
             _cambioFactura = true;
             RefrescarGridFacturas();
+            CargarTotalesDivisas();
+            CargarEstadosCuenta();
             GridFacturas.SelectedItem = copia;
             GridFacturas.ScrollIntoView(copia);
             GridFocusHelper.EnfocarCeldaSeleccionada(GridFacturas);
@@ -1604,6 +1617,8 @@ namespace VisorEmpresa
                 _facturas.Remove(fila);
                 _cambioFactura = true;
                 RefrescarGridFacturas();
+                CargarTotalesDivisas();
+                CargarEstadosCuenta();
                 if (_facturas.Count > 0)
                 {
                     var siguiente = _facturas[Math.Min(idx, _facturas.Count - 1)];
@@ -1612,6 +1627,42 @@ namespace VisorEmpresa
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(GridFacturas);
             }
+        }
+
+        // Recalcula las líneas "sin deuda" a partir de las líneas de artículos
+        // del pedido, agrupadas por categoría (una línea de factura por
+        // categoría, importe = suma de los artículos de esa categoría). Las
+        // líneas "con deuda" (cargos manuales) no se tocan; se puede volver a
+        // presionar el botón para refrescar el resumen si cambian los artículos.
+        private void BtnFacturarPedido_Click(object sender, RoutedEventArgs e)
+        {
+            _facturas.RemoveAll(f => f.Estado == "sin deuda");
+
+            var importePorCategoria = new Dictionary<string, double>();
+            foreach (var p in _pedidos)
+            {
+                if (string.IsNullOrEmpty(p.ArticuloId)) continue;
+                string catId = Sql.ArticulosObj.ObtenerItem("categoria", p.ArticuloId)?.ToString() ?? "";
+                if (string.IsNullOrEmpty(catId)) continue;
+
+                importePorCategoria.TryGetValue(catId, out double acumulado);
+                importePorCategoria[catId] = acumulado + p.Importe;
+            }
+
+            foreach (var kv in importePorCategoria)
+            {
+                string catDesc = Sql.CategoriasObj.ObtenerItem("descripcion", kv.Key)?.ToString() ?? kv.Key;
+                _facturas.Add(new FacturaItemFila
+                {
+                    FacturaId = "", Concepto = catDesc, CategoriaId = kv.Key,
+                    Estado = "sin deuda", Importe = kv.Value
+                });
+            }
+
+            _cambioFactura = true;
+            RefrescarGridFacturas();
+            CargarTotalesDivisas();
+            CargarEstadosCuenta();
         }
 
         // ─── Guardar ──────────────────────────────────────────────────────────
@@ -1866,7 +1917,7 @@ namespace VisorEmpresa
                 next++;
                 Sql.FacturasObj.EstablecerItem("concepto",  id, item.Concepto);
                 Sql.FacturasObj.EstablecerItem("categoria", id, item.CategoriaId);
-                Sql.FacturasObj.EstablecerItem("forma",     id, item.Forma);
+                Sql.FacturasObj.EstablecerItem("estado",    id, item.Estado);
                 Sql.FacturasObj.EstablecerItem("importe",   id, item.Importe);
             }
             _facturasOrig = new HashSet<string>(_facturas.Select(f => f.FacturaId));
@@ -2000,7 +2051,7 @@ namespace VisorEmpresa
             string.IsNullOrEmpty(CategoriaId)
                 ? ""
                 : SqlData.Instance.CategoriasObj.ObtenerItem("descripcion", CategoriaId)?.ToString() ?? "";
-        public string Forma   { get; set; } = "efectivo";
+        public string Estado  { get; set; } = "con deuda";
         public double Importe { get; set; }
     }
 
