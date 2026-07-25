@@ -42,8 +42,7 @@ namespace SistemaGestion.Data
         {
             ("documentosI", "sucursal"),
             ("documentosP", "sucursal"),
-            ("documentosC", "sucursal"),
-            ("documentosF", "sucursal")
+            ("documentosC", "sucursal")
         };
 
         /// <summary>

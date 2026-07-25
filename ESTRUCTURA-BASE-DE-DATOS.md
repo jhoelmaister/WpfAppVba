@@ -10,8 +10,8 @@
 ## Convenciones generales
 
 - **Motor**: SQL Server (compatibility level 160). Cada tabla es `PRIMARY KEY`
-  sobre `id`, la mayoría `NONCLUSTERED` (algunas — `documentosF`, `documentosL`,
-  `facturas` — son `CLUSTERED`).
+  sobre `id`, la mayoría `NONCLUSTERED` (algunas — `documentosL`, `facturas` —
+  son `CLUSTERED`).
 - **`id`** — `uniqueidentifier NOT NULL`, en todas las tablas. Default `newid()`
   vía constraint `DF_<tabla>_id` (excepto `usuarios`, que no tiene ese default
   explícito en el script — igual se genera el GUID desde la app).
@@ -26,7 +26,7 @@
     `industrias`, `terceros`, `sucursales`, `regiones`, `empresas`): `int`,
     numeración 1..N ordenada por `descripcion` (excepto `usuarios`, que no
     tiene esa columna y se ordena por `apellidos, nombres`).
-  - Tablas de documentos (`documentosI/P/C/F`): `nvarchar`, signo de la
+  - Tablas de documentos (`documentosI/P/C`): `nvarchar`, signo de la
     sucursal + correlativo por sucursal.
   - `documentosT`: signo de la **empresa** (cascada `emitido` → `sucursales` →
     `empresas`) + correlativo por empresa.
@@ -56,6 +56,17 @@
 - **`usuarios.emision` / `usuarios.edicion`**: agregadas (antes `usuarios` no
   las tenía). `VisorEmpresa/UsuariosDetalle.xaml.cs` ya las escribía al crear
   un usuario nuevo — con esto la columna finalmente existe en la base.
+- **`pedidos.forma` / `pedidos.contable`**: eliminadas, sin reemplazo — ya no
+  se usan en ningún lado.
+- **`documentosF` y `transaccionesF` eliminadas por completo.** Facturas dejó
+  de ser un documento propio (con cabecera, tercero, fecha, estado, etc.) y
+  pasó a ser una línea más colgada directamente de `documentosP`, igual que
+  `pedidos`/`transacciones`/`entregas`. `facturas.documentoF` se renombró a
+  `facturas.documentoP`, y se agregó `facturas.forma` (`nvarchar(100)`,
+  reemplaza lo que antes cubría `transaccionesF.forma`). Las pantallas
+  `FacturasGeneral`/`FacturasDetalle` (ambos proyectos) se eliminaron; ahora
+  hay una pestaña "Facturas" dentro de `PedidosDetalle`, igual que las
+  pestañas de "Transacciones"/"Entregas" que ya existían.
 
 ## Tablas
 
@@ -141,27 +152,6 @@ Cabecera de correcciones de stock.
 | sucursal    | uniqueidentifier    | sí   |
 | usuario     | uniqueidentifier    | sí   |
 | usuarioE    | uniqueidentifier    | sí   |
-
-### `documentosF`
-Cabecera de facturas.
-
-| Columna     | Tipo               | Null |
-|-------------|---------------------|------|
-| id          | uniqueidentifier    | NO   |
-| codigo      | nvarchar(100)       | sí   |
-| fecha       | datetime            | sí   |
-| emision     | datetime            | sí   |
-| edicion     | datetime            | sí   |
-| estadof     | nvarchar(100)       | sí   |
-| observacion | nvarchar(255)       | sí   |
-| referencia  | nvarchar(255)       | sí   |
-| sucursal    | uniqueidentifier    | sí   |
-| usuario     | uniqueidentifier    | sí   |
-| usuarioE    | uniqueidentifier    | sí   |
-| estado      | nvarchar(100)       | sí   |
-| estadoC     | nvarchar(100)       | sí   |
-| movimiento  | nvarchar(255)       | sí   |
-| tercero     | uniqueidentifier    | sí   |
 
 ### `documentosI`
 Cabecera de inventarios.
@@ -271,17 +261,19 @@ Líneas de entrega de un pedido.
 | articulo    | uniqueidentifier    | sí   |
 
 ### `facturas`
-Líneas de `documentosF`.
+Línea colgada directamente de `documentosP` (como `pedidos`/`transacciones`/
+`entregas`) — gestionada desde la pestaña "Facturas" de `PedidosDetalle`.
 
-| Columna     | Tipo               | Null |
-|-------------|---------------------|------|
-| id          | uniqueidentifier    | NO   |
-| indice      | int                 | sí   |
-| concepto    | nvarchar(255)       | sí   |
-| importe     | float               | sí   |
-| estadof     | nvarchar(100)       | sí   |
-| documentoF  | uniqueidentifier    | sí   |
-| categoria   | uniqueidentifier    | sí   |
+| Columna     | Tipo               | Null | Nota |
+|-------------|---------------------|------|------|
+| id          | uniqueidentifier    | NO   | |
+| indice      | int                 | sí   | |
+| concepto    | nvarchar(255)       | sí   | |
+| importe     | float               | sí   | |
+| estadof     | nvarchar(100)       | sí   | |
+| documentoP  | uniqueidentifier    | sí   | FK → documentosP (antes `documentoF` → `documentosF`, eliminada) |
+| categoria   | uniqueidentifier    | sí   | FK → categorias |
+| forma       | nvarchar(100)       | sí   | agregada en esta sesión |
 
 ### `familias`
 
@@ -333,8 +325,6 @@ Líneas de `documentosP`.
 | importe     | float               | sí   |
 | tipo        | nvarchar(100)       | sí   |
 | estadof     | nvarchar(100)       | sí   |
-| forma       | nvarchar(255)       | sí   |
-| contable    | float               | sí   |
 | id          | uniqueidentifier    | NO   |
 | documentoP  | uniqueidentifier    | sí   |
 | articulo    | uniqueidentifier    | sí   |
@@ -436,21 +426,6 @@ Movimientos contables de `documentosP`.
 | estadof     | nvarchar(100)       | sí   |
 | id          | uniqueidentifier    | NO   |
 | documentoP  | uniqueidentifier    | sí   |
-
-### `transaccionesF`
-Movimientos contables de `documentosF`. ⚠ Sin `CONSTRAINT PRIMARY KEY`
-declarada en el script (a diferencia del resto de las tablas).
-
-| Columna     | Tipo               | Null |
-|-------------|---------------------|------|
-| fecha       | datetime            | sí   |
-| descripcion | nvarchar(255)       | sí   |
-| indice      | int                 | sí   |
-| importe     | float               | sí   |
-| forma       | nvarchar(255)       | sí   |
-| estadof     | nvarchar(100)       | sí   |
-| id          | uniqueidentifier    | NO   |
-| documentoF  | uniqueidentifier    | sí   |
 
 ### `traspasos`
 Líneas de `documentosT`.

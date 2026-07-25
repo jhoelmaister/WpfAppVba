@@ -260,11 +260,6 @@
                                     Content="🔧  Correcciones"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Correcciones_Click"/>
-                            <Button x:Name="BtnNav_Facturas"
-                                    Content="🧾  Facturas"
-                                    Style="{StaticResource NavBtn}"
-                                    Click="BtnNav_Facturas_Click"/>
-
                             <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="12,8"/>
 
                             <!-- Catálogos de empresa: edición completa -->

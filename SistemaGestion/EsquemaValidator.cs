@@ -73,9 +73,7 @@ namespace SistemaGestion.Data
             ["traspasos"]      = new[] { "indice", "cantidad", "documentoT", "articulo" },
             ["documentosC"]    = new[] { "fecha", "emision", "edicion", "referencia", "movimiento", "observacion", "motivo", "codigo", "sucursal", "usuario", "usuarioE" },
             ["correcciones"]   = new[] { "indice", "cantidad", "documentoC", "articulo" },
-            ["documentosF"]    = new[] { "codigo", "fecha", "emision", "edicion", "observacion", "referencia", "sucursal", "usuario", "usuarioE", "estado", "estadoC", "movimiento", "tercero" },
-            ["facturas"]       = new[] { "indice", "concepto", "importe", "documentoF", "categoria" },
-            ["transaccionesF"] = new[] { "fecha", "descripcion", "indice", "importe", "forma", "documentoF" },
+            ["facturas"]       = new[] { "indice", "concepto", "importe", "forma", "documentoP", "categoria" },
         };
 
         // ─── Validar una conexión ya abierta ─────────────────────────────────

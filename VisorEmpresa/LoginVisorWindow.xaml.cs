@@ -339,14 +339,16 @@ namespace VisorEmpresa
                 MostrarEstado("Calculando stock de la empresa...", Colors.Green);
                 await Task.Run(() => ConsultasEmpresa.ObtenerStockEmpresa(usuario.Empresa));
 
-                // Precalienta también Pedidos/Traspasos/Correcciones/FacturasGeneral —
-                // TODA la empresa (sin filtro de sucursal), para el año activo. Estas
-                // pantallas vuelven a llamar a los mismos ConectarCacheXxx al abrirse
-                // (para quedar correctas si el usuario entra directo sin pasar por acá),
-                // pero como ya quedó cargado con la misma clave (empresa, año), esa
-                // segunda llamada es un no-op (ver memoización en ConsultasEmpresa) y la
-                // pantalla arma la grilla al instante filtrando en memoria — el combo de
-                // sucursal de cada pantalla ya no dispara una consulta SQL nueva.
+                // Precalienta también Pedidos/Traspasos/Correcciones — TODA la empresa
+                // (sin filtro de sucursal), para el año activo. Estas pantallas vuelven
+                // a llamar a los mismos ConectarCacheXxx al abrirse (para quedar
+                // correctas si el usuario entra directo sin pasar por acá), pero como ya
+                // quedó cargado con la misma clave (empresa, año), esa segunda llamada es
+                // un no-op (ver memoización en ConsultasEmpresa) y la pantalla arma la
+                // grilla al instante filtrando en memoria — el combo de sucursal de cada
+                // pantalla ya no dispara una consulta SQL nueva. Las facturas de cada
+                // pedido viajan con ConectarCachePedidos (facturas.documentoP → misma
+                // caché de documentosP/pedidos).
                 MostrarEstado("Cargando documentos de la empresa...", Colors.Green);
                 int añoActivo = VisorState.AnioActivo;
                 await Task.Run(() =>
@@ -354,7 +356,6 @@ namespace VisorEmpresa
                     ConsultasEmpresa.ConectarCachePedidos(usuario.Empresa, añoActivo);
                     ConsultasEmpresa.ConectarCacheTraspasos(usuario.Empresa, añoActivo);
                     ConsultasEmpresa.ConectarCacheCorrecciones(usuario.Empresa, añoActivo);
-                    ConsultasEmpresa.ConectarCacheFacturas(usuario.Empresa, añoActivo);
                 });
 
                 var main = new ConsolaMovimientos();   // la consola del visor (ConsolaVisor.xaml)

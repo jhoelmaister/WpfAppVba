@@ -122,8 +122,9 @@ namespace VisorEmpresa
         }
 
         /// <summary>
-        /// Años con documentos (pedidos, traspasos, correcciones o facturas) en la
-        /// empresa, descendente. Siempre incluye el año actual aunque esté vacío.
+        /// Años con documentos (pedidos —incluye sus facturas—, traspasos o
+        /// correcciones) en la empresa, descendente. Siempre incluye el año
+        /// actual aunque esté vacío.
         /// </summary>
         public static List<int> CargarAnios(string empresa)
         {
@@ -134,10 +135,6 @@ namespace VisorEmpresa
                 "WHERE vg.estadof = 'normal' AND s.estadof = 'normal' AND s.empresa = @emp " +
                 "UNION " +
                 "SELECT DISTINCT YEAR(vg.fecha) FROM documentosC vg " +
-                "INNER JOIN sucursales s ON s.id = vg.sucursal " +
-                "WHERE vg.estadof = 'normal' AND s.estadof = 'normal' AND s.empresa = @emp " +
-                "UNION " +
-                "SELECT DISTINCT YEAR(vg.fecha) FROM documentosF vg " +
                 "INNER JOIN sucursales s ON s.id = vg.sucursal " +
                 "WHERE vg.estadof = 'normal' AND s.estadof = 'normal' AND s.empresa = @emp " +
                 "UNION " +
@@ -167,9 +164,9 @@ namespace VisorEmpresa
         /// Sql.SucursalesObj — el catálogo que AppLoader.ConectarProductos ya
         /// carga al loguear (mismo filtro exacto: estadof='normal' AND empresa=X)
         /// — en vez de repetir la consulta en vivo. Sin esto, cada pantalla que la
-        /// llama en su primer Loaded (Pedidos/Traspasos/Correcciones/
-        /// FacturasGeneral, Articulos, Dashboard) disparaba su propio viaje a SQL
-        /// por separado, aunque las 6 pidieran la misma lista.
+        /// llama en su primer Loaded (Pedidos/Traspasos/Correcciones, Articulos,
+        /// Dashboard) disparaba su propio viaje a SQL por separado, aunque las 5
+        /// pidieran la misma lista.
         /// </summary>
         public static List<(string Id, string Descripcion)> CargarSucursalesEmpresa(string empresa)
         {
@@ -603,9 +600,9 @@ namespace VisorEmpresa
             return ObtenerStockEmpresa(empresa, hasta, forzarRecarga);
         }
 
-        // ─── Cachés SqlData para Pedidos/Traspasos/Correcciones/FacturasGeneral ──
+        // ─── Cachés SqlData para Pedidos/Traspasos/Correcciones ──────────────────
         //
-        // Estos 4 controles (VisorEmpresa.PedidosGeneral, etc.) son duplicados
+        // Estos 3 controles (VisorEmpresa.PedidosGeneral, etc.) son duplicados
         // fieles de los de la app principal: mismo código de UI (Tree1 de meses,
         // filtros, grilla, detalle) que lee de Sql.DocumentosXObj/Sql.XObj
         // (DataConsulta), igual que AppLoader.ConectarDocumentos. En vez de
@@ -613,6 +610,7 @@ namespace VisorEmpresa
         // consulta para TODA la empresa (todas las sucursales), siempre con el
         // corte por apertura de CADA sucursal (SubconsultaApertura) — cada
         // pantalla filtra por sucursal en memoria (ver sus CargarMeses/CargarXxx).
+        // Las facturas viajan junto con Pedidos (facturas.documentoP).
 
         private const string SubconsultaApertura =
             "(SELECT sucursal, MAX(fecha) AS fecha FROM documentosI " +
@@ -620,18 +618,22 @@ namespace VisorEmpresa
 
         private static string FechaLiteral(DateTime dt) => dt.ToString("yyyyMMdd HH:mm:ss");
 
-        // Memoización de las 4 cachés de abajo: al loguear (y al cambiar de
+        // Memoización de las 3 cachés de abajo: al loguear (y al cambiar de
         // empresa/año) se precargan para TODA la empresa, y las pantallas
-        // Pedidos/Traspasos/Correcciones/FacturasGeneral llaman a estos mismos
+        // Pedidos/Traspasos/Correcciones llaman a estos mismos
         // métodos cada vez que se abren o cambia el año — sin esta memoización,
         // esa segunda llamada repetiría la consulta SQL con los mismos
         // parámetros. Con ella, esa segunda llamada es un no-op.
         private static (string Empresa, int Anio)? _pedidosCacheCargada;
         private static (string Empresa, int Anio)? _traspasosCacheCargada;
         private static (string Empresa, int Anio)? _correccionesCacheCargada;
-        private static (string Empresa, int Anio)? _facturasCacheCargada;
 
-        /// <summary>Puebla Sql.DocumentosPObj + Sql.PedidosObj para TODA la empresa.</summary>
+        /// <summary>
+        /// Puebla Sql.DocumentosPObj + Sql.PedidosObj + Sql.FacturasObj para TODA
+        /// la empresa. Las facturas se cargan acá (no en una caché aparte) porque
+        /// cuelgan directamente de documentosP (facturas.documentoP), igual que
+        /// pedidos.
+        /// </summary>
         public static void ConectarCachePedidos(string empresa, int anio)
         {
             var clave = (empresa, anio);
@@ -653,6 +655,16 @@ namespace VisorEmpresa
 
             Sql.PedidosObj.Conectar("pedidos",
                 "SELECT vd.* FROM pedidos AS vd " +
+                "INNER JOIN documentosP AS vg ON vd.documentoP = vg.id " +
+                $"INNER JOIN sucursales AS s ON s.id = vg.sucursal AND s.estadof = 'normal' AND s.empresa = '{emp}' " +
+                "LEFT JOIN " + SubconsultaApertura + " ap ON ap.sucursal = vg.sucursal " +
+                "WHERE vg.estadof = 'normal' " +
+                $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
+                "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
+                " ORDER BY vd.documentoP ASC, vd.indice ASC");
+
+            Sql.FacturasObj.Conectar("facturas",
+                "SELECT vd.* FROM facturas AS vd " +
                 "INNER JOIN documentosP AS vg ON vd.documentoP = vg.id " +
                 $"INNER JOIN sucursales AS s ON s.id = vg.sucursal AND s.estadof = 'normal' AND s.empresa = '{emp}' " +
                 "LEFT JOIN " + SubconsultaApertura + " ap ON ap.sucursal = vg.sucursal " +
@@ -738,44 +750,6 @@ namespace VisorEmpresa
                 " ORDER BY vd.documentoC ASC, vd.indice ASC");
 
             _correccionesCacheCargada = clave;
-        }
-
-        /// <summary>
-        /// Puebla Sql.DocumentosFObj + Sql.FacturasObj para TODA la empresa. Al usar
-        /// SELECT vg.*/vd.* (no columnas nombradas) no hace falta verificar
-        /// existencia de columnas: se adapta sola al esquema real, igual que
-        /// AppLoader.ConectarDocumentos.
-        /// </summary>
-        public static void ConectarCacheFacturas(string empresa, int anio)
-        {
-            var clave = (empresa, anio);
-            if (_facturasCacheCargada == clave) return;
-
-            var (desde, hasta) = RangoAnio(anio);
-            string aper = FechaLiteral(desde);
-            string cier = FechaLiteral(hasta);
-            string emp  = EmpresaSegura(empresa);
-
-            Sql.DocumentosFObj.Conectar("documentosF",
-                "SELECT vg.* FROM documentosF AS vg " +
-                $"INNER JOIN sucursales AS s ON s.id = vg.sucursal AND s.estadof = 'normal' AND s.empresa = '{emp}' " +
-                "LEFT JOIN " + SubconsultaApertura + " ap ON ap.sucursal = vg.sucursal " +
-                "WHERE vg.estadof = 'normal' " +
-                $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
-                "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
-                " ORDER BY vg.fecha ASC");
-
-            Sql.FacturasObj.Conectar("facturas",
-                "SELECT vd.* FROM facturas AS vd " +
-                "INNER JOIN documentosF AS vg ON vd.documentoF = vg.id " +
-                $"INNER JOIN sucursales AS s ON s.id = vg.sucursal AND s.estadof = 'normal' AND s.empresa = '{emp}' " +
-                "LEFT JOIN " + SubconsultaApertura + " ap ON ap.sucursal = vg.sucursal " +
-                "WHERE vg.estadof = 'normal' " +
-                $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
-                "AND vg.fecha >= COALESCE(ap.fecha, s.fecha)" +
-                " ORDER BY vd.documentoF ASC, vd.indice ASC");
-
-            _facturasCacheCargada = clave;
         }
 
         // ─── Helpers ──────────────────────────────────────────────────────────
