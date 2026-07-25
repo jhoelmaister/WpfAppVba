@@ -994,6 +994,17 @@
 
                 <!-- Derecha: totales de importe -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Importe facturado -->
+                    <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
+                        <StackPanel>
+                            <TextBlock Text="Importe facturado" FontSize="10"
+                                       Foreground="{DynamicResource ThemeTextoSec}"/>
+                            <TextBlock x:Name="TxtTotalFacturado"
+                                       FontSize="17" FontWeight="SemiBold"
+                                       HorizontalAlignment="Right"
+                                       Foreground="#1D4ED8"/>
+                        </StackPanel>
+                    </Border>
                     <!-- Importe -->
                     <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0">
                         <StackPanel>

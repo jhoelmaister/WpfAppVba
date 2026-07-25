@@ -557,12 +557,14 @@ namespace SistemaGestion
             // Facturas "con deuda" son cargos adicionales al pedido que todavía no
             // se cobraron — se suman al saldo pendiente. Las "sin deuda" (p. ej.
             // las que genera "Facturar pedido") no lo afectan.
+            double totalFacturado = _facturas.Sum(f => f.Importe);
             double facturasConDeuda = _facturas.Where(f => f.Estado == "con deuda").Sum(f => f.Importe);
             double saldo = totalImporte - totalCuenta + facturasConDeuda;
 
-            TxtTotalImporte.Text = totalImporte.ToString("N2");
-            TxtTotalCuenta.Text  = totalCuenta.ToString("N2");
-            TxtTotalSaldo.Text   = saldo.ToString("N2");
+            TxtTotalFacturado.Text = totalFacturado.ToString("N2");
+            TxtTotalImporte.Text   = totalImporte.ToString("N2");
+            TxtTotalCuenta.Text    = totalCuenta.ToString("N2");
+            TxtTotalSaldo.Text     = saldo.ToString("N2");
         }
 
         private void CargarEstadosCuenta()
@@ -1616,24 +1618,32 @@ namespace SistemaGestion
         // agrega líneas adicionales.
         private void BtnFacturarPedido_Click(object sender, RoutedEventArgs e)
         {
-            var importePorCategoria = new Dictionary<string, double>();
-            foreach (var p in _pedidos)
-            {
-                if (string.IsNullOrEmpty(p.ArticuloId)) continue;
-                string catId = Sql.ArticulosObj.ObtenerItem("categoria", p.ArticuloId)?.ToString() ?? "";
-                if (string.IsNullOrEmpty(catId)) continue;
+            // Misma lógica que "Registrar entregas": agrupa lo pedido por
+            // categoría, agrupa lo ya facturado por categoría, y solo crea una
+            // línea nueva por la diferencia pendiente — nunca edita ni duplica
+            // lo que ya está facturado (con deuda o sin deuda).
+            var importePedido = _pedidos
+                .Where(p => !string.IsNullOrEmpty(p.ArticuloId))
+                .GroupBy(p => Sql.ArticulosObj.ObtenerItem("categoria", p.ArticuloId)?.ToString() ?? "")
+                .Where(g => !string.IsNullOrEmpty(g.Key))
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.Importe));
 
-                importePorCategoria.TryGetValue(catId, out double acumulado);
-                importePorCategoria[catId] = acumulado + p.Importe;
-            }
+            var importeFacturado = _facturas
+                .Where(f => !string.IsNullOrEmpty(f.CategoriaId))
+                .GroupBy(f => f.CategoriaId)
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.Importe));
 
-            foreach (var kv in importePorCategoria)
+            foreach (var kv in importePedido)
             {
+                double facturado = importeFacturado.TryGetValue(kv.Key, out double val) ? val : 0;
+                double pendiente = kv.Value - facturado;
+                if (pendiente <= 0) continue;
+
                 string catDesc = Sql.CategoriasObj.ObtenerItem("descripcion", kv.Key)?.ToString() ?? kv.Key;
                 _facturas.Add(new FacturaItemFila
                 {
                     FacturaId = "", Concepto = catDesc, CategoriaId = kv.Key,
-                    Estado = "sin deuda", Importe = kv.Value
+                    Estado = "sin deuda", Importe = pendiente
                 });
             }
 
