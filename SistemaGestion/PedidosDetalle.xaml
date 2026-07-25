@@ -320,122 +320,7 @@
                     BorderThickness="0" Padding="0">
 
             <!-- ──────────────────────────────────────────────────────── -->
-            <!-- TAB 1: FACTURAS                                          -->
-            <!-- ──────────────────────────────────────────────────────── -->
-            <TabItem x:Name="TabFacturas" Header="Facturas">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <!-- Toolbar facturas -->
-                    <Border Grid.Row="0"
-                            Background="{DynamicResource ThemeBgSurface}"
-                            BorderBrush="{DynamicResource ThemeBorde}"
-                            BorderThickness="0,0,0,1"
-                            Padding="10,6">
-                        <StackPanel x:Name="PanelBotonesFacturas" Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Content="Insertar" Margin="0,0,5,0"
-                                    Style="{StaticResource BtnSecundario}"
-                                    Click="BtnInsertarFactura_Click"/>
-                            <Button Content="Nueva línea" Margin="0,0,5,0"
-                                    Style="{StaticResource BtnSecundario}"
-                                    Click="BtnNuevaLineaFactura_Click"/>
-                            <Button Content="Duplicar" Margin="0,0,5,0"
-                                    Style="{StaticResource BtnSecundario}"
-                                    Click="BtnDuplicarLineaFactura_Click"/>
-                            <Button Content="Eliminar línea" Margin="0,0,5,0"
-                                    Style="{StaticResource BtnPeligro}"
-                                    Click="BtnEliminarLineaFactura_Click"/>
-                            <Button Content="Facturar pedido"
-                                    Style="{StaticResource BtnAmarillo}"
-                                    Click="BtnFacturarPedido_Click"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Grid facturas -->
-                    <DataGrid x:Name="GridFacturas" Grid.Row="1"
-                              AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              CanUserDeleteRows="False"
-                              SelectionMode="Single"
-                              HeadersVisibility="Column"
-                              GridLinesVisibility="Horizontal"
-                              BorderBrush="{DynamicResource ThemeBorde}"
-                              BorderThickness="0"
-                              FontSize="12"
-                              RowHeight="32"
-                              CellEditEnding="GridFacturas_CellEditEnding"
-                              PreparingCellForEdit="GridFacturas_PreparingCellForEdit"
-                              ScrollViewer.PanningMode="VerticalOnly">
-                        <DataGrid.ColumnHeaderStyle>
-                            <Style TargetType="DataGridColumnHeader">
-                                <Setter Property="Background"      Value="{DynamicResource ThemeBgSurface}"/>
-                                <Setter Property="Foreground"      Value="{DynamicResource ThemeTextoSec}"/>
-                                <Setter Property="BorderBrush"     Value="{DynamicResource ThemeBorde}"/>
-                                <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                                <Setter Property="Padding"         Value="8,5"/>
-                                <Setter Property="FontSize"        Value="11"/>
-                                <Setter Property="FontWeight"      Value="SemiBold"/>
-                            </Style>
-                        </DataGrid.ColumnHeaderStyle>
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Lín." Binding="{Binding Linea}"
-                                                Width="42" IsReadOnly="True">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground"        Value="{DynamicResource ThemeTextoSec}"/>
-                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                        <Setter Property="Margin"            Value="8,0,0,0"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Concepto" Binding="{Binding Concepto}" Width="*"/>
-                            <DataGridTemplateColumn Header="Categoría" Width="200">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding CategoriaDescripcion}"
-                                                   Margin="6,0" VerticalAlignment="Center"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                                <DataGridTemplateColumn.CellEditingTemplate>
-                                    <DataTemplate>
-                                        <ComboBox ItemsSource="{x:Static local:PedidosDetalle.CategoriasCombo}"
-                                                  DisplayMemberPath="Descripcion"
-                                                  SelectedValuePath="Id"
-                                                  SelectedValue="{Binding CategoriaId, UpdateSourceTrigger=PropertyChanged}"
-                                                  FontSize="12"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellEditingTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Estado" Width="108">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Estado}"
-                                                   Margin="6,0" VerticalAlignment="Center"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                                <DataGridTemplateColumn.CellEditingTemplate>
-                                    <DataTemplate>
-                                        <ComboBox SelectedItem="{Binding Estado, UpdateSourceTrigger=PropertyChanged}"
-                                                  ItemsSource="{x:Static local:PedidosDetalle.EstadosFactura}"
-                                                  FontSize="12"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellEditingTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="Importe"
-                                                Binding="{Binding Importe, StringFormat=#\,##0.##}"
-                                                Width="100"
-                                                ElementStyle="{StaticResource CeldaNumero}"
-                                                EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </Grid>
-            </TabItem>
-
-            <!-- ──────────────────────────────────────────────────────── -->
-            <!-- TAB 2: ARTÍCULOS                                         -->
+            <!-- TAB 1: ARTÍCULOS                                         -->
             <!-- ──────────────────────────────────────────────────────── -->
             <TabItem Header="Artículos del pedido">
                 <Grid>
@@ -665,6 +550,121 @@
                                      TextChanged="Box_Observaciones_TextChanged"/>
                         </DockPanel>
                     </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- ──────────────────────────────────────────────────────── -->
+            <!-- TAB 2: FACTURAS                                          -->
+            <!-- ──────────────────────────────────────────────────────── -->
+            <TabItem x:Name="TabFacturas" Header="Facturas">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Toolbar facturas -->
+                    <Border Grid.Row="0"
+                            Background="{DynamicResource ThemeBgSurface}"
+                            BorderBrush="{DynamicResource ThemeBorde}"
+                            BorderThickness="0,0,0,1"
+                            Padding="10,6">
+                        <StackPanel x:Name="PanelBotonesFacturas" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Insertar" Margin="0,0,5,0"
+                                    Style="{StaticResource BtnSecundario}"
+                                    Click="BtnInsertarFactura_Click"/>
+                            <Button Content="Nueva línea" Margin="0,0,5,0"
+                                    Style="{StaticResource BtnSecundario}"
+                                    Click="BtnNuevaLineaFactura_Click"/>
+                            <Button Content="Duplicar" Margin="0,0,5,0"
+                                    Style="{StaticResource BtnSecundario}"
+                                    Click="BtnDuplicarLineaFactura_Click"/>
+                            <Button Content="Eliminar línea" Margin="0,0,5,0"
+                                    Style="{StaticResource BtnPeligro}"
+                                    Click="BtnEliminarLineaFactura_Click"/>
+                            <Button Content="Facturar pedido"
+                                    Style="{StaticResource BtnAmarillo}"
+                                    Click="BtnFacturarPedido_Click"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Grid facturas -->
+                    <DataGrid x:Name="GridFacturas" Grid.Row="1"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              BorderBrush="{DynamicResource ThemeBorde}"
+                              BorderThickness="0"
+                              FontSize="12"
+                              RowHeight="32"
+                              CellEditEnding="GridFacturas_CellEditEnding"
+                              PreparingCellForEdit="GridFacturas_PreparingCellForEdit"
+                              ScrollViewer.PanningMode="VerticalOnly">
+                        <DataGrid.ColumnHeaderStyle>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="Background"      Value="{DynamicResource ThemeBgSurface}"/>
+                                <Setter Property="Foreground"      Value="{DynamicResource ThemeTextoSec}"/>
+                                <Setter Property="BorderBrush"     Value="{DynamicResource ThemeBorde}"/>
+                                <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                <Setter Property="Padding"         Value="8,5"/>
+                                <Setter Property="FontSize"        Value="11"/>
+                                <Setter Property="FontWeight"      Value="SemiBold"/>
+                            </Style>
+                        </DataGrid.ColumnHeaderStyle>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Lín." Binding="{Binding Linea}"
+                                                Width="42" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground"        Value="{DynamicResource ThemeTextoSec}"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="Margin"            Value="8,0,0,0"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Concepto" Binding="{Binding Concepto}" Width="*"/>
+                            <DataGridTemplateColumn Header="Categoría" Width="200">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding CategoriaDescripcion}"
+                                                   Margin="6,0" VerticalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <ComboBox ItemsSource="{x:Static local:PedidosDetalle.CategoriasCombo}"
+                                                  DisplayMemberPath="Descripcion"
+                                                  SelectedValuePath="Id"
+                                                  SelectedValue="{Binding CategoriaId, UpdateSourceTrigger=PropertyChanged}"
+                                                  FontSize="12"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Estado" Width="108">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Estado}"
+                                                   Margin="6,0" VerticalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <ComboBox SelectedItem="{Binding Estado, UpdateSourceTrigger=PropertyChanged}"
+                                                  ItemsSource="{x:Static local:PedidosDetalle.EstadosFactura}"
+                                                  FontSize="12"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Importe"
+                                                Binding="{Binding Importe, StringFormat=#\,##0.##}"
+                                                Width="100"
+                                                ElementStyle="{StaticResource CeldaNumero}"
+                                                EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
                 </Grid>
             </TabItem>
 

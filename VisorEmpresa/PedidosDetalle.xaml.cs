@@ -791,6 +791,8 @@ namespace VisorEmpresa
             if (AppState.TipoMovimiento.ToLower() != "venta") return;
             if (AppState.EventoFormularioM != "nuevo") return;
 
+            var faltantes = new List<string>();
+
             foreach (var item in _pedidos)
             {
                 if (string.IsNullOrEmpty(item.ArticuloId)) continue;
@@ -803,9 +805,14 @@ namespace VisorEmpresa
                 if (stock < totalCant)
                 {
                     _articulosAlertados.Add(item.ArticuloId);
-                    MessageBox.Show($"{item.Descripcion}: stock insuficiente (disponible: {stock:F0}, solicitado: {totalCant:F0}).",
-                        "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    faltantes.Add($"{item.Descripcion}: disponible {stock:F0}, solicitado {totalCant:F0}");
                 }
+            }
+
+            if (faltantes.Count > 0)
+            {
+                MessageBox.Show("Stock insuficiente:\n\n" + string.Join("\n", faltantes),
+                    "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
@@ -1629,15 +1636,14 @@ namespace VisorEmpresa
             }
         }
 
-        // Recalcula las líneas "sin deuda" a partir de las líneas de artículos
-        // del pedido, agrupadas por categoría (una línea de factura por
-        // categoría, importe = suma de los artículos de esa categoría). Las
-        // líneas "con deuda" (cargos manuales) no se tocan; se puede volver a
-        // presionar el botón para refrescar el resumen si cambian los artículos.
+        // Genera líneas de factura nuevas a partir de las líneas de artículos
+        // del pedido, agrupadas por categoría (una línea nueva por categoría,
+        // importe = suma de los artículos de esa categoría), estado "sin
+        // deuda". No toca ni reemplaza las líneas ya existentes en la grilla
+        // (ni "con deuda" ni "sin deuda" de una pasada anterior) — cada click
+        // agrega líneas adicionales.
         private void BtnFacturarPedido_Click(object sender, RoutedEventArgs e)
         {
-            _facturas.RemoveAll(f => f.Estado == "sin deuda");
-
             var importePorCategoria = new Dictionary<string, double>();
             foreach (var p in _pedidos)
             {
