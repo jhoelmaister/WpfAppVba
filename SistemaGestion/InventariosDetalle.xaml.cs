@@ -629,7 +629,6 @@ namespace SistemaGestion
                 Sql.DocumentosIObj.EstablecerItem("observacion", docId, Box_Observacion.Text);
                 Sql.DocumentosIObj.EstablecerItem("referencia",  docId, Box_Referencia.Text.Trim());
                 Sql.DocumentosIObj.EstablecerItem("edicion",     docId, DateTime.Now);
-                Sql.DocumentosIObj.EstablecerItem("usuario",     docId, AppState.UsuarioActivo);
                 Sql.DocumentosIObj.EstablecerItem("usuarioE",    docId, AppState.UsuarioActivo);
 
                 GuardarLineasInventario(docId);

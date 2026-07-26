@@ -586,14 +586,14 @@ namespace SistemaGestion
             ActualizarBadges();
         }
 
-        // Estado de factura: se deduce directamente de si el pedido tiene
-        // líneas cargadas en la pestaña Facturas (no depende del campo
-        // "estado" de cada línea, sino de si existe al menos una).
+        // Estado de factura: se deduce directamente de si el importe total
+        // facturado es mayor que cero (no alcanza con tener líneas cargadas
+        // si su importe es 0, ni depende del campo "estado" de cada línea).
         private void CargarEstadoFactura()
         {
             bool prev = _cargando;
             _cargando = true;
-            Box_EstadoA.Text = _facturas.Count > 0 ? "con factura" : "sin factura";
+            Box_EstadoA.Text = _facturas.Sum(f => f.Importe) > 0 ? "con factura" : "sin factura";
             _cargando = prev;
             ActualizarBadges();
         }
@@ -1763,7 +1763,6 @@ namespace SistemaGestion
                 Sql.DocumentosPObj.EstablecerItem("estadoC",     docP, cuenta);
                 Sql.DocumentosPObj.EstablecerItem("estadoA",     docP, estadoA);
                 Sql.DocumentosPObj.EstablecerItem("edicion",     docP, DateTime.Now);
-                Sql.DocumentosPObj.EstablecerItem("usuario",     docP, AppState.UsuarioActivo);
                 Sql.DocumentosPObj.EstablecerItem("usuarioE",    docP, AppState.UsuarioActivo);
 
                 // Guardado diferencial: solo inserta/actualiza/oculta lo que cambió.

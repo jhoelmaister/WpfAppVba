@@ -357,6 +357,24 @@ namespace SistemaGestion
             RenumerarYActualizarTotales();   // renumera Línea + totales + Items.Refresh()
         }
 
+        // Actualiza solo las banderas Seleccionado/OrdenSeleccion de las filas ya
+        // existentes en memoria, sin recalcular stock ni volver a consultar SQL.
+        // Marcar/desmarcar no cambia el stock de ningún artículo, así que no hace
+        // falta pagar el costo de ConstruirListaArticulos() (que recalcula
+        // StockCalculator.ContarStock/ContarStock2 de TODOS los artículos filtrados)
+        // en cada clic — antes eso hacía notoriamente lento tildar artículos uno
+        // por uno al importar a un pedido.
+        private void ActualizarSeleccionEnGrid()
+        {
+            foreach (var f in FilasGrid)
+            {
+                int ordenIdx = _seleccionados.IndexOf(f.Id);
+                f.Seleccionado   = ordenIdx >= 0;
+                f.OrdenSeleccion = ordenIdx >= 0 ? ordenIdx + 1 : 0;
+            }
+            RenumerarYActualizarTotales();
+        }
+
         private void RestaurarSeleccionGrid(string artId)
         {
             if (string.IsNullOrEmpty(artId)) return;
@@ -715,7 +733,7 @@ namespace SistemaGestion
         {
             if (_seleccionados.Count == 0) return;
             _seleccionados.Clear();
-            RefrescarGridIncremental();
+            ActualizarSeleccionEnGrid();
             GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
 
@@ -768,12 +786,14 @@ namespace SistemaGestion
             else
                 _seleccionados.Add(idActual);
 
-            // Refresco incremental: conserva las instancias de fila (y sus contenedores
-            // visuales reciclados) en vez de reemplazar todo el ItemsSource. Reemplazar
-            // la lista entera (CargarArticulos) hacía que la virtualización reciclara
-            // contenedores entre instancias distintas y se viera un "parpadeo" de
-            // colores de fondo al seleccionar/marcar, sobre todo en modo oscuro.
-            RefrescarGridIncremental();
+            // Solo actualiza las banderas de selección en memoria (sin recalcular
+            // stock ni volver a SQL) — conserva las instancias de fila (y sus
+            // contenedores visuales reciclados) en vez de reemplazar todo el
+            // ItemsSource. Reemplazar la lista entera (CargarArticulos) hacía que la
+            // virtualización reciclara contenedores entre instancias distintas y se
+            // viera un "parpadeo" de colores de fondo al seleccionar/marcar, sobre
+            // todo en modo oscuro.
+            ActualizarSeleccionEnGrid();
 
             // Restaurar selección y foco al mismo ítem
             var item = FilasGrid.Find(x => x.Id == idActual);

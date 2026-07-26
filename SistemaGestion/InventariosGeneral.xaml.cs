@@ -26,10 +26,10 @@ namespace SistemaGestion
             Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarInventarios(); };
         }
 
-        private void ConfigurarModo()
-        {
-            if (!AppState.EsAdmin) BtnEliminar.Visibility = Visibility.Collapsed;
-        }
+        // BtnEliminar queda visible para todos: además del administrador, el
+        // usuario que creó el documento también puede eliminarlo/ocultarlo — el
+        // permiso se valida por documento en BtnEliminar_Click.
+        private void ConfigurarModo() { }
 
         // ─── Carga la lista ────────────────────────────────────────────────────
         public void CargarInventarios()
@@ -56,6 +56,7 @@ namespace SistemaGestion
                     Fecha         = fecha,
                     FechaStr      = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                     Referencia    = Sql.DocumentosIObj.ObtenerItem("referencia", id)?.ToString() ?? "",
+                    UsuarioCreador = Sql.DocumentosIObj.ObtenerItem("usuario", id)?.ToString() ?? "",
                     CantidadTotal = cantidad
                 });
             }
@@ -79,6 +80,7 @@ namespace SistemaGestion
                 Fecha         = fecha,
                 FechaStr      = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                 Referencia    = Sql.DocumentosIObj.ObtenerItem("referencia", id)?.ToString() ?? "",
+                UsuarioCreador = Sql.DocumentosIObj.ObtenerItem("usuario", id)?.ToString() ?? "",
                 CantidadTotal = CalcularCantidad(id)
             };
         }
@@ -158,6 +160,14 @@ namespace SistemaGestion
         private void BtnEliminar_Click(object sender, RoutedEventArgs e)
         {
             if (Grid1.SelectedItem is not InventarioFila fila) return;
+
+            // Solo el administrador o el usuario que creó el documento puede eliminarlo.
+            if (!AppState.EsAdmin && fila.UsuarioCreador != AppState.UsuarioActivo)
+            {
+                MessageBox.Show("Solo un administrador o el usuario que creó este documento puede eliminarlo.",
+                    "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
             // Verificación de conexión en 2 capas antes de persistir el borrado.
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
@@ -962,6 +972,7 @@ namespace SistemaGestion
         public DateTime Fecha         { get; set; }
         public string   FechaStr      { get; set; } = "";
         public string   Referencia    { get; set; } = "";
+        public string   UsuarioCreador { get; set; } = "";
         public double   CantidadTotal { get; set; }
     }
 }

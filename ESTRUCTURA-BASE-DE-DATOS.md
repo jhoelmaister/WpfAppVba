@@ -76,11 +76,20 @@
 - **`documentosP.estadoA`**: agregada (`nvarchar(100)`, "sin factura"/"con
   factura"). Es un estado más para el pedido, igual que `estado` (entrega) y
   `estadoC` (cuenta): se recalcula solo, sin intervención manual, según si el
-  pedido tiene alguna línea cargada en la pestaña "Facturas del pedido" (con
-  factura) o ninguna (sin factura). Se muestra como badge "Estado de factura"
-  en el encabezado de `PedidosDetalle`. En `PedidosGeneral`, reemplaza a la
-  columna "Referencia" en `Grid1` (badge "Factura") y suma un nuevo filtro
-  lateral ("Todos"/"Con factura"/"Sin factura").
+  importe total facturado (`Importe facturado`, suma de las líneas de la
+  pestaña "Facturas del pedido") es mayor que cero. Se muestra como badge
+  "Estado de factura" en el encabezado de `PedidosDetalle`. En
+  `PedidosGeneral`, reemplaza a la columna "Referencia" en `Grid1` (badge
+  "Factura") y suma un nuevo filtro lateral ("Todos"/"Con factura"/"Sin
+  factura").
+- **Permiso de eliminar en `documentosP`/`documentosT`/`documentosI`/
+  `documentosC`**: además del administrador, ahora también puede
+  eliminar/ocultar un documento el usuario que figura en su columna
+  `usuario` (el creador). Para que esto sea confiable se corrigió un bug en
+  Pedidos e Inventarios: su `GuardarEditar` sobrescribía `usuario` en cada
+  edición (perdiendo el creador original) — ahora, igual que ya hacían
+  Traspasos y Correcciones, solo se actualiza `usuarioE` al editar y
+  `usuario` queda fijo desde que se crea el documento.
 
 ## Tablas
 
@@ -164,8 +173,8 @@ Cabecera de correcciones de stock.
 | codigo      | nvarchar(100)       | sí   |
 | id          | uniqueidentifier    | NO   |
 | sucursal    | uniqueidentifier    | sí   |
-| usuario     | uniqueidentifier    | sí   |
-| usuarioE    | uniqueidentifier    | sí   |
+| usuario     | uniqueidentifier    | sí   | creó (fijo, no se toca al editar) — determina quién puede eliminar/ocultar el documento además del admin |
+| usuarioE    | uniqueidentifier    | sí   | editó por última vez |
 
 ### `documentosI`
 Cabecera de inventarios.
@@ -180,8 +189,8 @@ Cabecera de inventarios.
 | codigo      | nvarchar(100)       | sí   |
 | id          | uniqueidentifier    | NO   |
 | sucursal    | uniqueidentifier    | sí   |
-| usuario     | uniqueidentifier    | sí   |
-| usuarioE    | uniqueidentifier    | sí   |
+| usuario     | uniqueidentifier    | sí   | creó (fijo, no se toca al editar) — determina quién puede eliminar/ocultar el documento además del admin |
+| usuarioE    | uniqueidentifier    | sí   | editó por última vez |
 | referencia  | nvarchar(255)       | sí   |
 
 ### `documentosL`
@@ -222,8 +231,8 @@ Cabecera de pedidos (ventas/compras).
 | codigo      | nvarchar(100)       | sí   | |
 | id          | uniqueidentifier    | NO   | |
 | sucursal    | uniqueidentifier    | sí   | sucursal emisora (única columna de sucursal; `emitido` se eliminó por ser duplicada) |
-| usuario     | uniqueidentifier    | sí   | |
-| usuarioE    | uniqueidentifier    | sí   | |
+| usuario     | uniqueidentifier    | sí   | creó (fijo, no se toca al editar) — determina quién puede eliminar/ocultar el documento además del admin |
+| usuarioE    | uniqueidentifier    | sí   | editó por última vez |
 | tercero     | uniqueidentifier    | sí   | cliente/proveedor |
 
 ### `documentosT`
@@ -243,8 +252,8 @@ Cabecera de traspasos entre sucursales.
 | origen      | uniqueidentifier    | sí   | |
 | destino     | uniqueidentifier    | sí   | |
 | emitido     | uniqueidentifier    | sí   | sucursal que emitió (ver cascada `emitido → sucursales → empresas` en `CodigoRegenerator`) |
-| usuario     | uniqueidentifier    | sí   | |
-| usuarioE    | uniqueidentifier    | sí   | |
+| usuario     | uniqueidentifier    | sí   | creó (fijo, no se toca al editar) — determina quién puede eliminar/ocultar el documento además del admin |
+| usuarioE    | uniqueidentifier    | sí   | editó por última vez |
 
 ### `empresas`
 

@@ -29,10 +29,10 @@ namespace SistemaGestion
             Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarMeses(); CargarPedidos(); };
         }
 
-        private void ConfigurarModo()
-        {
-            if (!AppState.EsAdmin) BtnEliminar.Visibility = Visibility.Collapsed;
-        }
+        // BtnEliminar queda visible para todos: además del administrador, el
+        // usuario que creó el documento también puede eliminarlo/ocultarlo — el
+        // permiso se valida por documento en BtnEliminar_Click (ver ES_CREADOR).
+        private void ConfigurarModo() { }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
         private void CargarMeses()
@@ -206,6 +206,7 @@ namespace SistemaGestion
                     Estado      = estado,
                     Cuenta      = estadoC,
                     Factura     = estadoA,
+                    UsuarioCreador = Sql.DocumentosPObj.ObtenerItem("usuario", id)?.ToString() ?? "",
                     Cantidad    = cant,
                     Importe     = importe
                 });
@@ -310,6 +311,7 @@ namespace SistemaGestion
                 Estado      = estado,
                 Cuenta      = estadoC,
                 Factura     = estadoA,
+                UsuarioCreador = Sql.DocumentosPObj.ObtenerItem("usuario", id)?.ToString() ?? "",
                 Cantidad    = CalcularCantidad(id),
                 Importe     = CalcularImporte(id)
             };
@@ -526,6 +528,14 @@ namespace SistemaGestion
         {
             if (Grid1.SelectedItem is not PedidoFila fila) return;
 
+            // Solo el administrador o el usuario que creó el documento puede eliminarlo.
+            if (!AppState.EsAdmin && fila.UsuarioCreador != AppState.UsuarioActivo)
+            {
+                MessageBox.Show("Solo un administrador o el usuario que creó este documento puede eliminarlo.",
+                    "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             // Verificación de conexión en 2 capas antes de persistir el borrado.
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
 
@@ -631,6 +641,7 @@ namespace SistemaGestion
         public string Estado      { get; set; } = "";
         public string Cuenta      { get; set; } = "";
         public string Factura     { get; set; } = "";
+        public string UsuarioCreador { get; set; } = "";
         public double Cantidad    { get; set; }
         public double Importe     { get; set; }
     }

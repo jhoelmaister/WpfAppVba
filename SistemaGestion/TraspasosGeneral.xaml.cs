@@ -29,10 +29,10 @@ namespace SistemaGestion
             Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarMeses(); CargarTraspasos(); };
         }
 
-        private void ConfigurarModo()
-        {
-            if (!AppState.EsAdmin) BtnEliminar.Visibility = Visibility.Collapsed;
-        }
+        // BtnEliminar queda visible para todos: además del administrador, el
+        // usuario que creó el documento también puede eliminarlo/ocultarlo — el
+        // permiso se valida por documento en BtnEliminar_Click.
+        private void ConfigurarModo() { }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
         private void CargarMeses()
@@ -204,6 +204,7 @@ namespace SistemaGestion
                     ContraparteDesc = contraparteDesc,
                     Referencia      = Sql.DocumentosTObj.ObtenerItem("referencia", id)?.ToString() ?? "",
                     Estado          = estado,
+                    UsuarioCreador  = Sql.DocumentosTObj.ObtenerItem("usuario", id)?.ToString() ?? "",
                     Cantidad        = cant
                 });
                 totalCant += cant;
@@ -291,6 +292,7 @@ namespace SistemaGestion
                 ContraparteDesc = contraparteDesc,
                 Referencia      = Sql.DocumentosTObj.ObtenerItem("referencia", id)?.ToString() ?? "",
                 Estado          = estado,
+                UsuarioCreador  = Sql.DocumentosTObj.ObtenerItem("usuario", id)?.ToString() ?? "",
                 Cantidad        = CalcularCantidad(id)
             };
         }
@@ -476,6 +478,14 @@ namespace SistemaGestion
         {
             if (Grid1.SelectedItem is not TraspasoFila fila) return;
 
+            // Solo el administrador o el usuario que creó el documento puede eliminarlo.
+            if (!AppState.EsAdmin && fila.UsuarioCreador != AppState.UsuarioActivo)
+            {
+                MessageBox.Show("Solo un administrador o el usuario que creó este documento puede eliminarlo.",
+                    "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             // Verificación de conexión en 2 capas antes de persistir el borrado.
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
 
@@ -640,6 +650,7 @@ namespace SistemaGestion
         public string ContraparteDesc { get; set; } = "";
         public string Referencia      { get; set; } = "";
         public string Estado          { get; set; } = "";
+        public string UsuarioCreador  { get; set; } = "";
         public double Cantidad        { get; set; }
     }
 
