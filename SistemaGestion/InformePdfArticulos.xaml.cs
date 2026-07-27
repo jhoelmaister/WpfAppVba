@@ -169,11 +169,11 @@ namespace SistemaGestion
             }
         }
 
-        // ─── Generación del PDF: catálogo agrupado por Producto & Familia ─────
-        // Mismos datos que InformeExcelArticulos (Código/Categoría/Descripción
-        // Completa/Stock), pero Producto/Familia van en la banda de grupo en vez
-        // de ser columnas de datos — mismo estilo que
-        // InventariosGeneral.GenerarPlantillaPdf.
+        // ─── Generación del PDF: catálogo agrupado por Producto & Familia, con
+        // resumen de categorías al final — mismo estilo/estructura exacta que
+        // InventariosGeneral.GenerarPdfInventario (banda celeste de grupo,
+        // encabezado gris, tabla de totales por categoría alineada al borde
+        // derecho de la columna Stock, fila "Total general" destacada). ────────
         private void GenerarPdf(string filePath, DateTime fechaCorte)
         {
             GlobalFontSettings.UseWindowsFontsUnderWindows = true;
@@ -192,65 +192,107 @@ namespace SistemaGestion
             const double altoGrupo     = 18;
             const double altoFila      = 16;
             const double anchoN        = 28;
-            const double anchoCodigo   = 70;
-            const double anchoCategoria = 90;
-            const double anchoStock    = 70;
+            const double anchoCodigo   = 80;
+            const double anchoStock    = 75;
 
             var document = new PdfDocument();
             PdfPage page = document.AddPage();
             page.Size = PageSize.A4;
             XGraphics gfx = XGraphics.FromPdfPage(page);
 
-            double anchoTabla     = page.Width - margen * 2;
-            double anchoDesc      = anchoTabla - anchoN - anchoCodigo - anchoCategoria - anchoStock;
-            double xN             = margen;
-            double xCodigo        = xN + anchoN;
-            double xCategoria     = xCodigo + anchoCodigo;
-            double xDesc          = xCategoria + anchoCategoria;
-            double xStock         = xDesc + anchoDesc;
+            double anchoTabla = page.Width - margen * 2;
+            double anchoDesc  = anchoTabla - anchoN - anchoCodigo - anchoStock;
+            double xN         = margen;
+            double xCodigo    = xN + anchoN;
+            double xDesc      = xCodigo + anchoCodigo;
+            double xStock     = xDesc + anchoDesc;
 
             double y = margen;
 
-            void DibujarFilaDatos(string n, string codigo, string categoria, string desc, string stock)
+            // Fila de datos: 4 columnas con sus líneas separadoras.
+            void DibujarFilaDatos(string n, string codigo, string desc, string stock)
             {
                 gfx.DrawRectangle(penLinea, xN, y, anchoTabla, altoFila);
-                gfx.DrawLine(penLinea, xCodigo,    y, xCodigo,    y + altoFila);
-                gfx.DrawLine(penLinea, xCategoria, y, xCategoria, y + altoFila);
-                gfx.DrawLine(penLinea, xDesc,      y, xDesc,      y + altoFila);
-                gfx.DrawLine(penLinea, xStock,     y, xStock,     y + altoFila);
+                gfx.DrawLine(penLinea, xCodigo, y, xCodigo, y + altoFila);
+                gfx.DrawLine(penLinea, xDesc,   y, xDesc,   y + altoFila);
+                gfx.DrawLine(penLinea, xStock,  y, xStock,  y + altoFila);
 
-                gfx.DrawString(n,         fontCuerpo, XBrushes.Black, new XRect(xN,             y, anchoN,             altoFila), XStringFormats.Center);
-                gfx.DrawString(codigo,    fontCuerpo, XBrushes.Black, new XRect(xCodigo + 4,    y, anchoCodigo - 8,    altoFila), XStringFormats.CenterLeft);
-                gfx.DrawString(categoria, fontCuerpo, XBrushes.Black, new XRect(xCategoria + 4, y, anchoCategoria - 8, altoFila), XStringFormats.CenterLeft);
-                gfx.DrawString(desc,      fontCuerpo, XBrushes.Black, new XRect(xDesc + 4,      y, anchoDesc - 8,      altoFila), XStringFormats.CenterLeft);
-                gfx.DrawString(stock,     fontCuerpo, XBrushes.Black, new XRect(xStock + 4,     y, anchoStock - 8,     altoFila), XStringFormats.CenterRight);
+                gfx.DrawString(n,      fontCuerpo, XBrushes.Black, new XRect(xN,          y, anchoN,          altoFila), XStringFormats.Center);
+                gfx.DrawString(codigo, fontCuerpo, XBrushes.Black, new XRect(xCodigo + 4, y, anchoCodigo - 8, altoFila), XStringFormats.CenterLeft);
+                gfx.DrawString(desc,   fontCuerpo, XBrushes.Black, new XRect(xDesc + 4,   y, anchoDesc - 8,   altoFila), XStringFormats.CenterLeft);
+                gfx.DrawString(stock,  fontCuerpo, XBrushes.Black, new XRect(xStock + 4,  y, anchoStock - 8,  altoFila), XStringFormats.CenterRight);
 
                 y += altoFila;
             }
 
+            // Encabezado de columnas con fondo gris claro.
             void DibujarEncabezadoColumnas()
             {
                 gfx.DrawRectangle(penLinea, brushHeader, xN, y, anchoTabla, altoHeader);
-                gfx.DrawLine(penLinea, xCodigo,    y, xCodigo,    y + altoHeader);
-                gfx.DrawLine(penLinea, xCategoria, y, xCategoria, y + altoHeader);
-                gfx.DrawLine(penLinea, xDesc,      y, xDesc,      y + altoHeader);
-                gfx.DrawLine(penLinea, xStock,     y, xStock,     y + altoHeader);
+                gfx.DrawLine(penLinea, xCodigo, y, xCodigo, y + altoHeader);
+                gfx.DrawLine(penLinea, xDesc,   y, xDesc,   y + altoHeader);
+                gfx.DrawLine(penLinea, xStock,  y, xStock,  y + altoHeader);
 
-                gfx.DrawString("N°",          fontHeader, XBrushes.Black, new XRect(xN,             y, anchoN,             altoHeader), XStringFormats.Center);
-                gfx.DrawString("Código",      fontHeader, XBrushes.Black, new XRect(xCodigo + 4,    y, anchoCodigo - 8,    altoHeader), XStringFormats.CenterLeft);
-                gfx.DrawString("Categoría",   fontHeader, XBrushes.Black, new XRect(xCategoria + 4, y, anchoCategoria - 8, altoHeader), XStringFormats.CenterLeft);
-                gfx.DrawString("Descripción", fontHeader, XBrushes.Black, new XRect(xDesc + 4,      y, anchoDesc - 8,      altoHeader), XStringFormats.CenterLeft);
-                gfx.DrawString("Stock",       fontHeader, XBrushes.Black, new XRect(xStock + 4,     y, anchoStock - 8,     altoHeader), XStringFormats.CenterRight);
+                gfx.DrawString("N°",          fontHeader, XBrushes.Black, new XRect(xN,          y, anchoN,          altoHeader), XStringFormats.Center);
+                gfx.DrawString("Código",      fontHeader, XBrushes.Black, new XRect(xCodigo + 4, y, anchoCodigo - 8, altoHeader), XStringFormats.CenterLeft);
+                gfx.DrawString("Descripción", fontHeader, XBrushes.Black, new XRect(xDesc + 4,   y, anchoDesc - 8,   altoHeader), XStringFormats.CenterLeft);
+                gfx.DrawString("Stock",       fontHeader, XBrushes.Black, new XRect(xStock + 4,  y, anchoStock - 8,  altoHeader), XStringFormats.CenterRight);
 
                 y += altoHeader;
             }
 
+            // Banda de agrupación: una sola celda celeste de ancho completo (sin separadores
+            // internos), para que el subtítulo resalte como una franja y no como otra fila de la tabla.
             void DibujarBandaGrupo(string texto)
             {
                 gfx.DrawRectangle(penLinea, brushCeleste, xN, y, anchoTabla, altoGrupo);
                 gfx.DrawString(texto, fontGrupo, XBrushes.Black, new XRect(xN + 6, y, anchoTabla - 12, altoGrupo), XStringFormats.CenterLeft);
                 y += altoGrupo;
             }
+
+            // Tabla de resumen por categoría: 3 columnas (Categoría / Cant. artículos /
+            // Stock total), con la última alineada con el borde derecho de la columna
+            // Stock de la tabla de artículos.
+            double anchoCantResumen = 90;
+            double xCantResumen     = xStock;
+            double xStockResumen    = xCantResumen - anchoCantResumen;
+            double anchoCatResumen  = xStockResumen - xN;
+
+            void DibujarEncabezadoResumen()
+            {
+                gfx.DrawRectangle(penLinea, brushHeader, xN, y, anchoTabla, altoHeader);
+                gfx.DrawLine(penLinea, xStockResumen, y, xStockResumen, y + altoHeader);
+                gfx.DrawLine(penLinea, xCantResumen,  y, xCantResumen,  y + altoHeader);
+                gfx.DrawString("Categoría",       fontHeader, XBrushes.Black, new XRect(xN + 4,            y, anchoCatResumen - 8, altoHeader), XStringFormats.CenterLeft);
+                gfx.DrawString("Stock total",     fontHeader, XBrushes.Black, new XRect(xStockResumen + 4, y, anchoCantResumen - 8, altoHeader), XStringFormats.CenterRight);
+                gfx.DrawString("Cant. artículos", fontHeader, XBrushes.Black, new XRect(xCantResumen + 4,  y, anchoStock - 8,       altoHeader), XStringFormats.CenterRight);
+                y += altoHeader;
+            }
+
+            void DibujarFilaResumen(string categoria, string stock, string cantidad, bool destacado = false)
+            {
+                if (destacado) gfx.DrawRectangle(penLinea, brushCeleste, xN, y, anchoTabla, altoFila);
+                else           gfx.DrawRectangle(penLinea, xN, y, anchoTabla, altoFila);
+                gfx.DrawLine(penLinea, xStockResumen, y, xStockResumen, y + altoFila);
+                gfx.DrawLine(penLinea, xCantResumen,  y, xCantResumen,  y + altoFila);
+
+                var font = destacado ? fontGrupo : fontCuerpo;
+                gfx.DrawString(categoria, font, XBrushes.Black, new XRect(xN + 4,            y, anchoCatResumen - 8, altoFila), XStringFormats.CenterLeft);
+                gfx.DrawString(stock,     font, XBrushes.Black, new XRect(xStockResumen + 4, y, anchoCantResumen - 8, altoFila), XStringFormats.CenterRight);
+                gfx.DrawString(cantidad,  font, XBrushes.Black, new XRect(xCantResumen + 4,  y, anchoStock - 8,       altoFila), XStringFormats.CenterRight);
+
+                y += altoFila;
+            }
+
+            // Espacio en blanco entre la lista de artículos y el resumen de categorías
+            // (sin línea dibujada, solo separación vertical).
+            const double altoSeparador = 16;
+            void DibujarSeparador() { y += altoSeparador; }
+
+            // Encabezado a redibujar al saltar de página: la tabla de artículos usa
+            // DibujarEncabezadoColumnas, la sección de resumen pasa a usar
+            // DibujarEncabezadoResumen una vez que empieza (ver más abajo).
+            Action dibujarEncabezadoPagina = DibujarEncabezadoColumnas;
 
             void NuevaPagina()
             {
@@ -259,7 +301,7 @@ namespace SistemaGestion
                 page.Size = PageSize.A4;
                 gfx = XGraphics.FromPdfPage(page);
                 y = margen;
-                DibujarEncabezadoColumnas();
+                dibujarEncabezadoPagina();
             }
 
             void AsegurarEspacio(double alto)
@@ -323,72 +365,38 @@ namespace SistemaGestion
                 {
                     AsegurarEspacio(altoFila);
                     n++;
-                    DibujarFilaDatos(n.ToString(), l.codigo, l.catDesc, l.desc, l.stock.ToString("0.##"));
+                    DibujarFilaDatos(n.ToString(), l.codigo, l.desc, l.stock.ToString("0.##"));
                 }
             }
 
-            // ── Tabla de categorías (separada de la de artículos por una fila
-            //    en blanco): cantidad de artículos y stock total por categoría,
-            //    sobre el mismo conjunto ya filtrado por Condición. Tiene su
-            //    propia paginación (no reusa NuevaPagina/AsegurarEspacio de
-            //    arriba, que redibujan el encabezado de 5 columnas de artículos). ──
-            const double anchoCantResumen  = 100;
-            const double anchoStockResumen = 90;
-            double anchoCatResumen = anchoTabla - anchoCantResumen - anchoStockResumen;
-            double xCantResumen    = xN + anchoCatResumen;
-            double xStockResumen   = xCantResumen + anchoCantResumen;
-
-            void DibujarEncabezadoResumen()
-            {
-                gfx.DrawRectangle(penLinea, brushHeader, xN, y, anchoTabla, altoHeader);
-                gfx.DrawLine(penLinea, xCantResumen,  y, xCantResumen,  y + altoHeader);
-                gfx.DrawLine(penLinea, xStockResumen, y, xStockResumen, y + altoHeader);
-                gfx.DrawString("Categoría",       fontHeader, XBrushes.Black, new XRect(xN + 4,            y, anchoCatResumen - 8,   altoHeader), XStringFormats.CenterLeft);
-                gfx.DrawString("Cant. artículos", fontHeader, XBrushes.Black, new XRect(xCantResumen + 4,  y, anchoCantResumen - 8,  altoHeader), XStringFormats.CenterRight);
-                gfx.DrawString("Stock total",     fontHeader, XBrushes.Black, new XRect(xStockResumen + 4, y, anchoStockResumen - 8, altoHeader), XStringFormats.CenterRight);
-                y += altoHeader;
-            }
-
-            void DibujarFilaResumen(string categoria, string cantidad, string stock)
-            {
-                gfx.DrawRectangle(penLinea, xN, y, anchoTabla, altoFila);
-                gfx.DrawLine(penLinea, xCantResumen,  y, xCantResumen,  y + altoFila);
-                gfx.DrawLine(penLinea, xStockResumen, y, xStockResumen, y + altoFila);
-                gfx.DrawString(categoria, fontCuerpo, XBrushes.Black, new XRect(xN + 4,            y, anchoCatResumen - 8,   altoFila), XStringFormats.CenterLeft);
-                gfx.DrawString(cantidad,  fontCuerpo, XBrushes.Black, new XRect(xCantResumen + 4,  y, anchoCantResumen - 8,  altoFila), XStringFormats.CenterRight);
-                gfx.DrawString(stock,     fontCuerpo, XBrushes.Black, new XRect(xStockResumen + 4, y, anchoStockResumen - 8, altoFila), XStringFormats.CenterRight);
-                y += altoFila;
-            }
-
-            void NuevaPaginaResumen()
-            {
-                gfx.Dispose();
-                page = document.AddPage();
-                page.Size = PageSize.A4;
-                gfx = XGraphics.FromPdfPage(page);
-                y = margen;
-                DibujarEncabezadoResumen();
-            }
-
-            void AsegurarEspacioResumen(double alto)
-            {
-                if (y + alto > page.Height - margen) NuevaPaginaResumen();
-            }
-
+            // ── Resumen por categoría + total general, al final del informe ──────
             var resumenCategorias = lineas
                 .GroupBy(l => string.IsNullOrEmpty(l.catDesc) ? "(sin categoría)" : l.catDesc)
-                .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase);
+                .Select(g => (categoria: g.Key, cantidad: g.Count(), stock: g.Sum(x => x.stock)))
+                .OrderBy(x => x.categoria, StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
-            y += 14; // fila en blanco entre la tabla de artículos y la de categorías
-            AsegurarEspacioResumen(altoHeader + altoFila);
-            gfx.DrawString("Resumen por categoría", fontGrupo, XBrushes.Black, new XPoint(xN, y + 12));
-            y += 20;
-            DibujarEncabezadoResumen();
-
-            foreach (var grupo in resumenCategorias)
+            if (resumenCategorias.Count > 0)
             {
-                AsegurarEspacioResumen(altoFila);
-                DibujarFilaResumen(grupo.Key, grupo.Count().ToString(), grupo.Sum(g => g.stock).ToString("0.##"));
+                dibujarEncabezadoPagina = () => { };
+                AsegurarEspacio(altoSeparador + altoGrupo + altoHeader);
+                DibujarSeparador();
+                DibujarBandaGrupo("Resumen por categoría");
+                DibujarEncabezadoResumen();
+                dibujarEncabezadoPagina = DibujarEncabezadoResumen;
+
+                int totalCantidad = 0;
+                double totalStock = 0;
+                foreach (var (categoria, cantidad, stock) in resumenCategorias)
+                {
+                    AsegurarEspacio(altoFila);
+                    DibujarFilaResumen(categoria, stock.ToString("0.##"), cantidad.ToString());
+                    totalCantidad += cantidad;
+                    totalStock    += stock;
+                }
+
+                AsegurarEspacio(altoFila);
+                DibujarFilaResumen("Total general", totalStock.ToString("0.##"), totalCantidad.ToString(), destacado: true);
             }
 
             // El último gfx de la generación de contenido sigue abierto: hay que
