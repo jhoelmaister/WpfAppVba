@@ -1,4 +1,5 @@
 using Microsoft.Data.SqlClient;
+using ConexionBroker;
 
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
