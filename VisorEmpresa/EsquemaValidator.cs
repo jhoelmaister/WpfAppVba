@@ -134,20 +134,6 @@ namespace VisorEmpresa.Data
             return resultado;
         }
 
-        // ─── Validar credenciales sueltas (sin tocar la conexión global) ─────
-        // Abre una conexión propia y desechable, igual que DatabaseConnection.Sondear,
-        // para no interferir con la conexión activa mientras se prueba otro servidor.
-        public static ResultadoValidacionEsquema ValidarConexion(
-            string server, string database, string user, string password, int timeoutSeg = 15)
-        {
-            string cs = $"Server={server};Database={database};User Id={user};Password={password};" +
-                        $"Application Name=edber;Connect Timeout={timeoutSeg};Command Timeout={timeoutSeg};" +
-                        "TrustServerCertificate=True;";
-            using var conn = new SqlConnection(cs);
-            conn.Open();
-            return Validar(conn);
-        }
-
         // ─── Texto legible para mostrar en un MessageBox (acotado) ───────────
         public static string DescribirProblemas(ResultadoValidacionEsquema resultado, int maxLineas = 20)
         {

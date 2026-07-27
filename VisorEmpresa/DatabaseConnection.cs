@@ -30,14 +30,11 @@ namespace VisorEmpresa.Data
             CerrarConexion();
         }
 
-        // ─── Cargar credenciales desde el archivo cifrado ────────────────────
-        public static bool CargarDesdeConfiguracion()
-        {
-            var cfg = ConexionConfig.Cargar();
-            if (cfg == null) return false;
-            Configurar(cfg.Value.servidor, cfg.Value.baseDatos, cfg.Value.usuario, cfg.Value.contrasena);
-            return true;
-        }
+        // ─── Cadena de conexión actual (para clases que abren sus propias
+        // conexiones sueltas en vez de reusar ObtenerConexion(), ver
+        // ConsultasEmpresa) — las credenciales ya están en memoria tras el
+        // login vía broker; nunca se leen de disco acá.
+        public static string ObtenerCadenaConexion() => ConnectionString;
 
         // ─── Obtener (o crear) la conexión ───────────────────────────────────
         public static SqlConnection ObtenerConexion()

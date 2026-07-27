@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using VisorEmpresa.Data;
@@ -9,8 +7,9 @@ using VisorEmpresa.Data;
 namespace VisorEmpresa
 {
     /// <summary>
-    /// Formulario de gestión de servidores SQL Server (lista, agregar, editar,
-    /// eliminar y conectar). Se abre desde el login mediante BtnConfigurarConexion.
+    /// Formulario de gestión de brokers de autenticación registrados (lista,
+    /// agregar, editar, eliminar y conectar). Se abre desde el login mediante
+    /// BtnConfigurarConexion.
     /// </summary>
     public partial class ConexionServidoresWindow : Window
     {
@@ -22,15 +21,14 @@ namespace VisorEmpresa
             Loaded += (_, _) => RefrescarServidores();
         }
 
-        // Fila de la lista de servidores (sin exponer credenciales).
+        // Fila de la lista de servidores.
         private class ServidorVista
         {
-            public string Id        { get; set; } = "";
-            public string Nombre    { get; set; } = "";
-            public string Servidor  { get; set; } = "";
-            public string BaseDatos { get; set; } = "";
-            public bool   EsActivo  { get; set; }
-            public string Activo    => EsActivo ? "●" : "";
+            public string Id       { get; set; } = "";
+            public string Nombre   { get; set; } = "";
+            public string Servidor { get; set; } = "";
+            public bool   EsActivo { get; set; }
+            public string Activo   => EsActivo ? "●" : "";
         }
 
         private void RefrescarServidores()
@@ -39,11 +37,10 @@ namespace VisorEmpresa
             var items = ConexionConfig.CargarLista()
                 .Select(s => new ServidorVista
                 {
-                    Id        = s.Id,
-                    Nombre    = s.Nombre,
-                    Servidor  = s.Servidor,
-                    BaseDatos = s.BaseDatos,
-                    EsActivo  = s.Id == activo
+                    Id       = s.Id,
+                    Nombre   = s.Nombre,
+                    Servidor = s.Servidor,
+                    EsActivo = s.Id == activo
                 })
                 .ToList();
             LstServidores.ItemsSource = items;
@@ -133,41 +130,24 @@ namespace VisorEmpresa
             var s = ConexionConfig.ObtenerPorId(sel.Id);
             if (s == null) { RefrescarServidores(); return; }
 
-            // Antes de marcarlo activo: verifica que se puede conectar Y que la
-            // estructura de esa base de datos es compatible con la app. Si algo
-            // falla, no se toca la conexión activa actual.
+            // Antes de marcarlo activo, solo verifica que el broker responda — ya
+            // no hay credenciales de SQL Server para probar acá: esas se validan
+            // recién al loguear (ver LoginVisorWindow.BtnIngresar_Click).
             BtnConectarServidor.IsEnabled = false;
             Mouse.OverrideCursor = Cursors.Wait;
             try
             {
-                ResultadoValidacionEsquema esquema;
-                try
+                bool ok = await AuthBrokerClient.PingAsync(s.Servidor);
+                if (!ok)
                 {
-                    esquema = await Task.Run(() =>
-                        EsquemaValidator.ValidarConexion(s.Servidor, s.BaseDatos, s.Usuario, s.Contrasena));
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"No se pudo conectar al servidor \"{sel.Nombre}\":\n{ex.Message}",
+                    MessageBox.Show($"No se pudo conectar al servidor \"{sel.Nombre}\".",
                                     "Conectar", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
 
-                if (!esquema.EsCompatible)
-                {
-                    MessageBox.Show(
-                        $"La base de datos de \"{sel.Nombre}\" conectó, pero su estructura no es " +
-                        "compatible con la app. No se cambió la conexión activa.\n\n" +
-                        EsquemaValidator.DescribirProblemas(esquema),
-                        "Estructura incompatible", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                // Marcar el servidor elegido como activo y reconfigurar la conexión
-                // global. El formulario permanece abierto; el login reconecta al cerrarlo.
+                // Marcar el servidor elegido como activo. El formulario permanece
+                // abierto; el login reconecta al cerrarlo.
                 ConexionConfig.EstablecerActivo(sel.Id);
-                DatabaseConnection.Configurar(s.Servidor, s.BaseDatos, s.Usuario, s.Contrasena);
-
                 RefrescarServidores();
 
                 MessageBox.Show($"Servidor activo establecido: \"{sel.Nombre}\".", "Conectar",

@@ -8,20 +8,24 @@ using System.Text.Json;
 
 namespace SistemaGestion.Data
 {
-    /// <summary>Un servidor de base de datos registrado.</summary>
+    /// <summary>
+    /// Un broker de autenticación registrado. "Servidor" es la URL base del
+    /// broker (ver AuthBrokerClient) — NO son credenciales de SQL Server: esas
+    /// ya no las guarda ni las conoce esta app fuera de una sesión logueada.
+    /// </summary>
     public class ServidorConexion
     {
-        public string Id         { get; set; } = Guid.NewGuid().ToString("N");
-        public string Nombre     { get; set; } = "";
-        public string Servidor   { get; set; } = "";
-        public string BaseDatos  { get; set; } = "";
-        public string Usuario    { get; set; } = "";
-        public string Contrasena { get; set; } = "";
+        public string Id       { get; set; } = Guid.NewGuid().ToString("N");
+        public string Nombre   { get; set; } = "";
+        public string Servidor { get; set; } = "";
     }
 
     /// <summary>
-    /// Almacena de forma cifrada (DPAPI, CurrentUser) una lista de servidores
-    /// de base de datos en %AppData%\SistemaGestion\conexion.dat.
+    /// Almacena de forma cifrada (DPAPI, CurrentUser) una lista de brokers de
+    /// autenticación registrados en %AppData%\SistemaGestion\conexion.dat. Ya
+    /// no guarda credenciales de SQL Server (la URL del broker no es secreta;
+    /// el cifrado queda solo por prolijidad, sin necesidad real de proteger
+    /// este archivo en particular).
     /// </summary>
     public static class ConexionConfig
     {
@@ -43,6 +47,15 @@ namespace SistemaGestion.Data
 
         public static ServidorConexion? ObtenerPorId(string id) =>
             LeerArchivo().lista.FirstOrDefault(x => x.Id == id);
+
+        /// <summary>URL del broker activo, o "" si no hay ninguno configurado.</summary>
+        public static string ObtenerBrokerActivo()
+        {
+            var (lista, activo) = LeerArchivo();
+            if (lista.Count == 0) return "";
+            var s = lista.FirstOrDefault(x => x.Id == activo) ?? lista[0];
+            return s.Servidor;
+        }
 
         public static void Agregar(ServidorConexion s)
         {
@@ -77,32 +90,6 @@ namespace SistemaGestion.Data
                 EscribirArchivo(lista, id);
         }
 
-        // ─── Compatibilidad con el código previo ─────────────────────────────
-
-        /// <summary>Devuelve las credenciales del servidor activo (o null si no hay).</summary>
-        public static (string servidor, string baseDatos, string usuario, string contrasena)? Cargar()
-        {
-            var (lista, activo) = LeerArchivo();
-            if (lista.Count == 0) return null;
-            var s = lista.FirstOrDefault(x => x.Id == activo) ?? lista[0];
-            return (s.Servidor, s.BaseDatos, s.Usuario, s.Contrasena);
-        }
-
-        /// <summary>Agrega un servidor con los datos indicados y lo marca como activo.</summary>
-        public static void Guardar(string servidor, string baseDatos, string usuario, string contrasena)
-        {
-            var s = new ServidorConexion
-            {
-                Nombre     = servidor,
-                Servidor   = servidor,
-                BaseDatos  = baseDatos,
-                Usuario    = usuario,
-                Contrasena = contrasena
-            };
-            Agregar(s);
-            EstablecerActivo(s.Id);
-        }
-
         // ─── Lectura / escritura cifrada ─────────────────────────────────────
 
         private static (List<ServidorConexion> lista, string activo) LeerArchivo()
@@ -126,16 +113,8 @@ namespace SistemaGestion.Data
                     foreach (var el in arr.EnumerateArray())
                         lista.Add(LeerServidor(el));
                 }
-                else if (root.TryGetProperty("Servidor", out _))
-                {
-                    // Formato antiguo: un único servidor → migrar a lista
-                    var s = LeerServidor(root);
-                    if (string.IsNullOrEmpty(s.Nombre)) s.Nombre = s.Servidor;
-                    lista.Add(s);
-                    activo = s.Id;
-                }
             }
-            catch { /* archivo corrupto o de otro usuario → lista vacía */ }
+            catch { /* archivo corrupto, de otro usuario, o formato previo incompatible → lista vacía */ }
 
             if (string.IsNullOrEmpty(activo) && lista.Count > 0)
                 activo = lista[0].Id;
@@ -148,11 +127,8 @@ namespace SistemaGestion.Data
             string Get(string p) => el.TryGetProperty(p, out var v) ? v.GetString() ?? "" : "";
             var s = new ServidorConexion
             {
-                Nombre     = Get("Nombre"),
-                Servidor   = Get("Servidor"),
-                BaseDatos  = Get("BaseDatos"),
-                Usuario    = Get("Usuario"),
-                Contrasena = Get("Contrasena")
+                Nombre   = Get("Nombre"),
+                Servidor = Get("Servidor")
             };
             string id = Get("Id");
             if (!string.IsNullOrEmpty(id)) s.Id = id;

@@ -41,31 +41,6 @@
             </Setter>
         </Style>
 
-        <Style x:Key="ModernPassword" TargetType="PasswordBox">
-            <Setter Property="Height"                   Value="34"/>
-            <Setter Property="FontSize"                 Value="13"/>
-            <Setter Property="Padding"                  Value="10,0"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="BorderBrush"              Value="{DynamicResource ThemeBordeInput}"/>
-            <Setter Property="BorderThickness"          Value="1"/>
-            <Setter Property="Background"               Value="{DynamicResource ThemeInputBg}"/>
-            <Setter Property="Foreground"               Value="{DynamicResource ThemeTexto}"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="PasswordBox">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="6">
-                            <ScrollViewer x:Name="PART_ContentHost"
-                                          Margin="{TemplateBinding Padding}"
-                                          VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <Style x:Key="BtnBase" TargetType="Button">
             <Setter Property="Height"          Value="36"/>
             <Setter Property="FontSize"        Value="13"/>
@@ -129,11 +104,11 @@
                 </Border>
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock x:Name="LblTitulo" FontSize="14" FontWeight="Bold"
-                               Text="Nuevo Servidor"
+                               Text="Nuevo servidor"
                                Foreground="{DynamicResource ThemeTexto}"/>
                     <TextBlock x:Name="LblHint" FontSize="11"
                                Foreground="{DynamicResource ThemeTextoSec}" Margin="0,1,0,0"
-                               Text="Datos de conexión a SQL Server."/>
+                               Text="Dirección del servicio de conexión (no es una contraseña)."/>
                 </StackPanel>
             </StackPanel>
         </Border>
@@ -144,33 +119,8 @@
                 <TextBlock Style="{StaticResource SectionLabel}" Text="NOMBRE (ALIAS)"/>
                 <TextBox x:Name="TxtNombre" Style="{StaticResource ModernInput}"/>
 
-                <TextBlock Style="{StaticResource SectionLabel}" Text="SERVIDOR"/>
+                <TextBlock Style="{StaticResource SectionLabel}" Text="DIRECCIÓN DEL SERVIDOR"/>
                 <TextBox x:Name="TxtServidor" Style="{StaticResource ModernInput}"/>
-
-                <TextBlock Style="{StaticResource SectionLabel}" Text="BASE DE DATOS"/>
-                <TextBox x:Name="TxtBaseDatos" Style="{StaticResource ModernInput}"/>
-
-                <TextBlock Style="{StaticResource SectionLabel}" Text="USUARIO"/>
-                <TextBox x:Name="TxtUsuario" Style="{StaticResource ModernInput}"/>
-
-                <TextBlock Style="{StaticResource SectionLabel}" Text="CONTRASEÑA"/>
-                <Grid Margin="0,0,0,12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <PasswordBox x:Name="PwdContrasena" Grid.Column="0"
-                                 Style="{StaticResource ModernPassword}"/>
-                    <TextBox x:Name="TxtContrasenaVisible" Grid.Column="0"
-                             Style="{StaticResource ModernInput}"
-                             Margin="0"
-                             Foreground="{DynamicResource ThemeTexto}"
-                             Visibility="Collapsed"/>
-                    <Button x:Name="BtnTogglePwd" Grid.Column="1" Content="Ver"
-                            Width="56" Style="{StaticResource BtnSecundario}"
-                            Margin="8,0,0,0"
-                            Click="BtnTogglePwd_Click"/>
-                </Grid>
 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Button x:Name="BtnProbarConexion" Content="Probar conexión"

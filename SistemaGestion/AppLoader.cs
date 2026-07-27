@@ -1,5 +1,4 @@
 using System;
-using Microsoft.Data.SqlClient;
 
 namespace SistemaGestion.Data
 {
@@ -19,7 +18,7 @@ namespace SistemaGestion.Data
         // ─── ConectarUsuarios ─────────────────────────────────────────────────
         /// <summary>
         /// Carga la tabla de usuarios y empresas completas. Se llama DESPUÉS de
-        /// autenticar (ver <see cref="ValidarLogin"/>), nunca antes: así no se
+        /// autenticar (ver AuthBrokerClient.LoginAsync), nunca antes: así no se
         /// descargan las contraseñas de todas las cuentas a un cliente sin loguear.
         /// El resto de catálogos se cargan luego con <see cref="ConectarProductos"/>,
         /// ya filtrados por la empresa del usuario.
@@ -31,52 +30,6 @@ namespace SistemaGestion.Data
             // Tabla de empresas (sin filtro de empresa).
             Sql.EmpresasObj.Conectar("empresas",
                 "SELECT * FROM empresas WHERE estadof = 'normal' ORDER BY descripcion ASC");
-        }
-
-        // ─── ValidarLogin ─────────────────────────────────────────────────────
-        /// <summary>
-        /// Valida una cuenta/contraseña con una consulta puntual y parametrizada,
-        /// SIN descargar la tabla completa de usuarios (con todas las contraseñas)
-        /// antes de autenticar. Devuelve el id del usuario si las credenciales son
-        /// correctas, o cadena vacía si no.
-        /// Migra automáticamente contraseñas antiguas en texto plano: si la
-        /// contraseña almacenada no tiene el formato de hash pero coincide en texto
-        /// plano, la re-hashea y la guarda antes de devolver el id.
-        /// </summary>
-        public static string ValidarLogin(string cuenta, string contrasena)
-        {
-            var conn = DatabaseConnection.ObtenerConexion();
-
-            string id = "";
-            string llaveDb = "";
-            using (var cmd = new SqlCommand(
-                "SELECT id, llave FROM usuarios WHERE cuenta = @cuenta AND estadof = 'normal'", conn))
-            {
-                cmd.Parameters.AddWithValue("@cuenta", cuenta);
-                using var reader = cmd.ExecuteReader();
-                if (reader.Read())
-                {
-                    id      = reader["id"].ToString() ?? "";
-                    llaveDb = reader["llave"] is DBNull ? "" : reader["llave"].ToString() ?? "";
-                }
-            }
-
-            if (string.IsNullOrEmpty(id)) return "";
-
-            if (PasswordHasher.Verificar(contrasena, llaveDb)) return id;
-
-            // Migración: contraseña antigua en texto plano que coincide → re-hashear.
-            if (!PasswordHasher.EsHash(llaveDb) && llaveDb == contrasena)
-            {
-                using var cmdUpd = new SqlCommand(
-                    "UPDATE usuarios SET llave = @llave WHERE id = @id", conn);
-                cmdUpd.Parameters.AddWithValue("@llave", PasswordHasher.Hashear(contrasena));
-                cmdUpd.Parameters.AddWithValue("@id", new Guid(id));
-                cmdUpd.ExecuteNonQuery();
-                return id;
-            }
-
-            return "";
         }
 
         // ─── ConectarProductos ────────────────────────────────────────────────

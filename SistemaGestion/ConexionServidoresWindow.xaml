@@ -104,10 +104,9 @@
                         </Style>
                     </DataGrid.ColumnHeaderStyle>
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header=""              Binding="{Binding Activo}"    Width="32"  IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Alias"         Binding="{Binding Nombre}"    Width="160" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Servidor"      Binding="{Binding Servidor}"  Width="200" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Base de datos" Binding="{Binding BaseDatos}" Width="*"   IsReadOnly="True"/>
+                        <DataGridTextColumn Header=""       Binding="{Binding Activo}"   Width="32"  IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Alias"  Binding="{Binding Nombre}"   Width="160" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Dirección del servidor" Binding="{Binding Servidor}" Width="*" IsReadOnly="True"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>
@@ -130,7 +129,7 @@
 
             <TextBlock Grid.Row="3" FontSize="11" Foreground="{DynamicResource ThemeTextoMuted}"
                        TextWrapping="Wrap" Margin="0,10,0,0"
-                       Text="Selecciona un servidor y pulsa Conectar para usarlo. Al editar no se muestran las credenciales guardadas."/>
+                       Text="Selecciona un servidor y pulsa Conectar para usarlo."/>
         </Grid>
 
         <!-- ══ BARRA DE ACCIONES ══════════════════════════════════════ -->

@@ -361,3 +361,10 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# ConexionBroker: credenciales reales de SQL Server (NUNCA commitear).
+# Ver ConexionBroker/README.md — appsettings.json en el repo solo tiene
+# placeholders; los valores reales van en uno de estos archivos locales.
+ConexionBroker/appsettings.Production.json
+ConexionBroker/appsettings.Local.json
+ConexionBroker/*.env

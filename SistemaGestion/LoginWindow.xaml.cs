@@ -26,7 +26,7 @@ namespace SistemaGestion
         }
 
         // ─── Al abrir: si hay actualización pendiente, bloquear el login hasta
-        //     que se actualice; si no, verificar config y cargar catálogos base ──
+        //     que se actualice; si no, verificar config y probar el broker ──────
         private async void LoginWindow_Loaded(object sender, RoutedEventArgs e)
         {
             HabilitarControles(false);
@@ -46,35 +46,31 @@ namespace SistemaGestion
 
             if (!ConexionConfig.HayConfiguracion())
             {
-                MostrarEstado("Configure la conexión a base de datos.", Colors.Orange);
+                MostrarEstado("Configure la conexión al servidor.", Colors.Orange);
                 var dlg = new ConfiguracionDbWindow { Owner = this };
                 if (dlg.ShowDialog() != true)
                 {
                     Application.Current.Shutdown();
                     return;
                 }
-                // ConfiguracionDbWindow ya configuró DatabaseConnection al guardar
-            }
-            else
-            {
-                DatabaseConnection.CargarDesdeConfiguracion();
             }
 
             await ConectarBaseDatosAsync();
         }
 
+        // Ya no hay credenciales de SQL Server para probar acá (recién llegan al
+        // loguear, ver BtnIngresar_Click): esto solo confirma que el broker de
+        // autenticación — y la base de datos detrás — responda.
         private async Task ConectarBaseDatosAsync()
         {
             HabilitarControles(false);
-            MostrarEstado("Conectando a base de datos...", Colors.Gray);
+            MostrarEstado("Conectando al servidor...", Colors.Gray);
 
+            string brokerUrl = ConexionConfig.ObtenerBrokerActivo();
             bool conectado;
             try
             {
-                // Antes de loguear NO se descarga ninguna tabla (ni siquiera 'usuarios':
-                // contiene las contraseñas de todas las cuentas). Solo se verifica que
-                // el servidor responda; el login se valida con una consulta puntual.
-                conectado = await Task.Run(() => DatabaseConnection.ConexionEstaActiva());
+                conectado = await AuthBrokerClient.PingAsync(brokerUrl);
             }
             catch
             {
@@ -91,7 +87,7 @@ namespace SistemaGestion
             }
             else
             {
-                // Mensaje simple (sin volcar el error técnico de SQL Server).
+                // Mensaje simple (sin volcar el error técnico).
                 MostrarEstado("⚠ Sin conexión. Reintentando…", Colors.Orange);
                 HabilitarControles(false);
                 ProgramarReintento();
@@ -200,7 +196,7 @@ namespace SistemaGestion
                 TxtContrasenaVisible.Text       = TxtContrasena.Password;
                 TxtContrasena.Visibility        = Visibility.Collapsed;
                 TxtContrasenaVisible.Visibility = Visibility.Visible;
-                IcoVerContrasena.Text           = "\uED1A";   // Segoe MDL2: Hide
+                IcoVerContrasena.Text           = "";   // Segoe MDL2: Hide
                 BtnVerContrasena.ToolTip        = "Ocultar contraseña";
                 TxtContrasenaVisible.Focus();
                 TxtContrasenaVisible.CaretIndex = TxtContrasenaVisible.Text.Length;
@@ -213,7 +209,7 @@ namespace SistemaGestion
                 TxtContrasena.Password          = TxtContrasenaVisible.Text;
                 TxtContrasenaVisible.Visibility = Visibility.Collapsed;
                 TxtContrasena.Visibility        = Visibility.Visible;
-                IcoVerContrasena.Text           = "\uE7B3";   // Segoe MDL2: RedEye
+                IcoVerContrasena.Text           = "";   // Segoe MDL2: RedEye
                 BtnVerContrasena.ToolTip        = "Mostrar contraseña";
                 TxtContrasena.Focus();
                 PosicionarCursorPassword(TxtContrasena, caret);
@@ -241,12 +237,9 @@ namespace SistemaGestion
             var dlg = new ConexionServidoresWindow { Owner = this };
             dlg.ShowDialog();
 
-            // Tras gestionar los servidores, recargar la conexión activa y reconectar.
+            // Tras gestionar los servidores, recheck del broker activo.
             if (ConexionConfig.HayConfiguracion())
-            {
-                DatabaseConnection.CargarDesdeConfiguracion();
                 await ConectarBaseDatosAsync();
-            }
         }
 
         // ─── Lógica de inicio de sesión (equivalente a CommandButton1_Click) ──
@@ -267,76 +260,23 @@ namespace SistemaGestion
 
             MostrarEstado("Verificando credenciales...", Colors.Green);
 
-            string idEncontrado = "";
-            bool encontrado = false;
-
+            // El login ya NO se valida con una conexión directa a SQL Server: se
+            // manda al broker (ver AuthBrokerClient/ConexionBroker), que valida
+            // contra "usuarios" del lado del servidor y, si es correcto, devuelve
+            // la conexión real de SQL Server SOLO para esta sesión (en memoria,
+            // nunca a disco).
+            string brokerUrl = ConexionConfig.ObtenerBrokerActivo();
+            LoginBrokerResponse? resp;
             try
             {
-                await Task.Run(() => idEncontrado = AppLoader.ValidarLogin(cuenta, contrasena));
-                encontrado = !string.IsNullOrEmpty(idEncontrado);
+                resp = await AuthBrokerClient.LoginAsync(brokerUrl, cuenta, contrasena);
             }
             catch
             {
-                // Sin conexión al validar: tratar como credenciales no verificadas.
-                encontrado = false;
+                resp = null;
             }
 
-            if (encontrado)
-            {
-                try
-                {
-                    // Recién autenticado: ahora sí se cargan los catálogos de usuarios
-                    // y empresas (ya no hace falta ocultarlos de un usuario sin loguear).
-                    MostrarEstado("Cargando datos de la cuenta...", Colors.Green);
-                    await Task.Run(() => AppLoader.ConectarUsuarios());
-
-                    AppState.UsuarioActivo  = idEncontrado;
-                    AppState.TipoUsuario    = Sql.UsuariosObj.ObtenerItem("tipo",     idEncontrado)?.ToString() ?? "";
-                    AppState.EmpresaActiva  = Sql.UsuariosObj.ObtenerItem("empresa",  idEncontrado)?.ToString() ?? "";
-                    AppState.SucursalActiva = Sql.UsuariosObj.ObtenerItem("sucursal", idEncontrado)?.ToString() ?? "";
-                    AppState.SesionActiva   = true;
-                    AppState.PeriodoActivo  = DateTime.Now.Year.ToString();
-
-                    // Tema: 100% local (theme.txt), sin columna en SQL. App.xaml.cs
-                    // ya aplicó el preferido de esta PC antes de mostrar el login;
-                    // AppState.TemaActivo ya quedó correcto desde ese momento.
-
-                    // Recargar catálogos ya filtrados por la empresa del usuario.
-                    MostrarEstado("Cargando catálogos de la empresa...", Colors.Green);
-                    await Task.Run(() => AppLoader.ConectarProductos());
-
-                    // La región sale de la sucursal activa, ya disponible tras cargar
-                    // sucursales en ConectarProductos.
-                    AppState.RegionActiva = Sql.SucursalesObj.ObtenerItem("region", AppState.SucursalActiva)?.ToString() ?? "";
-
-                    MostrarEstado("Conectando a base de datos principal...", Colors.Green);
-                    await Task.Run(() => AppLoader.ConectarBases());
-
-                    MostrarEstado($"Actualizando datos del período {AppState.PeriodoActivo}...", Colors.Green);
-                    await Task.Run(() => AppState.ActualizarBase(DateTime.Now.Year));
-
-                    MostrarEstado("Cargando documentos...", Colors.Green);
-                    await Task.Run(() => AppLoader.ConectarDocumentos(
-                        AppState.DataFechaInicio, AppState.DataFechaFinal));
-
-                    MostrarEstado("¡Conexión exitosa!", Colors.Green);
-
-                    var main = new ConsolaMovimientos();
-                    main.Show();
-                    Close();
-                }
-                catch (Exception ex)
-                {
-                    // Cancelar el inicio de sesión, avisar y desbloquear todo para
-                    // reintentar. Se muestra el mensaje real: no toda falla acá es de
-                    // conexión (puede ser un error de SQL real, p.ej. de esquema).
-                    AppState.SesionActiva  = false;
-                    AppState.UsuarioActivo = "";
-                    MostrarEstado($"⚠ No se pudo cargar los datos: {ex.Message}", Colors.Orange);
-                    HabilitarControles(true);
-                }
-            }
-            else
+            if (resp == null)
             {
                 MostrarEstado("Cuenta o contraseña incorrecta", Colors.Red);
                 HabilitarControles(true);
@@ -347,6 +287,80 @@ namespace SistemaGestion
                     TxtContrasena.Focus();
                 else
                     TxtContrasenaVisible.Focus();
+                return;
+            }
+
+            try
+            {
+                // Credenciales reales de SQL Server: solo en memoria para esta sesión.
+                DatabaseConnection.Configurar(resp.Servidor, resp.BaseDatos, resp.Usuario, resp.Contrasena);
+
+                MostrarEstado("Verificando estructura de la base de datos...", Colors.Green);
+                var esquema = await Task.Run(() =>
+                    EsquemaValidator.Validar(DatabaseConnection.ObtenerConexion()));
+
+                if (!esquema.EsCompatible)
+                {
+                    DatabaseConnection.CerrarConexion();
+                    MostrarEstado("⚠ Estructura de la base de datos incompatible", Colors.Orange);
+                    MessageBox.Show(
+                        "La base de datos conectó, pero su estructura no es compatible con la app:\n\n" +
+                        EsquemaValidator.DescribirProblemas(esquema),
+                        "Estructura incompatible", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    HabilitarControles(true);
+                    return;
+                }
+
+                // Recién autenticado: ahora sí se cargan los catálogos de usuarios
+                // y empresas (ya no hace falta ocultarlos de un usuario sin loguear).
+                MostrarEstado("Cargando datos de la cuenta...", Colors.Green);
+                await Task.Run(() => AppLoader.ConectarUsuarios());
+
+                AppState.UsuarioActivo  = resp.UsuarioId;
+                AppState.TipoUsuario    = Sql.UsuariosObj.ObtenerItem("tipo",     resp.UsuarioId)?.ToString() ?? "";
+                AppState.EmpresaActiva  = Sql.UsuariosObj.ObtenerItem("empresa",  resp.UsuarioId)?.ToString() ?? "";
+                AppState.SucursalActiva = Sql.UsuariosObj.ObtenerItem("sucursal", resp.UsuarioId)?.ToString() ?? "";
+                AppState.SesionActiva   = true;
+                AppState.PeriodoActivo  = DateTime.Now.Year.ToString();
+
+                // Tema: 100% local (theme.txt), sin columna en SQL. App.xaml.cs
+                // ya aplicó el preferido de esta PC antes de mostrar el login;
+                // AppState.TemaActivo ya quedó correcto desde ese momento.
+
+                // Recargar catálogos ya filtrados por la empresa del usuario.
+                MostrarEstado("Cargando catálogos de la empresa...", Colors.Green);
+                await Task.Run(() => AppLoader.ConectarProductos());
+
+                // La región sale de la sucursal activa, ya disponible tras cargar
+                // sucursales en ConectarProductos.
+                AppState.RegionActiva = Sql.SucursalesObj.ObtenerItem("region", AppState.SucursalActiva)?.ToString() ?? "";
+
+                MostrarEstado("Conectando a base de datos principal...", Colors.Green);
+                await Task.Run(() => AppLoader.ConectarBases());
+
+                MostrarEstado($"Actualizando datos del período {AppState.PeriodoActivo}...", Colors.Green);
+                await Task.Run(() => AppState.ActualizarBase(DateTime.Now.Year));
+
+                MostrarEstado("Cargando documentos...", Colors.Green);
+                await Task.Run(() => AppLoader.ConectarDocumentos(
+                    AppState.DataFechaInicio, AppState.DataFechaFinal));
+
+                MostrarEstado("¡Conexión exitosa!", Colors.Green);
+
+                var main = new ConsolaMovimientos();
+                main.Show();
+                Close();
+            }
+            catch (Exception ex)
+            {
+                // Cancelar el inicio de sesión, avisar y desbloquear todo para
+                // reintentar. Se muestra el mensaje real: no toda falla acá es de
+                // conexión (puede ser un error de SQL real, p.ej. de esquema).
+                AppState.SesionActiva  = false;
+                AppState.UsuarioActivo = "";
+                DatabaseConnection.CerrarConexion();
+                MostrarEstado($"⚠ No se pudo cargar los datos: {ex.Message}", Colors.Orange);
+                HabilitarControles(true);
             }
         }
 

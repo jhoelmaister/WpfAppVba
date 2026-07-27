@@ -22,17 +22,6 @@ namespace VisorEmpresa
         public double Cantidad   { get; set; }
     }
 
-    /// <summary>
-    /// Datos del usuario autenticado que necesita el visor. Sin TemaC a propósito:
-    /// el tema del visor es independiente del de la app principal (ver TemaVisor).
-    /// </summary>
-    public class UsuarioVisor
-    {
-        public string Id      { get; set; } = "";
-        public string Tipo    { get; set; } = "";
-        public string Empresa { get; set; } = "";
-    }
-
     /// <summary>Acumulador de movimientos de UNA sucursal + UN artículo, usado por
     /// <see cref="ConsultasEmpresa.ObtenerStockEmpresa"/>. Mismas fórmulas que
     /// SistemaGestion.StockCalculator.ContarStock/ContarStock2.</summary>
@@ -71,41 +60,6 @@ namespace VisorEmpresa
 
         private static string EmpresaSegura(string empresa) =>
             string.IsNullOrEmpty(empresa) ? GuidNulo : empresa;
-
-        // ─── Login (solo lectura) ─────────────────────────────────────────────
-        /// <summary>
-        /// Valida credenciales con una consulta puntual, sin descargar la tabla de
-        /// usuarios y SIN escribir en la base. A diferencia de AppLoader.ValidarLogin,
-        /// una contraseña antigua en texto plano que coincide se acepta pero NO se
-        /// re-hashea: la migración queda a cargo de la app principal.
-        /// Devuelve null si la cuenta no existe o la contraseña no coincide.
-        /// </summary>
-        public static UsuarioVisor? ValidarLogin(string cuenta, string contrasena)
-        {
-            // Parte SQL con reintentos ante fallos transitorios (timeout de handshake,
-            // conexión rota) — igual que DataConsulta; acá antes no estaba conectado.
-            var (id, llave, tipo, empresa) = SqlRetry.Ejecutar(() =>
-            {
-                using var conn = new SqlConnection(CadenaConexion());
-                conn.Open();
-
-                using var cmd = new SqlCommand(
-                    "SELECT id, llave, tipo, empresa FROM usuarios " +
-                    "WHERE cuenta = @cuenta AND estadof = 'normal'", conn);
-                cmd.Parameters.AddWithValue("@cuenta", cuenta);
-                using var reader = cmd.ExecuteReader();
-                if (!reader.Read()) return ("", "", "", "");
-                return (Texto(reader["id"]), Texto(reader["llave"]), Texto(reader["tipo"]), Texto(reader["empresa"]));
-            });
-
-            if (string.IsNullOrEmpty(id)) return null;
-
-            bool valida = PasswordHasher.Verificar(contrasena, llave)
-                          || (!PasswordHasher.EsHash(llave) && llave == contrasena);
-            if (!valida) return null;
-
-            return new UsuarioVisor { Id = id, Tipo = tipo, Empresa = empresa };
-        }
 
         // ─── Catálogos mínimos ────────────────────────────────────────────────
 
@@ -758,22 +712,14 @@ namespace VisorEmpresa
             (new DateTime(anio, 1, 1, 0, 0, 0), new DateTime(anio, 12, 31, 23, 59, 59));
 
         // Cadena de conexión PROPIA del visor: mismas credenciales que
-        // DatabaseConnection (leídas de la configuración cifrada compartida), pero
+        // DatabaseConnection (recibidas del broker de autenticación solo en
+        // memoria tras el login, ver AuthBrokerClient/LoginVisorWindow), pero
         // cada consulta abre su propia conexión del pool. Las vistas consultan en
         // segundo plano (Task.Run) y pueden solaparse entre sí o con los módulos
         // de edición: dos consultas simultáneas sobre la MISMA SqlConnection dan
         // "Ya hay un DataReader abierto asociado a Connection". La conexión global
         // queda solo para las cachés (AppLoader), que la usan secuencialmente.
-        private static string CadenaConexion()
-        {
-            var cfg = ConexionConfig.Cargar()
-                      ?? throw new InvalidOperationException("Sin configuración de conexión.");
-            var (servidor, baseDatos, usuario, contrasena) = cfg;
-            return $"Server={servidor};Database={baseDatos};User Id={usuario};Password={contrasena};" +
-                   "Application Name=edber-visor;Connect Timeout=10;Command Timeout=10;" +
-                   "TrustServerCertificate=True;" +
-                   "Connect Retry Count=3;Connect Retry Interval=10;Pooling=true;";
-        }
+        private static string CadenaConexion() => DatabaseConnection.ObtenerCadenaConexion();
 
         // Reintentos ante fallos transitorios (timeout de handshake, conexión rota,
         // deadlock) — igual que DataConsulta.ObtenerDatos. Cubre implícitamente casi

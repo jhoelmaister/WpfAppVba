@@ -6,18 +6,21 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using SistemaGestion;        // ConsolaMovimientos (nombre de clase de ConsolaVisor.xaml.cs)
-using VisorEmpresa.Data;   // DatabaseConnection, ConexionConfig
+using VisorEmpresa.Data;   // DatabaseConnection, ConexionConfig, AuthBrokerClient
 
 namespace VisorEmpresa
 {
     /// <summary>
     /// Login del visor. Mismo flujo que el de la app principal (configuración de
-    /// conexión compartida, sonda con auto-reintento, validación puntual), con una
-    /// diferencia clave: solo aceptan usuarios de tipo "admin" — el visor muestra
-    /// datos de TODA la empresa y los usuarios comunes están acotados por sucursal.
+    /// conexión compartida, sonda con auto-reintento, validación vía broker), con
+    /// una diferencia clave: solo aceptan usuarios de tipo "admin" — el visor
+    /// muestra datos de TODA la empresa y los usuarios comunes están acotados por
+    /// sucursal.
     /// </summary>
     public partial class LoginVisorWindow : Window
     {
+        private static SqlData Sql => SqlData.Instance;
+
         // Reintenta la conexión automáticamente mientras no haya internet.
         private DispatcherTimer? _reintentoTimer;
 
@@ -31,7 +34,7 @@ namespace VisorEmpresa
         }
 
         // ─── Al abrir: si hay actualización pendiente, bloquear el login hasta
-        //     que se actualice; si no, verificar config y sondear la base ──────
+        //     que se actualice; si no, verificar config y probar el broker ──────
         private async void LoginVisorWindow_Loaded(object sender, RoutedEventArgs e)
         {
             HabilitarControles(false);
@@ -51,34 +54,31 @@ namespace VisorEmpresa
 
             if (!ConexionConfig.HayConfiguracion())
             {
-                MostrarEstado("Configure la conexión a base de datos.", Colors.Orange);
+                MostrarEstado("Configure la conexión al servidor.", Colors.Orange);
                 var dlg = new ConfiguracionDbWindow { Owner = this };
                 if (dlg.ShowDialog() != true)
                 {
                     Application.Current.Shutdown();
                     return;
                 }
-                // ConfiguracionDbWindow ya configuró DatabaseConnection al guardar
-            }
-            else
-            {
-                DatabaseConnection.CargarDesdeConfiguracion();
             }
 
             await ConectarBaseDatosAsync();
         }
 
+        // Ya no hay credenciales de SQL Server para probar acá (recién llegan al
+        // loguear): esto solo confirma que el broker de autenticación — y la base
+        // de datos detrás — responda.
         private async Task ConectarBaseDatosAsync()
         {
             HabilitarControles(false);
-            MostrarEstado("Conectando a base de datos...", Colors.Gray);
+            MostrarEstado("Conectando al servidor...", Colors.Gray);
 
+            string brokerUrl = ConexionConfig.ObtenerBrokerActivo();
             bool conectado;
             try
             {
-                // Antes de loguear NO se descarga ninguna tabla; solo se verifica
-                // que el servidor responda (el login se valida con consulta puntual).
-                conectado = await Task.Run(() => DatabaseConnection.ConexionEstaActiva());
+                conectado = await AuthBrokerClient.PingAsync(brokerUrl);
             }
             catch
             {
@@ -200,7 +200,7 @@ namespace VisorEmpresa
                 TxtContrasenaVisible.Text       = TxtContrasena.Password;
                 TxtContrasena.Visibility        = Visibility.Collapsed;
                 TxtContrasenaVisible.Visibility = Visibility.Visible;
-                IcoVerContrasena.Text           = "\uED1A";   // Segoe MDL2: Hide
+                IcoVerContrasena.Text           = "";   // Segoe MDL2: Hide
                 BtnVerContrasena.ToolTip        = "Ocultar contraseña";
                 TxtContrasenaVisible.Focus();
                 TxtContrasenaVisible.CaretIndex = TxtContrasenaVisible.Text.Length;
@@ -213,7 +213,7 @@ namespace VisorEmpresa
                 TxtContrasena.Password          = TxtContrasenaVisible.Text;
                 TxtContrasenaVisible.Visibility = Visibility.Collapsed;
                 TxtContrasena.Visibility        = Visibility.Visible;
-                IcoVerContrasena.Text           = "\uE7B3";   // Segoe MDL2: RedEye
+                IcoVerContrasena.Text           = "";   // Segoe MDL2: RedEye
                 BtnVerContrasena.ToolTip        = "Mostrar contraseña";
                 TxtContrasena.Focus();
                 PosicionarCursorPassword(TxtContrasena, caret);
@@ -242,12 +242,9 @@ namespace VisorEmpresa
             var dlg = new ConexionServidoresWindow { Owner = this };
             dlg.ShowDialog();
 
-            // Tras gestionar los servidores, recargar la conexión activa y reconectar.
+            // Tras gestionar los servidores, recheck del broker activo.
             if (ConexionConfig.HayConfiguracion())
-            {
-                DatabaseConnection.CargarDesdeConfiguracion();
                 await ConectarBaseDatosAsync();
-            }
         }
 
         // ─── Lógica de inicio de sesión ────────────────────────────────────────
@@ -267,18 +264,23 @@ namespace VisorEmpresa
             HabilitarControles(false);
             MostrarEstado("Verificando credenciales...", Colors.Green);
 
-            UsuarioVisor? usuario = null;
+            // El login ya NO se valida con una conexión directa a SQL Server: se
+            // manda al broker (ver AuthBrokerClient/ConexionBroker), que valida
+            // contra "usuarios" del lado del servidor y, si es correcto, devuelve
+            // la conexión real de SQL Server SOLO para esta sesión (en memoria,
+            // nunca a disco).
+            string brokerUrl = ConexionConfig.ObtenerBrokerActivo();
+            LoginBrokerResponse? resp;
             try
             {
-                usuario = await Task.Run(() => ConsultasEmpresa.ValidarLogin(cuenta, contrasena));
+                resp = await AuthBrokerClient.LoginAsync(brokerUrl, cuenta, contrasena);
             }
             catch
             {
-                // Sin conexión al validar: tratar como credenciales no verificadas.
-                usuario = null;
+                resp = null;
             }
 
-            if (usuario == null)
+            if (resp == null)
             {
                 MostrarEstado("Cuenta o contraseña incorrecta", Colors.Red);
                 HabilitarControles(true);
@@ -286,27 +288,56 @@ namespace VisorEmpresa
                 return;
             }
 
-            // Gating por rol: el visor muestra la empresa completa, así que solo
-            // entran administradores (los usuarios comunes operan por sucursal).
-            if (usuario.Tipo.Trim().ToLowerInvariant() != "admin")
-            {
-                MostrarEstado("Acceso solo para administradores.", Colors.Red);
-                HabilitarControles(true);
-                LimpiarContrasena();
-                return;
-            }
-
             try
             {
-                VisorState.UsuarioActivo = usuario.Id;
-                VisorState.TipoUsuario   = usuario.Tipo.Trim().ToLowerInvariant();
-                VisorState.EmpresaActiva = usuario.Empresa;
+                // Credenciales reales de SQL Server: solo en memoria para esta sesión.
+                DatabaseConnection.Configurar(resp.Servidor, resp.BaseDatos, resp.Usuario, resp.Contrasena);
+
+                MostrarEstado("Verificando estructura de la base de datos...", Colors.Green);
+                var esquema = await Task.Run(() =>
+                    EsquemaValidator.Validar(DatabaseConnection.ObtenerConexion()));
+
+                if (!esquema.EsCompatible)
+                {
+                    DatabaseConnection.CerrarConexion();
+                    MostrarEstado("⚠ Estructura de la base de datos incompatible", Colors.Orange);
+                    MessageBox.Show(
+                        "La base de datos conectó, pero su estructura no es compatible con la app:\n\n" +
+                        EsquemaValidator.DescribirProblemas(esquema),
+                        "Estructura incompatible", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    HabilitarControles(true);
+                    return;
+                }
+
+                // Cachés que usan los módulos de edición vinculados (Precios/Empresas/
+                // Sucursales/Usuarios). Hace falta cargarlas antes de poder gatear por
+                // rol (el tipo/empresa del usuario vienen de acá).
+                MostrarEstado("Cargando datos de la cuenta...", Colors.Green);
+                await Task.Run(() => AppLoader.ConectarUsuarios());
+
+                string tipo    = Sql.UsuariosObj.ObtenerItem("tipo",    resp.UsuarioId)?.ToString() ?? "";
+                string empresa = Sql.UsuariosObj.ObtenerItem("empresa", resp.UsuarioId)?.ToString() ?? "";
+
+                // Gating por rol: el visor muestra la empresa completa, así que solo
+                // entran administradores (los usuarios comunes operan por sucursal).
+                if (tipo.Trim().ToLowerInvariant() != "admin")
+                {
+                    DatabaseConnection.CerrarConexion();
+                    MostrarEstado("Acceso solo para administradores.", Colors.Red);
+                    HabilitarControles(true);
+                    LimpiarContrasena();
+                    return;
+                }
+
+                VisorState.UsuarioActivo = resp.UsuarioId;
+                VisorState.TipoUsuario   = tipo.Trim().ToLowerInvariant();
+                VisorState.EmpresaActiva = empresa;
 
                 // Estado global compartido con los formularios vinculados de la app
                 // principal (Precios/Empresas/Sucursales/Usuarios leen AppState).
-                AppState.UsuarioActivo = usuario.Id;
+                AppState.UsuarioActivo = resp.UsuarioId;
                 AppState.TipoUsuario   = VisorState.TipoUsuario;
-                AppState.EmpresaActiva = usuario.Empresa;
+                AppState.EmpresaActiva = empresa;
                 AppState.SesionActiva  = true;
                 AppState.PeriodoActivo = DateTime.Now.Year.ToString();
                 // Sin sucursal activa: el visor trabaja a nivel de empresa completa.
@@ -318,11 +349,6 @@ namespace VisorEmpresa
                 // esta PC (TemaVisor.CargarTemaLocal()) antes de mostrar el login;
                 // solo se sincroniza AppState para los formularios vinculados.
                 AppState.TemaActivo = VisorState.TemaActivo;
-
-                // Cachés que usan los módulos de edición vinculados. Todas son
-                // empresa-scoped (AppLoader NO filtra por sucursal aquí).
-                MostrarEstado("Cargando datos de la cuenta...", Colors.Green);
-                await Task.Run(() => AppLoader.ConectarUsuarios());
 
                 MostrarEstado("Cargando catálogos de la empresa...", Colors.Green);
                 await Task.Run(() => AppLoader.ConectarProductos());
@@ -337,7 +363,7 @@ namespace VisorEmpresa
                 // (incluido el Dashboard: CargarMovimientos/CargarResumenPedidos/
                 // CargarTraspasosInternos) abren instantáneas después.
                 MostrarEstado("Calculando stock de la empresa...", Colors.Green);
-                await Task.Run(() => ConsultasEmpresa.ObtenerStockEmpresa(usuario.Empresa));
+                await Task.Run(() => ConsultasEmpresa.ObtenerStockEmpresa(empresa));
 
                 // Precalienta también Pedidos/Traspasos/Correcciones — TODA la empresa
                 // (sin filtro de sucursal), para el año activo. Estas pantallas vuelven
@@ -353,9 +379,9 @@ namespace VisorEmpresa
                 int añoActivo = VisorState.AnioActivo;
                 await Task.Run(() =>
                 {
-                    ConsultasEmpresa.ConectarCachePedidos(usuario.Empresa, añoActivo);
-                    ConsultasEmpresa.ConectarCacheTraspasos(usuario.Empresa, añoActivo);
-                    ConsultasEmpresa.ConectarCacheCorrecciones(usuario.Empresa, añoActivo);
+                    ConsultasEmpresa.ConectarCachePedidos(empresa, añoActivo);
+                    ConsultasEmpresa.ConectarCacheTraspasos(empresa, añoActivo);
+                    ConsultasEmpresa.ConectarCacheCorrecciones(empresa, añoActivo);
                 });
 
                 var main = new ConsolaMovimientos();   // la consola del visor (ConsolaVisor.xaml)
@@ -366,6 +392,7 @@ namespace VisorEmpresa
             {
                 AppState.SesionActiva  = false;
                 AppState.UsuarioActivo = "";
+                DatabaseConnection.CerrarConexion();
                 MostrarEstado($"⚠ No se pudo cargar los datos: {ex.Message}", Colors.Orange);
                 HabilitarControles(true);
             }
