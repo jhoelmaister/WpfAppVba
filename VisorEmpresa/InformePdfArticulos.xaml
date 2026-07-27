@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Generar Informe PDF — Artículos"
-        Width="420" Height="310"
+        Width="420" Height="400"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
         ResizeMode="NoResize"
@@ -70,6 +70,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Nombre del informe -->
@@ -105,8 +106,20 @@
             </StackPanel>
         </Grid>
 
+        <!-- Condición (filtro de artículos incluidos) -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,14">
+            <TextBlock Text="Condición:" FontSize="12" Margin="0,0,0,5"
+                       Foreground="{DynamicResource ThemeTextoSec}"/>
+            <ComboBox x:Name="CmbCondicion" Height="30" FontSize="12" SelectedIndex="0">
+                <ComboBoxItem Content="Todos los artículos"/>
+                <ComboBoxItem Content="Artículos con stock negativo"/>
+                <ComboBoxItem Content="Artículos con stock"/>
+                <ComboBoxItem Content="Artículos con stock 0"/>
+            </ComboBox>
+        </StackPanel>
+
         <!-- Vista previa + Botón crear -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="3">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>

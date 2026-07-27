@@ -81,6 +81,18 @@ namespace SistemaGestion
             }
         }
 
+        // ─── Condición (filtro de artículos incluidos en el informe) ──────────
+        private string CondicionSeleccionada()
+            => (CmbCondicion.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Todos los artículos";
+
+        private static bool CumpleCondicion(double stock, string condicion) => condicion switch
+        {
+            "Artículos con stock negativo" => stock < 0,
+            "Artículos con stock"          => stock > 0,
+            "Artículos con stock 0"        => stock == 0,
+            _                               => true, // "Todos los artículos"
+        };
+
         // ─── Handlers de cambio ───────────────────────────────────────────────
         private void TxtNombre_TextChanged(object sender, TextChangedEventArgs e)
             => ActualizarNombreArchivo();
@@ -255,12 +267,19 @@ namespace SistemaGestion
                 if (y + alto > page.Height - margen) NuevaPagina();
             }
 
-            gfx.DrawString("Informe de Artículos", fontTitulo, XBrushes.Black, new XPoint(margen, y + 12));
-            y += 28;
+            string nombreInforme = TxtNombre.Text.Trim();
+            string tituloInforme = string.IsNullOrEmpty(nombreInforme) ? "Informe de Artículos" : nombreInforme;
+            string condicion     = CondicionSeleccionada();
+
+            gfx.DrawString(tituloInforme, fontTitulo, XBrushes.Black, new XPoint(margen, y + 12));
+            y += 20;
+            gfx.DrawString($"Fecha de corte: {fechaCorte:dd/MM/yyyy HH:mm:ss}    Condición: {condicion}",
+                fontCuerpo, XBrushes.Black, new XPoint(margen, y + 10));
+            y += 22;
 
             DibujarEncabezadoColumnas();
 
-            // ── Recolectar datos ──────────────────────────────────────────
+            // ── Recolectar datos (según la Condición elegida) ─────────────
             var lineas = new List<(string prodDesc, string famDesc, string codigo, string catDesc, string desc, double stock)>();
 
             int uf = Sql.ArticulosObj.ContarFilas;
@@ -284,6 +303,8 @@ namespace SistemaGestion
                 string descCompleta = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
                 double stock        = StockCalculator.ContarStock(id, fechaCorte);
 
+                if (!CumpleCondicion(stock, condicion)) continue;
+
                 lineas.Add((prodDesc, famDesc, codigo, catDesc, descCompleta, stock));
             }
 
@@ -304,6 +325,70 @@ namespace SistemaGestion
                     n++;
                     DibujarFilaDatos(n.ToString(), l.codigo, l.catDesc, l.desc, l.stock.ToString("0.##"));
                 }
+            }
+
+            // ── Tabla de categorías (separada de la de artículos por una fila
+            //    en blanco): cantidad de artículos y stock total por categoría,
+            //    sobre el mismo conjunto ya filtrado por Condición. Tiene su
+            //    propia paginación (no reusa NuevaPagina/AsegurarEspacio de
+            //    arriba, que redibujan el encabezado de 5 columnas de artículos). ──
+            const double anchoCantResumen  = 100;
+            const double anchoStockResumen = 90;
+            double anchoCatResumen = anchoTabla - anchoCantResumen - anchoStockResumen;
+            double xCantResumen    = xN + anchoCatResumen;
+            double xStockResumen   = xCantResumen + anchoCantResumen;
+
+            void DibujarEncabezadoResumen()
+            {
+                gfx.DrawRectangle(penLinea, brushHeader, xN, y, anchoTabla, altoHeader);
+                gfx.DrawLine(penLinea, xCantResumen,  y, xCantResumen,  y + altoHeader);
+                gfx.DrawLine(penLinea, xStockResumen, y, xStockResumen, y + altoHeader);
+                gfx.DrawString("Categoría",       fontHeader, XBrushes.Black, new XRect(xN + 4,            y, anchoCatResumen - 8,   altoHeader), XStringFormats.CenterLeft);
+                gfx.DrawString("Cant. artículos", fontHeader, XBrushes.Black, new XRect(xCantResumen + 4,  y, anchoCantResumen - 8,  altoHeader), XStringFormats.CenterRight);
+                gfx.DrawString("Stock total",     fontHeader, XBrushes.Black, new XRect(xStockResumen + 4, y, anchoStockResumen - 8, altoHeader), XStringFormats.CenterRight);
+                y += altoHeader;
+            }
+
+            void DibujarFilaResumen(string categoria, string cantidad, string stock)
+            {
+                gfx.DrawRectangle(penLinea, xN, y, anchoTabla, altoFila);
+                gfx.DrawLine(penLinea, xCantResumen,  y, xCantResumen,  y + altoFila);
+                gfx.DrawLine(penLinea, xStockResumen, y, xStockResumen, y + altoFila);
+                gfx.DrawString(categoria, fontCuerpo, XBrushes.Black, new XRect(xN + 4,            y, anchoCatResumen - 8,   altoFila), XStringFormats.CenterLeft);
+                gfx.DrawString(cantidad,  fontCuerpo, XBrushes.Black, new XRect(xCantResumen + 4,  y, anchoCantResumen - 8,  altoFila), XStringFormats.CenterRight);
+                gfx.DrawString(stock,     fontCuerpo, XBrushes.Black, new XRect(xStockResumen + 4, y, anchoStockResumen - 8, altoFila), XStringFormats.CenterRight);
+                y += altoFila;
+            }
+
+            void NuevaPaginaResumen()
+            {
+                gfx.Dispose();
+                page = document.AddPage();
+                page.Size = PageSize.A4;
+                gfx = XGraphics.FromPdfPage(page);
+                y = margen;
+                DibujarEncabezadoResumen();
+            }
+
+            void AsegurarEspacioResumen(double alto)
+            {
+                if (y + alto > page.Height - margen) NuevaPaginaResumen();
+            }
+
+            var resumenCategorias = lineas
+                .GroupBy(l => string.IsNullOrEmpty(l.catDesc) ? "(sin categoría)" : l.catDesc)
+                .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase);
+
+            y += 14; // fila en blanco entre la tabla de artículos y la de categorías
+            AsegurarEspacioResumen(altoHeader + altoFila);
+            gfx.DrawString("Resumen por categoría", fontGrupo, XBrushes.Black, new XPoint(xN, y + 12));
+            y += 20;
+            DibujarEncabezadoResumen();
+
+            foreach (var grupo in resumenCategorias)
+            {
+                AsegurarEspacioResumen(altoFila);
+                DibujarFilaResumen(grupo.Key, grupo.Count().ToString(), grupo.Sum(g => g.stock).ToString("0.##"));
             }
 
             // El último gfx de la generación de contenido sigue abierto: hay que

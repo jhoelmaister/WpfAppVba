@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using ClosedXML.Excel;
 using Microsoft.Win32;
 using SistemaGestion;
@@ -84,6 +86,18 @@ namespace VisorEmpresa
                 n++;
             }
         }
+
+        // ─── Condición (filtro de artículos incluidos en el informe) ──────────
+        private string CondicionSeleccionada()
+            => (CmbCondicion.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Todos los artículos";
+
+        private static bool CumpleCondicion(double stock, string condicion) => condicion switch
+        {
+            "Artículos con stock negativo" => stock < 0,
+            "Artículos con stock"          => stock > 0,
+            "Artículos con stock 0"        => stock == 0,
+            _                               => true, // "Todos los artículos"
+        };
 
         // ─── Handlers de cambio ───────────────────────────────────────────────
         private void TxtNombre_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
@@ -167,18 +181,30 @@ namespace VisorEmpresa
             using var wb = new XLWorkbook();
             var ws = wb.Worksheets.Add("Artículos");
 
+            string nombreInforme = TxtNombre.Text.Trim();
+            string tituloInforme = string.IsNullOrEmpty(nombreInforme) ? "Informe de Artículos" : nombreInforme;
+            string condicion     = CondicionSeleccionada();
+
+            // ── Bloque de título ──────────────────────────────────────────
+            ws.Cell(1, 1).Value = tituloInforme;
+            ws.Cell(1, 1).Style.Font.Bold = true;
+            ws.Cell(1, 1).Style.Font.FontSize = 14;
+            ws.Cell(2, 1).Value = $"Fecha de corte: {fechaCorte:dd/MM/yyyy HH:mm:ss}";
+            ws.Cell(3, 1).Value = $"Condición: {condicion}";
+
             // ── Encabezados ───────────────────────────────────────────────
-            ws.Cell(1, 1).Value = "Productos";
-            ws.Cell(1, 2).Value = "Código";
-            ws.Cell(1, 3).Value = "Categoría";
-            ws.Cell(1, 4).Value = "Familia";
-            ws.Cell(1, 5).Value = "Descripción Completa";
-            ws.Cell(1, 6).Value = "Stock";
+            const int filaEncabezado = 5;
+            ws.Cell(filaEncabezado, 1).Value = "Productos";
+            ws.Cell(filaEncabezado, 2).Value = "Código";
+            ws.Cell(filaEncabezado, 3).Value = "Categoría";
+            ws.Cell(filaEncabezado, 4).Value = "Familia";
+            ws.Cell(filaEncabezado, 5).Value = "Descripción Completa";
+            ws.Cell(filaEncabezado, 6).Value = "Stock";
 
             // Stock de TODA la empresa (todas las sucursales) a la fecha de corte.
             var stockEmpresa = ConsultasEmpresa.ObtenerStockEmpresa(AppState.EmpresaActiva, fechaCorte).Totales;
 
-            // ── Recolectar datos ──────────────────────────────────────────
+            // ── Recolectar datos (según la Condición elegida) ─────────────
             int uf = Sql.ArticulosObj.ContarFilas;
             var datos = new List<(string id, string codigo, string prodDesc, string catDesc, string famDesc, string descCompleta, double stock)>();
 
@@ -201,8 +227,11 @@ namespace VisorEmpresa
 
                 string descCompleta = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
                 stockEmpresa.TryGetValue(id, out var totales);
+                double stock = totales.Stock;
 
-                datos.Add((id, codigo, prodDesc, catDesc, famDesc, descCompleta, totales.Stock));
+                if (!CumpleCondicion(stock, condicion)) continue;
+
+                datos.Add((id, codigo, prodDesc, catDesc, famDesc, descCompleta, stock));
             }
 
             // ── Ordenar por Producto → Familia → Id ──────────────────────
@@ -216,7 +245,7 @@ namespace VisorEmpresa
             });
 
             // ── Escribir datos (una fila por artículo) ────────────────────
-            int row = 2;
+            int row = filaEncabezado + 1;
             foreach (var item in datos)
             {
                 ws.Cell(row, 1).Value = item.prodDesc;
@@ -228,6 +257,32 @@ namespace VisorEmpresa
                 row++;
             }
 
+            // ── Tabla de categorías (separada de la de artículos por una fila
+            //    en blanco): cantidad de artículos y stock total por categoría,
+            //    sobre el mismo conjunto ya filtrado por Condición ────────────
+            row++; // fila en blanco
+            ws.Cell(row, 1).Value = "Resumen por categoría";
+            ws.Cell(row, 1).Style.Font.Bold = true;
+            row++;
+            ws.Cell(row, 1).Value = "Categoría";
+            ws.Cell(row, 2).Value = "Cantidad de artículos";
+            ws.Cell(row, 3).Value = "Stock total";
+            ws.Row(row).Style.Font.Bold = true;
+            row++;
+
+            var resumenCategorias = datos
+                .GroupBy(d => string.IsNullOrEmpty(d.catDesc) ? "(sin categoría)" : d.catDesc)
+                .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var grupo in resumenCategorias)
+            {
+                ws.Cell(row, 1).Value = grupo.Key;
+                ws.Cell(row, 2).Value = grupo.Count();
+                ws.Cell(row, 3).Value = grupo.Sum(g => g.stock);
+                row++;
+            }
+
+            ws.Columns().AdjustToContents();
             wb.SaveAs(filePath);
         }
     }
