@@ -109,6 +109,7 @@ namespace SistemaGestion
 
             PanelExportar.Visibility   = ModoExportar ? Visibility.Visible   : Visibility.Collapsed;
             BtnInformeExcel.Visibility = esDialog     ? Visibility.Collapsed : Visibility.Visible;
+            BtnInformePdf.Visibility   = esDialog     ? Visibility.Collapsed : Visibility.Visible;
             BtnArqueoExcel.Visibility  = esDialog     ? Visibility.Collapsed : Visibility.Visible;
             BtnNuevo.Visibility        = esDialog     ? Visibility.Collapsed : Visibility.Visible;
             BtnInsertar.Visibility     = esDialog     ? Visibility.Collapsed : Visibility.Visible;
@@ -688,6 +689,15 @@ namespace SistemaGestion
         private void BtnInformeExcel_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new InformeExcelArticulos
+            {
+                Owner = Window.GetWindow(this)
+            };
+            dlg.ShowDialog();
+        }
+
+        private void BtnInformePdf_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new InformePdfArticulos
             {
                 Owner = Window.GetWindow(this)
             };

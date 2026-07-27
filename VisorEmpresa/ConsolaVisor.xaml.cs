@@ -419,10 +419,9 @@ namespace SistemaGestion
 
         // ─── Tema claro / oscuro ──────────────────────────────────────────────
         // El tema del visor es INDEPENDIENTE del de la app principal: se persiste
-        // solo en %LOCALAPPDATA%\VisorEmpresa\theme.txt (TemaVisor), nunca en
-        // usuarios.temaC — esa columna es la que usa/escribe la app principal
-        // (ConsolaMovimientos/Configuracion de SistemaGestion). Compartirla hacía que
-        // cambiar el tema en una app se reflejara también en la otra.
+        // solo en %LOCALAPPDATA%\VisorEmpresa\theme.txt (TemaVisor). La app principal
+        // también es 100% local (ThemeManager, theme.txt propio) — usuarios.temaC ya
+        // no lo usa ninguna de las dos (columna en desuso, ver sesión 2026-07-27).
         private void BtnTema_Click(object sender, RoutedEventArgs e)
         {
             string nuevo = TemaVisor.EsOscuroActivo ? TemaVisor.TemaClaro : TemaVisor.TemaOscuro;

@@ -423,6 +423,13 @@ namespace VisorEmpresa
             dlg.ShowDialog();
         }
 
+        // ─── Informe PDF ────────────────────────────────────────────────────────
+        private void BtnInformePdf_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new InformePdfArticulos { Owner = Window.GetWindow(this) };
+            dlg.ShowDialog();
+        }
+
         // ─── Actualizar ─────────────────────────────────────────────────────────
         private void BtnActualizar_Click(object sender, RoutedEventArgs e)
         {

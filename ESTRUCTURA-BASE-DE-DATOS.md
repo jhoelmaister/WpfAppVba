@@ -90,6 +90,19 @@
   edición (perdiendo el creador original) — ahora, igual que ya hacían
   Traspasos y Correcciones, solo se actualiza `usuarioE` al editar y
   `usuario` queda fijo desde que se crea el documento.
+- **`usuarios.temaC`** (sesión 2026-07-27): pedido explícito del usuario de
+  sacarla, ya que ninguna de las dos apps la usa — el tema visual pasó a
+  persistirse 100% local (`ThemeManager`/`TemaVisor`, `theme.txt` por PC) hace
+  varias sesiones, dejando esta columna sin lectura ni escritura desde el
+  código. Se sacó del manifiesto de `EsquemaValidator.cs` (los dos proyectos)
+  para que dejar de tenerla no rompa el login. **La columna en sí todavía
+  existe en la base** (no hay forma de correr DDL contra SQL Server desde este
+  entorno) — para borrarla de verdad, correr en el SQL Server real:
+  ```sql
+  ALTER TABLE usuarios DROP COLUMN temaC;
+  ```
+  Se puede hacer en cualquier momento sin coordinar con un release de la app
+  (ya no la lee ni la escribe ningún código en producción).
 
 ## Tablas
 
@@ -473,7 +486,7 @@ Líneas de `documentosT`.
 | apellidos   | nvarchar(255)       | sí   | |
 | estadof     | nvarchar(100)       | sí   | |
 | tipo        | nvarchar(100)       | sí   | rol (admin / otros) |
-| temaC       | nvarchar(255)       | sí   | tema visual elegido |
+| temaC       | nvarchar(255)       | sí   | **en desuso** — el código ya no la lee/escribe; pendiente `DROP COLUMN` (ver arriba) |
 | codigo      | int                 | sí   | |
 | id          | uniqueidentifier    | NO   | |
 | sucursal    | uniqueidentifier    | sí   | |

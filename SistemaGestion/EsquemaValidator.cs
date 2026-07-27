@@ -51,7 +51,7 @@ namespace SistemaGestion.Data
         private static readonly Dictionary<string, string[]> Manifiesto =
             new(StringComparer.OrdinalIgnoreCase)
         {
-            ["usuarios"]       = new[] { "cuenta", "llave", "nombres", "apellidos", "tipo", "temaC", "codigo", "sucursal", "empresa", "emision", "edicion" },
+            ["usuarios"]       = new[] { "cuenta", "llave", "nombres", "apellidos", "tipo", "codigo", "sucursal", "empresa", "emision", "edicion" },
             ["empresas"]       = new[] { "descripcion", "signo", "observacion", "fecha", "emision", "edicion", "usuario", "usuarioE", "codigo" },
             ["articulos"]      = new[] { "descripcion", "indice", "modelo", "observacion", "estado", "emision", "edicion", "codigo", "categoria", "familia", "industria", "usuario", "usuarioE" },
             ["familias"]       = new[] { "descripcion", "observacion", "emision", "edicion", "codigo", "producto", "usuario", "usuarioE" },
