@@ -32,8 +32,9 @@ app.MapGet("/ping", async () =>
         await cmd.ExecuteScalarAsync();
         return Results.Ok();
     }
-    catch
+    catch (Exception ex)
     {
+        app.Logger.LogError(ex, "Fallo /ping: no se pudo conectar a SQL Server.");
         return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
     }
 });
@@ -92,8 +93,9 @@ app.MapPost("/login", async (LoginRequest req) =>
             Contrasena = cfg["Sql:Contrasena"] ?? ""
         });
     }
-    catch
+    catch (Exception ex)
     {
+        app.Logger.LogError(ex, "Fallo /login: no se pudo conectar a SQL Server.");
         return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
     }
 });
