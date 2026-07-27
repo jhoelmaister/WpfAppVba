@@ -284,7 +284,12 @@ namespace VisorEmpresa
                 Sql.UsuariosObj.EstablecerItem("empresa",  id, (CmbEmpresa.SelectedItem  as EmpresaItem)?.Id  ?? "");
                 Sql.UsuariosObj.EstablecerItem("sucursal", id, (CmbSucursal.SelectedItem as SucursalItem)?.Id ?? "");
                 Sql.UsuariosObj.EstablecerItem("llave",    id, PasswordHasher.Hashear(contrasena));
-                Sql.UsuariosObj.EstablecerItem("estadof",  id, "normal");
+                // No tocar "estadof" acá: Nuevo(id) ya lo dejó en "nuevo", y
+                // ExportarItemsInterno() lo pasa a "normal" recién al insertar. Si se
+                // llama EstablecerItem("estadof", ...) el propio método lo reescribe y
+                // lo termina marcando "editado", con lo que este usuario se manda por
+                // UPDATE (0 filas afectadas: el id todavía no existe en SQL Server) en
+                // vez de por INSERT — queda en la caché pero nunca llega a la base.
                 Sql.UsuariosObj.EstablecerItem("emision",   id, DateTime.Now);
                 Sql.UsuariosObj.EstablecerItem("edicion",   id, DateTime.Now);
 

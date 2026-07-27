@@ -42,12 +42,16 @@ namespace SistemaGestion.Data
             if (!_tabla.Columns.Contains(columna))  return;
             if (!_tabla.Columns.Contains("estadof")) return;
 
+            // Estado ANTES de tocar la fila: si columna=="estadof", la línea de abajo
+            // ya lo sobreescribiría, y leerlo después siempre daría el valor recién
+            // puesto (nunca "nuevo"), degradando por error un alta a "editado".
+            var estadoActual = row["estadof"]?.ToString() ?? "";
+
             // Strings vacíos se persisten como NULL en SQL Server (consistente con INSERT).
             if (valor is string s && s.Length == 0) valor = null;
             row[columna] = valor ?? DBNull.Value;
 
-            var estadoActual = row["estadof"]?.ToString() ?? "";
-            if (estadoActual != "nuevo")
+            if (estadoActual != "nuevo" && !string.Equals(columna, "estadof", StringComparison.OrdinalIgnoreCase))
                 row["estadof"] = "editado";
         }
 

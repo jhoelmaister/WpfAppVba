@@ -52,6 +52,14 @@
             </Setter>
         </Style>
 
+        <!-- ── Encabezado de sección en la barra lateral ──────────────── -->
+        <Style x:Key="NavSeccion" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoMuted}"/>
+            <Setter Property="Margin" Value="14,10,0,4"/>
+        </Style>
+
     </Window.Resources>
 
     <Grid>
@@ -262,15 +270,12 @@
                                     Click="BtnNav_Correcciones_Click"/>
                             <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="12,8"/>
 
-                            <!-- Catálogos de empresa: edición completa -->
+                            <!-- Nivel empresa: catálogos propios de la empresa seleccionada -->
+                            <TextBlock Text="NIVEL EMPRESA" Style="{StaticResource NavSeccion}"/>
                             <Button x:Name="BtnNav_Precios"
                                     Content="💲  Precios"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Precios_Click"/>
-                            <Button x:Name="BtnNav_Empresas"
-                                    Content="🏢  Empresas"
-                                    Style="{StaticResource NavBtn}"
-                                    Click="BtnNav_Empresas_Click"/>
                             <Button x:Name="BtnNav_Sucursales"
                                     Content="🏪  Sucursales"
                                     Style="{StaticResource NavBtn}"
@@ -279,6 +284,15 @@
                                     Content="🌐  Regiones"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Regiones_Click"/>
+
+                            <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="12,8"/>
+
+                            <!-- Superiores: administración por encima de una empresa puntual -->
+                            <TextBlock Text="SUPERIORES" Style="{StaticResource NavSeccion}"/>
+                            <Button x:Name="BtnNav_Empresas"
+                                    Content="🏢  Empresas"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Empresas_Click"/>
                             <Button x:Name="BtnNav_Usuarios"
                                     Content="👤  Usuarios"
                                     Style="{StaticResource NavBtn}"
