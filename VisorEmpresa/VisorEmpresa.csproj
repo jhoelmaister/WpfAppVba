@@ -41,24 +41,22 @@
   <!-- ══ Código 100% independiente de la app principal ══
        Ya NO hay archivos vinculados (<Compile Link=.../>): la capa de datos
        (DataConsulta/SqlData/AppLoader/AppState/StockCalculator), la conexión/
-       configuración (DatabaseConnection/ConexionConfig/EsquemaValidator/
+       configuración (DatabaseConnection/AuthBrokerClient/EsquemaValidator/
        ConexionEstado/SqlRetry/PasswordHasher), las utilidades (WindowHelper/
-       WindowTheming/GridFocusHelper/FuncionesComunes), las herramientas de
+       WindowTheming/GridFocusHelper/FuncionesComunes) y las herramientas de
        administración (CodigoRegenerator/PedidosPrecioActualizador/
-       AppsheetsSync) y las ventanas de configuración de servidores
-       (ConfiguracionDbWindow/ConexionServidoresWindow) tienen acá su propia
-       copia física (namespace VisorEmpresa/VisorEmpresa.Data), recogida
-       automáticamente por el globbing implícito del SDK — editar cualquiera
-       de estos archivos ya NO afecta a SistemaGestion, y viceversa. Es la
-       misma independencia física que ya tenían los módulos de catálogo
-       (Precios, Empresas, Sucursales, Regiones, Usuarios) y los formularios
-       de Pedidos/Traspasos/Correcciones/Facturas.
+       AppsheetsSync) tienen acá su propia copia física (namespace
+       VisorEmpresa/VisorEmpresa.Data), recogida automáticamente por el
+       globbing implícito del SDK — editar cualquiera de estos archivos ya NO
+       afecta a SistemaGestion, y viceversa. Es la misma independencia física
+       que ya tenían los módulos de catálogo (Precios, Empresas, Sucursales,
+       Regiones, Usuarios) y los formularios de Pedidos/Traspasos/
+       Correcciones/Facturas.
 
-       Único punto en común entre las dos apps: el archivo de conexión cifrado
-       en disco (%AppData%\SistemaGestion\conexion.dat, ver ConexionConfig.cs)
-       sigue usando ese nombre de carpeta a propósito, para que un servidor ya
-       configurado en una app aparezca también en la otra — es una convención
-       de almacenamiento compartida, no código compartido.
+       Ya no hay pantalla de "elegir servidor": la URL del broker de
+       autenticación (ConexionBroker/, ver AuthBrokerClient.BrokerUrl) es una
+       única constante fija en el código, igual en ambas apps — no se guarda
+       nada de conexión en disco (%AppData%) ni hay conexion.dat.
 
        La consola original (ConsolaMovimientos.xaml/.cs) sigue sin vincularse
        a propósito: el visor define su propia clase SistemaGestion.

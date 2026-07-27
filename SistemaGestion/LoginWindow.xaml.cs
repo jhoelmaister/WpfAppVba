@@ -44,17 +44,6 @@ namespace SistemaGestion
                 // Sin red o sin feed accesible: no bloquear el login por esto solo.
             }
 
-            if (!ConexionConfig.HayConfiguracion())
-            {
-                MostrarEstado("Configure la conexión al servidor.", Colors.Orange);
-                var dlg = new ConfiguracionDbWindow { Owner = this };
-                if (dlg.ShowDialog() != true)
-                {
-                    Application.Current.Shutdown();
-                    return;
-                }
-            }
-
             await ConectarBaseDatosAsync();
         }
 
@@ -66,11 +55,10 @@ namespace SistemaGestion
             HabilitarControles(false);
             MostrarEstado("Conectando al servidor...", Colors.Gray);
 
-            string brokerUrl = ConexionConfig.ObtenerBrokerActivo();
             bool conectado;
             try
             {
-                conectado = await AuthBrokerClient.PingAsync(brokerUrl);
+                conectado = await AuthBrokerClient.PingAsync(AuthBrokerClient.BrokerUrl);
             }
             catch
             {
@@ -104,7 +92,6 @@ namespace SistemaGestion
             TxtContrasena.IsEnabled        = habilitado;
             TxtContrasenaVisible.IsEnabled = habilitado;
             BtnVerContrasena.IsEnabled      = habilitado;
-            BtnConfigurarConexion.IsEnabled = habilitado;
         }
 
         // ─── Auto-reconexión: reintenta cada 4 s hasta que vuelva el internet ─────
@@ -230,18 +217,6 @@ namespace SistemaGestion
             catch { /* si la API interna cambia, queda el foco normal como respaldo */ }
         }
 
-        // ─── Configurar conexión desde el login ───────────────────────────────
-        private async void BtnConfigurarConexion_Click(object sender, RoutedEventArgs e)
-        {
-            // Abrir el listado de servidores para agregar / editar / conectar.
-            var dlg = new ConexionServidoresWindow { Owner = this };
-            dlg.ShowDialog();
-
-            // Tras gestionar los servidores, recheck del broker activo.
-            if (ConexionConfig.HayConfiguracion())
-                await ConectarBaseDatosAsync();
-        }
-
         // ─── Lógica de inicio de sesión (equivalente a CommandButton1_Click) ──
         private async void BtnIngresar_Click(object sender, RoutedEventArgs e)
         {
@@ -265,11 +240,10 @@ namespace SistemaGestion
             // contra "usuarios" del lado del servidor y, si es correcto, devuelve
             // la conexión real de SQL Server SOLO para esta sesión (en memoria,
             // nunca a disco).
-            string brokerUrl = ConexionConfig.ObtenerBrokerActivo();
             LoginBrokerResponse? resp;
             try
             {
-                resp = await AuthBrokerClient.LoginAsync(brokerUrl, cuenta, contrasena);
+                resp = await AuthBrokerClient.LoginAsync(AuthBrokerClient.BrokerUrl, cuenta, contrasena);
             }
             catch
             {

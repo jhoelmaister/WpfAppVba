@@ -22,12 +22,15 @@ namespace SistemaGestion.Data
     /// <summary>
     /// Cliente del servicio de autenticación remoto ("broker", ver proyecto
     /// ConexionBroker/). La app ya no guarda ni conoce las credenciales reales
-    /// de SQL Server: solo conoce la URL del broker (no es secreta, ver
-    /// ConexionConfig) y, tras un login válido, recibe la conexión real solo
-    /// en memoria para esa sesión.
+    /// de SQL Server: solo conoce la URL del broker (no es secreta) y, tras un
+    /// login válido, recibe la conexión real solo en memoria para esa sesión.
     /// </summary>
     public static class AuthBrokerClient
     {
+        // Única dirección del broker para toda la empresa — fija en el código
+        // a propósito (no hay pantalla de "elegir servidor").
+        public const string BrokerUrl = "https://conexion.jhoelmaister.tech";
+
         private static readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(12) };
 
         /// <summary>true si el broker (y la base de datos detrás) responde.</summary>

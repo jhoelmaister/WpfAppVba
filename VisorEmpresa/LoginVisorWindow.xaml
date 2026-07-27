@@ -210,12 +210,6 @@
                                HorizontalAlignment="Center" TextWrapping="Wrap"
                                TextAlignment="Center"/>
 
-                    <!-- Configurar conexión -->
-                    <Button x:Name="BtnConfigurarConexion" Content="⚙ Configurar conexión"
-                            Style="{StaticResource BtnLink}"
-                            HorizontalAlignment="Center" Margin="0,6,0,0"
-                            Click="BtnConfigurarConexion_Click"/>
-
                 </StackPanel>
 
             </StackPanel>

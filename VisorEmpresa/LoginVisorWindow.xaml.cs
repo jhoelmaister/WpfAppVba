@@ -6,7 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using SistemaGestion;        // ConsolaMovimientos (nombre de clase de ConsolaVisor.xaml.cs)
-using VisorEmpresa.Data;   // DatabaseConnection, ConexionConfig, AuthBrokerClient
+using VisorEmpresa.Data;   // DatabaseConnection, AuthBrokerClient
 
 namespace VisorEmpresa
 {
@@ -52,17 +52,6 @@ namespace VisorEmpresa
                 // Sin red o sin feed accesible: no bloquear el login por esto solo.
             }
 
-            if (!ConexionConfig.HayConfiguracion())
-            {
-                MostrarEstado("Configure la conexión al servidor.", Colors.Orange);
-                var dlg = new ConfiguracionDbWindow { Owner = this };
-                if (dlg.ShowDialog() != true)
-                {
-                    Application.Current.Shutdown();
-                    return;
-                }
-            }
-
             await ConectarBaseDatosAsync();
         }
 
@@ -74,11 +63,10 @@ namespace VisorEmpresa
             HabilitarControles(false);
             MostrarEstado("Conectando al servidor...", Colors.Gray);
 
-            string brokerUrl = ConexionConfig.ObtenerBrokerActivo();
             bool conectado;
             try
             {
-                conectado = await AuthBrokerClient.PingAsync(brokerUrl);
+                conectado = await AuthBrokerClient.PingAsync(AuthBrokerClient.BrokerUrl);
             }
             catch
             {
@@ -108,7 +96,6 @@ namespace VisorEmpresa
             TxtContrasena.IsEnabled         = habilitado;
             TxtContrasenaVisible.IsEnabled  = habilitado;
             BtnVerContrasena.IsEnabled      = habilitado;
-            BtnConfigurarConexion.IsEnabled = habilitado;
         }
 
         // ─── Auto-reconexión: reintenta cada 4 s hasta que vuelva el internet ─
@@ -234,19 +221,6 @@ namespace VisorEmpresa
             catch { /* si la API interna cambia, queda el foco normal como respaldo */ }
         }
 
-        // ─── Configurar conexión desde el login ───────────────────────────────
-        private async void BtnConfigurarConexion_Click(object sender, RoutedEventArgs e)
-        {
-            // Abrir el listado de servidores para agregar / editar / conectar
-            // (misma configuración cifrada que la app principal).
-            var dlg = new ConexionServidoresWindow { Owner = this };
-            dlg.ShowDialog();
-
-            // Tras gestionar los servidores, recheck del broker activo.
-            if (ConexionConfig.HayConfiguracion())
-                await ConectarBaseDatosAsync();
-        }
-
         // ─── Lógica de inicio de sesión ────────────────────────────────────────
         private async void BtnIngresar_Click(object sender, RoutedEventArgs e)
         {
@@ -269,11 +243,10 @@ namespace VisorEmpresa
             // contra "usuarios" del lado del servidor y, si es correcto, devuelve
             // la conexión real de SQL Server SOLO para esta sesión (en memoria,
             // nunca a disco).
-            string brokerUrl = ConexionConfig.ObtenerBrokerActivo();
             LoginBrokerResponse? resp;
             try
             {
-                resp = await AuthBrokerClient.LoginAsync(brokerUrl, cuenta, contrasena);
+                resp = await AuthBrokerClient.LoginAsync(AuthBrokerClient.BrokerUrl, cuenta, contrasena);
             }
             catch
             {
