@@ -55,11 +55,13 @@ namespace VisorEmpresa
             if (AppState.EventoFormularioI == "modificar")
             {
                 LblTitulo.Text = "Editar Usuario";
+                LblHintContrasena.Text = "Deja este campo en blanco para no cambiarla.";
                 CargarParaEditar();
             }
             else
             {
                 LblTitulo.Text = "Nuevo Usuario";
+                LblHintContrasena.Text = "Obligatoria: sin esto el usuario no va a poder loguear.";
                 CargarParaNuevo();
             }
 
@@ -169,6 +171,35 @@ namespace VisorEmpresa
             if (!_cargando) _hayCambios = true;
         }
 
+        private void Campo_PasswordChanged(object sender, RoutedEventArgs e)
+        {
+            if (!_cargando) _hayCambios = true;
+        }
+
+        // ─── Mostrar / ocultar contraseña (mismo patrón que CambiarContrasena) ──
+        private string ValorContrasena() =>
+            TxtContrasenaVisible.Visibility == Visibility.Visible
+                ? TxtContrasenaVisible.Text
+                : PwdContrasena.Password;
+
+        private void BtnVerContrasena_Click(object sender, RoutedEventArgs e)
+        {
+            if (PwdContrasena.Visibility == Visibility.Visible)
+            {
+                TxtContrasenaVisible.Text       = PwdContrasena.Password;
+                PwdContrasena.Visibility        = Visibility.Collapsed;
+                TxtContrasenaVisible.Visibility = Visibility.Visible;
+                BtnVerContrasena.Content        = "Ocultar";
+            }
+            else
+            {
+                PwdContrasena.Password          = TxtContrasenaVisible.Text;
+                TxtContrasenaVisible.Visibility = Visibility.Collapsed;
+                PwdContrasena.Visibility        = Visibility.Visible;
+                BtnVerContrasena.Content         = "Ver";
+            }
+        }
+
         // ─── Código: solo dígitos (columna codigo es int en la base) ─────────
         private void Box_Numeros_PreviewTextInput(object sender, TextCompositionEventArgs e)
             => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
@@ -206,6 +237,11 @@ namespace VisorEmpresa
                 Sql.UsuariosObj.EstablecerItem("sucursal", id, (CmbSucursal.SelectedItem as SucursalItem)?.Id ?? "");
                 Sql.UsuariosObj.EstablecerItem("edicion",  id, DateTime.Now);
 
+                // Contraseña: en blanco = no se toca (queda la actual).
+                string contrasena = ValorContrasena();
+                if (!string.IsNullOrEmpty(contrasena))
+                    Sql.UsuariosObj.EstablecerItem("llave", id, PasswordHasher.Hashear(contrasena));
+
                 Sql.UsuariosObj.OrdenarData(("codigo", false));
                 Sql.UsuariosObj.ExportarItems();
                 MessageBox.Show("Guardado exitoso", "Usuarios", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -228,6 +264,14 @@ namespace VisorEmpresa
                 return false;
             }
 
+            string contrasena = ValorContrasena();
+            if (string.IsNullOrEmpty(contrasena))
+            {
+                MessageBox.Show("La contraseña no puede estar vacía: sin ella, este usuario no va a poder loguear.",
+                    "Usuarios", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
             try
             {
                 string id = Guid.NewGuid().ToString();
@@ -239,6 +283,7 @@ namespace VisorEmpresa
                 Sql.UsuariosObj.EstablecerItem("tipo",     id, ObtenerComboValor(CmbTipo));
                 Sql.UsuariosObj.EstablecerItem("empresa",  id, (CmbEmpresa.SelectedItem  as EmpresaItem)?.Id  ?? "");
                 Sql.UsuariosObj.EstablecerItem("sucursal", id, (CmbSucursal.SelectedItem as SucursalItem)?.Id ?? "");
+                Sql.UsuariosObj.EstablecerItem("llave",    id, PasswordHasher.Hashear(contrasena));
                 Sql.UsuariosObj.EstablecerItem("estadof",  id, "normal");
                 Sql.UsuariosObj.EstablecerItem("emision",   id, DateTime.Now);
                 Sql.UsuariosObj.EstablecerItem("edicion",   id, DateTime.Now);

@@ -88,6 +88,30 @@
             <Setter Property="Foreground" Value="#4F8EF7"/>
             <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
+        <Style x:Key="ModernPassword" TargetType="PasswordBox">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBordeInput}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeInputBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -189,6 +213,27 @@
                                     <ComboBoxItem Content="admin"/>
                                     <ComboBoxItem Content="user"/>
                                 </ComboBox>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock x:Name="LblContrasena" Style="{StaticResource SectionLabel}" Text="CONTRASEÑA"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <PasswordBox x:Name="PwdContrasena" Grid.Column="0"
+                                                 Style="{StaticResource ModernPassword}"
+                                                 PasswordChanged="Campo_PasswordChanged"/>
+                                    <TextBox x:Name="TxtContrasenaVisible" Grid.Column="0"
+                                             Style="{StaticResource ModernInput}"
+                                             Margin="0" Visibility="Collapsed"
+                                             TextChanged="Campo_TextChanged"/>
+                                    <Button x:Name="BtnVerContrasena" Grid.Column="1" Content="Ver"
+                                            Width="52" Style="{StaticResource BtnSecundario}"
+                                            Margin="6,0,0,0" Click="BtnVerContrasena_Click"/>
+                                </Grid>
+                                <TextBlock x:Name="LblHintContrasena" FontSize="10" Margin="0,4,0,0"
+                                           Foreground="{DynamicResource ThemeTextoMuted}" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Grid>
                     </StackPanel>
