@@ -42,12 +42,22 @@ namespace SistemaGestion
         /// <summary>ID del documento de factura recién creado.</summary>
         public string? ItemCreadoId { get; private set; }
 
-        public FacturasDetalle(object? padre = null, string idEditar = "", string tituloTab = "")
+        // Factura nueva creada desde "Validar pedido" (FacturasGeneral): id del
+        // documentosP a copiar y las líneas ya sumadas por categoría. Vacíos en
+        // una factura nueva común o al editar.
+        private readonly string _desdePedidoId;
+        private readonly List<FacturaLineaValidada> _lineasDesdePedido;
+
+        public FacturasDetalle(object? padre = null, string idEditar = "", string tituloTab = "",
+                               string desdePedidoId = "",
+                               List<FacturaLineaValidada>? lineasDesdePedido = null)
         {
             InitializeComponent();
             _padre       = padre;
             _idEditar    = idEditar;
             _tituloTab   = tituloTab;
+            _desdePedidoId     = desdePedidoId;
+            _lineasDesdePedido = lineasDesdePedido ?? new List<FacturaLineaValidada>();
             Loaded      += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
         }
 
@@ -186,9 +196,47 @@ namespace SistemaGestion
             _itemsOrig.Clear();
             _cobros.Clear();
             _cobrosOrig.Clear();
+
+            if (!string.IsNullOrEmpty(_desdePedidoId)) CopiarDesdePedido();
+
             RefrescarGrid();
             RefrescarGridCobros();
             ActualizarTotales();
+        }
+
+        /// <summary>
+        /// Factura nueva creada desde "Validar pedido": copia los datos generales
+        /// del pedido (tercero, movimiento, referencia y observación) y carga las
+        /// líneas ya sumadas por categoría. La fecha queda en hoy — la factura es
+        /// un documento nuevo, no hereda la fecha del pedido.
+        /// </summary>
+        private void CopiarDesdePedido()
+        {
+            string terceroId = Sql.DocumentosPObj.ObtenerItem("tercero", _desdePedidoId)?.ToString() ?? "";
+            Box_Tercero_Identificador.Text = terceroId == ""
+                                             ? ""
+                                             : Sql.TercerosObj.ObtenerItem("codigo", terceroId)?.ToString() ?? "";
+            ActualizarDescripcionTercero();
+
+            string movimiento = Sql.DocumentosPObj.ObtenerItem("movimiento", _desdePedidoId)?.ToString() ?? "venta";
+            Box_Movimiento.SelectedIndex =
+                string.Equals(movimiento, "compra", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+
+            Box_Referencia.Text  = Sql.DocumentosPObj.ObtenerItem("referencia",  _desdePedidoId)?.ToString() ?? "";
+            Box_Observacion.Text = Sql.DocumentosPObj.ObtenerItem("observacion", _desdePedidoId)?.ToString() ?? "";
+
+            // documentosF.relacion: el pedido que se está facturando.
+            Box_PedidoRelacionado.Text = Sql.DocumentosPObj.ObtenerItem("codigo", _desdePedidoId)?.ToString() ?? "";
+            ActualizarDescripcionPedido();
+
+            foreach (var linea in _lineasDesdePedido)
+                _items.Add(new FacturaItemFila
+                {
+                    FacturaId   = "",   // línea nueva, todavía sin guardar
+                    Concepto    = linea.Concepto,
+                    CategoriaId = string.IsNullOrEmpty(linea.CategoriaId) ? PrimeraCategoriaId() : linea.CategoriaId,
+                    Importe     = linea.Importe
+                });
         }
 
         // ─── Estado (manual) ──────────────────────────────────────────────────
@@ -262,51 +310,6 @@ namespace SistemaGestion
             if (_cargando) return;
             ActualizarDescripcionPedido();
             _hayCambios = true;
-        }
-
-        // Abre la pestaña "Validar pedido": se elige un pedido, se tildan las
-        // líneas a facturar y al validar se reemplazan las líneas de esta factura
-        // por una línea por artículo tildado (más el pedido en `relacion`).
-        private void BtnValidarPedido_Click(object sender, RoutedEventArgs e)
-        {
-#if !VISOR
-            ValidarPedido.PedidoValidado = null;
-            ValidarPedido.ItemsValidados = null;
-            ValidarPedido.OpenAsDialog(Window.GetWindow(this)!, contexto: _tituloTab, llamador: this,
-                onCerrado: () =>
-                {
-                    string pedidoId = ValidarPedido.PedidoValidado ?? "";
-                    var validados   = ValidarPedido.ItemsValidados;
-                    if (pedidoId == "" || validados == null || validados.Count == 0) return;
-
-                    if (_items.Count > 0)
-                    {
-                        var res = MessageBox.Show(
-                            $"La factura ya tiene {_items.Count} línea(s) cargada(s).\n" +
-                            "Se van a reemplazar por las del pedido validado.\n\n¿Continuar?",
-                            "Consola", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                        if (res != MessageBoxResult.Yes) return;
-                    }
-
-                    _items.Clear();
-                    foreach (var v in validados)
-                        _items.Add(new FacturaItemFila
-                        {
-                            FacturaId   = "",           // línea nueva, todavía sin guardar
-                            Concepto    = v.Concepto,
-                            CategoriaId = string.IsNullOrEmpty(v.CategoriaId) ? PrimeraCategoriaId() : v.CategoriaId,
-                            Importe     = v.Importe
-                        });
-
-                    // Deja el pedido en el campo "Pedido" (se guarda en documentosF.relacion).
-                    Box_PedidoRelacionado.Text = Sql.DocumentosPObj.ObtenerItem("codigo", pedidoId)?.ToString() ?? "";
-                    ActualizarDescripcionPedido();
-
-                    _hayCambios = true;
-                    RefrescarGrid();
-                    ActualizarTotales();
-                });
-#endif
         }
 
         private void Box_Numeros_PreviewTextInput(object sender, TextCompositionEventArgs e)

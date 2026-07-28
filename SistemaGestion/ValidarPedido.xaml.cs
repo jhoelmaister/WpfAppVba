@@ -15,9 +15,9 @@ namespace SistemaGestion
     ///
     /// Al validar deja el resultado en <see cref="PedidoValidado"/> (id del
     /// documentosP, que va a `documentosF.relacion`) y en
-    /// <see cref="ItemsValidados"/> (una entrada por línea tildada, que
-    /// FacturasDetalle convierte en líneas de la factura). Si se cancela, ambas
-    /// quedan en null.
+    /// <see cref="LineasValidadas"/>: las líneas tildadas ya sumadas **por
+    /// categoría** — una línea de factura por categoría, no una por artículo.
+    /// Si se cancela, ambas quedan en null.
     /// </summary>
     public partial class ValidarPedido : System.Windows.Controls.UserControl
     {
@@ -28,8 +28,11 @@ namespace SistemaGestion
         /// <summary>Id del documentosP validado (null si se canceló).</summary>
         public static string? PedidoValidado { get; set; }
 
-        /// <summary>Líneas tildadas del pedido validado (null si se canceló).</summary>
-        public static List<PedidoItemValidado>? ItemsValidados { get; set; }
+        /// <summary>
+        /// Líneas de factura resultantes: las líneas tildadas agrupadas por
+        /// categoría (null si se canceló).
+        /// </summary>
+        public static List<FacturaLineaValidada>? LineasValidadas { get; set; }
 
         private readonly List<ValidarPedidoFila> _pedidos = new();
         private readonly List<ValidarItemFila>   _items   = new();
@@ -289,24 +292,34 @@ namespace SistemaGestion
                 return;
             }
 
-            PedidoValidado = pedido.DocumentoP;
-            ItemsValidados = marcados.Select(i => new PedidoItemValidado
-            {
-                ArticuloId  = i.ArticuloId,
-                Concepto    = i.Descripcion,
-                CategoriaId = i.CategoriaId,
-                Importe     = i.Importe
-            }).ToList();
+            // Una línea de factura por categoría: se suman los importes de todas
+            // las líneas tildadas que comparten categoría (dos ítems de 200 de la
+            // misma categoría entran como una sola línea de 400).
+            PedidoValidado  = pedido.DocumentoP;
+            LineasValidadas = marcados
+                .GroupBy(i => i.CategoriaId)
+                .Select(g => new FacturaLineaValidada
+                {
+                    CategoriaId = g.Key,
+                    Concepto    = DescripcionCategoria(g.Key),
+                    Importe     = g.Sum(i => i.Importe)
+                })
+                .ToList();
 
             Cerrando?.Invoke();
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
         {
-            PedidoValidado = null;
-            ItemsValidados = null;
+            PedidoValidado  = null;
+            LineasValidadas = null;
             Cerrando?.Invoke();
         }
+
+        private static string DescripcionCategoria(string categoriaId)
+            => string.IsNullOrEmpty(categoriaId)
+               ? "Sin categoría"
+               : Sql.CategoriasObj.ObtenerItem("descripcion", categoriaId)?.ToString() ?? "Sin categoría";
     }
 
     // ─── Modelos ──────────────────────────────────────────────────────────────
@@ -331,16 +344,23 @@ namespace SistemaGestion
         public string Codigo       { get; set; } = "";
         public string Descripcion  { get; set; } = "";
         public string CategoriaId  { get; set; } = "";
+        // Se resuelve en vivo contra la caché de Categorias (igual que en FacturasDetalle).
+        public string CategoriaDescripcion =>
+            string.IsNullOrEmpty(CategoriaId)
+                ? "Sin categoría"
+                : SqlData.Instance.CategoriasObj.ObtenerItem("descripcion", CategoriaId)?.ToString() ?? "Sin categoría";
         public double Cantidad     { get; set; }
         public double Importe      { get; set; }
     }
 
-    /// <summary>Línea validada, tal como la consume FacturasDetalle.</summary>
-    public class PedidoItemValidado
+    /// <summary>
+    /// Línea de factura resultante de validar un pedido: una por categoría, con
+    /// el importe ya sumado.
+    /// </summary>
+    public class FacturaLineaValidada
     {
-        public string ArticuloId  { get; set; } = "";
-        public string Concepto    { get; set; } = "";
         public string CategoriaId { get; set; } = "";
+        public string Concepto    { get; set; } = "";
         public double Importe     { get; set; }
     }
 }

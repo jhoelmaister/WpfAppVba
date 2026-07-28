@@ -40,6 +40,10 @@
             <Setter Property="Background" Value="#3B82F6"/>
             <Setter Property="Foreground" Value="White"/>
         </Style>
+        <Style x:Key="BtnSuccess" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="#10B981"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
         <Style x:Key="BtnSecundario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
             <Setter Property="Background"    Value="{DynamicResource ThemeBtnSecBg}"/>
             <Setter Property="Foreground"    Value="{DynamicResource ThemeBtnSecFg}"/>
@@ -430,6 +434,12 @@
                                 Style="{StaticResource BtnPrimario}"
                                 Margin="0,0,6,0"
                                 Click="BtnNuevo_Click"/>
+                        <Button x:Name="BtnValidarPedido"
+                                Content="Validar pedido"
+                                Style="{StaticResource BtnSuccess}"
+                                Margin="0,0,6,0"
+                                ToolTip="Crea una factura nueva a partir de un pedido"
+                                Click="BtnValidarPedido_Click"/>
                         <Rectangle Width="1" Fill="{DynamicResource ThemeBorde}"
                                    VerticalAlignment="Stretch" Margin="2,4,8,4"/>
                         <Button x:Name="BtnEditar"

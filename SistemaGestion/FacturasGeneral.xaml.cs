@@ -380,9 +380,37 @@ namespace SistemaGestion
         {
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
+            AbrirNuevaFactura(consola, desdePedidoId: "", lineas: null);
+        }
+
+        // Abre la pestaña "Validar pedido"; al validar, crea una factura nueva con
+        // los datos generales copiados del pedido y una línea por categoría (los
+        // ítems tildados se suman por categoría — ver ValidarPedido).
+        private void BtnValidarPedido_Click(object sender, RoutedEventArgs e)
+        {
+            var consola = Window.GetWindow(this) as ConsolaMovimientos;
+            if (consola == null) return;
+
+            ValidarPedido.PedidoValidado  = null;
+            ValidarPedido.LineasValidadas = null;
+            ValidarPedido.OpenAsDialog(consola, contexto: "Facturas", llamador: this, onCerrado: () =>
+            {
+                string pedidoId = ValidarPedido.PedidoValidado ?? "";
+                var lineas      = ValidarPedido.LineasValidadas;
+                if (pedidoId == "" || lineas == null || lineas.Count == 0) return;
+
+                AbrirNuevaFactura(consola, pedidoId, lineas);
+            });
+        }
+
+        private void AbrirNuevaFactura(ConsolaMovimientos consola, string desdePedidoId,
+                                       List<FacturaLineaValidada>? lineas)
+        {
             string titulo = "Nueva Factura";
             string clave  = "nueva-factura";
-            var dlg = new FacturasDetalle(this, tituloTab: titulo);
+            var dlg = new FacturasDetalle(this, tituloTab: titulo,
+                                          desdePedidoId: desdePedidoId,
+                                          lineasDesdePedido: lineas);
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);

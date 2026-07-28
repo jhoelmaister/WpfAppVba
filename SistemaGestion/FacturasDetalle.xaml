@@ -292,16 +292,9 @@
                                VerticalAlignment="Center"/>
                     <TextBox x:Name="Box_PedidoRelacionado"
                              Width="110" Height="24" FontSize="11"
-                             Margin="6,0,6,0"
+                             Margin="6,0,8,0"
                              VerticalContentAlignment="Center"
                              TextChanged="Box_PedidoRelacionado_TextChanged"/>
-                    <Button x:Name="BtnValidarPedido"
-                            Content="Validar pedido"
-                            Height="24" Padding="10,0" FontSize="11"
-                            Margin="0,0,8,0"
-                            Style="{StaticResource BtnSecundario}"
-                            ToolTip="Elegir un pedido y las líneas a facturar"
-                            Click="BtnValidarPedido_Click"/>
                     <TextBlock x:Name="Box_PedidoRelacionado_Desc"
                                FontSize="10"
                                Foreground="{DynamicResource ThemeTextoMuted}"
