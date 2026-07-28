@@ -211,7 +211,9 @@ namespace SistemaGestion
                 string famDesc  = Sql.FamiliasObj.ObtenerItem("descripcion",   famId)?.ToString() ?? "";
                 string prodId   = Sql.FamiliasObj.ObtenerItem("producto",      famId)?.ToString() ?? "";
                 string prodDesc = Sql.ProductosObj.ObtenerItem("descripcion",  prodId)?.ToString() ?? "";
-                string catDesc  = Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "";
+                string catDesc  = string.IsNullOrEmpty(catId)
+                    ? "(sin categoría)"
+                    : (Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "(sin categoría)");
 
                 string descCompleta = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
                 double stock        = StockCalculator.ContarStock(id, fechaCorte);
@@ -244,29 +246,50 @@ namespace SistemaGestion
                 row++;
             }
 
-            // ── Tabla de categorías (separada de la de artículos por una fila
-            //    en blanco): cantidad de artículos y stock total por categoría,
-            //    sobre el mismo conjunto ya filtrado por Condición ────────────
-            row++; // fila en blanco
-            ws.Cell(row, 1).Value = "Resumen por categoría";
-            ws.Cell(row, 1).Style.Font.Bold = true;
-            row++;
-            ws.Cell(row, 1).Value = "Categoría";
-            ws.Cell(row, 2).Value = "Cantidad de artículos";
-            ws.Cell(row, 3).Value = "Stock total";
-            ws.Row(row).Style.Font.Bold = true;
-            row++;
+            // ── Totales por categoría (separados de la lista de artículos por una
+            //    fila en blanco), con fórmulas SUMIF/SUM sobre el mismo conjunto ya
+            //    filtrado por Condición — mismo diseño (bandas de color, celdas
+            //    combinadas, fórmulas) que InventariosGeneral.GenerarExcelInventario. ──
+            int primerFilaDatos = filaEncabezado + 1;
+            int ultimaFilaDatos = row - 1;
 
-            var resumenCategorias = datos
-                .GroupBy(d => string.IsNullOrEmpty(d.catDesc) ? "(sin categoría)" : d.catDesc)
-                .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase);
-
-            foreach (var grupo in resumenCategorias)
+            if (ultimaFilaDatos >= primerFilaDatos)
             {
-                ws.Cell(row, 1).Value = grupo.Key;
-                ws.Cell(row, 2).Value = grupo.Count();
-                ws.Cell(row, 3).Value = grupo.Sum(g => g.stock);
+                row++; // fila en blanco
+
+                ws.Cell(row, 1).Value = "Totales por categoría";
+                ws.Range(row, 1, row, 6).Merge();
+                ws.Range(row, 1, row, 6).Style.Fill.BackgroundColor = XLColor.FromArgb(191, 219, 254);
+                ws.Range(row, 1, row, 6).Style.Font.Bold = true;
                 row++;
+
+                ws.Range(row, 1, row, 5).Merge();
+                ws.Cell(row, 1).Value = "Categoría";
+                ws.Cell(row, 6).Value = "Stock total";
+                ws.Range(row, 1, row, 6).Style.Font.Bold = true;
+                ws.Range(row, 1, row, 6).Style.Fill.BackgroundColor = XLColor.FromArgb(241, 245, 249);
+                row++;
+
+                var categoriasDistintas = datos
+                    .Select(d => d.catDesc)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(c => c, StringComparer.OrdinalIgnoreCase);
+
+                foreach (var categoria in categoriasDistintas)
+                {
+                    string catEscapada = categoria.Replace("\"", "\"\"");
+                    ws.Range(row, 1, row, 5).Merge();
+                    ws.Cell(row, 1).Value = categoria;
+                    ws.Cell(row, 6).FormulaA1 =
+                        $"=SUMIF(C{primerFilaDatos}:C{ultimaFilaDatos},\"{catEscapada}\",F{primerFilaDatos}:F{ultimaFilaDatos})";
+                    row++;
+                }
+
+                ws.Range(row, 1, row, 5).Merge();
+                ws.Cell(row, 1).Value = "Total general";
+                ws.Cell(row, 6).FormulaA1 = $"=SUM(F{primerFilaDatos}:F{ultimaFilaDatos})";
+                ws.Range(row, 1, row, 6).Style.Font.Bold = true;
+                ws.Range(row, 1, row, 6).Style.Fill.BackgroundColor = XLColor.FromArgb(191, 219, 254);
             }
 
             ws.Columns().AdjustToContents();

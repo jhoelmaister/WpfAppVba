@@ -250,36 +250,30 @@ namespace SistemaGestion
                 y += altoGrupo;
             }
 
-            // Tabla de resumen por categoría: 3 columnas (Categoría / Cant. artículos /
-            // Stock total), con la última alineada con el borde derecho de la columna
-            // Stock de la tabla de artículos.
-            double anchoCantResumen = 90;
-            double xCantResumen     = xStock;
-            double xStockResumen    = xCantResumen - anchoCantResumen;
-            double anchoCatResumen  = xStockResumen - xN;
+            // Tabla de resumen por categoría: 2 columnas (Categoría / Stock total),
+            // con la segunda alineada al borde derecho de la columna Stock de la
+            // tabla de artículos.
+            double xStockResumen   = xStock;
+            double anchoCatResumen = xStockResumen - xN;
 
             void DibujarEncabezadoResumen()
             {
                 gfx.DrawRectangle(penLinea, brushHeader, xN, y, anchoTabla, altoHeader);
                 gfx.DrawLine(penLinea, xStockResumen, y, xStockResumen, y + altoHeader);
-                gfx.DrawLine(penLinea, xCantResumen,  y, xCantResumen,  y + altoHeader);
-                gfx.DrawString("Categoría",       fontHeader, XBrushes.Black, new XRect(xN + 4,            y, anchoCatResumen - 8, altoHeader), XStringFormats.CenterLeft);
-                gfx.DrawString("Stock total",     fontHeader, XBrushes.Black, new XRect(xStockResumen + 4, y, anchoCantResumen - 8, altoHeader), XStringFormats.CenterRight);
-                gfx.DrawString("Cant. artículos", fontHeader, XBrushes.Black, new XRect(xCantResumen + 4,  y, anchoStock - 8,       altoHeader), XStringFormats.CenterRight);
+                gfx.DrawString("Categoría",   fontHeader, XBrushes.Black, new XRect(xN + 4,            y, anchoCatResumen - 8, altoHeader), XStringFormats.CenterLeft);
+                gfx.DrawString("Stock total", fontHeader, XBrushes.Black, new XRect(xStockResumen + 4, y, anchoStock - 8,      altoHeader), XStringFormats.CenterRight);
                 y += altoHeader;
             }
 
-            void DibujarFilaResumen(string categoria, string stock, string cantidad, bool destacado = false)
+            void DibujarFilaResumen(string categoria, string stock, bool destacado = false)
             {
                 if (destacado) gfx.DrawRectangle(penLinea, brushCeleste, xN, y, anchoTabla, altoFila);
                 else           gfx.DrawRectangle(penLinea, xN, y, anchoTabla, altoFila);
                 gfx.DrawLine(penLinea, xStockResumen, y, xStockResumen, y + altoFila);
-                gfx.DrawLine(penLinea, xCantResumen,  y, xCantResumen,  y + altoFila);
 
                 var font = destacado ? fontGrupo : fontCuerpo;
                 gfx.DrawString(categoria, font, XBrushes.Black, new XRect(xN + 4,            y, anchoCatResumen - 8, altoFila), XStringFormats.CenterLeft);
-                gfx.DrawString(stock,     font, XBrushes.Black, new XRect(xStockResumen + 4, y, anchoCantResumen - 8, altoFila), XStringFormats.CenterRight);
-                gfx.DrawString(cantidad,  font, XBrushes.Black, new XRect(xCantResumen + 4,  y, anchoStock - 8,       altoFila), XStringFormats.CenterRight);
+                gfx.DrawString(stock,     font, XBrushes.Black, new XRect(xStockResumen + 4, y, anchoStock - 8,      altoFila), XStringFormats.CenterRight);
 
                 y += altoFila;
             }
@@ -372,7 +366,7 @@ namespace SistemaGestion
             // ── Resumen por categoría + total general, al final del informe ──────
             var resumenCategorias = lineas
                 .GroupBy(l => string.IsNullOrEmpty(l.catDesc) ? "(sin categoría)" : l.catDesc)
-                .Select(g => (categoria: g.Key, cantidad: g.Count(), stock: g.Sum(x => x.stock)))
+                .Select(g => (categoria: g.Key, stock: g.Sum(x => x.stock)))
                 .OrderBy(x => x.categoria, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
@@ -385,18 +379,16 @@ namespace SistemaGestion
                 DibujarEncabezadoResumen();
                 dibujarEncabezadoPagina = DibujarEncabezadoResumen;
 
-                int totalCantidad = 0;
                 double totalStock = 0;
-                foreach (var (categoria, cantidad, stock) in resumenCategorias)
+                foreach (var (categoria, stock) in resumenCategorias)
                 {
                     AsegurarEspacio(altoFila);
-                    DibujarFilaResumen(categoria, stock.ToString("0.##"), cantidad.ToString());
-                    totalCantidad += cantidad;
-                    totalStock    += stock;
+                    DibujarFilaResumen(categoria, stock.ToString("0.##"));
+                    totalStock += stock;
                 }
 
                 AsegurarEspacio(altoFila);
-                DibujarFilaResumen("Total general", totalStock.ToString("0.##"), totalCantidad.ToString(), destacado: true);
+                DibujarFilaResumen("Total general", totalStock.ToString("0.##"), destacado: true);
             }
 
             // El último gfx de la generación de contenido sigue abierto: hay que
