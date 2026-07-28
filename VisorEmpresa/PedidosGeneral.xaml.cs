@@ -429,6 +429,7 @@ namespace VisorEmpresa
                 if (Sql.PedidosObj.ObtenerItem("documentoP", id)?.ToString() != documentoP) continue;
 
                 string articuloId  = Sql.PedidosObj.ObtenerItem("articulo",  id)?.ToString() ?? "";
+                string codigo      = Sql.ArticulosObj.ObtenerItem("codigo",      articuloId)?.ToString() ?? articuloId;
                 string desc        = Sql.ArticulosObj.ObtenerItem("descripcion", articuloId)?.ToString() ?? "";
                 string famId       = Sql.ArticulosObj.ObtenerItem("familia",     articuloId)?.ToString() ?? "";
                 string famDesc     = Sql.FamiliasObj.ObtenerItem("descripcion",  famId)?.ToString() ?? "";
@@ -440,7 +441,7 @@ namespace VisorEmpresa
                 detalles.Add(new PedidoDetalleFila
                 {
                     Linea      = linea++,
-                    ArticuloId = articuloId,
+                    Codigo     = codigo,
                     Descripcion = descripcion,
                     Cantidad   = cantidad,
                     Importe    = importe.ToString("N2")
@@ -582,7 +583,7 @@ namespace VisorEmpresa
     public class PedidoDetalleFila
     {
         public int    Linea       { get; set; }
-        public string ArticuloId  { get; set; } = "";
+        public string Codigo      { get; set; } = "";
         public string Descripcion { get; set; } = "";
         public double Cantidad    { get; set; }
         public string Importe     { get; set; } = "";

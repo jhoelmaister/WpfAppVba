@@ -13,6 +13,11 @@
     <Product>Sistema de Gestión</Product>
     <AssemblyTitle>Sistema de Gestión</AssemblyTitle>
 
+    <!-- Solo se empaquetan los recursos localizados es/en de las librerías
+         (SqlClient, ClosedXML...). Sin esto se copian ~13 idiomas más que nadie
+         usa y engordan el instalador. -->
+    <SatelliteResourceLanguages>es;en</SatelliteResourceLanguages>
+
 
     <Version>1.0.6</Version>
   </PropertyGroup>

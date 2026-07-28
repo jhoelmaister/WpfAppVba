@@ -683,8 +683,8 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Lín."
                                                 Binding="{Binding Linea}"       Width="40"/>
-                            <DataGridTextColumn Header="Artículo"
-                                                Binding="{Binding ArticuloId}"  Width="70"/>
+                            <DataGridTextColumn Header="Código"
+                                                Binding="{Binding Codigo}"      Width="70"/>
                             <DataGridTextColumn Header="Descripción"
                                                 Binding="{Binding Descripcion}" Width="*"/>
                             <DataGridTextColumn Header="Cant."

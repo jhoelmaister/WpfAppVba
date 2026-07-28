@@ -161,6 +161,45 @@ A partir de ahí, todas las actualizaciones son in-app.
 4. Al terminar, el botón cambia a **✅ Reiniciar para actualizar**.
 5. El usuario reinicia **cuando quiera** y la app vuelve a abrir ya actualizada.
 
+## Problemas al instalar en otra PC
+
+### "Sistema de Gestión requires at least NNN MB disk space to be installed. There is only NNN MB available."
+
+No es un error de la app: el `Setup.exe` de Velopack comprueba el espacio libre
+**antes** de instalar y esa PC no lo tiene. La cuenta que hace Velopack es:
+
+```
+espacio exigido = tamaño del paquete comprimido + tamaño ya extraído + 50 MB de margen
+```
+
+y lo mide en la unidad donde va a instalar (por defecto `C:`, en
+`%LocalAppData%\SistemaGestion`).
+
+**Soluciones, en orden:**
+
+1. **Liberar espacio en la PC** (es la causa real). Conviene dejar **1 GB o más
+   libre**, no lo justo: cada actualización necesita espacio para descargar el
+   paquete nuevo y extraerlo mientras la versión vieja todavía está en disco.
+   Rápido: Papelera, `Configuración > Sistema > Almacenamiento > Archivos
+   temporales`, y `%LocalAppData%\Temp`.
+2. **Instalar en otra unidad** que sí tenga espacio (ej. un disco `D:`), desde
+   `cmd` en la carpeta del instalador:
+
+   ```
+   SistemaGestion-win-Setup.exe --installto D:\SistemaGestion
+   ```
+
+   (`--silent` además instala sin diálogos.)
+3. Si ya está instalada y el disco quedó corto, borrar paquetes viejos de
+   `%LocalAppData%\SistemaGestion\packages` (se vuelven a descargar si hicieran falta).
+
+**De parte del repo** ya se hizo lo que se podía para achicar el instalador:
+`-p:EnableCompressionInSingleFile=true` en el publish de los workflows y
+`<SatelliteResourceLanguages>es;en</SatelliteResourceLanguages>` en los `.csproj`.
+Baja bastante el requisito, pero **no reemplaza** liberar espacio: la app es
+self-contained (lleva el runtime de .NET adentro) y siempre va a pedir unos
+cuantos cientos de MB.
+
 ## Notas
 
 - En **desarrollo** (ejecutando desde Visual Studio o `bin\`), el botón nunca aparece:
