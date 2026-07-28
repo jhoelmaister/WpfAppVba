@@ -264,6 +264,51 @@ namespace SistemaGestion
             _hayCambios = true;
         }
 
+        // Abre la pestaña "Validar pedido": se elige un pedido, se tildan las
+        // líneas a facturar y al validar se reemplazan las líneas de esta factura
+        // por una línea por artículo tildado (más el pedido en `relacion`).
+        private void BtnValidarPedido_Click(object sender, RoutedEventArgs e)
+        {
+#if !VISOR
+            ValidarPedido.PedidoValidado = null;
+            ValidarPedido.ItemsValidados = null;
+            ValidarPedido.OpenAsDialog(Window.GetWindow(this)!, contexto: _tituloTab, llamador: this,
+                onCerrado: () =>
+                {
+                    string pedidoId = ValidarPedido.PedidoValidado ?? "";
+                    var validados   = ValidarPedido.ItemsValidados;
+                    if (pedidoId == "" || validados == null || validados.Count == 0) return;
+
+                    if (_items.Count > 0)
+                    {
+                        var res = MessageBox.Show(
+                            $"La factura ya tiene {_items.Count} línea(s) cargada(s).\n" +
+                            "Se van a reemplazar por las del pedido validado.\n\n¿Continuar?",
+                            "Consola", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                        if (res != MessageBoxResult.Yes) return;
+                    }
+
+                    _items.Clear();
+                    foreach (var v in validados)
+                        _items.Add(new FacturaItemFila
+                        {
+                            FacturaId   = "",           // línea nueva, todavía sin guardar
+                            Concepto    = v.Concepto,
+                            CategoriaId = string.IsNullOrEmpty(v.CategoriaId) ? PrimeraCategoriaId() : v.CategoriaId,
+                            Importe     = v.Importe
+                        });
+
+                    // Deja el pedido en el campo "Pedido" (se guarda en documentosF.relacion).
+                    Box_PedidoRelacionado.Text = Sql.DocumentosPObj.ObtenerItem("codigo", pedidoId)?.ToString() ?? "";
+                    ActualizarDescripcionPedido();
+
+                    _hayCambios = true;
+                    RefrescarGrid();
+                    ActualizarTotales();
+                });
+#endif
+        }
+
         private void Box_Numeros_PreviewTextInput(object sender, TextCompositionEventArgs e)
             => FuncionesComunes.ValidarSoloNumeros(sender, e, permitirDecimales: false);
 
