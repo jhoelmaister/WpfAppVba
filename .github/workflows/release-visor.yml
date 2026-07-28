@@ -58,13 +58,10 @@ jobs:
           "version=$v" >> $env:GITHUB_OUTPUT
 
       - name: Publish (self-contained single-file)
-        # EnableCompressionInSingleFile: ver comentario equivalente en release.yml
-        # (achica el instalador y el espacio en disco que exige el Setup.exe).
         run: >
           dotnet publish VisorEmpresa/VisorEmpresa.csproj
           -c Release -r win-x64 --self-contained true
           -p:PublishSingleFile=true -p:DebugType=none
-          -p:EnableCompressionInSingleFile=true
           -o ./publish
 
       - name: Descargar release anterior (para generar delta)

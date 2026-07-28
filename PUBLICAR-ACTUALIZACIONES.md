@@ -193,12 +193,11 @@ y lo mide en la unidad donde va a instalar (por defecto `C:`, en
 3. Si ya está instalada y el disco quedó corto, borrar paquetes viejos de
    `%LocalAppData%\SistemaGestion\packages` (se vuelven a descargar si hicieran falta).
 
-**De parte del repo** ya se hizo lo que se podía para achicar el instalador:
-`-p:EnableCompressionInSingleFile=true` en el publish de los workflows y
-`<SatelliteResourceLanguages>es;en</SatelliteResourceLanguages>` en los `.csproj`.
-Baja bastante el requisito, pero **no reemplaza** liberar espacio: la app es
-self-contained (lleva el runtime de .NET adentro) y siempre va a pedir unos
-cuantos cientos de MB.
+La app es self-contained (lleva el runtime de .NET adentro), así que el
+instalador siempre va a pedir unos cuantos cientos de MB. Se puede achicar
+(comprimir el single-file al publicar, recortar idiomas de las librerías), pero
+eso hay que probarlo en Windows antes de publicarlo y de todas formas no
+reemplaza tener disco libre.
 
 ## Notas
 

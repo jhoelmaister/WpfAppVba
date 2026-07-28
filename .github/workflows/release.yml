@@ -57,15 +57,10 @@ jobs:
           "version=$v" >> $env:GITHUB_OUTPUT
 
       - name: Publish (self-contained single-file)
-        # EnableCompressionInSingleFile: comprime el payload dentro del .exe. Achica
-        # el paquete y, sobre todo, el tamaño ya extraído en disco — que es lo que
-        # mira el chequeo de espacio del Setup.exe de Velopack (requiere
-        # comprimido + extraído + 50 MB libres en la unidad de instalación).
         run: >
           dotnet publish SistemaGestion/SistemaGestion.csproj
           -c Release -r win-x64 --self-contained true
           -p:PublishSingleFile=true -p:DebugType=none
-          -p:EnableCompressionInSingleFile=true
           -o ./publish
 
       - name: Descargar release anterior (para generar delta)
