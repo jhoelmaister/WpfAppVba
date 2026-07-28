@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="SistemaGestion.PedidosGeneral"
+﻿<UserControl x:Class="SistemaGestion.FacturasGeneral"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Background="{DynamicResource ThemeBgPrincipal}">
@@ -40,10 +40,6 @@
             <Setter Property="Background" Value="#3B82F6"/>
             <Setter Property="Foreground" Value="White"/>
         </Style>
-        <Style x:Key="BtnSuccess" TargetType="Button" BasedOn="{StaticResource BtnBase}">
-            <Setter Property="Background" Value="#10B981"/>
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
         <Style x:Key="BtnSecundario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
             <Setter Property="Background"    Value="{DynamicResource ThemeBtnSecBg}"/>
             <Setter Property="Foreground"    Value="{DynamicResource ThemeBtnSecFg}"/>
@@ -53,22 +49,6 @@
         <Style x:Key="BtnPeligro" TargetType="Button" BasedOn="{StaticResource BtnBase}">
             <Setter Property="Background" Value="#EF4444"/>
             <Setter Property="Foreground" Value="White"/>
-        </Style>
-        <Style x:Key="BtnIcono" TargetType="Button" BasedOn="{StaticResource BtnBase}">
-            <Setter Property="Width"         Value="30"/>
-            <Setter Property="Padding"       Value="0"/>
-            <Setter Property="Background"    Value="{DynamicResource ThemeBtnSecBg}"/>
-            <Setter Property="Foreground"    Value="{DynamicResource ThemeBtnSecFg}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush"   Value="{DynamicResource ThemeBorde}"/>
-        </Style>
-
-        <!-- ── Filtro radio pill ── -->
-        <Style x:Key="FilterRadio" TargetType="RadioButton">
-            <Setter Property="FontSize"                Value="11"/>
-            <Setter Property="Margin"                  Value="0,1"/>
-            <Setter Property="Foreground"              Value="{DynamicResource ThemeTextoSec}"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
 
         <!-- ── Tarjeta métrica ── -->
@@ -80,7 +60,15 @@
             <Setter Property="Padding"       Value="12,10"/>
         </Style>
 
-        <!-- ── Badge/chips de estado en DataGrid ── -->
+        <!-- ── Radio de filtro (sidebar) ── -->
+        <Style x:Key="FilterRadio" TargetType="RadioButton">
+            <Setter Property="FontSize"                Value="11"/>
+            <Setter Property="Margin"                  Value="0,1"/>
+            <Setter Property="Foreground"              Value="{DynamicResource ThemeTextoSec}"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <!-- ── Badge de estado (entrega) en DataGrid ── -->
         <DataTemplate x:Key="BadgeEstado">
             <Border Padding="6,2" CornerRadius="10" HorizontalAlignment="Left">
                 <Border.Style>
@@ -91,9 +79,6 @@
                             </DataTrigger>
                             <DataTrigger Binding="{Binding Estado}" Value="pendiente">
                                 <Setter Property="Background" Value="#FEE2E2"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Estado}" Value="pendiente parcial">
-                                <Setter Property="Background" Value="#FEF3C7"/>
                             </DataTrigger>
                         </Style.Triggers>
                         <Setter Property="Background" Value="{DynamicResource ThemeBgReadOnly}"/>
@@ -109,9 +94,6 @@
                                 <DataTrigger Binding="{Binding Estado}" Value="pendiente">
                                     <Setter Property="Foreground" Value="#991B1B"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding Estado}" Value="pendiente parcial">
-                                    <Setter Property="Foreground" Value="#92400E"/>
-                                </DataTrigger>
                             </Style.Triggers>
                             <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
                         </Style>
@@ -120,35 +102,36 @@
             </Border>
         </DataTemplate>
 
-        <DataTemplate x:Key="BadgeCuenta">
+        <!-- ── Badge de estado de cuenta (cobro) en DataGrid ── -->
+        <DataTemplate x:Key="BadgeEstadoC">
             <Border Padding="6,2" CornerRadius="10" HorizontalAlignment="Left">
                 <Border.Style>
                     <Style TargetType="Border">
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding Cuenta}" Value="cancelado">
+                            <DataTrigger Binding="{Binding EstadoC}" Value="cancelado">
                                 <Setter Property="Background" Value="#D1FAE5"/>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding Cuenta}" Value="pendiente">
+                            <DataTrigger Binding="{Binding EstadoC}" Value="pendiente">
                                 <Setter Property="Background" Value="#FEE2E2"/>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding Cuenta}" Value="pendiente parcial">
+                            <DataTrigger Binding="{Binding EstadoC}" Value="pendiente parcial">
                                 <Setter Property="Background" Value="#FEF3C7"/>
                             </DataTrigger>
                         </Style.Triggers>
                         <Setter Property="Background" Value="{DynamicResource ThemeBgReadOnly}"/>
                     </Style>
                 </Border.Style>
-                <TextBlock Text="{Binding Cuenta}" FontSize="11" FontWeight="SemiBold">
+                <TextBlock Text="{Binding EstadoC}" FontSize="11" FontWeight="SemiBold">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding Cuenta}" Value="cancelado">
+                                <DataTrigger Binding="{Binding EstadoC}" Value="cancelado">
                                     <Setter Property="Foreground" Value="#065F46"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding Cuenta}" Value="pendiente">
+                                <DataTrigger Binding="{Binding EstadoC}" Value="pendiente">
                                     <Setter Property="Foreground" Value="#991B1B"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding Cuenta}" Value="pendiente parcial">
+                                <DataTrigger Binding="{Binding EstadoC}" Value="pendiente parcial">
                                     <Setter Property="Foreground" Value="#92400E"/>
                                 </DataTrigger>
                             </Style.Triggers>
@@ -159,6 +142,7 @@
             </Border>
         </DataTemplate>
 
+        <!-- ── Badge de movimiento (venta/compra) en DataGrid ── -->
         <DataTemplate x:Key="BadgeMovimiento">
             <Border Padding="6,2" CornerRadius="4" HorizontalAlignment="Left">
                 <Border.Style>
@@ -237,22 +221,17 @@
                     <StackPanel Margin="12,0">
                         <RadioButton x:Name="BtnFiltroTodos"
                                      Content="Todos" IsChecked="True"
-                                     GroupName="EstadoP"
+                                     GroupName="EstadoF"
                                      Style="{StaticResource FilterRadio}"
                                      Checked="FiltroEstado_Checked"/>
                         <RadioButton x:Name="BtnFiltroPendiente"
                                      Content="Pendiente"
-                                     GroupName="EstadoP"
+                                     GroupName="EstadoF"
                                      Style="{StaticResource FilterRadio}"
                                      Checked="FiltroEstado_Checked"/>
                         <RadioButton x:Name="BtnFiltroEntregado"
                                      Content="Entregado"
-                                     GroupName="EstadoP"
-                                     Style="{StaticResource FilterRadio}"
-                                     Checked="FiltroEstado_Checked"/>
-                        <RadioButton x:Name="BtnFiltroEntregaParcial"
-                                     Content="Pendiente parcial"
-                                     GroupName="EstadoP"
+                                     GroupName="EstadoF"
                                      Style="{StaticResource FilterRadio}"
                                      Checked="FiltroEstado_Checked"/>
                     </StackPanel>
@@ -268,22 +247,22 @@
                     <StackPanel Margin="12,0">
                         <RadioButton x:Name="BtnCuentaTodos"
                                      Content="Todos" IsChecked="True"
-                                     GroupName="CuentaP"
+                                     GroupName="CuentaF"
                                      Style="{StaticResource FilterRadio}"
                                      Checked="FiltroCuenta_Checked"/>
                         <RadioButton x:Name="BtnCuentaPendiente"
                                      Content="Pendiente"
-                                     GroupName="CuentaP"
+                                     GroupName="CuentaF"
                                      Style="{StaticResource FilterRadio}"
                                      Checked="FiltroCuenta_Checked"/>
                         <RadioButton x:Name="BtnCuentaCancelado"
                                      Content="Cancelado"
-                                     GroupName="CuentaP"
+                                     GroupName="CuentaF"
                                      Style="{StaticResource FilterRadio}"
                                      Checked="FiltroCuenta_Checked"/>
                         <RadioButton x:Name="BtnCuentaParcial"
                                      Content="Pendiente parcial"
-                                     GroupName="CuentaP"
+                                     GroupName="CuentaF"
                                      Style="{StaticResource FilterRadio}"
                                      Checked="FiltroCuenta_Checked"/>
                     </StackPanel>
@@ -297,11 +276,11 @@
         <!-- ════════════════════════════════════════════════════════ -->
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>  <!-- Top bar: título + selector tipo -->
+                <RowDefinition Height="Auto"/>  <!-- Top bar -->
                 <RowDefinition Height="Auto"/>  <!-- Métricas -->
                 <RowDefinition Height="Auto"/>  <!-- Búsqueda + botones -->
                 <RowDefinition Height="*"/>     <!-- DataGrid principal -->
-                <RowDefinition Height="Auto"/>  <!-- Panel detalle artículos -->
+                <RowDefinition Height="Auto"/>  <!-- Panel detalle líneas -->
             </Grid.RowDefinitions>
 
             <!-- ── Top bar ── -->
@@ -317,7 +296,7 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock x:Name="LblTipoMovimiento"
+                        <TextBlock Text="Facturas"
                                    FontSize="15" FontWeight="SemiBold"
                                    Foreground="{DynamicResource ThemeTexto}"/>
                         <TextBlock x:Name="LblSubtitulo"
@@ -326,8 +305,7 @@
                                    Margin="0,2,0,0"/>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="1" Orientation="Horizontal"
-                                VerticalAlignment="Center" Margin="0,0,0,0">
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="Movimiento:"
                                    FontSize="12" VerticalAlignment="Center"
                                    Foreground="{DynamicResource ThemeTextoSec}"
@@ -353,15 +331,13 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="8"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="8"/>
-                    <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
                 <Border Grid.Column="0" Style="{StaticResource MetricCard}">
                     <StackPanel>
-                        <TextBlock Text="Total cantidad"
+                        <TextBlock Text="Total importe"
                                    FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
-                        <TextBlock x:Name="TxtTotalCantidad"
+                        <TextBlock x:Name="TxtTotalImporte"
                                    FontSize="20" FontWeight="SemiBold"
                                    Foreground="{DynamicResource ThemeTexto}"
                                    Margin="0,2,0,0"/>
@@ -369,17 +345,6 @@
                 </Border>
 
                 <Border Grid.Column="2" Style="{StaticResource MetricCard}">
-                    <StackPanel>
-                        <TextBlock Text="Total importe"
-                                   FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
-                        <TextBlock x:Name="TxtTotalImporte"
-                                   FontSize="18" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource ThemeTexto}"
-                                   Margin="0,2,0,0"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Grid.Column="4" Style="{StaticResource MetricCard}">
                     <StackPanel>
                         <TextBlock Text="Documentos"
                                    FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
@@ -390,22 +355,22 @@
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="6" Style="{StaticResource MetricCard}">
+                <Border Grid.Column="4" Style="{StaticResource MetricCard}">
                     <StackPanel>
-                        <TextBlock Text="Estado pendientes"
+                        <TextBlock Text="Estados pendientes"
                                    FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
-                        <TextBlock x:Name="TxtTotalPendientes"
+                        <TextBlock x:Name="TxtEstadosPendientes"
                                    FontSize="20" FontWeight="SemiBold"
                                    Foreground="#EF4444"
                                    Margin="0,2,0,0"/>
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="8" Style="{StaticResource MetricCard}">
+                <Border Grid.Column="6" Style="{StaticResource MetricCard}">
                     <StackPanel>
-                        <TextBlock Text="Cuenta pendientes"
+                        <TextBlock Text="Cuentas pendientes"
                                    FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
-                        <TextBlock x:Name="TxtCuentaPendientes"
+                        <TextBlock x:Name="TxtCuentasPendientes"
                                    FontSize="20" FontWeight="SemiBold"
                                    Foreground="#F59E0B"
                                    Margin="0,2,0,0"/>
@@ -460,16 +425,11 @@
 
                     <!-- Botones de acción -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <Button x:Name="BtnNuevoRapido"
-                                Content="Nuevo Pedido Rápido"
+                        <Button x:Name="BtnNuevo"
+                                Content="Nueva Factura"
                                 Style="{StaticResource BtnPrimario}"
                                 Margin="0,0,6,0"
-                                Click="BtnNuevoRapido_Click"/>
-                        <Button x:Name="BtnNuevoNormal"
-                                Content="Nuevo Pedido Normal"
-                                Style="{StaticResource BtnSuccess}"
-                                Margin="0,0,6,0"
-                                Click="BtnNuevoNormal_Click"/>
+                                Click="BtnNuevo_Click"/>
                         <Rectangle Width="1" Fill="{DynamicResource ThemeBorde}"
                                    VerticalAlignment="Stretch" Margin="2,4,8,4"/>
                         <Button x:Name="BtnEditar"
@@ -541,12 +501,8 @@
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
 
-                    <DataGridTextColumn Header="Fecha"
-                                        Binding="{Binding FechaStr}"
-                                        Width="148"/>
-
                     <!-- Columna Movimiento con badge -->
-                    <DataGridTemplateColumn Header="Movimiento" Width="80">
+                    <DataGridTemplateColumn Header="Movimiento" Width="90">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <ContentPresenter Content="{Binding}"
@@ -556,12 +512,25 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
+                    <DataGridTextColumn Header="Fecha"
+                                        Binding="{Binding FechaStr}"
+                                        Width="148"/>
+
                     <DataGridTextColumn Header="Cliente / Proveedor"
                                         Binding="{Binding TerceroDesc}"
                                         Width="*"/>
 
-                    <!-- Columna Estado con badge -->
-                    <DataGridTemplateColumn Header="Estado" Width="120">
+                    <DataGridTextColumn Header="Referencia"
+                                        Binding="{Binding Referencia}"
+                                        Width="140"/>
+
+                    <!-- Pedido de origen (documentosF.relacion → documentosP) -->
+                    <DataGridTextColumn Header="Pedido"
+                                        Binding="{Binding PedidoCodigo}"
+                                        Width="100"/>
+
+                    <!-- Columna Estado (entrega) con badge -->
+                    <DataGridTemplateColumn Header="Estado" Width="100">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <ContentPresenter Content="{Binding}"
@@ -571,29 +540,25 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- Columna Cuenta con badge -->
-                    <DataGridTemplateColumn Header="Cuenta" Width="110">
+                    <!-- Columna Estado de cuenta (cobro) con badge -->
+                    <DataGridTemplateColumn Header="Cuenta" Width="130">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <ContentPresenter Content="{Binding}"
-                                                  ContentTemplate="{StaticResource BadgeCuenta}"
+                                                  ContentTemplate="{StaticResource BadgeEstadoC}"
                                                   Margin="4,0" VerticalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTextColumn Header="Cant."
-                                        Binding="{Binding Cantidad, StringFormat=#\,##0.##}"
-                                        Width="70"
-                                        ElementStyle="{StaticResource CeldaNumero}"/>
                     <DataGridTextColumn Header="Importe"
-                                        Binding="{Binding Importe, StringFormat=#\,##0.##}"
-                                        Width="86"
+                                        Binding="{Binding ImporteTotal, StringFormat=#\,##0.00}"
+                                        Width="100"
                                         ElementStyle="{StaticResource CeldaNumero}"/>
                 </DataGrid.Columns>
             </DataGrid>
 
-            <!-- ── Panel detalle artículos (siempre visible) ── -->
+            <!-- ── Panel detalle líneas (siempre visible) ── -->
             <Border x:Name="PanelDetalle" Grid.Row="4"
                     Background="{DynamicResource ThemeBgSurface}"
                     BorderBrush="#7C3AED"
@@ -613,7 +578,7 @@
                                        FontSize="12" Foreground="White"
                                        VerticalAlignment="Center" Margin="0,0,6,0"/>
                             <TextBlock x:Name="LblDetalleHeader"
-                                       Text="Artículos del documento"
+                                       Text="Líneas del documento"
                                        FontSize="12" FontWeight="SemiBold"
                                        Foreground="White"
                                        VerticalAlignment="Center"/>
@@ -644,17 +609,13 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Lín."
                                                 Binding="{Binding Linea}"       Width="40"/>
-                            <DataGridTextColumn Header="Código"
-                                                Binding="{Binding Codigo}"      Width="70"/>
-                            <DataGridTextColumn Header="Descripción"
-                                                Binding="{Binding Descripcion}" Width="*"/>
-                            <DataGridTextColumn Header="Cant."
-                                                Binding="{Binding Cantidad, StringFormat=#\,##0.##}"
-                                                Width="60"
-                                                ElementStyle="{StaticResource CeldaNumero}"/>
+                            <DataGridTextColumn Header="Concepto"
+                                                Binding="{Binding Concepto}"    Width="*"/>
+                            <DataGridTextColumn Header="Categoría"
+                                                Binding="{Binding Categoria}"   Width="140"/>
                             <DataGridTextColumn Header="Importe"
-                                                Binding="{Binding Importe}"
-                                                Width="80"
+                                                Binding="{Binding Importe, StringFormat=#\,##0.00}"
+                                                Width="90"
                                                 ElementStyle="{StaticResource CeldaNumero}"/>
                         </DataGrid.Columns>
                     </DataGrid>

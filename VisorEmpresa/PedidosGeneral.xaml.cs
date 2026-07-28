@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -223,7 +223,6 @@ namespace VisorEmpresa
 
             string filtroEstado  = ObtenerFiltroEstado();
             string filtroCuenta  = ObtenerFiltroCuenta();
-            string filtroFactura = ObtenerFiltroFactura();
             string busqueda  = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
             string mesFiltro = _modoFiltro == "filtros"  ? _mesActivo : "";
             string tipoMov = ObtenerFiltroTipo();
@@ -268,7 +267,6 @@ namespace VisorEmpresa
 
                 // ── Usar estadoC (campo correcto en VBA) para cuenta ──────────
                 string estadoC = (Sql.DocumentosPObj.ObtenerItem("estadoC", id)?.ToString() ?? "").ToLower();
-                string estadoA = (Sql.DocumentosPObj.ObtenerItem("estadoA", id)?.ToString() ?? "sin factura").ToLower();
 
                 // Filtro por estado
                 if (!string.IsNullOrEmpty(filtroEstado) &&
@@ -278,11 +276,6 @@ namespace VisorEmpresa
                 // Filtro por cuenta (estadoC)
                 if (!string.IsNullOrEmpty(filtroCuenta) &&
                     !string.Equals(estadoC, filtroCuenta, StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                // Filtro por factura (estadoA)
-                if (!string.IsNullOrEmpty(filtroFactura) &&
-                    !string.Equals(estadoA, filtroFactura, StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 // Filtro por búsqueda
@@ -304,7 +297,6 @@ namespace VisorEmpresa
                     TerceroDesc  = terceroDesc,
                     Estado       = estado,
                     Cuenta       = estadoC,
-                    Factura      = estadoA,
                     Cantidad     = cant,
                     Importe      = importe
                 });
@@ -352,13 +344,6 @@ namespace VisorEmpresa
             if (BtnCuentaPendiente?.IsChecked == true) return "pendiente";
             if (BtnCuentaCancelado?.IsChecked == true) return "cancelado";
             if (BtnCuentaParcial?.IsChecked   == true) return "pendiente parcial";
-            return "";
-        }
-
-        private string ObtenerFiltroFactura()
-        {
-            if (BtnFacturaConFactura?.IsChecked == true) return "con factura";
-            if (BtnFacturaSinFactura?.IsChecked == true) return "sin factura";
             return "";
         }
 
@@ -486,9 +471,6 @@ namespace VisorEmpresa
         private void FiltroCuenta_Checked(object sender, RoutedEventArgs e)
             => CargarPedidos();
 
-        private void FiltroFactura_Checked(object sender, RoutedEventArgs e)
-            => CargarPedidos();
-
         private void CboTipoMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
             => CargarPedidos();
 
@@ -574,7 +556,6 @@ namespace VisorEmpresa
         public string TerceroDesc  { get; set; } = "";
         public string Estado       { get; set; } = "";
         public string Cuenta       { get; set; } = "";
-        public string Factura      { get; set; } = "";
         public double Cantidad     { get; set; }
         public double Importe      { get; set; }
     }

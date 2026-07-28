@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -28,19 +28,16 @@ namespace VisorEmpresa
         private bool _cambioPedido     = false;
         private bool _cambioTrasaccion = false;
         private bool _cambioEntrega    = false;
-        private bool _cambioFactura    = false;
 
         private List<PedidoItemFila>     _pedidos       = new();
         private List<TrasaccionItemFila> _trasacciones  = new();
         private List<EntregaItemFila>    _entregas      = new();
-        private List<FacturaItemFila>    _facturas      = new();
 
         // IDs de las líneas existentes al abrir para editar; sirven para detectar
         // bajas (lo que estaba y ya no está) y aplicar un guardado diferencial.
         private HashSet<string> _pedidosOrig      = new();
         private HashSet<string> _trasaccionesOrig = new();
         private HashSet<string> _entregasOrig     = new();
-        private HashSet<string> _facturasOrig     = new();
 
         private readonly HashSet<string> _articulosAlertados = new();
         private string                   _observaciones = "";
@@ -50,37 +47,8 @@ namespace VisorEmpresa
 
         // Listas estáticas para ComboBox dentro de DataGrid
         public static List<string> FormasTrasaccion = new() { "cheque", "efectivo", "transferencia", "pago Qr" };
-        public static List<string> EstadosFactura    = new() { "con deuda", "sin deuda" };
 
-        // ─── Categoría: lista para el ComboBox del GridFacturas ───────────────
-        public static List<CategoriaComboItem> CategoriasCombo
-        {
-            get
-            {
-                var lista = new List<CategoriaComboItem>();
-                int uf = Sql.CategoriasObj.ContarFilas;
-                for (int i = 1; i <= uf; i++)
-                {
-                    var idObj = Sql.CategoriasObj.Mover(i);
-                    if (idObj == null) continue;
-                    string id = idObj.ToString()!;
-                    lista.Add(new CategoriaComboItem
-                    {
-                        Id          = id,
-                        Descripcion = Sql.CategoriasObj.ObtenerItem("descripcion", id)?.ToString() ?? id
-                    });
-                }
-                return lista;
-            }
-        }
-
-        private static string PrimeraCategoriaId()
-        {
-            var idObj = Sql.CategoriasObj.Mover(1);
-            return idObj?.ToString() ?? "";
-        }
-
-        private bool HayCambios => _cambioDocumento || _cambioPedido || _cambioTrasaccion || _cambioEntrega || _cambioFactura;
+        private bool HayCambios => _cambioDocumento || _cambioPedido || _cambioTrasaccion || _cambioEntrega;
 
         private bool _iniciado = false;
         private readonly string _tituloTab;
@@ -135,7 +103,6 @@ namespace VisorEmpresa
             _cambioPedido    = false;
             _cambioTrasaccion= false;
             _cambioEntrega   = false;
-            _cambioFactura   = false;
 
             AplicarModoSoloLectura();
         }
@@ -150,11 +117,9 @@ namespace VisorEmpresa
             PanelBotonesArticulos.IsEnabled     = false;
             PanelBotonesTrasacciones.IsEnabled  = false;
             PanelBotonesEntregas.IsEnabled      = false;
-            PanelBotonesFacturas.IsEnabled      = false;
             GridItems.IsReadOnly               = true;
             GridTrasacciones.IsReadOnly         = true;
             GridEntregas.IsReadOnly             = true;
-            GridFacturas.IsReadOnly            = true;
         }
 
         // ─── Modo nuevo ───────────────────────────────────────────────────────
@@ -186,15 +151,12 @@ namespace VisorEmpresa
             _pedidos.Clear();
             _trasacciones.Clear();
             _entregas.Clear();
-            _facturas.Clear();
             _pedidosOrig.Clear();
             _trasaccionesOrig.Clear();
             _entregasOrig.Clear();
-            _facturasOrig.Clear();
             RefrescarGridPedidos();
             RefrescarGridTrasacciones();
             RefrescarGridEntregas();
-            RefrescarGridFacturas();
             ActualizarTotales();
             ActualizarBadges();
         }
@@ -317,38 +279,14 @@ namespace VisorEmpresa
                 });
             }
 
-            // Cargar facturas
-            _facturas.Clear();
-            int lineaF = 1;
-            int ufF = Sql.FacturasObj.ContarFilas;
-            for (int i = 1; i <= ufF; i++)
-            {
-                var idObj = Sql.FacturasObj.Mover(i);
-                if (idObj == null) continue;
-                string id = idObj.ToString()!;
-                if (Sql.FacturasObj.ObtenerItem("documentoP", id)?.ToString() != _idEditar) continue;
-
-                _facturas.Add(new FacturaItemFila
-                {
-                    FacturaId   = id,
-                    Linea       = lineaF++,
-                    Concepto    = Sql.FacturasObj.ObtenerItem("concepto",  id)?.ToString() ?? "",
-                    CategoriaId = Sql.FacturasObj.ObtenerItem("categoria", id)?.ToString() ?? "",
-                    Estado      = Sql.FacturasObj.ObtenerItem("estado",    id)?.ToString() ?? "con deuda",
-                    Importe     = Convert.ToDouble(Sql.FacturasObj.ObtenerItem("importe", id) ?? 0)
-                });
-            }
-
             // Snapshot de los ids existentes para el guardado diferencial
             _pedidosOrig      = new HashSet<string>(_pedidos.Select(p => p.PedidoId));
             _trasaccionesOrig = new HashSet<string>(_trasacciones.Select(t => t.TrasaccionId));
             _entregasOrig     = new HashSet<string>(_entregas.Select(e => e.EntregaId));
-            _facturasOrig     = new HashSet<string>(_facturas.Select(f => f.FacturaId));
 
             RefrescarGridPedidos();
             RefrescarGridTrasacciones();
             RefrescarGridEntregas();
-            RefrescarGridFacturas();
             ActualizarTotales();
             ActualizarBadges();
         }
@@ -512,15 +450,6 @@ namespace VisorEmpresa
             if (sel != null && _entregas.Contains(sel)) GridEntregas.SelectedItem = sel;
         }
 
-        private void RefrescarGridFacturas()
-        {
-            for (int i = 0; i < _facturas.Count; i++) _facturas[i].Linea = i + 1;
-            var sel = GridFacturas.SelectedItem as FacturaItemFila;
-            GridFacturas.ItemsSource = null;
-            GridFacturas.ItemsSource = _facturas;
-            if (sel != null && _facturas.Contains(sel)) GridFacturas.SelectedItem = sel;
-        }
-
         // ─── Totales ──────────────────────────────────────────────────────────
         private void ActualizarTotales()
         {
@@ -528,7 +457,6 @@ namespace VisorEmpresa
             CargarTotalesEntregas();
             CargarTotalesDivisas();
             CargarEstadosCuenta();
-            CargarEstadoFactura();
             CargarTotalesCategoria();
             CargarTotalesCategoriaEntregas();
             if (AppState.TipoPedido.ToLower() == "normal")
@@ -575,14 +503,8 @@ namespace VisorEmpresa
             else
                 totalCuenta = _trasacciones.Sum(t => t.Importe);
 
-            // Facturas "con deuda" son cargos adicionales al pedido que todavía no
-            // se cobraron — se suman al saldo pendiente. Las "sin deuda" (p. ej.
-            // las que genera "Facturar pedido") no lo afectan.
-            double totalFacturado = _facturas.Sum(f => f.Importe);
-            double facturasConDeuda = _facturas.Where(f => f.Estado == "con deuda").Sum(f => f.Importe);
-            double saldo = totalImporte - totalCuenta + facturasConDeuda;
+            double saldo = totalImporte - totalCuenta;
 
-            TxtTotalFacturado.Text = totalFacturado.ToString("N2");
             TxtTotalImporte.Text   = totalImporte.ToString("N2");
             TxtTotalCuenta.Text    = totalCuenta.ToString("N2");
             TxtTotalSaldo.Text     = saldo.ToString("N2");
@@ -602,18 +524,6 @@ namespace VisorEmpresa
             bool prev = _cargando;
             _cargando = true;
             Box_Cuenta.Text = nuevaCuenta;
-            _cargando = prev;
-            ActualizarBadges();
-        }
-
-        // Estado de factura: se deduce directamente de si el importe total
-        // facturado es mayor que cero (no alcanza con tener líneas cargadas
-        // si su importe es 0, ni depende del campo "estado" de cada línea).
-        private void CargarEstadoFactura()
-        {
-            bool prev = _cargando;
-            _cargando = true;
-            Box_EstadoA.Text = _facturas.Sum(f => f.Importe) > 0 ? "con factura" : "sin factura";
             _cargando = prev;
             ActualizarBadges();
         }
@@ -648,18 +558,6 @@ namespace VisorEmpresa
                 _                   => (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
                                         new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)),
                                         "Cta: Pendiente")
-            };
-
-            // Badge Factura
-            string estadoA = Box_EstadoA.Text.ToLower();
-            (BadgeFactura.Background, TxtBadgeFactura.Foreground, TxtBadgeFactura.Text) = estadoA switch
-            {
-                "con factura" => (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
-                                  new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)),
-                                  "Con factura"),
-                _             => (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
-                                  new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)),
-                                  "Sin factura")
             };
 
             // Ícono y color del encabezado según tipo de movimiento
@@ -1548,169 +1446,6 @@ namespace VisorEmpresa
             CargarEstados();
         }
 
-        // ─── CellEditEnding – Facturas ────────────────────────────────────────
-        private void GridFacturas_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
-        {
-            if (e.EditAction != DataGridEditAction.Commit) return;
-            if (e.Row.Item is not FacturaItemFila fila) return;
-
-            string col = e.Column.Header?.ToString() ?? "";
-
-            if (col == "Concepto" && e.EditingElement is TextBox tbConcepto)
-            {
-                fila.Concepto = tbConcepto.Text;
-            }
-            else if (col == "Importe" && e.EditingElement is TextBox tbImp)
-            {
-                if (double.TryParse(tbImp.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double importe))
-                    fila.Importe = importe;
-            }
-
-            _cambioFactura = true;
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                RefrescarGridFacturas();
-                CargarTotalesDivisas();
-                CargarEstadosCuenta();
-                GridFocusHelper.EnfocarCeldaSeleccionada(GridFacturas);
-            }), System.Windows.Threading.DispatcherPriority.Background);
-        }
-
-        private void GridFacturas_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
-        {
-            GridFocusHelper.SeleccionarTodoEnEdicion(e.EditingElement);
-            if (e.Column.Header?.ToString() == "Importe" && e.EditingElement is TextBox tb)
-                FuncionesComunes.RestringirACantidad(tb);
-        }
-
-        // ─── Botones Facturas ─────────────────────────────────────────────────
-        private void BtnNuevaLineaFactura_Click(object sender, RoutedEventArgs e)
-        {
-            _facturas.Add(new FacturaItemFila { FacturaId = "", Concepto = "", CategoriaId = PrimeraCategoriaId(), Estado = "con deuda", Importe = 0 });
-            _cambioFactura = true;
-            RefrescarGridFacturas();
-            CargarTotalesDivisas();
-            CargarEstadosCuenta();
-            CargarEstadoFactura();
-            int lastIdx = GridFacturas.Items.Count - 1;
-            if (lastIdx >= 0)
-            {
-                GridFacturas.SelectedIndex = lastIdx;
-                GridFacturas.ScrollIntoView(GridFacturas.SelectedItem);
-            }
-            GridFocusHelper.EnfocarCeldaSeleccionada(GridFacturas);
-        }
-
-        private void BtnInsertarFactura_Click(object sender, RoutedEventArgs e)
-        {
-            int idx = GridFacturas.SelectedItem is FacturaItemFila sel
-                      ? _facturas.IndexOf(sel) : _facturas.Count;
-            if (idx < 0) idx = _facturas.Count;
-
-            _facturas.Insert(idx, new FacturaItemFila { FacturaId = "", Concepto = "", CategoriaId = PrimeraCategoriaId(), Estado = "con deuda", Importe = 0 });
-            _cambioFactura = true;
-            RefrescarGridFacturas();
-            CargarTotalesDivisas();
-            CargarEstadosCuenta();
-            CargarEstadoFactura();
-            if (idx < GridFacturas.Items.Count)
-            {
-                GridFacturas.SelectedIndex = idx;
-                GridFacturas.ScrollIntoView(GridFacturas.SelectedItem);
-            }
-            GridFocusHelper.EnfocarCeldaSeleccionada(GridFacturas);
-        }
-
-        private void BtnDuplicarLineaFactura_Click(object sender, RoutedEventArgs e)
-        {
-            if (GridFacturas.SelectedItem is not FacturaItemFila fila) return;
-
-            var copia = new FacturaItemFila
-            {
-                FacturaId = "", Concepto = fila.Concepto, CategoriaId = fila.CategoriaId,
-                Estado = fila.Estado, Importe = fila.Importe
-            };
-            _facturas.Add(copia);
-            _cambioFactura = true;
-            RefrescarGridFacturas();
-            CargarTotalesDivisas();
-            CargarEstadosCuenta();
-            CargarEstadoFactura();
-            GridFacturas.SelectedItem = copia;
-            GridFacturas.ScrollIntoView(copia);
-            GridFocusHelper.EnfocarCeldaSeleccionada(GridFacturas);
-        }
-
-        private void BtnEliminarLineaFactura_Click(object sender, RoutedEventArgs e)
-        {
-            if (GridFacturas.SelectedItem is not FacturaItemFila fila) return;
-
-            var res = MessageBox.Show("¿Eliminar esta línea?", "Consola",
-                MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-            if (res == MessageBoxResult.Yes)
-            {
-                int idx = _facturas.IndexOf(fila);
-                _facturas.Remove(fila);
-                _cambioFactura = true;
-                RefrescarGridFacturas();
-                CargarTotalesDivisas();
-                CargarEstadosCuenta();
-                CargarEstadoFactura();
-                if (_facturas.Count > 0)
-                {
-                    var siguiente = _facturas[Math.Min(idx, _facturas.Count - 1)];
-                    GridFacturas.SelectedItem = siguiente;
-                    GridFacturas.ScrollIntoView(siguiente);
-                }
-                GridFocusHelper.EnfocarCeldaSeleccionada(GridFacturas);
-            }
-        }
-
-        // Genera líneas de factura nuevas a partir de las líneas de artículos
-        // del pedido, agrupadas por categoría (una línea nueva por categoría,
-        // importe = suma de los artículos de esa categoría), estado "sin
-        // deuda". No toca ni reemplaza las líneas ya existentes en la grilla
-        // (ni "con deuda" ni "sin deuda" de una pasada anterior) — cada click
-        // agrega líneas adicionales.
-        private void BtnFacturarPedido_Click(object sender, RoutedEventArgs e)
-        {
-            // Misma lógica que "Registrar entregas": agrupa lo pedido por
-            // categoría, agrupa lo ya facturado por categoría, y solo crea una
-            // línea nueva por la diferencia pendiente — nunca edita ni duplica
-            // lo que ya está facturado (con deuda o sin deuda).
-            var importePedido = _pedidos
-                .Where(p => !string.IsNullOrEmpty(p.ArticuloId))
-                .GroupBy(p => Sql.ArticulosObj.ObtenerItem("categoria", p.ArticuloId)?.ToString() ?? "")
-                .Where(g => !string.IsNullOrEmpty(g.Key))
-                .ToDictionary(g => g.Key, g => g.Sum(x => x.Importe));
-
-            var importeFacturado = _facturas
-                .Where(f => !string.IsNullOrEmpty(f.CategoriaId))
-                .GroupBy(f => f.CategoriaId)
-                .ToDictionary(g => g.Key, g => g.Sum(x => x.Importe));
-
-            foreach (var kv in importePedido)
-            {
-                double facturado = importeFacturado.TryGetValue(kv.Key, out double val) ? val : 0;
-                double pendiente = kv.Value - facturado;
-                if (pendiente <= 0) continue;
-
-                string catDesc = Sql.CategoriasObj.ObtenerItem("descripcion", kv.Key)?.ToString() ?? kv.Key;
-                _facturas.Add(new FacturaItemFila
-                {
-                    FacturaId = "", Concepto = catDesc, CategoriaId = kv.Key,
-                    Estado = "sin deuda", Importe = pendiente
-                });
-            }
-
-            _cambioFactura = true;
-            RefrescarGridFacturas();
-            CargarTotalesDivisas();
-            CargarEstadosCuenta();
-            CargarEstadoFactura();
-        }
-
         // ─── Guardar ──────────────────────────────────────────────────────────
         private bool SinPestañasRelacionadas()
         {
@@ -1738,7 +1473,6 @@ namespace VisorEmpresa
                 DateTime fechaFinal = CombinarFechaHora(Box_Fecha.SelectedDate ?? DateTime.Today, Box_Hora.Text);
                 string estado  = Box_Estado.Text;
                 string cuenta  = Box_Cuenta.Text;
-                string estadoA = Box_EstadoA.Text;
                 string tipoPed = AppState.TipoPedido.ToLower();
 
                 Sql.DocumentosPObj.Nuevo(id);
@@ -1751,7 +1485,6 @@ namespace VisorEmpresa
                 Sql.DocumentosPObj.EstablecerItem("referencia",  id, Box_Referencia.Text.Trim());
                 Sql.DocumentosPObj.EstablecerItem("observacion", id, _observaciones);
                 Sql.DocumentosPObj.EstablecerItem("estadoC",     id, cuenta);
-                Sql.DocumentosPObj.EstablecerItem("estadoA",     id, estadoA);
                 Sql.DocumentosPObj.EstablecerItem("tipo",        id, tipoPed);
                 Sql.DocumentosPObj.EstablecerItem("emision",     id, DateTime.Now);
                 Sql.DocumentosPObj.EstablecerItem("edicion",     id, DateTime.Now);
@@ -1761,11 +1494,10 @@ namespace VisorEmpresa
                 GuardarLineasPedido(id);
                 GuardarLineasTrasaccion(id);
                 GuardarLineasEntrega(id);
-                GuardarLineasFactura(id);
                 OrdenarTablas();
 
                 MessageBox.Show("Guardado exitoso.", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
-                _cambioDocumento = _cambioPedido = _cambioTrasaccion = _cambioEntrega = _cambioFactura = false;
+                _cambioDocumento = _cambioPedido = _cambioTrasaccion = _cambioEntrega = false;
                 DocumentoCreadoId = id;
                 return true;
             }
@@ -1781,7 +1513,6 @@ namespace VisorEmpresa
                 DateTime fechaFinal = CombinarFechaHora(Box_Fecha.SelectedDate ?? DateTime.Today, Box_Hora.Text);
                 string estado  = Box_Estado.Text;
                 string cuenta  = Box_Cuenta.Text;
-                string estadoA = Box_EstadoA.Text;
 
                 Sql.DocumentosPObj.EstablecerItem("tercero",     docP, ResolverTerceroId());
                 Sql.DocumentosPObj.EstablecerItem("fecha",       docP, fechaFinal);
@@ -1789,7 +1520,6 @@ namespace VisorEmpresa
                 Sql.DocumentosPObj.EstablecerItem("referencia",  docP, Box_Referencia.Text.Trim());
                 Sql.DocumentosPObj.EstablecerItem("observacion", docP, _observaciones);
                 Sql.DocumentosPObj.EstablecerItem("estadoC",     docP, cuenta);
-                Sql.DocumentosPObj.EstablecerItem("estadoA",     docP, estadoA);
                 Sql.DocumentosPObj.EstablecerItem("edicion",     docP, DateTime.Now);
                 Sql.DocumentosPObj.EstablecerItem("usuarioE",    docP, AppState.UsuarioActivo);
 
@@ -1797,11 +1527,10 @@ namespace VisorEmpresa
                 if (_cambioPedido)     GuardarLineasPedido(docP);
                 if (_cambioTrasaccion) GuardarLineasTrasaccion(docP);
                 if (_cambioEntrega)    GuardarLineasEntrega(docP);
-                if (_cambioFactura)    GuardarLineasFactura(docP);
                 OrdenarTablas();
 
                 MessageBox.Show("Guardado exitoso.", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
-                _cambioDocumento = _cambioPedido = _cambioTrasaccion = _cambioEntrega = _cambioFactura = false;
+                _cambioDocumento = _cambioPedido = _cambioTrasaccion = _cambioEntrega = false;
                 return true;
             }
             catch (Exception ex)
@@ -1932,53 +1661,12 @@ namespace VisorEmpresa
             _entregasOrig = new HashSet<string>(_entregas.Select(e => e.EntregaId));
         }
 
-        // Guardado diferencial de facturas (concepto/categoría/forma/importe)
-        // ligadas directamente a este documentoP.
-        private void GuardarLineasFactura(string docP)
-        {
-            var vigentes = new HashSet<string>(
-                _facturas.Where(f => !string.IsNullOrEmpty(f.FacturaId)).Select(f => f.FacturaId));
-
-            var reservados = Sql.FacturasObj.IndicesNoNormales("documentoP", docP);
-            foreach (var idOrig in _facturasOrig)
-                if (!vigentes.Contains(idOrig))
-                {
-                    var ix = Sql.FacturasObj.ObtenerItem("indice", idOrig);
-                    if (ix != null && int.TryParse(ix.ToString(), out int n)) reservados.Add(n);
-                    Sql.FacturasObj.Eliminar(idOrig);
-                }
-
-            int next = 1;
-            foreach (var item in _facturas)
-            {
-                string id;
-                if (string.IsNullOrEmpty(item.FacturaId))
-                {
-                    id = Guid.NewGuid().ToString();
-                    Sql.FacturasObj.Nuevo(id);
-                    Sql.FacturasObj.EstablecerItem("documentoP", id, docP);
-                    item.FacturaId = id;
-                }
-                else id = item.FacturaId;
-
-                while (reservados.Contains(next)) next++;
-                Sql.FacturasObj.EstablecerItem("indice",    id, next);
-                next++;
-                Sql.FacturasObj.EstablecerItem("concepto",  id, item.Concepto);
-                Sql.FacturasObj.EstablecerItem("categoria", id, item.CategoriaId);
-                Sql.FacturasObj.EstablecerItem("estado",    id, item.Estado);
-                Sql.FacturasObj.EstablecerItem("importe",   id, item.Importe);
-            }
-            _facturasOrig = new HashSet<string>(_facturas.Select(f => f.FacturaId));
-        }
-
         private static void OrdenarTablas()
         {
             Sql.DocumentosPObj.OrdenarData(("fecha", false));
             Sql.PedidosObj.OrdenarData(("documentoP", false), ("indice", false));
             Sql.TrasaccionesObj.OrdenarData(("documentoP", false), ("indice", false));
             Sql.EntregasObj.OrdenarData(("documentoP", false), ("indice", false));
-            Sql.FacturasObj.OrdenarData(("documentoP", false), ("indice", false));
         }
 
         // ─── Botones Guardar / Cancelar ───────────────────────────────────────
@@ -1991,7 +1679,7 @@ namespace VisorEmpresa
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
         {
             if (!SinPestañasRelacionadas()) return;
-            _cambioDocumento = _cambioPedido = _cambioTrasaccion = _cambioEntrega = _cambioFactura = false;
+            _cambioDocumento = _cambioPedido = _cambioTrasaccion = _cambioEntrega = false;
             Cerrando?.Invoke();
         }
 
@@ -2001,7 +1689,6 @@ namespace VisorEmpresa
             GridItems.CommitEdit(DataGridEditingUnit.Row, true);
             GridTrasacciones.CommitEdit(DataGridEditingUnit.Row, true);
             GridEntregas.CommitEdit(DataGridEditingUnit.Row, true);
-            GridFacturas.CommitEdit(DataGridEditingUnit.Row, true);
         }
 
         // Llamado por el botón X del overlay para verificar cambios antes de cerrar
@@ -2086,28 +1773,5 @@ namespace VisorEmpresa
     {
         public string Categoria { get; set; } = "";
         public string Cantidad  { get; set; } = "";
-    }
-
-    // ─── Modelo de ítem (facturas ligadas directamente al pedido) ─────────────
-    public class FacturaItemFila
-    {
-        public string FacturaId   { get; set; } = ""; // vacío = nuevo sin guardar
-        public int    Linea       { get; set; }
-        public string Concepto    { get; set; } = "";
-        public string CategoriaId { get; set; } = "";
-        // Se resuelve en vivo contra la caché de Categorias (no se guarda en la fila).
-        public string CategoriaDescripcion =>
-            string.IsNullOrEmpty(CategoriaId)
-                ? ""
-                : SqlData.Instance.CategoriasObj.ObtenerItem("descripcion", CategoriaId)?.ToString() ?? "";
-        public string Estado  { get; set; } = "con deuda";
-        public double Importe { get; set; }
-    }
-
-    // ─── Ítem del ComboBox de categoría en GridFacturas ────────────────────────
-    public class CategoriaComboItem
-    {
-        public string Id          { get; set; } = "";
-        public string Descripcion { get; set; } = "";
     }
 }

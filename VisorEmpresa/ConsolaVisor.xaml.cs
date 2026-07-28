@@ -21,8 +21,7 @@ namespace SistemaGestion
     /// compilarla aquí (la consola original NO se vincula) funcionan sin cambios.
     ///
     /// Secciones: Dashboard + documentos en solo-visualización (Pedidos,
-    /// Traspasos, Correcciones (con facturas embebidas en sus pedidos) —
-    /// duplicados fieles de los controles
+    /// Traspasos, Correcciones, Facturas — duplicados fieles de los controles
     /// de la app principal, con un combo de Sucursal propio en vez de
     /// AppState.SucursalActiva) + catálogos con edición completa (Precios,
     /// Empresas, Sucursales, Usuarios — formularios vinculados de la app
@@ -59,6 +58,7 @@ namespace SistemaGestion
         private PedidosGeneral    _panelPedidos      = new();
         private TraspasosGeneral  _panelTraspasos    = new();
         private CorreccionesGeneral _panelCorrecciones = new();
+        private FacturasGeneral   _panelFacturas     = new();
         private PreciosGeneral    _panelPrecios      = new();
         private EmpresasGeneral   _panelEmpresas     = new();
         // Calificado explícitamente: SistemaGestion también tiene su propia clase
@@ -81,6 +81,7 @@ namespace SistemaGestion
             ["pedidos"]      = new List<TabItem>(),
             ["traspasos"]    = new List<TabItem>(),
             ["correcciones"] = new List<TabItem>(),
+            ["facturas"]     = new List<TabItem>(),
             ["precios"]      = new List<TabItem>(),
             ["empresas"]     = new List<TabItem>(),
             ["sucursales"]   = new List<TabItem>(),
@@ -98,6 +99,7 @@ namespace SistemaGestion
             ["pedidos"]      = null,
             ["traspasos"]    = null,
             ["correcciones"] = null,
+            ["facturas"]     = null,
             ["precios"]      = null,
             ["empresas"]     = null,
             ["sucursales"]   = null,
@@ -160,14 +162,15 @@ namespace SistemaGestion
                     // Precalienta stock + pedidos/traspasos/correcciones del Dashboard
                     // para esta empresa (mismo motivo que en LoginVisorWindow).
                     await Task.Run(() => ConsultasEmpresa.ObtenerStockEmpresa(opciones[0].Id));
-                    // Ídem Pedidos/Traspasos/Correcciones (toda la empresa, año
-                    // activo — ver el mismo comentario en LoginVisorWindow).
+                    // Ídem Pedidos/Traspasos/Correcciones/FacturasGeneral (toda la
+                    // empresa, año activo — ver el mismo comentario en LoginVisorWindow).
                     int añoPrevio = VisorState.AnioActivo;
                     await Task.Run(() =>
                     {
                         ConsultasEmpresa.ConectarCachePedidos(opciones[0].Id, añoPrevio);
                         ConsultasEmpresa.ConectarCacheTraspasos(opciones[0].Id, añoPrevio);
                         ConsultasEmpresa.ConectarCacheCorrecciones(opciones[0].Id, añoPrevio);
+                        ConsultasEmpresa.ConectarCacheFacturas(opciones[0].Id, añoPrevio);
                     });
                     ActualizarInfoUsuario();
                     RefrescarPanelesDatos();
@@ -239,9 +242,9 @@ namespace SistemaGestion
 
                 await RepoblarAniosTopAsync();
 
-                // Precalienta Pedidos/Traspasos/Correcciones (toda la empresa, ya con
-                // el año correcto para la nueva empresa que acaba de fijar
-                // RepoblarAniosTopAsync). Las 3 pantallas quedan con la misma
+                // Precalienta Pedidos/Traspasos/Correcciones/FacturasGeneral (toda la
+                // empresa, ya con el año correcto para la nueva empresa que acaba de
+                // fijar RepoblarAniosTopAsync). Las 4 pantallas quedan con la misma
                 // clave (empresa, año) al recrearse en RecargarPaneles(), así que su
                 // propia carga inicial es un no-op (ver memoización en ConsultasEmpresa).
                 int añoNuevo = VisorState.AnioActivo;
@@ -250,6 +253,7 @@ namespace SistemaGestion
                     ConsultasEmpresa.ConectarCachePedidos(nueva, añoNuevo);
                     ConsultasEmpresa.ConectarCacheTraspasos(nueva, añoNuevo);
                     ConsultasEmpresa.ConectarCacheCorrecciones(nueva, añoNuevo);
+                    ConsultasEmpresa.ConectarCacheFacturas(nueva, añoNuevo);
                 });
 
                 RecargarPaneles();
@@ -284,6 +288,7 @@ namespace SistemaGestion
             _panelPedidos.RefrescarDatos();
             _panelTraspasos.RefrescarDatos();
             _panelCorrecciones.RefrescarDatos();
+            _panelFacturas.RefrescarDatos();
         }
 
         // Cierra todas las pestañas dinámicas y recrea TODOS los paneles para que
@@ -308,6 +313,7 @@ namespace SistemaGestion
             _panelPedidos      = new();
             _panelTraspasos    = new();
             _panelCorrecciones = new();
+            _panelFacturas     = new();
             _panelPrecios      = new();
             _panelEmpresas     = new();
             _panelSucursales   = new();
@@ -490,6 +496,7 @@ namespace SistemaGestion
                 case "pedidos":      TabFijoContenido.Content = _panelPedidos;      TabFijoTitulo.Text = "Pedidos";      break;
                 case "traspasos":    TabFijoContenido.Content = _panelTraspasos;    TabFijoTitulo.Text = "Traspasos";    break;
                 case "correcciones": TabFijoContenido.Content = _panelCorrecciones; TabFijoTitulo.Text = "Correcciones"; break;
+                case "facturas":     TabFijoContenido.Content = _panelFacturas;     TabFijoTitulo.Text = "Facturas";     break;
                 case "precios":      TabFijoContenido.Content = _panelPrecios;      TabFijoTitulo.Text = "Precios";      break;
                 case "empresas":     TabFijoContenido.Content = _panelEmpresas;     TabFijoTitulo.Text = "Empresas";     break;
                 case "sucursales":   TabFijoContenido.Content = _panelSucursales;   TabFijoTitulo.Text = "Sucursales";   break;
@@ -671,6 +678,12 @@ namespace SistemaGestion
         {
             MostrarPanel("correcciones");
             MarcarActivo(BtnNav_Correcciones);
+        }
+
+        private void BtnNav_Facturas_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("facturas");
+            MarcarActivo(BtnNav_Facturas);
         }
 
         private void BtnNav_Precios_Click(object sender, RoutedEventArgs e)

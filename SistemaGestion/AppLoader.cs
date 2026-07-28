@@ -169,8 +169,8 @@ namespace SistemaGestion.Data
                 $"ORDER BY vd.documentoP ASC, vd.indice ASC");
 
             // ── Transacciones ────────────────────────────────────────────────
-            Sql.TrasaccionesObj.Conectar("transacciones",
-                $"SELECT vd.* FROM transacciones AS vd " +
+            Sql.TrasaccionesObj.Conectar("transaccionesP",
+                $"SELECT vd.* FROM transaccionesP AS vd " +
                 $"INNER JOIN documentosP AS vg ON vd.documentoP = vg.id " +
                 $"WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
@@ -180,15 +180,6 @@ namespace SistemaGestion.Data
             // ── Entregas ─────────────────────────────────────────────────────
             Sql.EntregasObj.Conectar("entregas",
                 $"SELECT vd.* FROM entregas AS vd " +
-                $"INNER JOIN documentosP AS vg ON vd.documentoP = vg.id " +
-                $"WHERE vg.estadof = 'normal' " +
-                $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
-                $"AND vg.sucursal = '{suc}' " +
-                $"ORDER BY vd.documentoP ASC, vd.indice ASC");
-
-            // ── Facturas (cuelgan directamente de documentosP) ─────────────────
-            Sql.FacturasObj.Conectar("facturas",
-                $"SELECT vd.* FROM facturas AS vd " +
                 $"INNER JOIN documentosP AS vg ON vd.documentoP = vg.id " +
                 $"WHERE vg.estadof = 'normal' " +
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
@@ -228,6 +219,32 @@ namespace SistemaGestion.Data
                 $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
                 $"AND vg.sucursal = '{suc}' " +
                 $"ORDER BY vd.documentoC ASC, vd.indice ASC");
+
+            // ── DocumentosF (facturas) ────────────────────────────────────────
+            Sql.DocumentosFObj.Conectar("documentosF",
+                $"SELECT * FROM documentosF " +
+                $"WHERE estadof = 'normal' " +
+                $"AND fecha >= '{aper}' AND fecha <= '{cier}' " +
+                $"AND sucursal = '{suc}' " +
+                $"ORDER BY fecha ASC");
+
+            // ── Facturas (líneas de documentosF) ──────────────────────────────
+            Sql.FacturasObj.Conectar("facturas",
+                $"SELECT vd.* FROM facturas AS vd " +
+                $"INNER JOIN documentosF AS vg ON vd.documentoF = vg.id " +
+                $"WHERE vg.estadof = 'normal' " +
+                $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
+                $"AND vg.sucursal = '{suc}' " +
+                $"ORDER BY vd.documentoF ASC, vd.indice ASC");
+
+            // ── TransaccionesF (cobros/pagos de facturas) ─────────────────────
+            Sql.TransaccionesFObj.Conectar("transaccionesF",
+                $"SELECT vd.* FROM transaccionesF AS vd " +
+                $"INNER JOIN documentosF AS vg ON vd.documentoF = vg.id " +
+                $"WHERE vg.estadof = 'normal' " +
+                $"AND vg.fecha >= '{aper}' AND vg.fecha <= '{cier}' " +
+                $"AND vg.sucursal = '{suc}' " +
+                $"ORDER BY vd.documentoF ASC, vd.indice ASC");
         }
     }
 }

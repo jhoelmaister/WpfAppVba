@@ -46,8 +46,10 @@ namespace SistemaGestion.Data
         public DataConsulta DocumentosLObj  { get; } = new();
         public DataConsulta PreciosObj      { get; } = new();
 
-        // ─── Facturas (cuelgan directamente de documentosP, ver DocumentosPObj) ─
+        // ─── Facturas ─────────────────────────────────────────────────────────
+        public DataConsulta DocumentosFObj   { get; } = new();
         public DataConsulta FacturasObj      { get; } = new();
+        public DataConsulta TransaccionesFObj{ get; } = new();
 
         private SqlData() { } // constructor privado → usar Instance
     }

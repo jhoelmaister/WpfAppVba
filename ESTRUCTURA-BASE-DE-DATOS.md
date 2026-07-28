@@ -1,7 +1,7 @@
 # Estructura de la base de datos — `edberBase`
 
-> Generado a partir del script SQL Server provisto por el usuario (`script.sql`,
-> fecha de script 24/07/2026). Refleja el estado real de la base, no una
+> Generado a partir del script SQL Server provisto por el usuario (`script2.sql`,
+> fecha de script 28/07/2026). Refleja el estado real de la base, no una
 > suposición del código — ante cualquier diferencia, este archivo debe
 > actualizarse con el próximo `script.sql` que se comparta, junto con
 > `SistemaGestion/EsquemaValidator.cs` y `VisorEmpresa/EsquemaValidator.cs`
@@ -104,6 +104,45 @@
   Se puede hacer en cualquier momento sin coordinar con un release de la app
   (ya no la lee ni la escribe ningún código en producción).
 
+## Cambios respecto a la versión anterior de este documento (sesión 2026-07-28)
+
+Se revirtió el cambio de la sesión 2026-07-24 que había disuelto Facturas dentro
+de Pedidos. Las facturas vuelven a ser un documento propio.
+
+- **`documentosF` y `transaccionesF`: vuelven a existir**, con las mismas
+  columnas que antes. Vuelven también las pantallas `FacturasGeneral` /
+  `FacturasDetalle` (los dos proyectos) y la entrada "🧾 Facturas" del panel
+  lateral.
+- **`documentosF.relacion`** (`uniqueidentifier`): columna **nueva**, no existía
+  en la versión anterior de la tabla. Apunta al `documentosP` (pedido) que la
+  factura factura. En `FacturasDetalle` se carga con el campo "Pedido"
+  (se escribe el código del pedido y se resuelve a su `id`, igual que el campo
+  "Tercero"), y `FacturasGeneral` la muestra en la columna "Pedido".
+- **`facturas.documentoP` vuelve a ser `facturas.documentoF`**: las líneas de
+  concepto/importe vuelven a colgar de la cabecera de la factura, no del pedido.
+- **`transacciones` renombrada a `transaccionesP`** (mismas columnas). Es el
+  contraparte de `transaccionesF`: cobros/pagos de `documentosP`.
+- **Pedidos ya no sabe nada de facturas**: se eliminaron la pestaña "Facturas
+  del pedido" de `PedidosDetalle` (con su botón "Facturar pedido" y el contador
+  "Importe facturado"), el badge "Estado de factura", y en `PedidosGeneral` la
+  columna "Factura" y el filtro lateral por factura. El saldo del pedido vuelve
+  a ser `importe total − cobros`, sin sumarle facturas.
+- **`documentosP.estadoA`**: sigue existiendo en la base pero **la app ya no la
+  lee ni la escribe** (era el estado "sin factura"/"con factura" que calculaba
+  la pestaña eliminada). Se sacó del manifiesto de `EsquemaValidator`. Se puede
+  borrar cuando se quiera, sin coordinar con un release:
+  ```sql
+  ALTER TABLE documentosP DROP COLUMN estadoA;
+  ```
+- **`facturas.estado`** (`nvarchar(100)`, "con deuda"/"sin deuda"): queda en la
+  base pero sin uso — era de la pestaña eliminada. `FacturasDetalle` no la
+  lee ni la escribe.
+- **`pedidos.forma` / `pedidos.contable`**: el script las sigue trayendo (nunca
+  se llegaron a borrar en el SQL Server real). La app no las usa desde la sesión
+  2026-07-24; borrarlas es opcional.
+- **`usuarios.temaC`**: ya no está en el script — el `DROP COLUMN` pendiente de
+  la sesión anterior efectivamente se corrió.
+
 ## Tablas
 
 ### `appsheets`
@@ -189,6 +228,28 @@ Cabecera de correcciones de stock.
 | usuario     | uniqueidentifier    | sí   | creó (fijo, no se toca al editar) — determina quién puede eliminar/ocultar el documento además del admin |
 | usuarioE    | uniqueidentifier    | sí   | editó por última vez |
 
+### `documentosF`
+Cabecera de facturas.
+
+| Columna     | Tipo               | Null | Nota |
+|-------------|---------------------|------|------|
+| id          | uniqueidentifier    | NO   | |
+| codigo      | nvarchar(100)       | sí   | |
+| fecha       | datetime            | sí   | |
+| emision     | datetime            | sí   | |
+| edicion     | datetime            | sí   | |
+| estadof     | nvarchar(100)       | sí   | |
+| observacion | nvarchar(255)       | sí   | |
+| referencia  | nvarchar(255)       | sí   | |
+| sucursal    | uniqueidentifier    | sí   | |
+| usuario     | uniqueidentifier    | sí   | creó |
+| usuarioE    | uniqueidentifier    | sí   | editó por última vez |
+| estado      | nvarchar(100)       | sí   | "pendiente"/"entregado" |
+| estadoC     | nvarchar(100)       | sí   | estado de cuenta, se recalcula con los cobros |
+| movimiento  | nvarchar(100)       | sí   | "venta"/"compra" |
+| tercero     | uniqueidentifier    | sí   | FK → terceros |
+| relacion    | uniqueidentifier    | sí   | FK → documentosP: el pedido que factura (campo "Pedido" de `FacturasDetalle`) |
+
 ### `documentosI`
 Cabecera de inventarios.
 
@@ -240,7 +301,7 @@ Cabecera de pedidos (ventas/compras).
 | movimiento  | nvarchar(255)       | sí   | |
 | observacion | nvarchar(255)       | sí   | |
 | estadoC     | nvarchar(100)       | sí   | "pendiente"/"cancelado"/"pendiente parcial" — estado de cuenta |
-| estadoA     | nvarchar(100)       | sí   | "sin factura"/"con factura" — se recalcula solo según si el pedido tiene líneas en la pestaña Facturas |
+| estadoA     | nvarchar(100)       | sí   | **sin uso** — quedó de la pestaña "Facturas del pedido" (eliminada); se puede `DROP COLUMN` |
 | codigo      | nvarchar(100)       | sí   | |
 | id          | uniqueidentifier    | NO   | |
 | sucursal    | uniqueidentifier    | sí   | sucursal emisora (única columna de sucursal; `emitido` se eliminó por ser duplicada) |
@@ -298,8 +359,7 @@ Líneas de entrega de un pedido.
 | articulo    | uniqueidentifier    | sí   |
 
 ### `facturas`
-Línea colgada directamente de `documentosP` (como `pedidos`/`transacciones`/
-`entregas`) — gestionada desde la pestaña "Facturas" de `PedidosDetalle`.
+Líneas de `documentosF`.
 
 | Columna     | Tipo               | Null | Nota |
 |-------------|---------------------|------|------|
@@ -308,9 +368,9 @@ Línea colgada directamente de `documentosP` (como `pedidos`/`transacciones`/
 | concepto    | nvarchar(255)       | sí   | |
 | importe     | float               | sí   | |
 | estadof     | nvarchar(100)       | sí   | |
-| documentoP  | uniqueidentifier    | sí   | FK → documentosP (antes `documentoF` → `documentosF`, eliminada) |
+| documentoF  | uniqueidentifier    | sí   | FK → documentosF |
 | categoria   | uniqueidentifier    | sí   | FK → categorias |
-| estado      | nvarchar(100)       | sí   | "con deuda"/"sin deuda" — "con deuda" suma al Saldo del pedido; "sin deuda" no (p. ej. las líneas que genera el botón "Facturar pedido") |
+| estado      | nvarchar(100)       | sí   | **sin uso** — quedó de la pestaña "Facturas del pedido" (eliminada) |
 
 ### `familias`
 
@@ -355,16 +415,18 @@ Líneas de `documentosI`.
 ### `pedidos`
 Líneas de `documentosP`.
 
-| Columna     | Tipo               | Null |
-|-------------|---------------------|------|
-| indice      | int                 | sí   |
-| cantidad    | float               | sí   |
-| importe     | float               | sí   |
-| tipo        | nvarchar(100)       | sí   |
-| estadof     | nvarchar(100)       | sí   |
-| id          | uniqueidentifier    | NO   |
-| documentoP  | uniqueidentifier    | sí   |
-| articulo    | uniqueidentifier    | sí   |
+| Columna     | Tipo               | Null | Nota |
+|-------------|---------------------|------|------|
+| indice      | int                 | sí   | |
+| cantidad    | float               | sí   | |
+| importe     | float               | sí   | |
+| tipo        | nvarchar(100)       | sí   | |
+| estadof     | nvarchar(100)       | sí   | |
+| forma       | nvarchar(255)       | sí   | **sin uso** desde la sesión 2026-07-24; se puede `DROP COLUMN` |
+| contable    | float               | sí   | **sin uso** desde la sesión 2026-07-24; se puede `DROP COLUMN` |
+| id          | uniqueidentifier    | NO   | |
+| documentoP  | uniqueidentifier    | sí   | |
+| articulo    | uniqueidentifier    | sí   | |
 
 ### `precios`
 Líneas de `documentosL`.
@@ -450,8 +512,22 @@ Clientes/proveedores.
 | usuarioE    | uniqueidentifier    | sí   |
 | empresa     | uniqueidentifier    | sí   |
 
-### `transacciones`
-Movimientos contables de `documentosP`.
+### `transaccionesF`
+Cobros/pagos de `documentosF`.
+
+| Columna     | Tipo               | Null |
+|-------------|---------------------|------|
+| fecha       | datetime            | sí   |
+| descripcion | nvarchar(255)       | sí   |
+| indice      | int                 | sí   |
+| importe     | float               | sí   |
+| forma       | nvarchar(100)       | sí   |
+| estadof     | nvarchar(100)       | sí   |
+| id          | uniqueidentifier    | NO   |
+| documentoF  | uniqueidentifier    | sí   |
+
+### `transaccionesP`
+Cobros/pagos de `documentosP` (antes se llamaba `transacciones`).
 
 | Columna     | Tipo               | Null |
 |-------------|---------------------|------|
@@ -486,7 +562,6 @@ Líneas de `documentosT`.
 | apellidos   | nvarchar(255)       | sí   | |
 | estadof     | nvarchar(100)       | sí   | |
 | tipo        | nvarchar(100)       | sí   | rol (admin / otros) |
-| temaC       | nvarchar(255)       | sí   | **en desuso** — el código ya no la lee/escribe; pendiente `DROP COLUMN` (ver arriba) |
 | codigo      | int                 | sí   | |
 | id          | uniqueidentifier    | NO   | |
 | sucursal    | uniqueidentifier    | sí   | |

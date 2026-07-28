@@ -65,15 +65,17 @@ namespace VisorEmpresa.Data
             ["precios"]        = new[] { "precio", "articulo", "documentoL" },
             ["documentosI"]    = new[] { "observacion", "fecha", "emision", "edicion", "codigo", "sucursal", "usuario", "usuarioE", "referencia" },
             ["inventarios"]    = new[] { "cantidad", "documentoI", "articulo" },
-            ["documentosP"]    = new[] { "fecha", "estado", "tipo", "emision", "edicion", "referencia", "movimiento", "observacion", "estadoC", "estadoA", "codigo", "sucursal", "usuario", "usuarioE", "tercero" },
+            ["documentosP"]    = new[] { "fecha", "estado", "tipo", "emision", "edicion", "referencia", "movimiento", "observacion", "estadoC", "codigo", "sucursal", "usuario", "usuarioE", "tercero" },
             ["pedidos"]        = new[] { "indice", "cantidad", "importe", "tipo", "documentoP", "articulo" },
-            ["transacciones"]  = new[] { "fecha", "descripcion", "indice", "importe", "forma", "documentoP" },
+            ["transaccionesP"] = new[] { "fecha", "descripcion", "indice", "importe", "forma", "documentoP" },
             ["entregas"]       = new[] { "indice", "cantidad", "fecha", "documentoP", "articulo" },
             ["documentosT"]    = new[] { "fecha", "estado", "emision", "edicion", "referencia", "observacion", "codigo", "origen", "destino", "emitido", "usuario", "usuarioE" },
             ["traspasos"]      = new[] { "indice", "cantidad", "documentoT", "articulo" },
             ["documentosC"]    = new[] { "fecha", "emision", "edicion", "referencia", "movimiento", "observacion", "motivo", "codigo", "sucursal", "usuario", "usuarioE" },
             ["correcciones"]   = new[] { "indice", "cantidad", "documentoC", "articulo" },
-            ["facturas"]       = new[] { "indice", "concepto", "importe", "estado", "documentoP", "categoria" },
+            ["documentosF"]    = new[] { "codigo", "fecha", "emision", "edicion", "observacion", "referencia", "sucursal", "usuario", "usuarioE", "estado", "estadoC", "movimiento", "tercero", "relacion" },
+            ["facturas"]       = new[] { "indice", "concepto", "importe", "documentoF", "categoria" },
+            ["transaccionesF"] = new[] { "fecha", "descripcion", "indice", "importe", "forma", "documentoF" },
         };
 
         // ─── Validar una conexión ya abierta ─────────────────────────────────
