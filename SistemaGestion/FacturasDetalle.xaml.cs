@@ -47,10 +47,14 @@ namespace SistemaGestion
         // una factura nueva común o al editar.
         private readonly string _desdePedidoId;
         private readonly List<FacturaLineaValidada> _lineasDesdePedido;
+        // Movimiento con el que nace una factura nueva ("venta"/"compra"). Lo pasa
+        // la sección de FacturasGeneral desde la que se creó; vacío = venta.
+        private readonly string _movimientoInicial;
 
         public FacturasDetalle(object? padre = null, string idEditar = "", string tituloTab = "",
                                string desdePedidoId = "",
-                               List<FacturaLineaValidada>? lineasDesdePedido = null)
+                               List<FacturaLineaValidada>? lineasDesdePedido = null,
+                               string movimientoInicial = "")
         {
             InitializeComponent();
             _padre       = padre;
@@ -58,6 +62,7 @@ namespace SistemaGestion
             _tituloTab   = tituloTab;
             _desdePedidoId     = desdePedidoId;
             _lineasDesdePedido = lineasDesdePedido ?? new List<FacturaLineaValidada>();
+            _movimientoInicial = (movimientoInicial ?? "").ToLower();
             Loaded      += (_, _) => { if (_iniciado) return; _iniciado = true; CargarUserform(); };
         }
 
@@ -187,7 +192,7 @@ namespace SistemaGestion
             Box_Tercero_Descripcion.Text   = "";
             Box_PedidoRelacionado.Text      = "";
             Box_PedidoRelacionado_Desc.Text = "";
-            Box_Movimiento.SelectedIndex   = 0;
+            Box_Movimiento.SelectedIndex   = _movimientoInicial == "compra" ? 1 : 0;
 
             SeleccionarEstado("pendiente");
             _estadoC = "pendiente";

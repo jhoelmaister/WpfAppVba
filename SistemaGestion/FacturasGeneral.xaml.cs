@@ -15,17 +15,36 @@ namespace SistemaGestion
         private string _mesActivo  = "";
         private string _modoFiltro = "filtros"; // "filtros" = Tree1 | "busquedas" = TxtBuscar
 
+        /// <summary>
+        /// Tipo de movimiento fijo para este control ("venta" o "compra"). Lo fija
+        /// la sección del panel lateral (Ventas → Facturas / Compras → Facturas):
+        /// el listado queda filtrado, el combo "Movimiento" se oculta y las
+        /// facturas nuevas nacen con ese movimiento. Vacío = ventas y compras.
+        /// </summary>
+        public string TipoMovimiento { get; set; } = "";
+
         private bool _iniciado = false;
 
-        public FacturasGeneral()
+        public FacturasGeneral() : this("") { }
+
+        public FacturasGeneral(string tipoMovimiento)
         {
             InitializeComponent();
+            TipoMovimiento = (tipoMovimiento ?? "").ToLower();
             Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarMeses(); CargarFacturas(); };
         }
 
         private void ConfigurarModo()
         {
             if (!AppState.EsAdmin) BtnEliminar.Visibility = Visibility.Collapsed;
+
+            if (string.IsNullOrEmpty(TipoMovimiento)) return;
+
+            // Movimiento fijado por la sección: el combo queda en el valor
+            // correspondiente y se oculta (acá no es una opción del usuario).
+            CboTipoMovimiento.SelectedIndex = TipoMovimiento == "compra" ? 2 : 1;
+            PanelTipoMovimiento.Visibility  = Visibility.Collapsed;
+            LblTitulo.Text = TipoMovimiento == "compra" ? "Facturas de Compras" : "Facturas de Ventas";
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
@@ -238,6 +257,8 @@ namespace SistemaGestion
 
         private string ObtenerFiltroTipo()
         {
+            if (!string.IsNullOrEmpty(TipoMovimiento)) return TipoMovimiento;
+
             return (CboTipoMovimiento?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() switch
             {
                 "ventas"  => "venta",
@@ -393,7 +414,10 @@ namespace SistemaGestion
 
             ValidarPedido.PedidoValidado  = null;
             ValidarPedido.LineasValidadas = null;
-            ValidarPedido.OpenAsDialog(consola, contexto: "Facturas", llamador: this, onCerrado: () =>
+            string contexto = TipoMovimiento == "compra" ? "Facturas de Compras"
+                              : TipoMovimiento == "venta" ? "Facturas de Ventas" : "Facturas";
+            ValidarPedido.OpenAsDialog(consola, contexto: contexto, llamador: this,
+                                       movimiento: TipoMovimiento, onCerrado: () =>
             {
                 string pedidoId = ValidarPedido.PedidoValidado ?? "";
                 var lineas      = ValidarPedido.LineasValidadas;
@@ -410,7 +434,8 @@ namespace SistemaGestion
             string clave  = "nueva-factura";
             var dlg = new FacturasDetalle(this, tituloTab: titulo,
                                           desdePedidoId: desdePedidoId,
-                                          lineasDesdePedido: lineas);
+                                          lineasDesdePedido: lineas,
+                                          movimientoInicial: TipoMovimiento);
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);

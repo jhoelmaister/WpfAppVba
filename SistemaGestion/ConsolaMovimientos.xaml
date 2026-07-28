@@ -1,4 +1,4 @@
-<Window x:Class="SistemaGestion.ConsolaMovimientos"
+﻿<Window x:Class="SistemaGestion.ConsolaMovimientos"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:SistemaGestion"
@@ -48,6 +48,24 @@
         </Style>
 
         <!-- ── Botón de acceso rápido (top bar) ───────────────────────── -->
+        <!-- Encabezado de sección del panel lateral (VENTAS / COMPRAS): es un
+             título, no un botón — no hace nada al hacerle clic. -->
+        <Style x:Key="NavSeccion" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="10"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+            <Setter Property="Opacity"    Value="0.75"/>
+            <Setter Property="Margin"     Value="14,10,12,4"/>
+        </Style>
+
+        <!-- Ítem de navegación dentro de una sección: igual que NavBtn pero
+             indentado y un punto más chico. -->
+        <Style x:Key="NavBtnSub" TargetType="Button" BasedOn="{StaticResource NavBtn}">
+            <Setter Property="Height"   Value="36"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding"  Value="28,0,12,0"/>
+        </Style>
+
         <Style x:Key="QuickBtn" TargetType="Button">
             <Setter Property="Height" Value="32"/>
             <Setter Property="Padding" Value="14,0"/>
@@ -285,10 +303,29 @@
                                     Content="📋  Artículos"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Articulos_Click"/>
-                            <Button x:Name="BtnNav_Pedidos"
-                                    Content="📑  Pedidos"
-                                    Style="{StaticResource NavBtn}"
-                                    Click="BtnNav_Pedidos_Click"/>
+
+                            <TextBlock Text="VENTAS" Style="{StaticResource NavSeccion}"/>
+                            <Button x:Name="BtnNav_AlbaranesVenta"
+                                    Content="📑  Albaranes"
+                                    Style="{StaticResource NavBtnSub}"
+                                    Click="BtnNav_AlbaranesVenta_Click"/>
+                            <Button x:Name="BtnNav_FacturasVenta"
+                                    Content="🧾  Facturas"
+                                    Style="{StaticResource NavBtnSub}"
+                                    Click="BtnNav_FacturasVenta_Click"/>
+
+                            <TextBlock Text="COMPRAS" Style="{StaticResource NavSeccion}"/>
+                            <Button x:Name="BtnNav_AlbaranesCompra"
+                                    Content="📑  Albaranes"
+                                    Style="{StaticResource NavBtnSub}"
+                                    Click="BtnNav_AlbaranesCompra_Click"/>
+                            <Button x:Name="BtnNav_FacturasCompra"
+                                    Content="🧾  Facturas"
+                                    Style="{StaticResource NavBtnSub}"
+                                    Click="BtnNav_FacturasCompra_Click"/>
+
+                            <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="12,8"/>
+
                             <Button x:Name="BtnNav_Traspasos"
                                     Content="🔄  Traspasos"
                                     Style="{StaticResource NavBtn}"
@@ -297,10 +334,6 @@
                                     Content="🔧  Correcciones"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Correcciones_Click"/>
-                            <Button x:Name="BtnNav_Facturas"
-                                    Content="🧾  Facturas"
-                                    Style="{StaticResource NavBtn}"
-                                    Click="BtnNav_Facturas_Click"/>
                             <Button x:Name="BtnNav_Movimientos"
                                     Content="📈  Movimientos"
                                     Style="{StaticResource NavBtn}"

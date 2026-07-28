@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -38,20 +38,28 @@ namespace SistemaGestion
         private readonly List<ValidarItemFila>   _items   = new();
         private bool _iniciado = false;
 
-        public ValidarPedido()
+        // Movimiento de la sección desde la que se abrió ("venta"/"compra"): solo
+        // se listan pedidos de ese movimiento. Vacío = todos.
+        private readonly string _movimiento;
+
+        public ValidarPedido() : this("") { }
+
+        public ValidarPedido(string movimiento)
         {
             InitializeComponent();
+            _movimiento = (movimiento ?? "").ToLower();
             Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarPedidos(); };
         }
 
         public void IntentarCerrar() => Cerrando?.Invoke();
 
         public static void OpenAsDialog(Window owner, string contexto = "",
-                                        Action? onCerrado = null, UIElement? llamador = null)
+                                        Action? onCerrado = null, UIElement? llamador = null,
+                                        string movimiento = "")
         {
             if (owner is not ConsolaMovimientos consola) return;
 
-            var ctrl = new ValidarPedido();
+            var ctrl = new ValidarPedido(movimiento);
             ctrl.Cerrando += () => { consola.CerrarPestaña(ctrl); onCerrado?.Invoke(); consola.SeleccionarPestaña(llamador); };
 
             string titulo = string.IsNullOrEmpty(contexto)
@@ -81,6 +89,10 @@ namespace SistemaGestion
 
                 if (Sql.DocumentosPObj.ObtenerItem("sucursal", id)?.ToString() != AppState.SucursalActiva) continue;
 
+                string movDoc = Sql.DocumentosPObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(_movimiento) &&
+                    !string.Equals(movDoc, _movimiento, StringComparison.OrdinalIgnoreCase)) continue;
+
                 string codigo      = Sql.DocumentosPObj.ObtenerItem("codigo",     id)?.ToString() ?? "";
                 string referencia  = Sql.DocumentosPObj.ObtenerItem("referencia", id)?.ToString() ?? "";
                 string terceroId   = Sql.DocumentosPObj.ObtenerItem("tercero",    id)?.ToString() ?? "";
@@ -101,7 +113,7 @@ namespace SistemaGestion
                     DocumentoP  = id,
                     Codigo      = codigo,
                     FechaStr    = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
-                    Movimiento  = Sql.DocumentosPObj.ObtenerItem("movimiento", id)?.ToString() ?? "",
+                    Movimiento  = movDoc,
                     TerceroDesc = terceroDesc,
                     Referencia  = referencia,
                     Importe     = CalcularImportePedido(id),

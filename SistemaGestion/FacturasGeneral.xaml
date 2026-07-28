@@ -300,7 +300,8 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock Text="Facturas"
+                        <TextBlock x:Name="LblTitulo"
+                                   Text="Facturas"
                                    FontSize="15" FontWeight="SemiBold"
                                    Foreground="{DynamicResource ThemeTexto}"/>
                         <TextBlock x:Name="LblSubtitulo"
@@ -309,7 +310,8 @@
                                    Margin="0,2,0,0"/>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel x:Name="PanelTipoMovimiento"
+                                Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="Movimiento:"
                                    FontSize="12" VerticalAlignment="Center"
                                    Foreground="{DynamicResource ThemeTextoSec}"
