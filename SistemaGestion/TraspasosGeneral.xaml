@@ -1,4 +1,4 @@
-<UserControl x:Class="SistemaGestion.TraspasosGeneral"
+﻿<UserControl x:Class="SistemaGestion.TraspasosGeneral"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Background="{DynamicResource ThemeBgPrincipal}">
@@ -244,7 +244,8 @@
                                    Margin="0,2,0,0"/>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="1" Orientation="Horizontal"
+                    <StackPanel x:Name="PanelTipoMovimiento"
+                                Grid.Column="1" Orientation="Horizontal"
                                 VerticalAlignment="Center" Margin="0,0,0,0">
                         <TextBlock Text="Movimiento:"
                                    FontSize="12" VerticalAlignment="Center"

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -16,23 +16,36 @@ namespace SistemaGestion
         private string _modoFiltro = "filtros"; // "filtros" = Tree1 | "busquedas" = TxtBuscar
 
         /// <summary>
-        /// Tipo de movimiento fijo para este control ("entrada" o "salida").
-        /// Si está vacío, se lee de AppState.TipoMovimiento.
+        /// Tipo de movimiento fijo para este control ("entrada" o "salida"). Lo fija
+        /// la sección del panel lateral (Entradas → Traspasos / Salidas → Traspasos):
+        /// el listado queda filtrado y el combo "Movimiento" se oculta. Vacío = la
+        /// pantalla lista entradas y salidas y el combo queda a la vista.
         /// </summary>
         public string TipoMovimiento { get; set; } = "";
 
         private bool _iniciado = false;
 
-        public TraspasosGeneral()
+        public TraspasosGeneral() : this("") { }
+
+        public TraspasosGeneral(string tipoMovimiento)
         {
             InitializeComponent();
+            TipoMovimiento = (tipoMovimiento ?? "").ToLower();
             Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarMeses(); CargarTraspasos(); };
         }
 
         // BtnEliminar queda visible para todos: además del administrador, el
         // usuario que creó el documento también puede eliminarlo/ocultarlo — el
         // permiso se valida por documento en BtnEliminar_Click.
-        private void ConfigurarModo() { }
+        private void ConfigurarModo()
+        {
+            if (string.IsNullOrEmpty(TipoMovimiento)) return;
+
+            // Movimiento fijado por la sección: el combo queda en el valor
+            // correspondiente y se oculta (acá no es una opción del usuario).
+            CboTipoMovimiento.SelectedIndex = TipoMovimiento == "salida" ? 2 : 1;
+            PanelTipoMovimiento.Visibility  = Visibility.Collapsed;
+        }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
         private void CargarMeses()
@@ -234,6 +247,8 @@ namespace SistemaGestion
 
         private string ObtenerFiltroTipo()
         {
+            if (!string.IsNullOrEmpty(TipoMovimiento)) return TipoMovimiento;
+
             return (CboTipoMovimiento?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() switch
             {
                 "entradas" => "entrada",

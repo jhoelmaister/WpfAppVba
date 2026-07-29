@@ -18,8 +18,9 @@ namespace SistemaGestion
         /// <summary>
         /// Tipo de movimiento fijo para este control ("venta" o "compra"). Lo fija
         /// la sección del panel lateral (Ventas → Facturas / Compras → Facturas):
-        /// el listado queda filtrado, el combo "Movimiento" se oculta y las
-        /// facturas nuevas nacen con ese movimiento. Vacío = ventas y compras.
+        /// el listado queda filtrado y las facturas nuevas nacen con ese movimiento.
+        /// Es la única forma de elegirlo: ya no hay combo "Movimiento" en pantalla.
+        /// Vacío = la pantalla lista ventas y compras juntas.
         /// </summary>
         public string TipoMovimiento { get; set; } = "";
 
@@ -40,10 +41,6 @@ namespace SistemaGestion
 
             if (string.IsNullOrEmpty(TipoMovimiento)) return;
 
-            // Movimiento fijado por la sección: el combo queda en el valor
-            // correspondiente y se oculta (acá no es una opción del usuario).
-            CboTipoMovimiento.SelectedIndex = TipoMovimiento == "compra" ? 2 : 1;
-            PanelTipoMovimiento.Visibility  = Visibility.Collapsed;
             LblTitulo.Text = TipoMovimiento == "compra" ? "Facturas de Compras" : "Facturas de Ventas";
         }
 
@@ -255,20 +252,8 @@ namespace SistemaGestion
         private void FiltroCuenta_Checked(object sender, RoutedEventArgs e)
             => CargarFacturas();
 
-        private string ObtenerFiltroTipo()
-        {
-            if (!string.IsNullOrEmpty(TipoMovimiento)) return TipoMovimiento;
-
-            return (CboTipoMovimiento?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() switch
-            {
-                "ventas"  => "venta",
-                "compras" => "compra",
-                _         => ""
-            };
-        }
-
-        private void CboTipoMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
-            => CargarFacturas();
+        // El movimiento lo fija la sección del panel lateral; vacío = ventas y compras.
+        private string ObtenerFiltroTipo() => TipoMovimiento;
 
         // ─── Nombre de mes ────────────────────────────────────────────────────
         private static string ObtenerNombreMes(int mes)

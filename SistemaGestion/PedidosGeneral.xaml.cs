@@ -17,9 +17,9 @@ namespace SistemaGestion
 
         /// <summary>
         /// Tipo de movimiento fijo para este control ("venta" o "compra"). Lo fija
-        /// la sección del panel lateral (Ventas → Albaranes / Compras → Albaranes):
-        /// el listado queda filtrado y el combo "Movimiento" se oculta. Vacío = la
-        /// pantalla muestra ventas y compras y el combo queda a la vista.
+        /// la sección del panel lateral (Ventas → Remisiones / Compras → Remisiones)
+        /// y es la única forma de elegirlo: ya no hay combo "Movimiento" en pantalla.
+        /// Vacío = la pantalla lista ventas y compras juntas.
         /// </summary>
         public string TipoMovimiento { get; set; } = "";
 
@@ -37,16 +37,7 @@ namespace SistemaGestion
         // BtnEliminar queda visible para todos: además del administrador, el
         // usuario que creó el documento también puede eliminarlo/ocultarlo — el
         // permiso se valida por documento en BtnEliminar_Click (ver ES_CREADOR).
-        private void ConfigurarModo()
-        {
-            if (string.IsNullOrEmpty(TipoMovimiento)) return;
-
-            // Movimiento fijado por la sección: se deja el combo en el valor
-            // correspondiente (para que cualquier código que lo lea coincida) y se
-            // oculta, porque acá no es una opción del usuario.
-            CboTipoMovimiento.SelectedIndex = TipoMovimiento == "compra" ? 2 : 1;
-            PanelTipoMovimiento.Visibility  = Visibility.Collapsed;
-        }
+        private void ConfigurarModo() { }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
         private void CargarMeses()
@@ -231,9 +222,9 @@ namespace SistemaGestion
                                                      || f.Cuenta == "pendiente parcial").ToString();
 
             // ── Título: con el movimiento fijado por la sección usa el nombre del
-            //    panel lateral (Albaranes); sin fijar, el título histórico. ───────
+            //    panel lateral (Remisiones); sin fijar, el título histórico. ───────
             LblTipoMovimiento.Text = !string.IsNullOrEmpty(TipoMovimiento)
-                ? (TipoMovimiento == "compra" ? "Albaranes de Compras" : "Albaranes de Ventas")
+                ? (TipoMovimiento == "compra" ? "Remisiones de Compras" : "Remisiones de Ventas")
                 : tipoMov switch
                 {
                     "venta"  => "Ventas de Productos",
@@ -268,17 +259,8 @@ namespace SistemaGestion
             return "";
         }
 
-        private string ObtenerFiltroTipo()
-        {
-            if (!string.IsNullOrEmpty(TipoMovimiento)) return TipoMovimiento;
-
-            return (CboTipoMovimiento?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() switch
-            {
-                "ventas"  => "venta",
-                "compras" => "compra",
-                _         => ""
-            };
-        }
+        // El movimiento lo fija la sección del panel lateral; vacío = ventas y compras.
+        private string ObtenerFiltroTipo() => TipoMovimiento;
 
         // ─── Nombre de mes ────────────────────────────────────────────────────
         private static string ObtenerNombreMes(int mes)
@@ -445,9 +427,6 @@ namespace SistemaGestion
             => CargarPedidos();
 
         private void FiltroCuenta_Checked(object sender, RoutedEventArgs e)
-            => CargarPedidos();
-
-        private void CboTipoMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
             => CargarPedidos();
 
         // ─── Selección en Grid1 → mostrar detalle ────────────────────────────

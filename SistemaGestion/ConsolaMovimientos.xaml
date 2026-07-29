@@ -305,20 +305,20 @@
                                     Click="BtnNav_Articulos_Click"/>
 
                             <TextBlock Text="VENTAS" Style="{StaticResource NavSeccion}"/>
-                            <Button x:Name="BtnNav_AlbaranesVenta"
-                                    Content="📑  Albaranes"
+                            <Button x:Name="BtnNav_RemisionesVenta"
+                                    Content="📑  Remisiones"
                                     Style="{StaticResource NavBtnSub}"
-                                    Click="BtnNav_AlbaranesVenta_Click"/>
+                                    Click="BtnNav_RemisionesVenta_Click"/>
                             <Button x:Name="BtnNav_FacturasVenta"
                                     Content="🧾  Facturas"
                                     Style="{StaticResource NavBtnSub}"
                                     Click="BtnNav_FacturasVenta_Click"/>
 
                             <TextBlock Text="COMPRAS" Style="{StaticResource NavSeccion}"/>
-                            <Button x:Name="BtnNav_AlbaranesCompra"
-                                    Content="📑  Albaranes"
+                            <Button x:Name="BtnNav_RemisionesCompra"
+                                    Content="📑  Remisiones"
                                     Style="{StaticResource NavBtnSub}"
-                                    Click="BtnNav_AlbaranesCompra_Click"/>
+                                    Click="BtnNav_RemisionesCompra_Click"/>
                             <Button x:Name="BtnNav_FacturasCompra"
                                     Content="🧾  Facturas"
                                     Style="{StaticResource NavBtnSub}"
@@ -326,10 +326,20 @@
 
                             <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="12,8"/>
 
-                            <Button x:Name="BtnNav_Traspasos"
+                            <TextBlock Text="ENTRADAS" Style="{StaticResource NavSeccion}"/>
+                            <Button x:Name="BtnNav_TraspasosEntrada"
                                     Content="🔄  Traspasos"
-                                    Style="{StaticResource NavBtn}"
-                                    Click="BtnNav_Traspasos_Click"/>
+                                    Style="{StaticResource NavBtnSub}"
+                                    Click="BtnNav_TraspasosEntrada_Click"/>
+
+                            <TextBlock Text="SALIDAS" Style="{StaticResource NavSeccion}"/>
+                            <Button x:Name="BtnNav_TraspasosSalida"
+                                    Content="🔄  Traspasos"
+                                    Style="{StaticResource NavBtnSub}"
+                                    Click="BtnNav_TraspasosSalida_Click"/>
+
+                            <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="12,8"/>
+
                             <Button x:Name="BtnNav_Correcciones"
                                     Content="🔧  Correcciones"
                                     Style="{StaticResource NavBtn}"

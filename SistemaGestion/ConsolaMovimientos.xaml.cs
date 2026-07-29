@@ -21,9 +21,10 @@ namespace SistemaGestion
         // Paneles "General": mutables para poder recrearlos tras un cambio de contexto
         // (empresa/sucursal/periodo) y que relean los cachés recién cargados.
         private ArticulosGeneral    _panelArticulos    = new();
-        private PedidosGeneral      _panelAlbaranesVenta  = new("venta");
-        private PedidosGeneral      _panelAlbaranesCompra = new("compra");
-        private TraspasosGeneral    _panelTraspasos    = new();
+        private PedidosGeneral      _panelRemisionesVenta  = new("venta");
+        private PedidosGeneral      _panelRemisionesCompra = new("compra");
+        private TraspasosGeneral    _panelTraspasosEntrada = new("entrada");
+        private TraspasosGeneral    _panelTraspasosSalida  = new("salida");
         private CorreccionesGeneral _panelCorrecciones = new();
         private FacturasGeneral     _panelFacturasVenta   = new("venta");
         private FacturasGeneral     _panelFacturasCompra  = new("compra");
@@ -42,9 +43,10 @@ namespace SistemaGestion
         private readonly Dictionary<string, List<TabItem>> _pestañasPorSeccion = new()
         {
             ["articulos"]    = new List<TabItem>(),
-            ["albaranes-venta"]  = new List<TabItem>(),
-            ["albaranes-compra"] = new List<TabItem>(),
-            ["traspasos"]    = new List<TabItem>(),
+            ["remisiones-venta"]  = new List<TabItem>(),
+            ["remisiones-compra"] = new List<TabItem>(),
+            ["traspasos-entrada"] = new List<TabItem>(),
+            ["traspasos-salida"]  = new List<TabItem>(),
             ["correcciones"] = new List<TabItem>(),
             ["facturas-venta"]   = new List<TabItem>(),
             ["facturas-compra"]  = new List<TabItem>(),
@@ -61,9 +63,10 @@ namespace SistemaGestion
         private readonly Dictionary<string, TabItem?> _pestañaSeleccionadaPorSeccion = new()
         {
             ["articulos"]    = null,
-            ["albaranes-venta"]  = null,
-            ["albaranes-compra"] = null,
-            ["traspasos"]    = null,
+            ["remisiones-venta"]  = null,
+            ["remisiones-compra"] = null,
+            ["traspasos-entrada"] = null,
+            ["traspasos-salida"]  = null,
             ["correcciones"] = null,
             ["facturas-venta"]   = null,
             ["facturas-compra"]  = null,
@@ -235,9 +238,10 @@ namespace SistemaGestion
 
             // 2. Recrear los paneles "General" (no Configuración: se mantiene el enfoque)
             _panelArticulos    = new();
-            _panelAlbaranesVenta  = new("venta");
-            _panelAlbaranesCompra = new("compra");
-            _panelTraspasos    = new();
+            _panelRemisionesVenta  = new("venta");
+            _panelRemisionesCompra = new("compra");
+            _panelTraspasosEntrada = new("entrada");
+            _panelTraspasosSalida  = new("salida");
             _panelCorrecciones = new();
             _panelFacturasVenta   = new("venta");
             _panelFacturasCompra  = new("compra");
@@ -287,9 +291,10 @@ namespace SistemaGestion
             switch (nombre)
             {
                 case "articulos":    TabFijoContenido.Content = _panelArticulos;    TabFijoTitulo.Text = "Artículos";    break;
-                case "albaranes-venta":  TabFijoContenido.Content = _panelAlbaranesVenta;  TabFijoTitulo.Text = "Albaranes de Ventas";  break;
-                case "albaranes-compra": TabFijoContenido.Content = _panelAlbaranesCompra; TabFijoTitulo.Text = "Albaranes de Compras"; break;
-                case "traspasos":    TabFijoContenido.Content = _panelTraspasos;    TabFijoTitulo.Text = "Traspasos";    break;
+                case "remisiones-venta":  TabFijoContenido.Content = _panelRemisionesVenta;  TabFijoTitulo.Text = "Remisiones de Ventas";  break;
+                case "remisiones-compra": TabFijoContenido.Content = _panelRemisionesCompra; TabFijoTitulo.Text = "Remisiones de Compras"; break;
+                case "traspasos-entrada": TabFijoContenido.Content = _panelTraspasosEntrada; TabFijoTitulo.Text = "Traspasos de Entrada"; break;
+                case "traspasos-salida":  TabFijoContenido.Content = _panelTraspasosSalida;  TabFijoTitulo.Text = "Traspasos de Salida";  break;
                 case "correcciones": TabFijoContenido.Content = _panelCorrecciones; TabFijoTitulo.Text = "Correcciones"; break;
                 case "facturas-venta":   TabFijoContenido.Content = _panelFacturasVenta;   TabFijoTitulo.Text = "Facturas de Ventas";   break;
                 case "facturas-compra":  TabFijoContenido.Content = _panelFacturasCompra;  TabFijoTitulo.Text = "Facturas de Compras";  break;
@@ -445,22 +450,28 @@ namespace SistemaGestion
             MarcarActivo(BtnNav_Articulos);
         }
 
-        private void BtnNav_AlbaranesVenta_Click(object sender, RoutedEventArgs e)
+        private void BtnNav_RemisionesVenta_Click(object sender, RoutedEventArgs e)
         {
-            MostrarPanel("albaranes-venta");
-            MarcarActivo(BtnNav_AlbaranesVenta);
+            MostrarPanel("remisiones-venta");
+            MarcarActivo(BtnNav_RemisionesVenta);
         }
 
-        private void BtnNav_AlbaranesCompra_Click(object sender, RoutedEventArgs e)
+        private void BtnNav_RemisionesCompra_Click(object sender, RoutedEventArgs e)
         {
-            MostrarPanel("albaranes-compra");
-            MarcarActivo(BtnNav_AlbaranesCompra);
+            MostrarPanel("remisiones-compra");
+            MarcarActivo(BtnNav_RemisionesCompra);
         }
 
-        private void BtnNav_Traspasos_Click(object sender, RoutedEventArgs e)
+        private void BtnNav_TraspasosEntrada_Click(object sender, RoutedEventArgs e)
         {
-            MostrarPanel("traspasos");
-            MarcarActivo(BtnNav_Traspasos);
+            MostrarPanel("traspasos-entrada");
+            MarcarActivo(BtnNav_TraspasosEntrada);
+        }
+
+        private void BtnNav_TraspasosSalida_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("traspasos-salida");
+            MarcarActivo(BtnNav_TraspasosSalida);
         }
 
         private void BtnNav_Correcciones_Click(object sender, RoutedEventArgs e)
@@ -554,38 +565,38 @@ namespace SistemaGestion
 
         private void BtnQuick_Venta_Click(object sender, RoutedEventArgs e)
         {
-            MostrarPanel("albaranes-venta");
-            MarcarActivo(BtnNav_AlbaranesVenta);
+            MostrarPanel("remisiones-venta");
+            MarcarActivo(BtnNav_RemisionesVenta);
             var existing = BuscarTabPedidoRapido();
             if (existing != null) { existing.CambiarTipoMovimiento("venta"); foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
-            else _panelAlbaranesVenta.AbrirNuevoPedido("rapido", "venta");
+            else _panelRemisionesVenta.AbrirNuevoPedido("rapido", "venta");
         }
 
         private void BtnQuick_Compra_Click(object sender, RoutedEventArgs e)
         {
-            MostrarPanel("albaranes-compra");
-            MarcarActivo(BtnNav_AlbaranesCompra);
+            MostrarPanel("remisiones-compra");
+            MarcarActivo(BtnNav_RemisionesCompra);
             var existing = BuscarTabPedidoRapido();
             if (existing != null) { existing.CambiarTipoMovimiento("compra"); foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
-            else _panelAlbaranesCompra.AbrirNuevoPedido("rapido", "compra");
+            else _panelRemisionesCompra.AbrirNuevoPedido("rapido", "compra");
         }
 
         private void BtnQuick_Salida_Click(object sender, RoutedEventArgs e)
         {
-            MostrarPanel("traspasos");
-            MarcarActivo(BtnNav_Traspasos);
+            MostrarPanel("traspasos-salida");
+            MarcarActivo(BtnNav_TraspasosSalida);
             var existing = BuscarTabTraspasoRapido();
             if (existing != null) { existing.CambiarTipoMovimiento("salida"); foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
-            else _panelTraspasos.AbrirNuevoTraspaso("salida");
+            else _panelTraspasosSalida.AbrirNuevoTraspaso("salida");
         }
 
         private void BtnQuick_Entrada_Click(object sender, RoutedEventArgs e)
         {
-            MostrarPanel("traspasos");
-            MarcarActivo(BtnNav_Traspasos);
+            MostrarPanel("traspasos-entrada");
+            MarcarActivo(BtnNav_TraspasosEntrada);
             var existing = BuscarTabTraspasoRapido();
             if (existing != null) { existing.CambiarTipoMovimiento("entrada"); foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
-            else _panelTraspasos.AbrirNuevoTraspaso("entrada");
+            else _panelTraspasosEntrada.AbrirNuevoTraspaso("entrada");
         }
 
         private void MarcarInactivo() { }
