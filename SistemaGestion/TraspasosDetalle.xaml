@@ -1,4 +1,4 @@
-<UserControl x:Class="SistemaGestion.TraspasosDetalle"
+﻿<UserControl x:Class="SistemaGestion.TraspasosDetalle"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Background="{DynamicResource ThemeBgPrincipal}">
@@ -235,16 +235,6 @@
                             <ComboBoxItem Content="pendiente"/>
                             <ComboBoxItem Content="pendiente revisar"/>
                             <ComboBoxItem Content="entregado"/>
-                        </ComboBox>
-                    </StackPanel>
-
-                    <!-- Tipo -->
-                    <StackPanel Grid.Column="12">
-                        <TextBlock Text="Movimiento" Style="{StaticResource LblMuted}"/>
-                        <ComboBox x:Name="CboMovimiento" Height="28" FontSize="12"
-                                  SelectionChanged="CboMovimiento_SelectionChanged">
-                            <ComboBoxItem Content="Entrada"/>
-                            <ComboBoxItem Content="Salida"/>
                         </ComboBox>
                     </StackPanel>
                 </Grid>

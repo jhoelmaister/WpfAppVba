@@ -159,7 +159,8 @@
                             <TextBlock x:Name="TxtBadgeEstado"
                                        FontSize="11" FontWeight="SemiBold"/>
                         </Border>
-                        <TextBlock Text="Estado de cuenta:" Style="{StaticResource LblMuted}" Margin="12,0,4,0"/>
+                        <TextBlock x:Name="LblEstadoCuenta"
+                                   Text="Estado de cuenta:" Style="{StaticResource LblMuted}" Margin="12,0,4,0"/>
                         <Border x:Name="BadgeEstadoC"
                                 CornerRadius="10" Padding="8,3">
                             <TextBlock x:Name="TxtBadgeEstadoC"
@@ -198,9 +199,6 @@
                         <!-- Referencia -->
                         <ColumnDefinition Width="150"/>
                         <ColumnDefinition Width="8"/>
-                        <!-- Movimiento -->
-                        <ColumnDefinition Width="100"/>
-                        <ColumnDefinition Width="8"/>
                         <!-- Estado -->
                         <ColumnDefinition Width="110"/>
                     </Grid.ColumnDefinitions>
@@ -237,7 +235,8 @@
                     </StackPanel>
 
                     <!-- Botón buscar tercero -->
-                    <Button Grid.Column="8" Content="···"
+                    <Button x:Name="BtnBuscarTercero"
+                            Grid.Column="8" Content="···"
                             Height="28" Width="30" Padding="0"
                             Style="{StaticResource BtnSecundario}"
                             Margin="0,14,0,0"
@@ -265,18 +264,8 @@
                                  TextChanged="Campo_TextChanged"/>
                     </StackPanel>
 
-                    <!-- Movimiento -->
-                    <StackPanel Grid.Column="14">
-                        <TextBlock Text="Movimiento" Style="{StaticResource LblMuted}"/>
-                        <ComboBox x:Name="Box_Movimiento" Height="28" FontSize="12"
-                                  SelectionChanged="Box_Movimiento_SelectionChanged">
-                            <ComboBoxItem Content="Ingreso"/>
-                            <ComboBoxItem Content="Egreso"/>
-                        </ComboBox>
-                    </StackPanel>
-
                     <!-- Estado (manual) -->
-                    <StackPanel Grid.Column="16">
+                    <StackPanel Grid.Column="14">
                         <TextBlock Text="Estado" Style="{StaticResource LblMuted}"/>
                         <ComboBox x:Name="Box_Estado" Height="28" FontSize="12"
                                   SelectionChanged="Box_Estado_SelectionChanged">
@@ -576,7 +565,8 @@
                 </Border>
 
                 <!-- Cobrado -->
-                <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0" VerticalAlignment="Top">
+                <Border x:Name="CardCobrado"
+                        Style="{StaticResource MetricCard}" Margin="0,0,8,0" VerticalAlignment="Top">
                     <StackPanel>
                         <TextBlock Text="Cobrado" FontSize="10"
                                    Foreground="{DynamicResource ThemeTextoSec}"/>
@@ -588,7 +578,8 @@
                 </Border>
 
                 <!-- Saldo -->
-                <Border Style="{StaticResource MetricCard}" VerticalAlignment="Top">
+                <Border x:Name="CardSaldo"
+                        Style="{StaticResource MetricCard}" VerticalAlignment="Top">
                     <StackPanel>
                         <TextBlock Text="Saldo" FontSize="10"
                                    Foreground="{DynamicResource ThemeTextoSec}"/>

@@ -50,6 +50,14 @@ namespace SistemaGestion
         // Movimiento con el que nace una factura nueva ("ingreso"/"egreso"). Lo pasa
         // la sección de FacturasGeneral desde la que se creó; vacío = ingreso.
         private readonly string _movimientoInicial;
+        // Movimiento del documento ("ingreso"/"egreso"). Ya no es un combo: al crear
+        // lo fija la sección (Ingresos/Egresos) o el pedido validado, y al editar se
+        // conserva el que tiene guardado el documento.
+        private string _movimiento = "ingreso";
+
+        // Factura vinculada a un pedido (documentosF.relacion): los cobros y el estado
+        // de cuenta viven en el pedido, y los datos generales se toman de él.
+        private bool _vinculadoAPedido = false;
 
         public FacturasDetalle(object? padre = null, string idEditar = "", string tituloTab = "",
                                string desdePedidoId = "",
@@ -83,6 +91,7 @@ namespace SistemaGestion
             }
 
             LblDocNum.Text = Box_DocumentoF.Text;
+            AplicarVinculoPedido();
             _cargando   = false;
             _hayCambios = false;
         }
@@ -112,8 +121,7 @@ namespace SistemaGestion
 
             // Las facturas anteriores a este cambio guardaron "venta"/"compra": se
             // leen como su equivalente ingreso/egreso.
-            string movimientoVal = EsEgreso(Sql.DocumentosFObj.ObtenerItem("movimiento", _idEditar)?.ToString()) ? "egreso" : "ingreso";
-            Box_Movimiento.SelectedIndex = movimientoVal == "egreso" ? 1 : 0;
+            _movimiento = EsEgreso(Sql.DocumentosFObj.ObtenerItem("movimiento", _idEditar)?.ToString()) ? "egreso" : "ingreso";
 
             string estadoVal = Sql.DocumentosFObj.ObtenerItem("estado", _idEditar)?.ToString() ?? "pendiente";
             SeleccionarEstado(estadoVal);
@@ -194,7 +202,7 @@ namespace SistemaGestion
             Box_Tercero_Descripcion.Text   = "";
             Box_PedidoRelacionado.Text      = "";
             Box_PedidoRelacionado_Desc.Text = "";
-            Box_Movimiento.SelectedIndex   = _movimientoInicial == "egreso" ? 1 : 0;
+            _movimiento = _movimientoInicial == "egreso" ? "egreso" : "ingreso";
 
             SeleccionarEstado("pendiente");
             _estadoC = "pendiente";
@@ -219,19 +227,7 @@ namespace SistemaGestion
         /// </summary>
         private void CopiarDesdePedido()
         {
-            string terceroId = Sql.DocumentosPObj.ObtenerItem("tercero", _desdePedidoId)?.ToString() ?? "";
-            Box_Tercero_Identificador.Text = terceroId == ""
-                                             ? ""
-                                             : Sql.TercerosObj.ObtenerItem("codigo", terceroId)?.ToString() ?? "";
-            ActualizarDescripcionTercero();
-
-            // El pedido es venta/compra; la factura, ingreso/egreso.
-            string movimiento = Sql.DocumentosPObj.ObtenerItem("movimiento", _desdePedidoId)?.ToString() ?? "venta";
-            Box_Movimiento.SelectedIndex =
-                string.Equals(movimiento, "compra", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
-
-            Box_Referencia.Text  = Sql.DocumentosPObj.ObtenerItem("referencia",  _desdePedidoId)?.ToString() ?? "";
-            Box_Observacion.Text = Sql.DocumentosPObj.ObtenerItem("observacion", _desdePedidoId)?.ToString() ?? "";
+            CopiarGeneralesDelPedido(_desdePedidoId);
 
             // documentosF.relacion: el pedido que se está facturando.
             Box_PedidoRelacionado.Text = Sql.DocumentosPObj.ObtenerItem("codigo", _desdePedidoId)?.ToString() ?? "";
@@ -262,13 +258,6 @@ namespace SistemaGestion
         }
 
         private void Box_Estado_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (!_cargando) _hayCambios = true;
-            ActualizarBadges();
-        }
-
-        // ─── Movimiento (Ingreso/Egreso): ícono + color del encabezado ────────
-        private void Box_Movimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!_cargando) _hayCambios = true;
             ActualizarBadges();
@@ -317,7 +306,65 @@ namespace SistemaGestion
         {
             if (_cargando) return;
             ActualizarDescripcionPedido();
+            AplicarVinculoPedido();
             _hayCambios = true;
+        }
+
+        /// <summary>
+        /// Ajusta el formulario según haya o no un pedido en el campo "Pedido".
+        /// Con la factura vinculada a un pedido, los cobros y el estado de cuenta
+        /// son los del pedido (transaccionesP): acá no se muestran ni se cargan. Y
+        /// los datos generales (tercero, movimiento, referencia, observación) son
+        /// los del pedido: se copian de él y no se editan desde la factura.
+        /// </summary>
+        private void AplicarVinculoPedido()
+        {
+            string pedidoId = ResolverPedidoRelacionadoId();
+            _vinculadoAPedido = pedidoId != "";
+
+            var visible = _vinculadoAPedido ? Visibility.Collapsed : Visibility.Visible;
+            TabCobros.Visibility       = visible;
+            LblEstadoCuenta.Visibility = visible;
+            BadgeEstadoC.Visibility    = visible;
+            CardCobrado.Visibility     = visible;
+            CardSaldo.Visibility       = visible;
+
+            if (_vinculadoAPedido && ReferenceEquals(TabControl1.SelectedItem, TabCobros))
+                TabControl1.SelectedIndex = 0;
+
+            bool editable = !_vinculadoAPedido;
+            Box_Tercero_Identificador.IsEnabled = editable;
+            BtnBuscarTercero.IsEnabled          = editable;
+            Box_Referencia.IsEnabled            = editable;
+            Box_Observacion.IsEnabled           = editable;
+
+            if (_vinculadoAPedido) CopiarGeneralesDelPedido(pedidoId);
+            ActualizarBadges();
+        }
+
+        /// <summary>
+        /// Copia al encabezado los datos generales del pedido relacionado. El pedido
+        /// es venta/compra y la factura ingreso/egreso: venta → ingreso, compra →
+        /// egreso.
+        /// </summary>
+        private void CopiarGeneralesDelPedido(string pedidoId)
+        {
+            bool prev = _cargando;
+            _cargando = true;   // no marcar cambios por lo que se copia solo
+
+            string terceroId = Sql.DocumentosPObj.ObtenerItem("tercero", pedidoId)?.ToString() ?? "";
+            Box_Tercero_Identificador.Text = terceroId == ""
+                                             ? ""
+                                             : Sql.TercerosObj.ObtenerItem("codigo", terceroId)?.ToString() ?? "";
+            ActualizarDescripcionTercero();
+
+            string movimiento = Sql.DocumentosPObj.ObtenerItem("movimiento", pedidoId)?.ToString() ?? "venta";
+            _movimiento = string.Equals(movimiento, "compra", StringComparison.OrdinalIgnoreCase) ? "egreso" : "ingreso";
+
+            Box_Referencia.Text  = Sql.DocumentosPObj.ObtenerItem("referencia",  pedidoId)?.ToString() ?? "";
+            Box_Observacion.Text = Sql.DocumentosPObj.ObtenerItem("observacion", pedidoId)?.ToString() ?? "";
+
+            _cargando = prev;
         }
 
         private void Box_Numeros_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -407,10 +454,15 @@ namespace SistemaGestion
             TxtTotalCobrado.Text = cobrado.ToString("N2");
             TxtTotalSaldo.Text   = saldo.ToString("N2");
 
-            if (importe > 0 && cobrado == 0)         _estadoC = "pendiente";
-            else if (cobrado > 0 && cobrado < importe) _estadoC = "pendiente parcial";
-            else if (cobrado >= importe)               _estadoC = "cancelado";
-            else                                        _estadoC = "pendiente";
+            // Con la factura vinculada a un pedido, el estado de cuenta es el del
+            // pedido: acá no hay cobros que mirar y no se toca el valor guardado.
+            if (!_vinculadoAPedido)
+            {
+                if (importe > 0 && cobrado == 0)           _estadoC = "pendiente";
+                else if (cobrado > 0 && cobrado < importe) _estadoC = "pendiente parcial";
+                else if (cobrado >= importe)               _estadoC = "cancelado";
+                else                                       _estadoC = "pendiente";
+            }
 
             ActualizarBadges();
         }
@@ -460,8 +512,7 @@ namespace SistemaGestion
             if (!_cargando) _hayCambios = true;
         }
 
-        private string MovimientoSeleccionado =>
-            (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "ingreso";
+        private string MovimientoSeleccionado => _movimiento;
 
         /// <summary>
         /// true si el movimiento guardado es un egreso. Acepta el valor viejo

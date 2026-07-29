@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -53,7 +53,6 @@ namespace SistemaGestion
         public void CambiarTipoMovimiento(string tipo)
         {
             AppState.TipoMovimiento = tipo.ToLower();
-            CboMovimiento.SelectedIndex = tipo.ToLower() == "salida" ? 1 : 0;
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
@@ -65,7 +64,6 @@ namespace SistemaGestion
             LblTitulo.Text = tipo == "salida"
                 ? "Salida de Productos Detalle"
                 : "Entrada de Productos Detalle";
-            CboMovimiento.SelectedIndex = tipo == "salida" ? 1 : 0;
 
             CargarComboSucursales();
 
@@ -117,7 +115,6 @@ namespace SistemaGestion
                     // Solo lectura total: no se puede editar nada, ni siquiera tipo de
                     // movimiento, duplicar línea o guardar.
                     DeshabilitarControlesCabecera();
-                    CboMovimiento.IsEnabled = false;
                     BtnGuardar.IsEnabled    = false;
                     _editarFormulario = false;
                     GridItems.IsEnabled = false;
@@ -145,7 +142,6 @@ namespace SistemaGestion
                 Box_Estado.Items.Add(new ComboBoxItem { Content = "pendiente revisar" });
                 Box_Estado.Items.Add(new ComboBoxItem { Content = "entregado" });
                 Box_Estado.IsEnabled = true;
-                CboMovimiento.IsEnabled = false;
                 _editarFormulario = false;
                 GridItems.IsEnabled = false;
                 ActualizarBotonesGrid();
@@ -418,17 +414,6 @@ namespace SistemaGestion
                         "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
-        }
-
-        // ─── Cambio de tipo de movimiento (ComboBox superior) ────────────────
-        private void CboMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (_cargando) return;
-            string tipo = (CboMovimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "entrada";
-            AppState.TipoMovimiento = tipo;
-            LblTitulo.Text = tipo == "salida" ? "Salida de Productos Detalle" : "Entrada de Productos Detalle";
-            _hayCambios = true;
-            ActualizarBadgeEstado();
         }
 
         // ─── Eventos de campos ────────────────────────────────────────────────
