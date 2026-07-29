@@ -17,8 +17,12 @@
   explícito en el script — igual se genera el GUID desde la app).
 - **`estadof`** — `nvarchar(100) NULL`, en todas las tablas. Estado lógico
   interno de la fila: `normal` / `nuevo` / `editado` / `ocultado` / `eliminado`.
-  La app **nunca hace `DELETE` físico** — todo borrado es una actualización de
-  `estadof` (ver `DataConsulta.ExportarItemsInterno`).
+  La app **nunca hace `DELETE` físico** en el flujo normal — todo borrado es
+  una actualización de `estadof` (ver `DataConsulta.ExportarItemsInterno`).
+  La única excepción es la herramienta de administración
+  `RegistrosOcultosPurgador.PurgarTodos()` (botón "🗑️ Eliminar ocultos" en
+  VisorEmpresa), que sí hace `DELETE` físico e irreversible de las filas
+  `ocultado`/`eliminado` de la empresa activa — ver más abajo.
 - **`codigo`** — presente en la mayoría de las tablas maestras y de documentos.
   Es el número/código visible para el usuario, regenerable por
   `CodigoRegenerator.RegenerarTodos()`. Desde la sesión 2026-07-29 el botón
@@ -179,6 +183,22 @@ de Pedidos. Las facturas vuelven a ser un documento propio.
   lateral, como en el resto de módulos ya divididos). `LblTitulo` pasa a decir
   siempre "Traspasos de Producto" y el ícono de cabecera queda fijo en "TR"
   con relleno blanco, en vez de cambiar de texto/color según el tipo.
+- **Nueva herramienta `RegistrosOcultosPurgador.PurgarTodos()`** (ambos
+  proyectos; botón "🗑️ Eliminar ocultos" solo en `VisorEmpresa/ConsolaVisor`,
+  junto a "Regenerar códigos"/"Recalcular precios"). Primera y única
+  operación de la app que hace `DELETE` físico:
+  - Borra, de la **empresa activa** únicamente, todas las filas con
+    `estadof` en `('ocultado', 'eliminado')` en las 26 tablas de la base
+    (líneas de documentos primero, luego cabeceras, luego maestras).
+  - Después renumera 1..N sin huecos la columna `indice` de las tablas que
+    la tienen (`articulos` por familia; `correcciones`/`entregas`/
+    `facturas`/`pedidos`/`traspasos`/`transaccionesF`/`transaccionesP` por
+    su documento dueño).
+  - Todo en una única transacción (rollback completo ante cualquier error).
+    Exige empresa activa, igual que `CodigoRegenerator`. Al terminar cierra
+    la sesión (los `indice` cacheados en memoria podrían haber cambiado).
+  - **Irreversible**: no hay forma de recuperar lo borrado. Doble
+    confirmación en el botón antes de ejecutar.
 
 ## Tablas
 

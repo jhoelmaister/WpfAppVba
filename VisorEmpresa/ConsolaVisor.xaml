@@ -115,8 +115,13 @@
                     <Button x:Name="BtnSincronizarAppsheets" Content="🧾 Sincronizar AppSheets"
                             Height="30" FontSize="11" FontWeight="SemiBold" Padding="10,0"
                             Background="#2E7D32" Foreground="White"
-                            BorderThickness="0" Cursor="Hand" Margin="0,0,14,0"
+                            BorderThickness="0" Cursor="Hand" Margin="0,0,8,0"
                             Click="BtnSincronizarAppsheets_Click"/>
+                    <Button x:Name="BtnPurgarOcultos" Content="🗑️ Eliminar ocultos"
+                            Height="30" FontSize="11" FontWeight="SemiBold" Padding="10,0"
+                            Background="#B71C1C" Foreground="White"
+                            BorderThickness="0" Cursor="Hand" Margin="0,0,14,0"
+                            Click="BtnPurgarOcultos_Click"/>
 
                     <Rectangle Width="1" Height="24" Fill="{DynamicResource ThemeBorde}" Margin="0,0,14,0"/>
 

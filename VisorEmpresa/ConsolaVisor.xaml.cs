@@ -855,6 +855,52 @@ namespace SistemaGestion
             }
         }
 
+        // Borra FÍSICAMENTE (DELETE real) las filas ocultas/eliminadas de la
+        // EMPRESA ACTIVA en las 26 tablas y renumera 'indice' sin huecos. Es la
+        // única acción de la app que no es reversible ni queda como estadof —
+        // ver RegistrosOcultosPurgador para el detalle por tabla.
+        private async void BtnPurgarOcultos_Click(object sender, RoutedEventArgs e)
+        {
+            var r1 = MessageBox.Show(
+                "Se BORRARÁN DEFINITIVAMENTE (sin posibilidad de recuperación) todas las filas " +
+                "con estado oculto/eliminado de la EMPRESA ACTIVA, en todas las tablas — no toca " +
+                "otras empresas. Luego se renumerará sin huecos la columna 'indice' de las líneas " +
+                "de documentos y de artículos. Al finalizar se cerrará la sesión.\n\n" +
+                "Esta acción es IRREVERSIBLE. ¿Continuar?",
+                "Eliminar registros ocultos", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (r1 != MessageBoxResult.Yes) return;
+
+            var r2 = MessageBox.Show(
+                "Última confirmación: los datos borrados NO se pueden recuperar. ¿Seguro que querés continuar?",
+                "Eliminar registros ocultos", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (r2 != MessageBoxResult.Yes) return;
+
+            var btn = sender as Button;
+            try
+            {
+                if (btn != null) btn.IsEnabled = false;
+                Mouse.OverrideCursor = Cursors.Wait;
+
+                string resumen = await Task.Run(RegistrosOcultosPurgador.PurgarTodos);
+
+                MessageBox.Show($"Registros ocultos eliminados (filas afectadas):\n\n{resumen}" +
+                                "\n\nSe cerrará la sesión.",
+                                "Eliminar registros ocultos", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                CerrarSesionForzada();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al eliminar registros ocultos: {ex.Message}",
+                                "Eliminar registros ocultos", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+                if (btn != null) btn.IsEnabled = true;
+            }
+        }
+
         // ─── Cambios sin guardar (mismo mecanismo que la app principal) ───────
 
         // Marcado cuando el cierre ya fue confirmado (p. ej. desde Cerrar sesión) para
