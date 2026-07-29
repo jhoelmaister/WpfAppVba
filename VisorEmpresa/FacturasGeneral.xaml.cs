@@ -224,7 +224,7 @@ namespace VisorEmpresa
                 string id = idObj.ToString()!;
 
                 // Filtrar por tipo de movimiento
-                string movDoc = (Sql.DocumentosFObj.ObtenerItem("movimiento", id)?.ToString() ?? "venta").ToLower();
+                string movDoc = NormalizarMovimiento(Sql.DocumentosFObj.ObtenerItem("movimiento", id)?.ToString());
                 if (!string.IsNullOrEmpty(filtroTipo) &&
                     !string.Equals(movDoc, filtroTipo, StringComparison.OrdinalIgnoreCase)) continue;
 
@@ -335,11 +335,23 @@ namespace VisorEmpresa
         {
             return (CboTipoMovimiento?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() switch
             {
-                "ventas"  => "venta",
-                "compras" => "compra",
-                _         => ""
+                "ingresos" => "ingreso",
+                "egresos"  => "egreso",
+                _          => ""
             };
         }
+
+        /// <summary>
+        /// Movimiento de una factura, normalizado a "ingreso"/"egreso". Las
+        /// facturas creadas antes del cambio de vocabulario guardaron
+        /// "venta"/"compra": se leen como su equivalente.
+        /// </summary>
+        private static string NormalizarMovimiento(string? mov) =>
+            (mov ?? "").ToLower() switch
+            {
+                "egreso" or "compra" => "egreso",
+                _                    => "ingreso"
+            };
 
         private void CboTipoMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
             => CargarFacturas();
@@ -504,7 +516,7 @@ namespace VisorEmpresa
         public string   SucursalDesc { get; set; } = "";
         public string   TerceroDesc  { get; set; } = "";
         public string   PedidoCodigo { get; set; } = "";
-        public string   Movimiento   { get; set; } = "venta";
+        public string   Movimiento   { get; set; } = "ingreso";
         public double   ImporteTotal { get; set; }
         public string   Estado       { get; set; } = "pendiente";
         public string   EstadoC      { get; set; } = "pendiente";

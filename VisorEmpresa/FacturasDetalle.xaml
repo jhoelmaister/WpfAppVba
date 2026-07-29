@@ -268,8 +268,8 @@
                         <TextBlock Text="Movimiento" Style="{StaticResource LblMuted}"/>
                         <ComboBox x:Name="Box_Movimiento" Height="28" FontSize="12"
                                   SelectionChanged="Campo_SelectionChanged">
-                            <ComboBoxItem Content="Venta"/>
-                            <ComboBoxItem Content="Compra"/>
+                            <ComboBoxItem Content="Ingreso"/>
+                            <ComboBoxItem Content="Egreso"/>
                         </ComboBox>
                     </StackPanel>
 

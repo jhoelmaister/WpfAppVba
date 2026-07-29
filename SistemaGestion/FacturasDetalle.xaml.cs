@@ -47,8 +47,8 @@ namespace SistemaGestion
         // una factura nueva común o al editar.
         private readonly string _desdePedidoId;
         private readonly List<FacturaLineaValidada> _lineasDesdePedido;
-        // Movimiento con el que nace una factura nueva ("venta"/"compra"). Lo pasa
-        // la sección de FacturasGeneral desde la que se creó; vacío = venta.
+        // Movimiento con el que nace una factura nueva ("ingreso"/"egreso"). Lo pasa
+        // la sección de FacturasGeneral desde la que se creó; vacío = ingreso.
         private readonly string _movimientoInicial;
 
         public FacturasDetalle(object? padre = null, string idEditar = "", string tituloTab = "",
@@ -110,8 +110,10 @@ namespace SistemaGestion
                                          : Sql.DocumentosPObj.ObtenerItem("codigo", pedidoUuid)?.ToString() ?? "";
             ActualizarDescripcionPedido();
 
-            string movimientoVal = Sql.DocumentosFObj.ObtenerItem("movimiento", _idEditar)?.ToString() ?? "venta";
-            Box_Movimiento.SelectedIndex = string.Equals(movimientoVal, "compra", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+            // Las facturas anteriores a este cambio guardaron "venta"/"compra": se
+            // leen como su equivalente ingreso/egreso.
+            string movimientoVal = EsEgreso(Sql.DocumentosFObj.ObtenerItem("movimiento", _idEditar)?.ToString()) ? "egreso" : "ingreso";
+            Box_Movimiento.SelectedIndex = movimientoVal == "egreso" ? 1 : 0;
 
             string estadoVal = Sql.DocumentosFObj.ObtenerItem("estado", _idEditar)?.ToString() ?? "pendiente";
             SeleccionarEstado(estadoVal);
@@ -192,7 +194,7 @@ namespace SistemaGestion
             Box_Tercero_Descripcion.Text   = "";
             Box_PedidoRelacionado.Text      = "";
             Box_PedidoRelacionado_Desc.Text = "";
-            Box_Movimiento.SelectedIndex   = _movimientoInicial == "compra" ? 1 : 0;
+            Box_Movimiento.SelectedIndex   = _movimientoInicial == "egreso" ? 1 : 0;
 
             SeleccionarEstado("pendiente");
             _estadoC = "pendiente";
@@ -223,6 +225,7 @@ namespace SistemaGestion
                                              : Sql.TercerosObj.ObtenerItem("codigo", terceroId)?.ToString() ?? "";
             ActualizarDescripcionTercero();
 
+            // El pedido es venta/compra; la factura, ingreso/egreso.
             string movimiento = Sql.DocumentosPObj.ObtenerItem("movimiento", _desdePedidoId)?.ToString() ?? "venta";
             Box_Movimiento.SelectedIndex =
                 string.Equals(movimiento, "compra", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
@@ -264,7 +267,7 @@ namespace SistemaGestion
             ActualizarBadges();
         }
 
-        // ─── Movimiento (Venta/Compra): ícono + color del encabezado ──────────
+        // ─── Movimiento (Ingreso/Egreso): ícono + color del encabezado ────────
         private void Box_Movimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!_cargando) _hayCambios = true;
@@ -433,13 +436,13 @@ namespace SistemaGestion
                                         new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Cta: Pendiente")
             };
 
-            // Ícono y color del encabezado según el movimiento (Venta/Compra).
-            bool esCompra = MovimientoSeleccionado == "compra";
-            LblIconoTipo.Text       = esCompra ? "CO" : "VE";
-            LblIconoTipo.Foreground = esCompra
+            // Ícono y color del encabezado según el movimiento (Ingreso/Egreso).
+            bool esEgreso = MovimientoSeleccionado == "egreso";
+            LblIconoTipo.Text       = esEgreso ? "EG" : "IN";
+            LblIconoTipo.Foreground = esEgreso
                 ? new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46))
                 : new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B));
-            IconoBorde.Background   = esCompra
+            IconoBorde.Background   = esEgreso
                 ? new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5))
                 : new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2));
 
@@ -458,7 +461,17 @@ namespace SistemaGestion
         }
 
         private string MovimientoSeleccionado =>
-            (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "venta";
+            (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "ingreso";
+
+        /// <summary>
+        /// true si el movimiento guardado es un egreso. Acepta el valor viejo
+        /// ("compra") además del actual ("egreso").
+        /// </summary>
+        private static bool EsEgreso(string? mov)
+        {
+            string v = (mov ?? "").ToLower();
+            return v == "egreso" || v == "compra";
+        }
 
         // ─── Nueva línea vacía (líneas de la factura) ─────────────────────────
         private void BtnNuevaLinea_Click(object sender, RoutedEventArgs e)

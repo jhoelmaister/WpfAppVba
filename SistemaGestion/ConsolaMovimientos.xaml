@@ -294,10 +294,14 @@
                                     Content="📥  Compras"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Compras_Click"/>
-                            <Button x:Name="BtnNav_Facturas"
-                                    Content="🧾  Facturas"
+                            <Button x:Name="BtnNav_Ingresos"
+                                    Content="🧾  Ingresos"
                                     Style="{StaticResource NavBtn}"
-                                    Click="BtnNav_Facturas_Click"/>
+                                    Click="BtnNav_Ingresos_Click"/>
+                            <Button x:Name="BtnNav_Egresos"
+                                    Content="🧾  Egresos"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Egresos_Click"/>
                             <Button x:Name="BtnNav_Entradas"
                                     Content="📦  Entradas"
                                     Style="{StaticResource NavBtn}"

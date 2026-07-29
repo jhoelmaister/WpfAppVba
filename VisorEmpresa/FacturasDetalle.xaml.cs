@@ -112,8 +112,10 @@ namespace VisorEmpresa
                                          : Sql.DocumentosPObj.ObtenerItem("codigo", pedidoUuid)?.ToString() ?? "";
             ActualizarDescripcionPedido();
 
-            string movimientoVal = Sql.DocumentosFObj.ObtenerItem("movimiento", _idEditar)?.ToString() ?? "venta";
-            Box_Movimiento.SelectedIndex = string.Equals(movimientoVal, "compra", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+            // Las facturas anteriores al cambio de vocabulario guardaron
+            // "venta"/"compra": se leen como su equivalente ingreso/egreso.
+            string movimientoVal = (Sql.DocumentosFObj.ObtenerItem("movimiento", _idEditar)?.ToString() ?? "").ToLower();
+            Box_Movimiento.SelectedIndex = (movimientoVal == "egreso" || movimientoVal == "compra") ? 1 : 0;
 
             string estadoVal = Sql.DocumentosFObj.ObtenerItem("estado", _idEditar)?.ToString() ?? "pendiente";
             SeleccionarEstado(estadoVal);
@@ -410,7 +412,7 @@ namespace VisorEmpresa
         }
 
         private string MovimientoSeleccionado =>
-            (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "venta";
+            (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "ingreso";
 
         // ─── Nueva línea vacía (líneas de la factura) ─────────────────────────
         private void BtnNuevaLinea_Click(object sender, RoutedEventArgs e)

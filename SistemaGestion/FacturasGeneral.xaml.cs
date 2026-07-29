@@ -16,11 +16,10 @@ namespace SistemaGestion
         private string _modoFiltro = "filtros"; // "filtros" = Tree1 | "busquedas" = TxtBuscar
 
         /// <summary>
-        /// Tipo de movimiento fijo para este control ("venta" o "compra"). Lo fija
-        /// la sección del panel lateral, si esa sección fija uno:
-        /// el listado queda filtrado y las facturas nuevas nacen con ese movimiento.
-        /// Es la única forma de elegirlo: ya no hay combo "Movimiento" en pantalla.
-        /// Vacío = la pantalla lista ventas y compras juntas.
+        /// Tipo de movimiento fijo para este control ("ingreso" o "egreso"). Lo fija
+        /// la sección del panel lateral (Ingresos / Egresos): el listado queda
+        /// filtrado y las facturas nuevas nacen con ese movimiento. Vacío = la
+        /// pantalla lista ingresos y egresos juntos.
         /// </summary>
         public string TipoMovimiento { get; set; } = "";
 
@@ -41,7 +40,7 @@ namespace SistemaGestion
 
             if (string.IsNullOrEmpty(TipoMovimiento)) return;
 
-            LblTitulo.Text = TipoMovimiento == "compra" ? "Facturas de Compras" : "Facturas de Ventas";
+            LblTitulo.Text = TipoMovimiento == "egreso" ? "Facturas de Egresos" : "Facturas de Ingresos";
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
@@ -148,7 +147,7 @@ namespace SistemaGestion
                 string id = idObj.ToString()!;
 
                 // Filtrar por tipo de movimiento y sucursal activa
-                string movDoc = (Sql.DocumentosFObj.ObtenerItem("movimiento", id)?.ToString() ?? "venta").ToLower();
+                string movDoc = NormalizarMovimiento(Sql.DocumentosFObj.ObtenerItem("movimiento", id)?.ToString());
                 if (!string.IsNullOrEmpty(filtroTipo) &&
                     !string.Equals(movDoc, filtroTipo, StringComparison.OrdinalIgnoreCase)) continue;
 
@@ -252,8 +251,20 @@ namespace SistemaGestion
         private void FiltroCuenta_Checked(object sender, RoutedEventArgs e)
             => CargarFacturas();
 
-        // El movimiento lo fija la sección del panel lateral; vacío = ventas y compras.
+        // El movimiento lo fija la sección del panel lateral; vacío = ingresos y egresos.
         private string ObtenerFiltroTipo() => TipoMovimiento;
+
+        /// <summary>
+        /// Movimiento de una factura, normalizado a "ingreso"/"egreso". Las
+        /// facturas creadas antes de este cambio guardaron "venta"/"compra": se
+        /// leen como su equivalente para que sigan apareciendo en su listado.
+        /// </summary>
+        private static string NormalizarMovimiento(string? mov) =>
+            (mov ?? "").ToLower() switch
+            {
+                "egreso" or "compra" => "egreso",
+                _                    => "ingreso"
+            };
 
         // ─── Nombre de mes ────────────────────────────────────────────────────
         private static string ObtenerNombreMes(int mes)
@@ -399,10 +410,18 @@ namespace SistemaGestion
 
             ValidarPedido.PedidoValidado  = null;
             ValidarPedido.LineasValidadas = null;
-            string contexto = TipoMovimiento == "compra" ? "Facturas de Compras"
-                              : TipoMovimiento == "venta" ? "Facturas de Ventas" : "Facturas";
+            string contexto = TipoMovimiento == "egreso"  ? "Facturas de Egresos"
+                              : TipoMovimiento == "ingreso" ? "Facturas de Ingresos" : "Facturas";
+            // Los pedidos siguen siendo venta/compra: una factura de ingreso se arma
+            // con pedidos de venta, y una de egreso con pedidos de compra.
+            string movPedido = TipoMovimiento switch
+            {
+                "egreso"  => "compra",
+                "ingreso" => "venta",
+                _         => ""
+            };
             ValidarPedido.OpenAsDialog(consola, contexto: contexto, llamador: this,
-                                       movimiento: TipoMovimiento, onCerrado: () =>
+                                       movimiento: movPedido, onCerrado: () =>
             {
                 string pedidoId = ValidarPedido.PedidoValidado ?? "";
                 var lineas      = ValidarPedido.LineasValidadas;
@@ -543,7 +562,7 @@ namespace SistemaGestion
         public string   Referencia   { get; set; } = "";
         public string   TerceroDesc  { get; set; } = "";
         public string   PedidoCodigo { get; set; } = "";
-        public string   Movimiento   { get; set; } = "venta";
+        public string   Movimiento   { get; set; } = "ingreso";
         public double   ImporteTotal { get; set; }
         public string   Estado       { get; set; } = "pendiente";
         public string   EstadoC      { get; set; } = "pendiente";

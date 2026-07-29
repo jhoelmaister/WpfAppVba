@@ -134,16 +134,16 @@
             </Border>
         </DataTemplate>
 
-        <!-- ── Badge de movimiento (venta/compra) en DataGrid ── -->
+        <!-- ── Badge de movimiento (ingreso/egreso) en DataGrid ── -->
         <DataTemplate x:Key="BadgeMovimiento">
             <Border Padding="6,2" CornerRadius="4" HorizontalAlignment="Left">
                 <Border.Style>
                     <Style TargetType="Border">
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding Movimiento}" Value="venta">
+                            <DataTrigger Binding="{Binding Movimiento}" Value="egreso">
                                 <Setter Property="Background" Value="#FEE2E2"/>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding Movimiento}" Value="compra">
+                            <DataTrigger Binding="{Binding Movimiento}" Value="ingreso">
                                 <Setter Property="Background" Value="#D1FAE5"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -154,10 +154,10 @@
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding Movimiento}" Value="venta">
+                                <DataTrigger Binding="{Binding Movimiento}" Value="egreso">
                                     <Setter Property="Foreground" Value="#991B1B"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding Movimiento}" Value="compra">
+                                <DataTrigger Binding="{Binding Movimiento}" Value="ingreso">
                                     <Setter Property="Foreground" Value="#065F46"/>
                                 </DataTrigger>
                             </Style.Triggers>
@@ -313,8 +313,8 @@
                                   Width="100" Height="28" FontSize="12"
                                   SelectionChanged="CboTipoMovimiento_SelectionChanged">
                             <ComboBoxItem Content="Todos" IsSelected="True"/>
-                            <ComboBoxItem Content="Ventas"/>
-                            <ComboBoxItem Content="Compras"/>
+                            <ComboBoxItem Content="Ingresos"/>
+                            <ComboBoxItem Content="Egresos"/>
                         </ComboBox>
                     </StackPanel>
                 </Grid>

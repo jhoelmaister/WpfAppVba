@@ -146,7 +146,6 @@
             </Border>
         </DataTemplate>
 
-        <!-- ── Badge de movimiento (venta/compra) en DataGrid ── -->
     </UserControl.Resources>
 
     <Grid>
