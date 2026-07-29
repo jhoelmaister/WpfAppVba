@@ -52,15 +52,15 @@ namespace VisorEmpresa
 
             if (AppState.EventoFormularioC == "editar")
             {
-                string movEdit   = NormalizarMovimiento(Sql.DocumentosCObj.ObtenerItem("movimiento", _idEditar)?.ToString());
-                string tipoLabel = movEdit == "repuesta" ? "Repuesta" : "Retirado";
+                _movimiento      = NormalizarMovimiento(Sql.DocumentosCObj.ObtenerItem("movimiento", _idEditar)?.ToString());
+                string tipoLabel = _movimiento == "repuesta" ? "Repuesta" : "Retirado";
                 LblTitulo.Text   = $"Corrección de {tipoLabel}";
                 CargarParaEditar();
             }
             else
             {
-                string tipo      = string.IsNullOrEmpty(AppState.TipoCorreccion) ? "retirado" : AppState.TipoCorreccion;
-                string tipoLabel = tipo == "repuesta" ? "Repuesta" : "Retirado";
+                _movimiento      = NormalizarMovimiento(AppState.TipoCorreccion);
+                string tipoLabel = _movimiento == "repuesta" ? "Repuesta" : "Retirado";
                 LblTitulo.Text   = $"Nueva Corrección de {tipoLabel}";
                 CargarParaNuevo();
             }
@@ -162,19 +162,12 @@ namespace VisorEmpresa
         }
 
         // ─── Movimiento / Motivo ──────────────────────────────────────────────
-        private void Box_Movimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            ActualizarMotivos();
-            if (!_cargando)
-            {
-                string mov = (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "retirado";
-                string tipoLabel = mov == "repuesta" ? "Repuesta" : "Retirado";
-                string prefijo = AppState.EventoFormularioC == "editar" ? "Editar" : "Nueva";
-                LblTitulo.Text = $"{prefijo} Corrección de {tipoLabel}";
-                _hayCambios = true;
-            }
-            ActualizarBadge();
-        }
+        /// <summary>
+        /// Movimiento del documento ("repuesta"/"retirado"). Ya no es un combo en
+        /// pantalla: lo fija la sección (Repuestas/Retirados) o el documento que se
+        /// abre.
+        /// </summary>
+        private string _movimiento = "retirado";
 
         /// <summary>
         /// Movimiento de una corrección, normalizado a "repuesta"/"retirado". Las
@@ -191,8 +184,7 @@ namespace VisorEmpresa
         // ─── Badge + ícono según movimiento ───────────────────────────────────
         private void ActualizarBadge()
         {
-            string mov     = (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "retirado";
-            bool esIngreso = mov == "repuesta";
+            bool esIngreso = _movimiento == "repuesta";
 
             (BadgeEstado.Background, TxtBadgeEstado.Foreground, TxtBadgeEstado.Text) = esIngreso
                 ? (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
@@ -216,9 +208,7 @@ namespace VisorEmpresa
         {
             if (Box_Motivo == null) return;
 
-            string mov = (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "";
-
-            string[] motivos = mov == "repuesta"
+            string[] motivos = _movimiento == "repuesta"
                 ? new[] { "error de registro", "registros omitidos" }
                 : new[] { "pérdida", "merma", "hurto", "consumo interno" };
 
@@ -234,15 +224,8 @@ namespace VisorEmpresa
 
         private void SeleccionarMovimiento(string valor)
         {
-            foreach (ComboBoxItem item in Box_Movimiento.Items)
-            {
-                if (string.Equals(item.Content?.ToString(), valor, StringComparison.OrdinalIgnoreCase))
-                {
-                    Box_Movimiento.SelectedItem = item;
-                    return;
-                }
-            }
-            if (Box_Movimiento.Items.Count > 0) Box_Movimiento.SelectedIndex = 0;
+            _movimiento = NormalizarMovimiento(valor);
+            ActualizarMotivos();
         }
 
         private void SeleccionarMotivo(string valor)
@@ -659,12 +642,6 @@ namespace VisorEmpresa
 
         private bool ValidarCabecera()
         {
-            if (Box_Movimiento.SelectedItem == null)
-            {
-                MessageBox.Show("Seleccione un movimiento.", "Consola",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return false;
-            }
             if (Box_Motivo.SelectedItem == null)
             {
                 MessageBox.Show("Seleccione un motivo.", "Consola",
@@ -681,7 +658,7 @@ namespace VisorEmpresa
         }
 
         private string MovimientoSeleccionado =>
-            (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "retirado";
+            _movimiento;
 
         private string MotivoSeleccionado =>
             (Box_Motivo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";

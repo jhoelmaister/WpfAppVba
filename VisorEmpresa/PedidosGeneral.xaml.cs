@@ -38,9 +38,19 @@ namespace VisorEmpresa
             public override string ToString() => Texto;
         }
 
-        public PedidosGeneral()
+        /// <summary>
+        /// Tipo de movimiento fijo para este control ("venta" o "compra"). Lo fija la
+        /// sección del panel lateral (Ventas / Compras), igual que en SistemaGestión.
+        /// Vacío = la pantalla lista los dos juntos.
+        /// </summary>
+        public string TipoMovimiento { get; set; } = "";
+
+        public PedidosGeneral() : this("") { }
+
+        public PedidosGeneral(string tipoMovimiento)
         {
             InitializeComponent();
+            TipoMovimiento = (tipoMovimiento ?? "").ToLower();
             Loaded += async (_, _) =>
             {
                 if (_iniciado) return;
@@ -347,15 +357,8 @@ namespace VisorEmpresa
             return "";
         }
 
-        private string ObtenerFiltroTipo()
-        {
-            return (CboTipoMovimiento?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() switch
-            {
-                "ventas"  => "venta",
-                "compras" => "compra",
-                _         => ""
-            };
-        }
+        // El movimiento lo fija la sección del panel lateral; vacío = los dos juntos.
+        private string ObtenerFiltroTipo() => TipoMovimiento;
 
         // ─── Nombre de mes ────────────────────────────────────────────────────
         private static string ObtenerNombreMes(int mes)
@@ -471,8 +474,6 @@ namespace VisorEmpresa
         private void FiltroCuenta_Checked(object sender, RoutedEventArgs e)
             => CargarPedidos();
 
-        private void CboTipoMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
-            => CargarPedidos();
 
         // ─── Selección en Grid1 → mostrar detalle ────────────────────────────
         private void Grid1_SelectionChanged(object sender, SelectionChangedEventArgs e)

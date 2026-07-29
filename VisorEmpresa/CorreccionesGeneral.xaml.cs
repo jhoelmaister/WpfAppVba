@@ -38,9 +38,19 @@ namespace VisorEmpresa
             public override string ToString() => Texto;
         }
 
-        public CorreccionesGeneral()
+        /// <summary>
+        /// Tipo de movimiento fijo para este control ("repuesta" o "retirado"). Lo fija la
+        /// sección del panel lateral (Repuestas / Retirados), igual que en SistemaGestión.
+        /// Vacío = la pantalla lista los dos juntos.
+        /// </summary>
+        public string TipoMovimiento { get; set; } = "";
+
+        public CorreccionesGeneral() : this("") { }
+
+        public CorreccionesGeneral(string tipoMovimiento)
         {
             InitializeComponent();
+            TipoMovimiento = (tipoMovimiento ?? "").ToLower();
             Loaded += async (_, _) =>
             {
                 if (_iniciado) return;
@@ -300,15 +310,8 @@ namespace VisorEmpresa
                 _                       => ""
             };
 
-        private string ObtenerFiltroTipo()
-        {
-            return (CboTipoMovimiento?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() switch
-            {
-                "repuestas" => "repuesta",
-                "retirados" => "retirado",
-                _          => ""
-            };
-        }
+        // El movimiento lo fija la sección del panel lateral; vacío = los dos juntos.
+        private string ObtenerFiltroTipo() => TipoMovimiento;
 
         // ─── Nombre de mes ────────────────────────────────────────────────────
         private static string ObtenerNombreMes(int mes)
@@ -440,8 +443,6 @@ namespace VisorEmpresa
             }
         }
 
-        private void CboTipoMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
-            => CargarCorrecciones();
 
         // ─── Búsqueda (independiente del Tree1) ──────────────────────────────
         private void TxtBuscar_KeyDown(object sender, KeyEventArgs e)

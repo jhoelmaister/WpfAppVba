@@ -53,39 +53,6 @@
         </Style>
 
         <!-- ── Badge de movimiento en DataGrid ── -->
-        <DataTemplate x:Key="BadgeMovimiento">
-            <Border Padding="6,2" CornerRadius="4" HorizontalAlignment="Left">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Movimiento}" Value="repuesta">
-                                <Setter Property="Background" Value="#D1FAE5"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Movimiento}" Value="retirado">
-                                <Setter Property="Background" Value="#FEE2E2"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                        <Setter Property="Background" Value="{DynamicResource ThemeBgReadOnly}"/>
-                    </Style>
-                </Border.Style>
-                <TextBlock Text="{Binding Movimiento}" FontSize="11" FontWeight="SemiBold">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Movimiento}" Value="repuesta">
-                                    <Setter Property="Foreground" Value="#065F46"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Movimiento}" Value="retirado">
-                                    <Setter Property="Foreground" Value="#991B1B"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-            </Border>
-        </DataTemplate>
-
     </UserControl.Resources>
 
     <Grid>
@@ -167,17 +134,6 @@
                         <ComboBox x:Name="CmbSucursal"
                                   Width="180" Height="28" FontSize="12" Margin="0,0,16,0"
                                   SelectionChanged="Filtro_SelectionChanged"/>
-                        <TextBlock Text="Movimiento:"
-                                   FontSize="12" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource ThemeTextoSec}"
-                                   Margin="0,0,6,0"/>
-                        <ComboBox x:Name="CboTipoMovimiento"
-                                  Width="100" Height="28" FontSize="12"
-                                  SelectionChanged="CboTipoMovimiento_SelectionChanged">
-                            <ComboBoxItem Content="Todos" IsSelected="True"/>
-                            <ComboBoxItem Content="Repuestas"/>
-                            <ComboBoxItem Content="Retirados"/>
-                        </ComboBox>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -352,17 +308,6 @@
                     <DataGridTextColumn Header="Sucursal"
                                         Binding="{Binding SucursalDesc}"
                                         Width="130"/>
-
-                    <!-- Columna Movimiento con badge -->
-                    <DataGridTemplateColumn Header="Movimiento" Width="90">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <ContentPresenter Content="{Binding}"
-                                                  ContentTemplate="{StaticResource BadgeMovimiento}"
-                                                  Margin="4,0" VerticalAlignment="Center"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
 
                     <DataGridTextColumn Header="Motivo"
                                         Binding="{Binding Motivo}"

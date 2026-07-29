@@ -180,8 +180,6 @@
                         <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="90"/>
                         <ColumnDefinition Width="8"/>
-                        <ColumnDefinition Width="130"/>
-                        <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="180"/>
@@ -209,25 +207,16 @@
                                  TextChanged="Campo_TextChanged"/>
                     </StackPanel>
 
-                    <!-- Movimiento -->
-                    <StackPanel Grid.Column="6">
-                        <TextBlock Text="Movimiento" Style="{StaticResource LblMuted}"/>
-                        <ComboBox x:Name="Box_Movimiento" Height="28" FontSize="12"
-                                  SelectionChanged="Box_Movimiento_SelectionChanged">
-                            <ComboBoxItem Content="retirado"/>
-                            <ComboBoxItem Content="repuesta"/>
-                        </ComboBox>
-                    </StackPanel>
 
                     <!-- Motivo -->
-                    <StackPanel Grid.Column="8">
+                    <StackPanel Grid.Column="6">
                         <TextBlock Text="Motivo" Style="{StaticResource LblMuted}"/>
                         <ComboBox x:Name="Box_Motivo" Height="28" FontSize="12"
                                   SelectionChanged="Campo_SelectionChanged"/>
                     </StackPanel>
 
                     <!-- Referencia -->
-                    <StackPanel Grid.Column="10">
+                    <StackPanel Grid.Column="8">
                         <TextBlock Text="Referencia" Style="{StaticResource LblMuted}"/>
                         <TextBox x:Name="Box_Referencia" Style="{StaticResource ModernInput}"
                                  TextChanged="Campo_TextChanged"/>

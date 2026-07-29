@@ -66,7 +66,6 @@ namespace VisorEmpresa
         public void CambiarTipoMovimiento(string tipo)
         {
             AppState.TipoMovimiento = tipo.ToLower();
-            CboMovimiento.SelectedIndex = tipo.ToLower() == "compra" ? 1 : 0;
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
@@ -76,7 +75,6 @@ namespace VisorEmpresa
 
             string tipo = AppState.TipoMovimiento.ToLower();
             LblTitulo.Text = tipo == "venta" ? "Venta de Productos" : "Compra de Productos";
-            CboMovimiento.SelectedIndex = tipo == "compra" ? 1 : 0;
 
             // Etiquetas dinámicas según tipo
             if (TabCobros != null)
@@ -739,20 +737,6 @@ namespace VisorEmpresa
                 MessageBox.Show("Stock insuficiente:\n\n" + string.Join("\n", faltantes),
                     "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
-        }
-
-        // ─── Cambio de tipo de movimiento (ComboBox superior) ────────────────
-        private void CboMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (_cargando) return;
-            string tipo = (CboMovimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "venta";
-            AppState.TipoMovimiento = tipo;
-            LblTitulo.Text = tipo == "venta" ? "Venta de Productos" : "Compra de Productos";
-            if (TabCobros != null)
-                TabCobros.Header = tipo == "venta" ? "Cobros" : "Pagos";
-            BtnCobrarDocumento.Content = tipo == "venta" ? "Cobrar Documento" : "Pagar Documento";
-            _cambioDocumento = true;
-            ActualizarBadges();
         }
 
         // ─── Eventos de campos del encabezado ─────────────────────────────────

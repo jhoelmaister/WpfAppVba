@@ -36,6 +36,13 @@ namespace VisorEmpresa
         // (transaccionesF). No es editable por el usuario, a diferencia de "estado".
         private string _estadoC = "pendiente";
 
+        // Movimiento del documento ("ingreso"/"egreso") y pedido relacionado: ya no
+        // hay combo ni caja de texto, se leen del documento (igual que en
+        // SistemaGestión).
+        private string _movimiento = "ingreso";
+        private string _pedidoRelacionadoId = "";
+        private bool   _vinculadoAPedido = false;
+
         private bool _iniciado = false;
         private readonly string _tituloTab;
         private string _codigoDocF = "";
@@ -57,18 +64,12 @@ namespace VisorEmpresa
         {
             _cargando = true;
 
-            if (!string.IsNullOrEmpty(_idEditar))
-            {
-                LblTitulo.Text = "Factura";
-                CargarParaEditar();
-            }
-            else
-            {
-                LblTitulo.Text = "Nueva Factura";
-                CargarParaNuevo();
-            }
+            // El título lo pone ActualizarBadges según el movimiento.
+            if (!string.IsNullOrEmpty(_idEditar)) CargarParaEditar();
+            else                                  CargarParaNuevo();
 
             LblDocNum.Text = Box_DocumentoF.Text;
+            AplicarVinculoPedido();
             _cargando   = false;
             _hayCambios = false;
 
@@ -81,7 +82,6 @@ namespace VisorEmpresa
             BtnGuardar.Visibility          = Visibility.Collapsed;
             BtnCancelar.Content            = "Cerrar";
             PanelCamposCabecera.IsEnabled  = false;
-            Box_PedidoRelacionado.IsEnabled = false;
             Box_Observacion.IsEnabled      = false;
             PanelBotonesArticulos.IsEnabled = false;
             PanelBotonesCobros.IsEnabled    = false;
@@ -106,16 +106,13 @@ namespace VisorEmpresa
             Box_Tercero_Identificador.Text = Sql.TercerosObj.ObtenerItem("codigo", terceroUuid)?.ToString() ?? "";
             ActualizarDescripcionTercero();
 
-            string pedidoUuid = Sql.DocumentosFObj.ObtenerItem("relacion", _idEditar)?.ToString() ?? "";
-            Box_PedidoRelacionado.Text = pedidoUuid == ""
-                                         ? ""
-                                         : Sql.DocumentosPObj.ObtenerItem("codigo", pedidoUuid)?.ToString() ?? "";
+            _pedidoRelacionadoId = Sql.DocumentosFObj.ObtenerItem("relacion", _idEditar)?.ToString() ?? "";
             ActualizarDescripcionPedido();
 
             // Las facturas anteriores al cambio de vocabulario guardaron
             // "venta"/"compra": se leen como su equivalente ingreso/egreso.
             string movimientoVal = (Sql.DocumentosFObj.ObtenerItem("movimiento", _idEditar)?.ToString() ?? "").ToLower();
-            Box_Movimiento.SelectedIndex = (movimientoVal == "egreso" || movimientoVal == "venta") ? 1 : 0;
+            _movimiento = (movimientoVal == "egreso" || movimientoVal == "venta") ? "egreso" : "ingreso";
 
             string estadoVal = Sql.DocumentosFObj.ObtenerItem("estado", _idEditar)?.ToString() ?? "pendiente";
             SeleccionarEstado(estadoVal);
@@ -194,9 +191,9 @@ namespace VisorEmpresa
 
             Box_Tercero_Identificador.Text = "";
             Box_Tercero_Descripcion.Text   = "";
-            Box_PedidoRelacionado.Text      = "";
+            _pedidoRelacionadoId            = "";
             Box_PedidoRelacionado_Desc.Text = "";
-            Box_Movimiento.SelectedIndex   = 0;
+            _movimiento                     = "ingreso";
 
             SeleccionarEstado("pendiente");
             _estadoC = "pendiente";
@@ -251,29 +248,26 @@ namespace VisorEmpresa
         }
 
         // ─── Pedido de origen (documentosF.relacion → documentosP) ────────────
-        private string ResolverPedidoRelacionadoId()
-        {
-            string cod = Box_PedidoRelacionado.Text.Trim();
-            return cod == "" ? "" : Sql.DocumentosPObj.BuscarIdentificador("codigo", cod);
-        }
+        private string ResolverPedidoRelacionadoId() => _pedidoRelacionadoId;
 
+        /// <summary>
+        /// Muestra el pedido relacionado en el encabezado: código, cliente/proveedor
+        /// y fecha completa.
+        /// </summary>
         private void ActualizarDescripcionPedido()
         {
-            string id = ResolverPedidoRelacionadoId();
-            if (id == "") { Box_PedidoRelacionado_Desc.Text = ""; return; }
+            string id = _pedidoRelacionadoId;
+            if (id == "") { Box_PedidoRelacionado_Desc.Text = "—"; return; }
 
+            string codigo    = Sql.DocumentosPObj.ObtenerItem("codigo", id)?.ToString() ?? "";
             string terceroId = Sql.DocumentosPObj.ObtenerItem("tercero", id)?.ToString() ?? "";
             string desc      = Sql.TercerosObj.ObtenerItem("descripcion", terceroId)?.ToString() ?? "";
             var    fechaObj  = Sql.DocumentosPObj.ObtenerItem("fecha", id);
-            string fecha     = fechaObj != null ? $"{Convert.ToDateTime(fechaObj):d}" : "";
-            Box_PedidoRelacionado_Desc.Text = FuncionesComunes.UnirVariables(desc, fecha);
-        }
-
-        private void Box_PedidoRelacionado_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (_cargando) return;
-            ActualizarDescripcionPedido();
-            _hayCambios = true;
+            string fecha     = fechaObj != null
+                               ? $"{Convert.ToDateTime(fechaObj):d} {Convert.ToDateTime(fechaObj):HH:mm:ss}"
+                               : "";
+            Box_PedidoRelacionado_Desc.Text = string.Join("  ·  ",
+                new[] { codigo, desc, fecha }.Where(t => !string.IsNullOrWhiteSpace(t)));
         }
 
         private void Box_Numeros_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -363,10 +357,19 @@ namespace VisorEmpresa
             TxtTotalCobrado.Text = cobrado.ToString("N2");
             TxtTotalSaldo.Text   = saldo.ToString("N2");
 
-            if (importe > 0 && cobrado == 0)         _estadoC = "pendiente";
-            else if (cobrado > 0 && cobrado < importe) _estadoC = "pendiente parcial";
-            else if (cobrado >= importe)               _estadoC = "cancelado";
-            else                                        _estadoC = "pendiente";
+            // Con la factura vinculada a un pedido no hay cobros propios que mirar:
+            // la cuenta la lleva el pedido, así que la factura queda cancelada.
+            if (_vinculadoAPedido)
+            {
+                _estadoC = "cancelado";
+            }
+            else
+            {
+                if (importe > 0 && cobrado == 0)           _estadoC = "pendiente";
+                else if (cobrado > 0 && cobrado < importe) _estadoC = "pendiente parcial";
+                else if (cobrado >= importe)               _estadoC = "cancelado";
+                else                                       _estadoC = "pendiente";
+            }
 
             ActualizarBadges();
         }
@@ -392,6 +395,18 @@ namespace VisorEmpresa
                                         new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Cta: Pendiente")
             };
 
+            // Título, ícono y color del encabezado según el movimiento: ingreso en
+            // verde, egreso en rojo.
+            bool esEgreso = MovimientoSeleccionado == "egreso";
+            LblTitulo.Text          = esEgreso ? "Egreso de Factura" : "Ingreso de Factura";
+            LblIconoTipo.Text       = esEgreso ? "EG" : "IN";
+            LblIconoTipo.Foreground = esEgreso
+                ? new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B))
+                : new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46));
+            IconoBorde.Background   = esEgreso
+                ? new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2))
+                : new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5));
+
             LblDocNum.Text = Box_DocumentoF.Text;
         }
 
@@ -411,8 +426,31 @@ namespace VisorEmpresa
             if (!_cargando) _hayCambios = true;
         }
 
-        private string MovimientoSeleccionado =>
-            (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "ingreso";
+        private string MovimientoSeleccionado => _movimiento;
+
+        /// <summary>
+        /// Ajusta el formulario según haya o no un pedido relacionado: con la
+        /// factura vinculada, los cobros y el estado de cuenta son los del pedido
+        /// (transaccionesP), así que acá no se muestran.
+        /// </summary>
+        private void AplicarVinculoPedido()
+        {
+            _vinculadoAPedido = _pedidoRelacionadoId != "";
+
+            var visible = _vinculadoAPedido ? Visibility.Collapsed : Visibility.Visible;
+            TabCobros.Visibility   = visible;
+            CardCobrado.Visibility = visible;
+            CardSaldo.Visibility   = visible;
+
+            if (_vinculadoAPedido && ReferenceEquals(TabControl1.SelectedItem, TabCobros))
+                TabControl1.SelectedIndex = 0;
+
+            var pedido = _vinculadoAPedido ? Visibility.Visible : Visibility.Collapsed;
+            LblPedidoRelacionado.Visibility       = pedido;
+            Box_PedidoRelacionado_Desc.Visibility = pedido;
+
+            ActualizarTotales();
+        }
 
         // ─── Nueva línea vacía (líneas de la factura) ─────────────────────────
         private void BtnNuevaLinea_Click(object sender, RoutedEventArgs e)

@@ -1,4 +1,4 @@
-<Window x:Class="SistemaGestion.ConsolaMovimientos"
+﻿<Window x:Class="SistemaGestion.ConsolaMovimientos"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Visor Empresa"
@@ -256,23 +256,43 @@
 
                             <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="12,8"/>
 
-                            <!-- Documentos: solo visualización (sin filtro por sucursal) -->
-                            <Button x:Name="BtnNav_Pedidos"
-                                    Content="📑  Pedidos"
+                            <!-- Documentos: solo visualización (sin filtro por sucursal).
+                                 Mismas secciones que SistemaGestión. -->
+                            <TextBlock Text="PEDIDOS" Style="{StaticResource NavSeccion}"/>
+                            <Button x:Name="BtnNav_Ventas"
+                                    Content="🛒  Ventas"
                                     Style="{StaticResource NavBtn}"
-                                    Click="BtnNav_Pedidos_Click"/>
+                                    Click="BtnNav_Ventas_Click"/>
+                            <Button x:Name="BtnNav_Compras"
+                                    Content="📥  Compras"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Compras_Click"/>
+
+                            <TextBlock Text="TRASPASOS" Style="{StaticResource NavSeccion}"/>
                             <Button x:Name="BtnNav_Traspasos"
                                     Content="🔄  Traspasos"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Traspasos_Click"/>
-                            <Button x:Name="BtnNav_Correcciones"
-                                    Content="🔧  Correcciones"
+
+                            <TextBlock Text="CORRECCIONES" Style="{StaticResource NavSeccion}"/>
+                            <Button x:Name="BtnNav_Repuestas"
+                                    Content="🔧  Repuestas"
                                     Style="{StaticResource NavBtn}"
-                                    Click="BtnNav_Correcciones_Click"/>
-                            <Button x:Name="BtnNav_Facturas"
-                                    Content="🧾  Facturas"
+                                    Click="BtnNav_Repuestas_Click"/>
+                            <Button x:Name="BtnNav_Retirados"
+                                    Content="🔧  Retirados"
                                     Style="{StaticResource NavBtn}"
-                                    Click="BtnNav_Facturas_Click"/>
+                                    Click="BtnNav_Retirados_Click"/>
+
+                            <TextBlock Text="FACTURAS" Style="{StaticResource NavSeccion}"/>
+                            <Button x:Name="BtnNav_Ingresos"
+                                    Content="🧾  Ingresos"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Ingresos_Click"/>
+                            <Button x:Name="BtnNav_Egresos"
+                                    Content="🧾  Egresos"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Egresos_Click"/>
 
                             <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="12,8"/>
 

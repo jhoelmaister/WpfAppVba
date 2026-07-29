@@ -127,9 +127,11 @@
 
                     <StackPanel Grid.Column="0" Orientation="Horizontal"
                                 VerticalAlignment="Center" Margin="0,0,12,0">
-                        <Border Width="36" Height="36" CornerRadius="8"
-                                Background="#EDE9FE" Margin="0,0,10,0">
-                            <TextBlock Text="🧾" FontSize="15"
+                        <Border x:Name="IconoBorde" Width="36" Height="36" CornerRadius="8"
+                                Background="#D1FAE5" Margin="0,0,10,0">
+                            <TextBlock x:Name="LblIconoTipo"
+                                       Text="IN" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="#065F46"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
                         </Border>
@@ -196,9 +198,6 @@
                         <!-- Referencia -->
                         <ColumnDefinition Width="150"/>
                         <ColumnDefinition Width="8"/>
-                        <!-- Movimiento -->
-                        <ColumnDefinition Width="100"/>
-                        <ColumnDefinition Width="8"/>
                         <!-- Estado -->
                         <ColumnDefinition Width="110"/>
                     </Grid.ColumnDefinitions>
@@ -263,18 +262,9 @@
                                  TextChanged="Campo_TextChanged"/>
                     </StackPanel>
 
-                    <!-- Movimiento -->
-                    <StackPanel Grid.Column="14">
-                        <TextBlock Text="Movimiento" Style="{StaticResource LblMuted}"/>
-                        <ComboBox x:Name="Box_Movimiento" Height="28" FontSize="12"
-                                  SelectionChanged="Campo_SelectionChanged">
-                            <ComboBoxItem Content="Ingreso"/>
-                            <ComboBoxItem Content="Egreso"/>
-                        </ComboBox>
-                    </StackPanel>
 
                     <!-- Estado (manual) -->
-                    <StackPanel Grid.Column="16">
+                    <StackPanel Grid.Column="14">
                         <TextBlock Text="Estado" Style="{StaticResource LblMuted}"/>
                         <ComboBox x:Name="Box_Estado" Height="28" FontSize="12"
                                   SelectionChanged="Box_Estado_SelectionChanged">
@@ -283,22 +273,6 @@
                         </ComboBox>
                     </StackPanel>
                 </Grid>
-
-                <!-- Pedido de origen (documentosF.relacion → documentosP) -->
-                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                    <TextBlock Text="Pedido:" Style="{StaticResource LblMuted}"
-                               VerticalAlignment="Center"/>
-                    <TextBox x:Name="Box_PedidoRelacionado"
-                             Width="110" Height="24" FontSize="11"
-                             Margin="6,0,8,0"
-                             VerticalContentAlignment="Center"
-                             TextChanged="Box_PedidoRelacionado_TextChanged"/>
-                    <TextBlock x:Name="Box_PedidoRelacionado_Desc"
-                               FontSize="10"
-                               Foreground="{DynamicResource ThemeTextoMuted}"
-                               VerticalAlignment="Center"
-                               TextTrimming="CharacterEllipsis"/>
-                </StackPanel>
 
                 <!-- Emisión / edición (readonly) -->
                 <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
@@ -309,7 +283,14 @@
                     <TextBlock Text="Edición:" Style="{StaticResource LblMuted}"/>
                     <TextBlock x:Name="Box_Edicion"
                                FontSize="10" Foreground="{DynamicResource ThemeTexto}"
-                               VerticalAlignment="Center"/>
+                               VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <TextBlock x:Name="LblPedidoRelacionado"
+                               Text="Pedido:" Style="{StaticResource LblMuted}"/>
+                    <TextBlock x:Name="Box_PedidoRelacionado_Desc"
+                               FontSize="10" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeTexto}"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
 
             </StackPanel>
@@ -574,7 +555,7 @@
                 </Border>
 
                 <!-- Cobrado -->
-                <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0" VerticalAlignment="Top">
+                <Border x:Name="CardCobrado" Style="{StaticResource MetricCard}" Margin="0,0,8,0" VerticalAlignment="Top">
                     <StackPanel>
                         <TextBlock Text="Cobrado" FontSize="10"
                                    Foreground="{DynamicResource ThemeTextoSec}"/>
@@ -586,7 +567,7 @@
                 </Border>
 
                 <!-- Saldo -->
-                <Border Style="{StaticResource MetricCard}" VerticalAlignment="Top">
+                <Border x:Name="CardSaldo" Style="{StaticResource MetricCard}" VerticalAlignment="Top">
                     <StackPanel>
                         <TextBlock Text="Saldo" FontSize="10"
                                    Foreground="{DynamicResource ThemeTextoSec}"/>

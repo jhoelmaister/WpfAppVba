@@ -60,7 +60,7 @@ namespace SistemaGestion
             {
                 _movimiento      = NormalizarMovimiento(AppState.TipoCorreccion);
                 string tipoLabel = _movimiento == "repuesta" ? "Repuesta" : "Retirado";
-                LblTitulo.Text   = $"Nueva Corrección de {tipoLabel}";
+                LblTitulo.Text   = $"Corrección de {tipoLabel}";
                 CargarParaNuevo();
             }
 

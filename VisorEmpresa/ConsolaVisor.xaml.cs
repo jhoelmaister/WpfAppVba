@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -55,10 +55,13 @@ namespace SistemaGestion
         private ProductosGeneral  _panelProductos    = new();
         private IndustriasGeneral _panelIndustrias   = new();
         private CategoriasGeneral _panelCategorias   = new();
-        private PedidosGeneral    _panelPedidos      = new();
+        private PedidosGeneral    _panelVentas       = new("venta");
+        private PedidosGeneral    _panelCompras      = new("compra");
         private TraspasosGeneral  _panelTraspasos    = new();
-        private CorreccionesGeneral _panelCorrecciones = new();
-        private FacturasGeneral   _panelFacturas     = new();
+        private CorreccionesGeneral _panelRepuestas  = new("repuesta");
+        private CorreccionesGeneral _panelRetirados  = new("retirado");
+        private FacturasGeneral   _panelIngresos     = new("ingreso");
+        private FacturasGeneral   _panelEgresos      = new("egreso");
         private PreciosGeneral    _panelPrecios      = new();
         private EmpresasGeneral   _panelEmpresas     = new();
         // Calificado explícitamente: SistemaGestion también tiene su propia clase
@@ -78,10 +81,13 @@ namespace SistemaGestion
             ["productos"]    = new List<TabItem>(),
             ["industrias"]   = new List<TabItem>(),
             ["categorias"]   = new List<TabItem>(),
-            ["pedidos"]      = new List<TabItem>(),
+            ["ventas"]       = new List<TabItem>(),
+            ["compras"]      = new List<TabItem>(),
             ["traspasos"]    = new List<TabItem>(),
-            ["correcciones"] = new List<TabItem>(),
-            ["facturas"]     = new List<TabItem>(),
+            ["repuestas"]    = new List<TabItem>(),
+            ["retirados"]    = new List<TabItem>(),
+            ["ingresos"]     = new List<TabItem>(),
+            ["egresos"]      = new List<TabItem>(),
             ["precios"]      = new List<TabItem>(),
             ["empresas"]     = new List<TabItem>(),
             ["sucursales"]   = new List<TabItem>(),
@@ -96,10 +102,13 @@ namespace SistemaGestion
             ["productos"]    = null,
             ["industrias"]   = null,
             ["categorias"]   = null,
-            ["pedidos"]      = null,
+            ["ventas"]       = null,
+            ["compras"]      = null,
             ["traspasos"]    = null,
-            ["correcciones"] = null,
-            ["facturas"]     = null,
+            ["repuestas"]    = null,
+            ["retirados"]    = null,
+            ["ingresos"]     = null,
+            ["egresos"]      = null,
             ["precios"]      = null,
             ["empresas"]     = null,
             ["sucursales"]   = null,
@@ -285,10 +294,13 @@ namespace SistemaGestion
         private void RefrescarPanelesDatos()
         {
             _panelDashboard.RefrescarDatos();
-            _panelPedidos.RefrescarDatos();
+            _panelVentas.RefrescarDatos();
+            _panelCompras.RefrescarDatos();
             _panelTraspasos.RefrescarDatos();
-            _panelCorrecciones.RefrescarDatos();
-            _panelFacturas.RefrescarDatos();
+            _panelRepuestas.RefrescarDatos();
+            _panelRetirados.RefrescarDatos();
+            _panelIngresos.RefrescarDatos();
+            _panelEgresos.RefrescarDatos();
         }
 
         // Cierra todas las pestañas dinámicas y recrea TODOS los paneles para que
@@ -310,10 +322,13 @@ namespace SistemaGestion
             _panelProductos    = new();
             _panelIndustrias   = new();
             _panelCategorias   = new();
-            _panelPedidos      = new();
+            _panelVentas       = new("venta");
+            _panelCompras      = new("compra");
             _panelTraspasos    = new();
-            _panelCorrecciones = new();
-            _panelFacturas     = new();
+            _panelRepuestas  = new("repuesta");
+            _panelRetirados  = new("retirado");
+            _panelIngresos     = new("ingreso");
+            _panelEgresos      = new("egreso");
             _panelPrecios      = new();
             _panelEmpresas     = new();
             _panelSucursales   = new();
@@ -493,10 +508,13 @@ namespace SistemaGestion
                 case "productos":    TabFijoContenido.Content = _panelProductos;    TabFijoTitulo.Text = "Productos";    break;
                 case "industrias":   TabFijoContenido.Content = _panelIndustrias;   TabFijoTitulo.Text = "Industrias";   break;
                 case "categorias":   TabFijoContenido.Content = _panelCategorias;   TabFijoTitulo.Text = "Categorías";   break;
-                case "pedidos":      TabFijoContenido.Content = _panelPedidos;      TabFijoTitulo.Text = "Pedidos";      break;
+                case "ventas":       TabFijoContenido.Content = _panelVentas;       TabFijoTitulo.Text = "Ventas";       break;
+                case "compras":      TabFijoContenido.Content = _panelCompras;      TabFijoTitulo.Text = "Compras";      break;
                 case "traspasos":    TabFijoContenido.Content = _panelTraspasos;    TabFijoTitulo.Text = "Traspasos";    break;
-                case "correcciones": TabFijoContenido.Content = _panelCorrecciones; TabFijoTitulo.Text = "Correcciones"; break;
-                case "facturas":     TabFijoContenido.Content = _panelFacturas;     TabFijoTitulo.Text = "Facturas";     break;
+                case "repuestas":    TabFijoContenido.Content = _panelRepuestas;    TabFijoTitulo.Text = "Repuestas";    break;
+                case "retirados":    TabFijoContenido.Content = _panelRetirados;    TabFijoTitulo.Text = "Retirados";    break;
+                case "ingresos":     TabFijoContenido.Content = _panelIngresos;     TabFijoTitulo.Text = "Ingresos";     break;
+                case "egresos":      TabFijoContenido.Content = _panelEgresos;      TabFijoTitulo.Text = "Egresos";      break;
                 case "precios":      TabFijoContenido.Content = _panelPrecios;      TabFijoTitulo.Text = "Precios";      break;
                 case "empresas":     TabFijoContenido.Content = _panelEmpresas;     TabFijoTitulo.Text = "Empresas";     break;
                 case "sucursales":   TabFijoContenido.Content = _panelSucursales;   TabFijoTitulo.Text = "Sucursales";   break;
@@ -662,10 +680,16 @@ namespace SistemaGestion
             MarcarActivo(BtnNav_Categorias);
         }
 
-        private void BtnNav_Pedidos_Click(object sender, RoutedEventArgs e)
+        private void BtnNav_Ventas_Click(object sender, RoutedEventArgs e)
         {
-            MostrarPanel("pedidos");
-            MarcarActivo(BtnNav_Pedidos);
+            MostrarPanel("ventas");
+            MarcarActivo(BtnNav_Ventas);
+        }
+
+        private void BtnNav_Compras_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("compras");
+            MarcarActivo(BtnNav_Compras);
         }
 
         private void BtnNav_Traspasos_Click(object sender, RoutedEventArgs e)
@@ -674,16 +698,28 @@ namespace SistemaGestion
             MarcarActivo(BtnNav_Traspasos);
         }
 
-        private void BtnNav_Correcciones_Click(object sender, RoutedEventArgs e)
+        private void BtnNav_Repuestas_Click(object sender, RoutedEventArgs e)
         {
-            MostrarPanel("correcciones");
-            MarcarActivo(BtnNav_Correcciones);
+            MostrarPanel("repuestas");
+            MarcarActivo(BtnNav_Repuestas);
         }
 
-        private void BtnNav_Facturas_Click(object sender, RoutedEventArgs e)
+        private void BtnNav_Retirados_Click(object sender, RoutedEventArgs e)
         {
-            MostrarPanel("facturas");
-            MarcarActivo(BtnNav_Facturas);
+            MostrarPanel("retirados");
+            MarcarActivo(BtnNav_Retirados);
+        }
+
+        private void BtnNav_Ingresos_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("ingresos");
+            MarcarActivo(BtnNav_Ingresos);
+        }
+
+        private void BtnNav_Egresos_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel("egresos");
+            MarcarActivo(BtnNav_Egresos);
         }
 
         private void BtnNav_Precios_Click(object sender, RoutedEventArgs e)

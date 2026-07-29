@@ -38,9 +38,19 @@ namespace VisorEmpresa
             public override string ToString() => Texto;
         }
 
-        public FacturasGeneral()
+        /// <summary>
+        /// Tipo de movimiento fijo para este control ("ingreso" o "egreso"). Lo fija la
+        /// sección del panel lateral (Ingresos / Egresos), igual que en SistemaGestión.
+        /// Vacío = la pantalla lista los dos juntos.
+        /// </summary>
+        public string TipoMovimiento { get; set; } = "";
+
+        public FacturasGeneral() : this("") { }
+
+        public FacturasGeneral(string tipoMovimiento)
         {
             InitializeComponent();
+            TipoMovimiento = (tipoMovimiento ?? "").ToLower();
             Loaded += async (_, _) =>
             {
                 if (_iniciado) return;
@@ -331,15 +341,8 @@ namespace VisorEmpresa
         private void FiltroCuenta_Checked(object sender, RoutedEventArgs e)
             => CargarFacturas();
 
-        private string ObtenerFiltroTipo()
-        {
-            return (CboTipoMovimiento?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() switch
-            {
-                "ingresos" => "ingreso",
-                "egresos"  => "egreso",
-                _          => ""
-            };
-        }
+        // El movimiento lo fija la sección del panel lateral; vacío = los dos juntos.
+        private string ObtenerFiltroTipo() => TipoMovimiento;
 
         /// <summary>
         /// Movimiento de una factura, normalizado a "ingreso"/"egreso". Las
@@ -353,8 +356,6 @@ namespace VisorEmpresa
                 _                   => "ingreso"
             };
 
-        private void CboTipoMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
-            => CargarFacturas();
 
         // ─── Nombre de mes ────────────────────────────────────────────────────
         private static string ObtenerNombreMes(int mes)
