@@ -349,8 +349,8 @@ namespace VisorEmpresa
         private static string NormalizarMovimiento(string? mov) =>
             (mov ?? "").ToLower() switch
             {
-                "egreso" or "compra" => "egreso",
-                _                    => "ingreso"
+                "egreso" or "venta" => "egreso",
+                _                   => "ingreso"
             };
 
         private void CboTipoMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)

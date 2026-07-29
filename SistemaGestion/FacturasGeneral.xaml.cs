@@ -257,13 +257,14 @@ namespace SistemaGestion
         /// <summary>
         /// Movimiento de una factura, normalizado a "ingreso"/"egreso". Las
         /// facturas creadas antes de este cambio guardaron "venta"/"compra": se
-        /// leen como su equivalente para que sigan apareciendo en su listado.
+        /// leen como su equivalente (la mercadería de una compra entra, la de una
+        /// venta sale) para que sigan apareciendo en su listado.
         /// </summary>
         private static string NormalizarMovimiento(string? mov) =>
             (mov ?? "").ToLower() switch
             {
-                "egreso" or "compra" => "egreso",
-                _                    => "ingreso"
+                "egreso" or "venta" => "egreso",
+                _                   => "ingreso"
             };
 
         // ─── Nombre de mes ────────────────────────────────────────────────────
@@ -412,12 +413,13 @@ namespace SistemaGestion
             ValidarPedido.LineasValidadas = null;
             string contexto = TipoMovimiento == "egreso"  ? "Facturas de Egresos"
                               : TipoMovimiento == "ingreso" ? "Facturas de Ingresos" : "Facturas";
-            // Los pedidos siguen siendo venta/compra: una factura de ingreso se arma
-            // con pedidos de venta, y una de egreso con pedidos de compra.
+            // Los pedidos siguen siendo venta/compra. El criterio es el de la
+            // mercadería, no el del dinero: una compra entra (ingreso) y una venta
+            // sale (egreso).
             string movPedido = TipoMovimiento switch
             {
-                "egreso"  => "compra",
-                "ingreso" => "venta",
+                "ingreso" => "compra",
+                "egreso"  => "venta",
                 _         => ""
             };
             ValidarPedido.OpenAsDialog(consola, contexto: contexto, llamador: this,

@@ -115,7 +115,7 @@ namespace VisorEmpresa
             // Las facturas anteriores al cambio de vocabulario guardaron
             // "venta"/"compra": se leen como su equivalente ingreso/egreso.
             string movimientoVal = (Sql.DocumentosFObj.ObtenerItem("movimiento", _idEditar)?.ToString() ?? "").ToLower();
-            Box_Movimiento.SelectedIndex = (movimientoVal == "egreso" || movimientoVal == "compra") ? 1 : 0;
+            Box_Movimiento.SelectedIndex = (movimientoVal == "egreso" || movimientoVal == "venta") ? 1 : 0;
 
             string estadoVal = Sql.DocumentosFObj.ObtenerItem("estado", _idEditar)?.ToString() ?? "pendiente";
             SeleccionarEstado(estadoVal);

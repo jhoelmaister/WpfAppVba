@@ -316,7 +316,19 @@ namespace SistemaGestion
                     Concepto    = DescripcionCategoria(g.Key),
                     Importe     = g.Sum(i => i.Importe)
                 })
+                // Una categoría que suma cero no se factura: no aporta nada a la
+                // factura y solo ensucia la grilla con una línea en 0.
+                .Where(l => l.Importe != 0)
                 .ToList();
+
+            if (LineasValidadas.Count == 0)
+            {
+                MessageBox.Show("Lo tildado suma cero: no hay nada para facturar.", "Consola",
+                                MessageBoxButton.OK, MessageBoxImage.Information);
+                PedidoValidado  = null;
+                LineasValidadas = null;
+                return;
+            }
 
             Cerrando?.Invoke();
         }

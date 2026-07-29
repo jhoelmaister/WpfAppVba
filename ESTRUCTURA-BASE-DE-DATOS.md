@@ -246,7 +246,7 @@ Cabecera de facturas.
 | usuarioE    | uniqueidentifier    | sí   | editó por última vez |
 | estado      | nvarchar(100)       | sí   | "pendiente"/"entregado" |
 | estadoC     | nvarchar(100)       | sí   | estado de cuenta, se recalcula con los cobros |
-| movimiento  | nvarchar(100)       | sí   | "ingreso"/"egreso" — antes "venta"/"compra"; la app sigue leyendo los valores viejos como su equivalente |
+| movimiento  | nvarchar(100)       | sí   | "ingreso"/"egreso" — criterio de mercadería: una compra entra (ingreso), una venta sale (egreso). Antes "venta"/"compra"; la app sigue leyendo los valores viejos como su equivalente (venta→egreso, compra→ingreso) |
 | tercero     | uniqueidentifier    | sí   | FK → terceros |
 | relacion    | uniqueidentifier    | sí   | FK → documentosP: el pedido que factura (campo "Pedido" de `FacturasDetalle`) |
 

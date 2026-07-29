@@ -79,16 +79,10 @@ namespace SistemaGestion
         {
             _cargando = true;
 
-            if (!string.IsNullOrEmpty(_idEditar))
-            {
-                LblTitulo.Text = "Editar Factura";
-                CargarParaEditar();
-            }
-            else
-            {
-                LblTitulo.Text = "Nueva Factura";
-                CargarParaNuevo();
-            }
+            // El título lo pone ActualizarBadges según el movimiento, una vez que
+            // CargarParaEditar/CargarParaNuevo dejaron _movimiento con su valor.
+            if (!string.IsNullOrEmpty(_idEditar)) CargarParaEditar();
+            else                                  CargarParaNuevo();
 
             LblDocNum.Text = Box_DocumentoF.Text;
             AplicarVinculoPedido();
@@ -333,6 +327,8 @@ namespace SistemaGestion
                 TabControl1.SelectedIndex = 0;
 
             bool editable = !_vinculadoAPedido;
+            Box_Fecha.IsEnabled                 = editable;
+            Box_Hora.IsEnabled                  = editable;
             Box_Tercero_Identificador.IsEnabled = editable;
             BtnBuscarTercero.IsEnabled          = editable;
             Box_Referencia.IsEnabled            = editable;
@@ -343,14 +339,23 @@ namespace SistemaGestion
         }
 
         /// <summary>
-        /// Copia al encabezado los datos generales del pedido relacionado. El pedido
-        /// es venta/compra y la factura ingreso/egreso: venta → ingreso, compra →
-        /// egreso.
+        /// Copia al encabezado los datos generales del pedido relacionado: fecha y
+        /// hora, tercero, movimiento, referencia y observación. El pedido es
+        /// venta/compra y la factura ingreso/egreso, por la mercadería: una compra
+        /// entra (ingreso) y una venta sale (egreso).
         /// </summary>
         private void CopiarGeneralesDelPedido(string pedidoId)
         {
             bool prev = _cargando;
             _cargando = true;   // no marcar cambios por lo que se copia solo
+
+            var fechaObj = Sql.DocumentosPObj.ObtenerItem("fecha", pedidoId);
+            if (fechaObj != null)
+            {
+                DateTime fechaPedido = Convert.ToDateTime(fechaObj);
+                Box_Fecha.SelectedDate = fechaPedido.Date;
+                Box_Hora.Text          = fechaPedido.ToString("HH:mm:ss");
+            }
 
             string terceroId = Sql.DocumentosPObj.ObtenerItem("tercero", pedidoId)?.ToString() ?? "";
             Box_Tercero_Identificador.Text = terceroId == ""
@@ -359,7 +364,7 @@ namespace SistemaGestion
             ActualizarDescripcionTercero();
 
             string movimiento = Sql.DocumentosPObj.ObtenerItem("movimiento", pedidoId)?.ToString() ?? "venta";
-            _movimiento = string.Equals(movimiento, "compra", StringComparison.OrdinalIgnoreCase) ? "egreso" : "ingreso";
+            _movimiento = string.Equals(movimiento, "compra", StringComparison.OrdinalIgnoreCase) ? "ingreso" : "egreso";
 
             Box_Referencia.Text  = Sql.DocumentosPObj.ObtenerItem("referencia",  pedidoId)?.ToString() ?? "";
             Box_Observacion.Text = Sql.DocumentosPObj.ObtenerItem("observacion", pedidoId)?.ToString() ?? "";
@@ -488,8 +493,9 @@ namespace SistemaGestion
                                         new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Cta: Pendiente")
             };
 
-            // Ícono y color del encabezado según el movimiento (Ingreso/Egreso).
+            // Título, ícono y color del encabezado según el movimiento.
             bool esEgreso = MovimientoSeleccionado == "egreso";
+            LblTitulo.Text          = esEgreso ? "Egreso de Factura" : "Ingreso de Factura";
             LblIconoTipo.Text       = esEgreso ? "EG" : "IN";
             LblIconoTipo.Foreground = esEgreso
                 ? new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46))
@@ -516,12 +522,12 @@ namespace SistemaGestion
 
         /// <summary>
         /// true si el movimiento guardado es un egreso. Acepta el valor viejo
-        /// ("compra") además del actual ("egreso").
+        /// ("venta") además del actual ("egreso"): la mercadería de una venta sale.
         /// </summary>
         private static bool EsEgreso(string? mov)
         {
             string v = (mov ?? "").ToLower();
-            return v == "egreso" || v == "compra";
+            return v == "egreso" || v == "venta";
         }
 
         // ─── Nueva línea vacía (líneas de la factura) ─────────────────────────
