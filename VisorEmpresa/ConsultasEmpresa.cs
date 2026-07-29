@@ -184,6 +184,35 @@ namespace VisorEmpresa
         private static List<CorreccionCache>        _correccionesCache     = new();
 
         /// <summary>
+        /// Descarta TODAS las cachés estáticas de esta clase (dashboard, stock y
+        /// las memoizaciones empresa+año de pedidos/traspasos/correcciones/
+        /// facturas). Necesario porque son <c>static</c>: sobreviven al cierre de
+        /// sesión, así que al volver a entrar con la misma empresa+año las claves
+        /// memoizadas coinciden, <c>ConectarCache*</c> sale por el early-return y
+        /// se sigue mostrando lo que quedó en memoria en vez de releer SQL. Se
+        /// llama desde el cierre de sesión (ver <c>ConsolaVisor.CerrarSesionInterno</c>),
+        /// que es también lo que hacen las herramientas que reescriben datos en el
+        /// servidor (Regenerar códigos / Eliminar ocultos): sin esto, los códigos
+        /// o índices recién regenerados no se veían al volver a entrar.
+        /// </summary>
+        public static void LimpiarCaches()
+        {
+            _empresaCacheDashboard = null;
+            _aperturaFechaCache    = new Dictionary<string, DateTime>();
+            _aperturaCantidadCache = new Dictionary<string, double>();
+            _pedidosCache          = new List<PedidoCache>();
+            _traspasosCache        = new List<TraspasoCache>();
+            _correccionesCache     = new List<CorreccionCache>();
+
+            _stockEmpresaCache.Clear();
+
+            _pedidosCacheCargada      = null;
+            _traspasosCacheCargada    = null;
+            _correccionesCacheCargada = null;
+            _facturasCacheCargada     = null;
+        }
+
+        /// <summary>
         /// Puebla la caché de pedidos/traspasos/correcciones/aperturas de TODA la
         /// empresa (sin filtro de fecha ni sucursal). Los 4 métodos que la usan
         /// también la disparan solos si detectan que la empresa cacheada no

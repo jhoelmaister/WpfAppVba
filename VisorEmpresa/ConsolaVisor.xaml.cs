@@ -995,6 +995,14 @@ namespace SistemaGestion
             AppState.EmpresaActiva = "";
             VisorState.UsuarioActivo = "";
             VisorState.EmpresaActiva = "";
+
+            // Las cachés de ConsultasEmpresa son static: sin limpiarlas acá,
+            // volver a entrar con la misma empresa+año reusa lo que quedó en
+            // memoria (las claves memoizadas coinciden y ConectarCache* sale por
+            // el early-return) en vez de releer SQL. Por eso los códigos recién
+            // regenerados no se veían al reingresar.
+            ConsultasEmpresa.LimpiarCaches();
+
             DatabaseConnection.CerrarConexion();
 
             var login = new LoginVisorWindow();

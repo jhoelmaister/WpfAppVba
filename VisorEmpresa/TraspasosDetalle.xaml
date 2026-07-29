@@ -135,7 +135,7 @@
                                 Margin="0,0,10,0">
                             <TextBlock x:Name="LblIconoTipo"
                                        Text="TR" FontSize="13" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource ThemeTexto}"
+                                       Foreground="Black"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
                         </Border>
