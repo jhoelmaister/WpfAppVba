@@ -128,8 +128,16 @@
             </Setter>
         </Style>
 
-    </Window.Resources>
+        <!-- ── Encabezado de sección en la barra lateral ──────────────── -->
+        <Style x:Key="NavSeccion" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoMuted}"/>
+            <Setter Property="Margin" Value="14,10,0,4"/>
+        </Style>
 
+    </Window.Resources>
+    
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="52"/>   <!-- Top bar -->
@@ -276,7 +284,7 @@
                                   HorizontalScrollBarVisibility="Disabled"
                                   PanningMode="VerticalOnly">
                         <StackPanel Margin="0,8,0,8">
-
+                            
                             <Button x:Name="BtnNav_Dashboard"
                                     Content="📊  Dashboard"
                                     Style="{StaticResource NavBtn}"
@@ -285,7 +293,9 @@
                                     Content="📋  Artículos"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Articulos_Click"/>
-
+                            <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="12,8"/>
+                            <!-- Nivel pedidos -->
+                            <TextBlock Text="PEDIDOS" Style="{StaticResource NavSeccion}"/>
                             <Button x:Name="BtnNav_Ventas"
                                     Content="🛒  Ventas"
                                     Style="{StaticResource NavBtn}"
@@ -294,6 +304,8 @@
                                     Content="📥  Compras"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Compras_Click"/>
+                            <!-- Nivel traspasos -->
+                            <TextBlock Text="TRASPASOS" Style="{StaticResource NavSeccion}"/>
                             <Button x:Name="BtnNav_Entradas"
                                     Content="📦  Entradas"
                                     Style="{StaticResource NavBtn}"
@@ -302,6 +314,8 @@
                                     Content="📤  Salidas"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Salidas_Click"/>
+                            <!-- Nivel correciones -->
+                            <TextBlock Text="CORRECCIONES" Style="{StaticResource NavSeccion}"/>
                             <Button x:Name="BtnNav_Repuestas"
                                     Content="🔧  Repuestas"
                                     Style="{StaticResource NavBtn}"
@@ -310,6 +324,9 @@
                                     Content="🔧  Retirados"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Retirados_Click"/>
+
+                            <!-- Nivel facturas -->
+                            <TextBlock Text="FACTURAS" Style="{StaticResource NavSeccion}"/>
                             <Button x:Name="BtnNav_Ingresos"
                                     Content="🧾  Ingresos"
                                     Style="{StaticResource NavBtn}"
@@ -318,6 +335,8 @@
                                     Content="🧾  Egresos"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Egresos_Click"/>
+                            <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="12,8"/>
+                            
                             <Button x:Name="BtnNav_Movimientos"
                                     Content="📈  Movimientos"
                                     Style="{StaticResource NavBtn}"

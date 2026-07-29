@@ -227,7 +227,8 @@
                                   HorizontalScrollBarVisibility="Disabled"
                                   PanningMode="VerticalOnly">
                         <StackPanel Margin="0,8,0,8">
-
+                            <!-- Nivel empresa: catálogos propios de la empresa seleccionada -->
+                            <TextBlock Text="NIVEL EMPRESA" Style="{StaticResource NavSeccion}"/>
                             <Button x:Name="BtnNav_Dashboard"
                                     Content="📊  Dashboard"
                                     Style="{StaticResource NavBtn}"
@@ -275,8 +276,7 @@
 
                             <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="12,8"/>
 
-                            <!-- Nivel empresa: catálogos propios de la empresa seleccionada -->
-                            <TextBlock Text="NIVEL EMPRESA" Style="{StaticResource NavSeccion}"/>
+                            
                             <Button x:Name="BtnNav_Precios"
                                     Content="💲  Precios"
                                     Style="{StaticResource NavBtn}"
