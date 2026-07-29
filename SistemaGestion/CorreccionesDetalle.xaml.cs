@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -51,15 +51,15 @@ namespace SistemaGestion
 
             if (AppState.EventoFormularioC == "editar")
             {
-                string movEdit   = Sql.DocumentosCObj.ObtenerItem("movimiento", _idEditar)?.ToString() ?? "egreso";
-                string tipoLabel = movEdit == "ingreso" ? "Ingreso" : "Egreso";
+                string movEdit   = NormalizarMovimiento(Sql.DocumentosCObj.ObtenerItem("movimiento", _idEditar)?.ToString());
+                string tipoLabel = movEdit == "repuesta" ? "Repuesta" : "Descarga";
                 LblTitulo.Text   = $"Editar Corrección de {tipoLabel}";
                 CargarParaEditar();
             }
             else
             {
-                string tipo      = string.IsNullOrEmpty(AppState.TipoCorreccion) ? "egreso" : AppState.TipoCorreccion;
-                string tipoLabel = tipo == "ingreso" ? "Ingreso" : "Egreso";
+                string tipo      = string.IsNullOrEmpty(AppState.TipoCorreccion) ? "descarga" : AppState.TipoCorreccion;
+                string tipoLabel = tipo == "repuesta" ? "Repuesta" : "Descarga";
                 LblTitulo.Text   = $"Nueva Corrección de {tipoLabel}";
                 CargarParaNuevo();
             }
@@ -80,7 +80,7 @@ namespace SistemaGestion
             Box_Fecha.SelectedDate = fecha;
             Box_Hora.Text          = fecha.ToString("HH:mm:ss");
 
-            string movimiento = Sql.DocumentosCObj.ObtenerItem("movimiento",  _idEditar)?.ToString() ?? "egreso";
+            string movimiento = NormalizarMovimiento(Sql.DocumentosCObj.ObtenerItem("movimiento", _idEditar)?.ToString());
             string motivo     = Sql.DocumentosCObj.ObtenerItem("motivo",      _idEditar)?.ToString() ?? "";
             SeleccionarMovimiento(movimiento);
             ActualizarMotivos(motivo);
@@ -138,8 +138,8 @@ namespace SistemaGestion
             Box_Emision.Text = $"{ahora:d} {ahora:HH:mm:ss}";
             Box_Edicion.Text = $"{ahora:d} {ahora:HH:mm:ss}";
 
-            // Preseleccionar el movimiento según la sub-pestaña (Ingresos / Egresos)
-            string tipo = string.IsNullOrEmpty(AppState.TipoCorreccion) ? "egreso" : AppState.TipoCorreccion;
+            // Preseleccionar el movimiento según la sección (Repuestas / Descargas)
+            string tipo = string.IsNullOrEmpty(AppState.TipoCorreccion) ? "descarga" : AppState.TipoCorreccion;
             SeleccionarMovimiento(tipo);   // dispara ActualizarMotivos
 
             _items.Clear();
@@ -153,8 +153,8 @@ namespace SistemaGestion
             ActualizarMotivos();
             if (!_cargando)
             {
-                string mov = (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "egreso";
-                string tipoLabel = mov == "ingreso" ? "Ingreso" : "Egreso";
+                string mov = (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "descarga";
+                string tipoLabel = mov == "repuesta" ? "Repuesta" : "Descarga";
                 string prefijo = AppState.EventoFormularioC == "editar" ? "Editar" : "Nueva";
                 LblTitulo.Text = $"{prefijo} Corrección de {tipoLabel}";
                 _hayCambios = true;
@@ -162,19 +162,31 @@ namespace SistemaGestion
             ActualizarBadge();
         }
 
+        /// <summary>
+        /// Movimiento de una corrección, normalizado a "repuesta"/"descarga". Las
+        /// correcciones cargadas antes del cambio de vocabulario guardaron
+        /// "ingreso"/"egreso": se leen como su equivalente.
+        /// </summary>
+        private static string NormalizarMovimiento(string? mov) =>
+            (mov ?? "").ToLower() switch
+            {
+                "repuesta" or "ingreso" => "repuesta",
+                _                       => "descarga"
+            };
+
         // ─── Badge + ícono según movimiento ───────────────────────────────────
         private void ActualizarBadge()
         {
-            string mov     = (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "egreso";
-            bool esIngreso = mov == "ingreso";
+            string mov     = (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "descarga";
+            bool esIngreso = mov == "repuesta";
 
             (BadgeEstado.Background, TxtBadgeEstado.Foreground, TxtBadgeEstado.Text) = esIngreso
                 ? (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
-                   new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)), "Ingreso")
+                   new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)), "Repuesta")
                 : (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
-                   new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Egreso");
+                   new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Descarga");
 
-            LblIconoTipo.Text       = esIngreso ? "IN" : "EG";
+            LblIconoTipo.Text       = esIngreso ? "RE" : "DE";
             IconoBorde.Background   = esIngreso
                 ? new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5))
                 : new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2));
@@ -192,7 +204,7 @@ namespace SistemaGestion
 
             string mov = (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "";
 
-            string[] motivos = mov == "ingreso"
+            string[] motivos = mov == "repuesta"
                 ? new[] { "error de registro", "registros omitidos" }
                 : new[] { "pérdida", "merma", "hurto", "consumo interno" };
 
@@ -650,7 +662,7 @@ namespace SistemaGestion
         }
 
         private string MovimientoSeleccionado =>
-            (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "egreso";
+            (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "descarga";
 
         private string MotivoSeleccionado =>
             (Box_Motivo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";

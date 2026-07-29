@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows;
 
 namespace VisorEmpresa.Data
@@ -97,7 +97,7 @@ namespace VisorEmpresa.Data
                 if (destino == sucursal && origen != sucursal) entradas += cantidad;
             }
 
-            // ── Correcciones (ingreso suma, egreso resta) ────────────────────
+            // ── Correcciones (repuesta suma, descarga resta) ─────────────────
             int ufCorr = Sql.CorreccionesObj.ContarFilas;
             for (int ciclo = 1; ciclo <= ufCorr; ciclo++)
             {
@@ -121,8 +121,10 @@ namespace VisorEmpresa.Data
                 string movimiento = Sql.DocumentosCObj.ObtenerItem("movimiento", documentoC)?.ToString()?.ToLower() ?? "";
                 double cantidad   = Convert.ToDouble(Sql.CorreccionesObj.ObtenerItem("cantidad", id) ?? 0);
 
-                if (movimiento == "ingreso") ingresos   += cantidad;
-                if (movimiento == "egreso")  descuentos += cantidad;
+                // "repuesta"/"descarga" es el vocabulario actual; "ingreso"/"egreso"
+                // el anterior — se aceptan los dos para no tocar lo ya cargado.
+                if (movimiento is "repuesta" or "ingreso") ingresos   += cantidad;
+                if (movimiento is "descarga" or "egreso")  descuentos += cantidad;
             }
 
             return (aperturas + entradas + compras + ingresos) - (salidas + ventas + descuentos);
@@ -209,7 +211,7 @@ namespace VisorEmpresa.Data
                 if (destino == sucursal && origen != sucursal) entradas += cantidad;
             }
 
-            // ── Correcciones (ingreso suma, egreso resta) ────────────────────
+            // ── Correcciones (repuesta suma, descarga resta) ─────────────────
             int ufCorr = Sql.CorreccionesObj.ContarFilas;
             for (int ciclo = 1; ciclo <= ufCorr; ciclo++)
             {
@@ -233,8 +235,10 @@ namespace VisorEmpresa.Data
                 string movimiento = Sql.DocumentosCObj.ObtenerItem("movimiento", documentoC)?.ToString()?.ToLower() ?? "";
                 double cantidad   = Convert.ToDouble(Sql.CorreccionesObj.ObtenerItem("cantidad", id) ?? 0);
 
-                if (movimiento == "ingreso") ingresos   += cantidad;
-                if (movimiento == "egreso")  descuentos += cantidad;
+                // "repuesta"/"descarga" es el vocabulario actual; "ingreso"/"egreso"
+                // el anterior — se aceptan los dos para no tocar lo ya cargado.
+                if (movimiento is "repuesta" or "ingreso") ingresos   += cantidad;
+                if (movimiento is "descarga" or "egreso")  descuentos += cantidad;
             }
 
             return (aperturas + entradas + compras + ingresos) - (salidas + ventas + descuentos);

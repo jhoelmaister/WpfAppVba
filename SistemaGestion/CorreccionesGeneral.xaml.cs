@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -16,23 +16,36 @@ namespace SistemaGestion
         private string _modoFiltro = "filtros"; // "filtros" = Tree1 | "busquedas" = TxtBuscar
 
         /// <summary>
-        /// Tipo de movimiento fijo para este control ("ingreso" o "egreso").
-        /// Lo establece la sub-pestaña (Ingresos / Egresos).
+        /// Tipo de movimiento fijo para este control ("repuesta" o "descarga"). Lo
+        /// fija la sección del panel lateral (Repuestas / Descargas): el listado
+        /// queda filtrado y el combo "Movimiento" se oculta. Vacío = la pantalla
+        /// lista repuestas y descargas juntas.
         /// </summary>
         public string TipoMovimiento { get; set; } = "";
 
         private bool _iniciado = false;
 
-        public CorreccionesGeneral()
+        public CorreccionesGeneral() : this("") { }
+
+        public CorreccionesGeneral(string tipoMovimiento)
         {
             InitializeComponent();
+            TipoMovimiento = (tipoMovimiento ?? "").ToLower();
             Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; ConfigurarModo(); CargarMeses(); CargarCorrecciones(); };
         }
 
         // BtnEliminar queda visible para todos: además del administrador, el
         // usuario que creó el documento también puede eliminarlo/ocultarlo — el
         // permiso se valida por documento en BtnEliminar_Click.
-        private void ConfigurarModo() { }
+        private void ConfigurarModo()
+        {
+            if (string.IsNullOrEmpty(TipoMovimiento)) return;
+
+            // Movimiento fijado por la sección: el combo queda en el valor
+            // correspondiente y se oculta (acá no es una opción del usuario).
+            CboTipoMovimiento.SelectedIndex = TipoMovimiento == "descarga" ? 2 : 1;
+            PanelTipoMovimiento.Visibility  = Visibility.Collapsed;
+        }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
         private void CargarMeses()
@@ -139,8 +152,8 @@ namespace SistemaGestion
                 string suc = Sql.DocumentosCObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
                 if (suc != AppState.SucursalActiva) continue;
 
-                // Filtrar por tipo de movimiento (ingreso / egreso)
-                string movimiento = Sql.DocumentosCObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
+                // Filtrar por tipo de movimiento (repuesta / descarga)
+                string movimiento = NormalizarMovimiento(Sql.DocumentosCObj.ObtenerItem("movimiento", id)?.ToString());
                 if (!string.IsNullOrEmpty(tipoMov) &&
                     !string.Equals(movimiento, tipoMov, StringComparison.OrdinalIgnoreCase))
                     continue;
@@ -182,13 +195,13 @@ namespace SistemaGestion
             Grid1.ItemsSource       = lista;
             TxtTotalCantidad.Text   = totalCant.ToString("N0");
             TxtTotalDocumentos.Text = lista.Count.ToString("N0");
-            TxtTotalIngresos.Text   = lista.Count(f => f.Movimiento == "ingreso").ToString();
-            TxtTotalEgresos.Text    = lista.Count(f => f.Movimiento == "egreso").ToString();
+            TxtTotalIngresos.Text   = lista.Count(f => f.Movimiento == "repuesta").ToString();
+            TxtTotalEgresos.Text    = lista.Count(f => f.Movimiento == "descarga").ToString();
             LblTipoMovimiento.Text = tipoMov switch
             {
-                "egreso"  => "Egresos de Stock (pérdida, merma, hurto, consumo interno)",
-                "ingreso" => "Ingresos de Stock (error de registro, registros omitidos)",
-                _         => "Correcciones de Stock (Ingresos y Egresos)"
+                "descarga" => "Descargas de Stock (pérdida, merma, hurto, consumo interno)",
+                "repuesta" => "Repuestas de Stock (error de registro, registros omitidos)",
+                _          => "Correcciones de Stock (Repuestas y Descargas)"
             };
             int año = AppState.DataFechaFinal.Year > 2000
                 ? AppState.DataFechaFinal.Year
@@ -202,13 +215,28 @@ namespace SistemaGestion
 
         private string ObtenerFiltroTipo()
         {
+            if (!string.IsNullOrEmpty(TipoMovimiento)) return TipoMovimiento;
+
             return (CboTipoMovimiento?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() switch
             {
-                "ingresos" => "ingreso",
-                "egresos"  => "egreso",
-                _          => ""
+                "repuestas" => "repuesta",
+                "descargas" => "descarga",
+                _           => ""
             };
         }
+
+        /// <summary>
+        /// Movimiento de una corrección, normalizado a "repuesta"/"descarga". Las
+        /// correcciones cargadas antes del cambio de vocabulario guardaron
+        /// "ingreso"/"egreso": se leen como su equivalente.
+        /// </summary>
+        private static string NormalizarMovimiento(string? mov) =>
+            (mov ?? "").ToLower() switch
+            {
+                "descarga" or "egreso" => "descarga",
+                "repuesta" or "ingreso" => "repuesta",
+                _                       => ""
+            };
 
         // ─── Nombre de mes ────────────────────────────────────────────────────
         private static string ObtenerNombreMes(int mes)
@@ -233,7 +261,7 @@ namespace SistemaGestion
                 Codigo        = Sql.DocumentosCObj.ObtenerItem("codigo", id)?.ToString() ?? "",
                 Fecha         = fecha,
                 FechaStr      = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
-                Movimiento    = Sql.DocumentosCObj.ObtenerItem("movimiento",  id)?.ToString() ?? "",
+                Movimiento    = NormalizarMovimiento(Sql.DocumentosCObj.ObtenerItem("movimiento", id)?.ToString()),
                 Motivo        = Sql.DocumentosCObj.ObtenerItem("motivo",      id)?.ToString() ?? "",
                 Referencia    = Sql.DocumentosCObj.ObtenerItem("referencia",  id)?.ToString() ?? "",
                 UsuarioCreador = Sql.DocumentosCObj.ObtenerItem("usuario", id)?.ToString() ?? "",
@@ -253,8 +281,8 @@ namespace SistemaGestion
             }
             TxtTotalCantidad.Text   = totalCant.ToString("N0");
             TxtTotalDocumentos.Text = lista.Count.ToString("N0");
-            TxtTotalIngresos.Text   = lista.Count(f => f.Movimiento == "ingreso").ToString();
-            TxtTotalEgresos.Text    = lista.Count(f => f.Movimiento == "egreso").ToString();
+            TxtTotalIngresos.Text   = lista.Count(f => f.Movimiento == "repuesta").ToString();
+            TxtTotalEgresos.Text    = lista.Count(f => f.Movimiento == "descarga").ToString();
             Grid1.Items.Refresh();
         }
 
@@ -386,7 +414,7 @@ namespace SistemaGestion
         {
             AppState.EventoFormularioC = "nuevo";
             string filtroTipo = ObtenerFiltroTipo();
-            AppState.TipoCorreccion = string.IsNullOrEmpty(filtroTipo) ? "egreso" : filtroTipo;
+            AppState.TipoCorreccion = string.IsNullOrEmpty(filtroTipo) ? "descarga" : filtroTipo;
 
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
@@ -492,7 +520,7 @@ namespace SistemaGestion
             string idSel = fila.Id;
             int    linea = fila.Linea;
             AppState.EventoFormularioC = "editar";
-            AppState.TipoCorreccion = Sql.DocumentosCObj.ObtenerItem("movimiento", idSel)?.ToString() ?? "egreso";
+            AppState.TipoCorreccion = NormalizarMovimiento(Sql.DocumentosCObj.ObtenerItem("movimiento", idSel)?.ToString());
 
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;

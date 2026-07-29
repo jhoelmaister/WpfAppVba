@@ -58,6 +58,9 @@ namespace SistemaGestion
         // Factura vinculada a un pedido (documentosF.relacion): los cobros y el estado
         // de cuenta viven en el pedido, y los datos generales se toman de él.
         private bool _vinculadoAPedido = false;
+        // Id del documentosP relacionado. Ya no hay caja de texto: se carga con el
+        // botón "Validar" (o al abrir una factura que ya lo tenía guardado).
+        private string _pedidoRelacionadoId = "";
 
         public FacturasDetalle(object? padre = null, string idEditar = "", string tituloTab = "",
                                string desdePedidoId = "",
@@ -107,10 +110,7 @@ namespace SistemaGestion
             Box_Tercero_Identificador.Text = Sql.TercerosObj.ObtenerItem("codigo", terceroUuid)?.ToString() ?? "";
             ActualizarDescripcionTercero();
 
-            string pedidoUuid = Sql.DocumentosFObj.ObtenerItem("relacion", _idEditar)?.ToString() ?? "";
-            Box_PedidoRelacionado.Text = pedidoUuid == ""
-                                         ? ""
-                                         : Sql.DocumentosPObj.ObtenerItem("codigo", pedidoUuid)?.ToString() ?? "";
+            _pedidoRelacionadoId = Sql.DocumentosFObj.ObtenerItem("relacion", _idEditar)?.ToString() ?? "";
             ActualizarDescripcionPedido();
 
             // Las facturas anteriores a este cambio guardaron "venta"/"compra": se
@@ -194,7 +194,7 @@ namespace SistemaGestion
 
             Box_Tercero_Identificador.Text = "";
             Box_Tercero_Descripcion.Text   = "";
-            Box_PedidoRelacionado.Text      = "";
+            _pedidoRelacionadoId            = "";
             Box_PedidoRelacionado_Desc.Text = "";
             _movimiento = _movimientoInicial == "egreso" ? "egreso" : "ingreso";
 
@@ -224,7 +224,7 @@ namespace SistemaGestion
             CopiarGeneralesDelPedido(_desdePedidoId);
 
             // documentosF.relacion: el pedido que se está facturando.
-            Box_PedidoRelacionado.Text = Sql.DocumentosPObj.ObtenerItem("codigo", _desdePedidoId)?.ToString() ?? "";
+            _pedidoRelacionadoId = _desdePedidoId;
             ActualizarDescripcionPedido();
 
             foreach (var linea in _lineasDesdePedido)
@@ -278,30 +278,26 @@ namespace SistemaGestion
         }
 
         // ─── Pedido de origen (documentosF.relacion → documentosP) ────────────
-        private string ResolverPedidoRelacionadoId()
-        {
-            string cod = Box_PedidoRelacionado.Text.Trim();
-            return cod == "" ? "" : Sql.DocumentosPObj.BuscarIdentificador("codigo", cod);
-        }
+        private string ResolverPedidoRelacionadoId() => _pedidoRelacionadoId;
 
+        /// <summary>
+        /// Muestra el pedido relacionado en el encabezado: código, cliente/proveedor
+        /// y fecha completa.
+        /// </summary>
         private void ActualizarDescripcionPedido()
         {
-            string id = ResolverPedidoRelacionadoId();
-            if (id == "") { Box_PedidoRelacionado_Desc.Text = ""; return; }
+            string id = _pedidoRelacionadoId;
+            if (id == "") { Box_PedidoRelacionado_Desc.Text = "—"; return; }
 
+            string codigo    = Sql.DocumentosPObj.ObtenerItem("codigo", id)?.ToString() ?? "";
             string terceroId = Sql.DocumentosPObj.ObtenerItem("tercero", id)?.ToString() ?? "";
             string desc      = Sql.TercerosObj.ObtenerItem("descripcion", terceroId)?.ToString() ?? "";
             var    fechaObj  = Sql.DocumentosPObj.ObtenerItem("fecha", id);
-            string fecha     = fechaObj != null ? $"{Convert.ToDateTime(fechaObj):d}" : "";
-            Box_PedidoRelacionado_Desc.Text = FuncionesComunes.UnirVariables(desc, fecha);
-        }
-
-        private void Box_PedidoRelacionado_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (_cargando) return;
-            ActualizarDescripcionPedido();
-            AplicarVinculoPedido();
-            _hayCambios = true;
+            string fecha     = fechaObj != null
+                               ? $"{Convert.ToDateTime(fechaObj):d} {Convert.ToDateTime(fechaObj):HH:mm:ss}"
+                               : "";
+            Box_PedidoRelacionado_Desc.Text = string.Join("  ·  ",
+                new[] { codigo, desc, fecha }.Where(t => !string.IsNullOrWhiteSpace(t)));
         }
 
         /// <summary>
@@ -316,26 +312,98 @@ namespace SistemaGestion
             string pedidoId = ResolverPedidoRelacionadoId();
             _vinculadoAPedido = pedidoId != "";
 
-            var visible = _vinculadoAPedido ? Visibility.Collapsed : Visibility.Visible;
-            TabCobros.Visibility       = visible;
-            LblEstadoCuenta.Visibility = visible;
-            BadgeEstadoC.Visibility    = visible;
-            CardCobrado.Visibility     = visible;
-            CardSaldo.Visibility       = visible;
+            var ocultarCobros = _vinculadoAPedido ? Visibility.Collapsed : Visibility.Visible;
+            TabCobros.Visibility   = ocultarCobros;
+            CardCobrado.Visibility = ocultarCobros;
+            CardSaldo.Visibility   = ocultarCobros;
 
             if (_vinculadoAPedido && ReferenceEquals(TabControl1.SelectedItem, TabCobros))
                 TabControl1.SelectedIndex = 0;
 
-            bool editable = !_vinculadoAPedido;
-            Box_Fecha.IsEnabled                 = editable;
-            Box_Hora.IsEnabled                  = editable;
-            Box_Tercero_Identificador.IsEnabled = editable;
-            BtnBuscarTercero.IsEnabled          = editable;
-            Box_Referencia.IsEnabled            = editable;
-            Box_Observacion.IsEnabled           = editable;
+            // "Validar" y "Actualizar" solo tienen sentido con un pedido detrás.
+            var botonesPedido = _vinculadoAPedido ? Visibility.Visible : Visibility.Collapsed;
+            BtnValidarPedido.Visibility    = botonesPedido;
+            BtnActualizarPedido.Visibility = botonesPedido;
+            LblPedidoRelacionado.Visibility        = botonesPedido;
+            Box_PedidoRelacionado_Desc.Visibility  = botonesPedido;
 
-            if (_vinculadoAPedido) CopiarGeneralesDelPedido(pedidoId);
-            ActualizarBadges();
+            ActualizarTotales();
+        }
+
+        /// <summary>
+        // ─── Botones "Validar" / "Actualizar" (solo con un pedido detrás) ─────
+
+        /// <summary>
+        /// Reabre la pestaña "Validar pedido" con el pedido actual ya seleccionado:
+        /// se puede elegir otro pedido o volver a tildar las líneas de este. Lo que
+        /// se valide reemplaza los datos generales y las líneas de la factura.
+        /// </summary>
+        private void BtnValidarPedido_Click(object sender, RoutedEventArgs e)
+        {
+#if !VISOR
+            ValidarPedido.PedidoValidado  = null;
+            ValidarPedido.LineasValidadas = null;
+
+            // El pedido es venta/compra y la factura ingreso/egreso: una compra
+            // entra (ingreso) y una venta sale (egreso).
+            string movPedido = MovimientoSeleccionado == "egreso" ? "venta" : "compra";
+
+            ValidarPedido.OpenAsDialog(Window.GetWindow(this)!, contexto: _tituloTab, llamador: this,
+                movimiento: movPedido, pedidoPreseleccionado: _pedidoRelacionadoId,
+                onCerrado: () =>
+                {
+                    string pedidoId = ValidarPedido.PedidoValidado ?? "";
+                    var lineas      = ValidarPedido.LineasValidadas;
+                    if (pedidoId == "" || lineas == null || lineas.Count == 0) return;
+
+                    RehacerDesdePedido(pedidoId, lineas);
+                });
+#endif
+        }
+
+        /// <summary>
+        /// Rehace la factura con los datos actuales del pedido ya relacionado, sin
+        /// pasar por la pestaña de validación: mismos datos generales y las líneas
+        /// del pedido agrupadas por categoría.
+        /// </summary>
+        private void BtnActualizarPedido_Click(object sender, RoutedEventArgs e)
+        {
+#if !VISOR
+            if (_pedidoRelacionadoId == "") return;
+
+            var res = MessageBox.Show(
+                "Se van a reemplazar los datos generales y todas las líneas con lo que " +
+                "tiene hoy el pedido relacionado.\n\n¿Continuar?",
+                "Consola", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (res != MessageBoxResult.Yes) return;
+
+            RehacerDesdePedido(_pedidoRelacionadoId, ValidarPedido.LineasDePedido(_pedidoRelacionadoId));
+#endif
+        }
+
+        /// <summary>
+        /// Reemplaza documento y líneas con los del pedido indicado.
+        /// </summary>
+        private void RehacerDesdePedido(string pedidoId, List<FacturaLineaValidada> lineas)
+        {
+            _pedidoRelacionadoId = pedidoId;
+            CopiarGeneralesDelPedido(pedidoId);
+            ActualizarDescripcionPedido();
+
+            _items.Clear();
+            foreach (var linea in lineas)
+                _items.Add(new FacturaItemFila
+                {
+                    FacturaId   = "",   // línea nueva, todavía sin guardar
+                    Concepto    = linea.Concepto,
+                    CategoriaId = string.IsNullOrEmpty(linea.CategoriaId) ? PrimeraCategoriaId() : linea.CategoriaId,
+                    Importe     = linea.Importe
+                });
+
+            _hayCambios = true;
+            AplicarVinculoPedido();
+            RefrescarGrid();
+            ActualizarTotales();
         }
 
         /// <summary>
@@ -459,9 +527,13 @@ namespace SistemaGestion
             TxtTotalCobrado.Text = cobrado.ToString("N2");
             TxtTotalSaldo.Text   = saldo.ToString("N2");
 
-            // Con la factura vinculada a un pedido, el estado de cuenta es el del
-            // pedido: acá no hay cobros que mirar y no se toca el valor guardado.
-            if (!_vinculadoAPedido)
+            // Con la factura vinculada a un pedido no hay cobros propios que mirar:
+            // la cuenta la lleva el pedido, así que la factura queda cancelada.
+            if (_vinculadoAPedido)
+            {
+                _estadoC = "cancelado";
+            }
+            else
             {
                 if (importe > 0 && cobrado == 0)           _estadoC = "pendiente";
                 else if (cobrado > 0 && cobrado < importe) _estadoC = "pendiente parcial";
@@ -497,12 +569,13 @@ namespace SistemaGestion
             bool esEgreso = MovimientoSeleccionado == "egreso";
             LblTitulo.Text          = esEgreso ? "Egreso de Factura" : "Ingreso de Factura";
             LblIconoTipo.Text       = esEgreso ? "EG" : "IN";
+            // Ingreso en verde, egreso en rojo.
             LblIconoTipo.Foreground = esEgreso
-                ? new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46))
-                : new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B));
+                ? new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B))
+                : new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46));
             IconoBorde.Background   = esEgreso
-                ? new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5))
-                : new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2));
+                ? new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2))
+                : new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5));
 
             LblDocNum.Text = Box_DocumentoF.Text;
         }

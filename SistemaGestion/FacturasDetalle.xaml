@@ -45,6 +45,10 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush"     Value="{DynamicResource ThemeBorde}"/>
         </Style>
+        <Style x:Key="BtnSuccess" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="#10B981"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
         <Style x:Key="BtnPeligro" TargetType="Button" BasedOn="{StaticResource BtnBase}">
             <Setter Property="Background" Value="#EF4444"/>
             <Setter Property="Foreground" Value="White"/>
@@ -275,23 +279,9 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- Pedido de origen (documentosF.relacion → documentosP) -->
-                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                    <TextBlock Text="Pedido:" Style="{StaticResource LblMuted}"
-                               VerticalAlignment="Center"/>
-                    <TextBox x:Name="Box_PedidoRelacionado"
-                             Width="110" Height="24" FontSize="11"
-                             Margin="6,0,8,0"
-                             VerticalContentAlignment="Center"
-                             TextChanged="Box_PedidoRelacionado_TextChanged"/>
-                    <TextBlock x:Name="Box_PedidoRelacionado_Desc"
-                               FontSize="10"
-                               Foreground="{DynamicResource ThemeTextoMuted}"
-                               VerticalAlignment="Center"
-                               TextTrimming="CharacterEllipsis"/>
-                </StackPanel>
-
-                <!-- Emisión / edición (readonly) -->
+                <!-- Emisión / edición (readonly) + pedido de origen
+                     (documentosF.relacion → documentosP), que se carga con el
+                     botón "Validar" de la pestaña de líneas. -->
                 <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                     <TextBlock Text="Emisión:" Style="{StaticResource LblMuted}"/>
                     <TextBlock x:Name="Box_Emision"
@@ -300,7 +290,14 @@
                     <TextBlock Text="Edición:" Style="{StaticResource LblMuted}"/>
                     <TextBlock x:Name="Box_Edicion"
                                FontSize="10" Foreground="{DynamicResource ThemeTexto}"
-                               VerticalAlignment="Center"/>
+                               VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <TextBlock x:Name="LblPedidoRelacionado"
+                               Text="Pedido:" Style="{StaticResource LblMuted}"/>
+                    <TextBlock x:Name="Box_PedidoRelacionado_Desc"
+                               FontSize="10" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeTexto}"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
 
             </StackPanel>
@@ -341,7 +338,20 @@
                                     Click="BtnDuplicarLinea_Click"/>
                             <Button Content="Eliminar línea"
                                     Style="{StaticResource BtnPeligro}"
+                                    Margin="0,0,5,0"
                                     Click="BtnEliminarLinea_Click"/>
+                            <!-- Solo visibles si el documento nació validando un pedido -->
+                            <Button x:Name="BtnValidarPedido"
+                                    Content="Validar"
+                                    Style="{StaticResource BtnSuccess}"
+                                    Margin="0,0,5,0"
+                                    ToolTip="Elegir otro pedido o volver a tildar las líneas de este"
+                                    Click="BtnValidarPedido_Click"/>
+                            <Button x:Name="BtnActualizarPedido"
+                                    Content="Actualizar"
+                                    Style="{StaticResource BtnPrimario}"
+                                    ToolTip="Rehacer la factura con los datos actuales del pedido relacionado"
+                                    Click="BtnActualizarPedido_Click"/>
                         </StackPanel>
                     </Border>
 

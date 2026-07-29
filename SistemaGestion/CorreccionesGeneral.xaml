@@ -1,4 +1,4 @@
-<UserControl x:Class="SistemaGestion.CorreccionesGeneral"
+﻿<UserControl x:Class="SistemaGestion.CorreccionesGeneral"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Background="{DynamicResource ThemeBgPrincipal}">
@@ -66,10 +66,10 @@
                 <Border.Style>
                     <Style TargetType="Border">
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding Movimiento}" Value="ingreso">
+                            <DataTrigger Binding="{Binding Movimiento}" Value="repuesta">
                                 <Setter Property="Background" Value="#D1FAE5"/>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding Movimiento}" Value="egreso">
+                            <DataTrigger Binding="{Binding Movimiento}" Value="descarga">
                                 <Setter Property="Background" Value="#FEE2E2"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -80,10 +80,10 @@
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding Movimiento}" Value="ingreso">
+                                <DataTrigger Binding="{Binding Movimiento}" Value="repuesta">
                                     <Setter Property="Foreground" Value="#065F46"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding Movimiento}" Value="egreso">
+                                <DataTrigger Binding="{Binding Movimiento}" Value="descarga">
                                     <Setter Property="Foreground" Value="#991B1B"/>
                                 </DataTrigger>
                             </Style.Triggers>
@@ -166,7 +166,7 @@
                                    Margin="0,2,0,0"/>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="1" Orientation="Horizontal"
+                    <StackPanel x:Name="PanelTipoMovimiento" Grid.Column="1" Orientation="Horizontal"
                                 VerticalAlignment="Center" Margin="0,0,0,0">
                         <TextBlock Text="Movimiento:"
                                    FontSize="12" VerticalAlignment="Center"
@@ -176,8 +176,8 @@
                                   Width="100" Height="28" FontSize="12"
                                   SelectionChanged="CboTipoMovimiento_SelectionChanged">
                             <ComboBoxItem Content="Todos" IsSelected="True"/>
-                            <ComboBoxItem Content="Ingresos"/>
-                            <ComboBoxItem Content="Egresos"/>
+                            <ComboBoxItem Content="Repuestas"/>
+                            <ComboBoxItem Content="Descargas"/>
                         </ComboBox>
                     </StackPanel>
                 </Grid>
@@ -219,7 +219,7 @@
 
                 <Border Grid.Column="4" Style="{StaticResource MetricCard}">
                     <StackPanel>
-                        <TextBlock Text="Ingresos"
+                        <TextBlock Text="Repuestas"
                                    FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
                         <TextBlock x:Name="TxtTotalIngresos"
                                    FontSize="20" FontWeight="SemiBold"
@@ -230,7 +230,7 @@
 
                 <Border Grid.Column="6" Style="{StaticResource MetricCard}">
                     <StackPanel>
-                        <TextBlock Text="Egresos"
+                        <TextBlock Text="Descargas"
                                    FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
                         <TextBlock x:Name="TxtTotalEgresos"
                                    FontSize="20" FontWeight="SemiBold"

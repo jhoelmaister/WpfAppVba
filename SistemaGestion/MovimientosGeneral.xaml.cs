@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -229,7 +229,11 @@ namespace SistemaGestion
                     case "venta":    stock -= d.Cantidad; totalVentas   += d.Cantidad; break;
                     case "entrada":  stock += d.Cantidad; totalEntradas += d.Cantidad; break;
                     case "salida":   stock -= d.Cantidad; totalSalidas  += d.Cantidad; break;
+                    // Correcciones: "repuesta"/"descarga" es el vocabulario actual,
+                    // "ingreso"/"egreso" el anterior (documentos ya cargados).
+                    case "repuesta":
                     case "ingreso":  stock += d.Cantidad; totalIngresos += d.Cantidad; break;
+                    case "descarga":
                     case "egreso":   stock -= d.Cantidad; totalEgresos  += d.Cantidad; break;
                 }
 

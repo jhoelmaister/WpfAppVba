@@ -310,10 +310,14 @@
                                     Content="🧾  Egresos"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Egresos_Click"/>
-                            <Button x:Name="BtnNav_Correcciones"
-                                    Content="🔧  Correcciones"
+                            <Button x:Name="BtnNav_Repuestas"
+                                    Content="🔧  Repuestas"
                                     Style="{StaticResource NavBtn}"
-                                    Click="BtnNav_Correcciones_Click"/>
+                                    Click="BtnNav_Repuestas_Click"/>
+                            <Button x:Name="BtnNav_Descargas"
+                                    Content="🔧  Descargas"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Descargas_Click"/>
                             <Button x:Name="BtnNav_Movimientos"
                                     Content="📈  Movimientos"
                                     Style="{StaticResource NavBtn}"

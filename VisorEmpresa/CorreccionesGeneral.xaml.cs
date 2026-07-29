@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -229,8 +229,8 @@ namespace VisorEmpresa
 
                 string sucDesc = Sql.SucursalesObj.ObtenerItem("descripcion", suc)?.ToString() ?? suc;
 
-                // Filtrar por tipo de movimiento (ingreso / egreso)
-                string movimiento = Sql.DocumentosCObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
+                // Filtrar por tipo de movimiento (repuesta / descarga)
+                string movimiento = NormalizarMovimiento(Sql.DocumentosCObj.ObtenerItem("movimiento", id)?.ToString());
                 if (!string.IsNullOrEmpty(tipoMov) &&
                     !string.Equals(movimiento, tipoMov, StringComparison.OrdinalIgnoreCase))
                     continue;
@@ -271,13 +271,13 @@ namespace VisorEmpresa
             Grid1.ItemsSource       = lista;
             TxtTotalCantidad.Text   = totalCant.ToString("N0");
             TxtTotalDocumentos.Text = lista.Count.ToString("N0");
-            TxtTotalIngresos.Text   = lista.Count(f => f.Movimiento == "ingreso").ToString();
-            TxtTotalEgresos.Text    = lista.Count(f => f.Movimiento == "egreso").ToString();
+            TxtTotalIngresos.Text   = lista.Count(f => f.Movimiento == "repuesta").ToString();
+            TxtTotalEgresos.Text    = lista.Count(f => f.Movimiento == "descarga").ToString();
             LblTipoMovimiento.Text = tipoMov switch
             {
-                "egreso"  => "Egresos de Stock (pérdida, merma, hurto, consumo interno)",
-                "ingreso" => "Ingresos de Stock (error de registro, registros omitidos)",
-                _         => "Correcciones de Stock (Ingresos y Egresos)"
+                "descarga" => "Descargas de Stock (pérdida, merma, hurto, consumo interno)",
+                "repuesta" => "Repuestas de Stock (error de registro, registros omitidos)",
+                _          => "Correcciones de Stock (Repuestas y Descargas)"
             };
             int año = VisorState.AnioActivo;
             LblSubtitulo.Text = string.IsNullOrEmpty(_mesActivo)
@@ -287,12 +287,25 @@ namespace VisorEmpresa
             OcultarDetalle();
         }
 
+        /// <summary>
+        /// Movimiento de una corrección, normalizado a "repuesta"/"descarga". Las
+        /// correcciones cargadas antes del cambio de vocabulario guardaron
+        /// "ingreso"/"egreso": se leen como su equivalente.
+        /// </summary>
+        private static string NormalizarMovimiento(string? mov) =>
+            (mov ?? "").ToLower() switch
+            {
+                "descarga" or "egreso"  => "descarga",
+                "repuesta" or "ingreso" => "repuesta",
+                _                       => ""
+            };
+
         private string ObtenerFiltroTipo()
         {
             return (CboTipoMovimiento?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() switch
             {
-                "ingresos" => "ingreso",
-                "egresos"  => "egreso",
+                "repuestas" => "repuesta",
+                "descargas" => "descarga",
                 _          => ""
             };
         }

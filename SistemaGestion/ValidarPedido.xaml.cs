@@ -42,24 +42,37 @@ namespace SistemaGestion
         // se listan pedidos de ese movimiento. Vacío = todos.
         private readonly string _movimiento;
 
+        // Pedido que ya trae la factura: se deja seleccionado al abrir.
+        private readonly string _pedidoPreseleccionado;
+
         public ValidarPedido() : this("") { }
 
-        public ValidarPedido(string movimiento)
+        public ValidarPedido(string movimiento, string pedidoPreseleccionado = "")
         {
             InitializeComponent();
             _movimiento = (movimiento ?? "").ToLower();
-            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarPedidos(); };
+            _pedidoPreseleccionado = pedidoPreseleccionado ?? "";
+            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarPedidos(); Preseleccionar(); };
+        }
+
+        private void Preseleccionar()
+        {
+            if (_pedidoPreseleccionado == "") return;
+            var fila = _pedidos.FirstOrDefault(f => f.DocumentoP == _pedidoPreseleccionado);
+            if (fila == null) return;
+            GridPedidos.SelectedItem = fila;
+            GridPedidos.ScrollIntoView(fila);
         }
 
         public void IntentarCerrar() => Cerrando?.Invoke();
 
         public static void OpenAsDialog(Window owner, string contexto = "",
                                         Action? onCerrado = null, UIElement? llamador = null,
-                                        string movimiento = "")
+                                        string movimiento = "", string pedidoPreseleccionado = "")
         {
             if (owner is not ConsolaMovimientos consola) return;
 
-            var ctrl = new ValidarPedido(movimiento);
+            var ctrl = new ValidarPedido(movimiento, pedidoPreseleccionado);
             ctrl.Cerrando += () => { consola.CerrarPestaña(ctrl); onCerrado?.Invoke(); consola.SeleccionarPestaña(llamador); };
 
             string titulo = string.IsNullOrEmpty(contexto)
@@ -338,6 +351,40 @@ namespace SistemaGestion
             PedidoValidado  = null;
             LineasValidadas = null;
             Cerrando?.Invoke();
+        }
+
+        /// <summary>
+        /// Todas las líneas de un pedido agrupadas por categoría, con el mismo
+        /// criterio que "Validar pedido" (una línea por categoría, sin las que
+        /// suman cero). La usa el botón "Actualizar" de FacturasDetalle para
+        /// rehacer la factura sin volver a tildar línea por línea.
+        /// </summary>
+        public static List<FacturaLineaValidada> LineasDePedido(string documentoP)
+        {
+            var porCategoria = new Dictionary<string, double>();
+            int uf = Sql.PedidosObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.PedidosObj.Mover(i);
+                if (idObj == null) continue;
+                string id = idObj.ToString()!;
+                if (Sql.PedidosObj.ObtenerItem("documentoP", id)?.ToString() != documentoP) continue;
+
+                string artId = Sql.PedidosObj.ObtenerItem("articulo", id)?.ToString() ?? "";
+                string catId = Sql.ArticulosObj.ObtenerItem("categoria", artId)?.ToString() ?? "";
+                double importe = Convert.ToDouble(Sql.PedidosObj.ObtenerItem("importe", id) ?? 0);
+                porCategoria[catId] = (porCategoria.TryGetValue(catId, out double acum) ? acum : 0) + importe;
+            }
+
+            return porCategoria
+                .Where(kv => kv.Value != 0)
+                .Select(kv => new FacturaLineaValidada
+                {
+                    CategoriaId = kv.Key,
+                    Concepto    = DescripcionCategoria(kv.Key),
+                    Importe     = kv.Value
+                })
+                .ToList();
         }
 
         private static string DescripcionCategoria(string categoriaId)
