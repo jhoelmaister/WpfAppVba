@@ -17,7 +17,7 @@ namespace SistemaGestion
 
         /// <summary>
         /// Tipo de movimiento fijo para este control ("venta" o "compra"). Lo fija
-        /// la sección del panel lateral (Ventas → Facturas / Compras → Facturas):
+        /// la sección del panel lateral, si esa sección fija uno:
         /// el listado queda filtrado y las facturas nuevas nacen con ese movimiento.
         /// Es la única forma de elegirlo: ya no hay combo "Movimiento" en pantalla.
         /// Vacío = la pantalla lista ventas y compras juntas.

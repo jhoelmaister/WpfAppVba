@@ -48,24 +48,6 @@
         </Style>
 
         <!-- ── Botón de acceso rápido (top bar) ───────────────────────── -->
-        <!-- Encabezado de sección del panel lateral (VENTAS / COMPRAS): es un
-             título, no un botón — no hace nada al hacerle clic. -->
-        <Style x:Key="NavSeccion" TargetType="TextBlock">
-            <Setter Property="FontSize"   Value="10"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
-            <Setter Property="Opacity"    Value="0.75"/>
-            <Setter Property="Margin"     Value="14,10,12,4"/>
-        </Style>
-
-        <!-- Ítem de navegación dentro de una sección: igual que NavBtn pero
-             indentado y un punto más chico. -->
-        <Style x:Key="NavBtnSub" TargetType="Button" BasedOn="{StaticResource NavBtn}">
-            <Setter Property="Height"   Value="36"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Padding"  Value="28,0,12,0"/>
-        </Style>
-
         <Style x:Key="QuickBtn" TargetType="Button">
             <Setter Property="Height" Value="32"/>
             <Setter Property="Padding" Value="14,0"/>
@@ -304,42 +286,26 @@
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Articulos_Click"/>
 
-                            <TextBlock Text="VENTAS" Style="{StaticResource NavSeccion}"/>
-                            <Button x:Name="BtnNav_RemisionesVenta"
-                                    Content="📑  Remisiones"
-                                    Style="{StaticResource NavBtnSub}"
-                                    Click="BtnNav_RemisionesVenta_Click"/>
-                            <Button x:Name="BtnNav_FacturasVenta"
+                            <Button x:Name="BtnNav_Ventas"
+                                    Content="🛒  Ventas"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Ventas_Click"/>
+                            <Button x:Name="BtnNav_Compras"
+                                    Content="📥  Compras"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Compras_Click"/>
+                            <Button x:Name="BtnNav_Facturas"
                                     Content="🧾  Facturas"
-                                    Style="{StaticResource NavBtnSub}"
-                                    Click="BtnNav_FacturasVenta_Click"/>
-
-                            <TextBlock Text="COMPRAS" Style="{StaticResource NavSeccion}"/>
-                            <Button x:Name="BtnNav_RemisionesCompra"
-                                    Content="📑  Remisiones"
-                                    Style="{StaticResource NavBtnSub}"
-                                    Click="BtnNav_RemisionesCompra_Click"/>
-                            <Button x:Name="BtnNav_FacturasCompra"
-                                    Content="🧾  Facturas"
-                                    Style="{StaticResource NavBtnSub}"
-                                    Click="BtnNav_FacturasCompra_Click"/>
-
-                            <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="12,8"/>
-
-                            <TextBlock Text="ENTRADAS" Style="{StaticResource NavSeccion}"/>
-                            <Button x:Name="BtnNav_TraspasosEntrada"
-                                    Content="🔄  Traspasos"
-                                    Style="{StaticResource NavBtnSub}"
-                                    Click="BtnNav_TraspasosEntrada_Click"/>
-
-                            <TextBlock Text="SALIDAS" Style="{StaticResource NavSeccion}"/>
-                            <Button x:Name="BtnNav_TraspasosSalida"
-                                    Content="🔄  Traspasos"
-                                    Style="{StaticResource NavBtnSub}"
-                                    Click="BtnNav_TraspasosSalida_Click"/>
-
-                            <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="12,8"/>
-
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Facturas_Click"/>
+                            <Button x:Name="BtnNav_Entradas"
+                                    Content="📦  Entradas"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Entradas_Click"/>
+                            <Button x:Name="BtnNav_Salidas"
+                                    Content="📤  Salidas"
+                                    Style="{StaticResource NavBtn}"
+                                    Click="BtnNav_Salidas_Click"/>
                             <Button x:Name="BtnNav_Correcciones"
                                     Content="🔧  Correcciones"
                                     Style="{StaticResource NavBtn}"

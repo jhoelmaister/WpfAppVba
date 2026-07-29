@@ -50,10 +50,6 @@ namespace SistemaGestion
         // Movimiento con el que nace una factura nueva ("venta"/"compra"). Lo pasa
         // la sección de FacturasGeneral desde la que se creó; vacío = venta.
         private readonly string _movimientoInicial;
-        // Movimiento del documento ("venta"/"compra"). Ya no es un combo en pantalla:
-        // al crear lo fija la sección (Ventas/Compras) y al editar se conserva el
-        // que tiene guardado el documento.
-        private string _movimiento = "venta";
 
         public FacturasDetalle(object? padre = null, string idEditar = "", string tituloTab = "",
                                string desdePedidoId = "",
@@ -115,7 +111,7 @@ namespace SistemaGestion
             ActualizarDescripcionPedido();
 
             string movimientoVal = Sql.DocumentosFObj.ObtenerItem("movimiento", _idEditar)?.ToString() ?? "venta";
-            _movimiento = string.Equals(movimientoVal, "compra", StringComparison.OrdinalIgnoreCase) ? "compra" : "venta";
+            Box_Movimiento.SelectedIndex = string.Equals(movimientoVal, "compra", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
 
             string estadoVal = Sql.DocumentosFObj.ObtenerItem("estado", _idEditar)?.ToString() ?? "pendiente";
             SeleccionarEstado(estadoVal);
@@ -196,7 +192,7 @@ namespace SistemaGestion
             Box_Tercero_Descripcion.Text   = "";
             Box_PedidoRelacionado.Text      = "";
             Box_PedidoRelacionado_Desc.Text = "";
-            _movimiento = _movimientoInicial == "compra" ? "compra" : "venta";
+            Box_Movimiento.SelectedIndex   = _movimientoInicial == "compra" ? 1 : 0;
 
             SeleccionarEstado("pendiente");
             _estadoC = "pendiente";
@@ -228,7 +224,8 @@ namespace SistemaGestion
             ActualizarDescripcionTercero();
 
             string movimiento = Sql.DocumentosPObj.ObtenerItem("movimiento", _desdePedidoId)?.ToString() ?? "venta";
-            _movimiento = string.Equals(movimiento, "compra", StringComparison.OrdinalIgnoreCase) ? "compra" : "venta";
+            Box_Movimiento.SelectedIndex =
+                string.Equals(movimiento, "compra", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
 
             Box_Referencia.Text  = Sql.DocumentosPObj.ObtenerItem("referencia",  _desdePedidoId)?.ToString() ?? "";
             Box_Observacion.Text = Sql.DocumentosPObj.ObtenerItem("observacion", _desdePedidoId)?.ToString() ?? "";
@@ -262,6 +259,13 @@ namespace SistemaGestion
         }
 
         private void Box_Estado_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_cargando) _hayCambios = true;
+            ActualizarBadges();
+        }
+
+        // ─── Movimiento (Venta/Compra): ícono + color del encabezado ──────────
+        private void Box_Movimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!_cargando) _hayCambios = true;
             ActualizarBadges();
@@ -453,7 +457,8 @@ namespace SistemaGestion
             if (!_cargando) _hayCambios = true;
         }
 
-        private string MovimientoSeleccionado => _movimiento;
+        private string MovimientoSeleccionado =>
+            (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "venta";
 
         // ─── Nueva línea vacía (líneas de la factura) ─────────────────────────
         private void BtnNuevaLinea_Click(object sender, RoutedEventArgs e)

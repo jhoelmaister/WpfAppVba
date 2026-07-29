@@ -17,7 +17,7 @@ namespace SistemaGestion
 
         /// <summary>
         /// Tipo de movimiento fijo para este control ("venta" o "compra"). Lo fija
-        /// la sección del panel lateral (Ventas → Remisiones / Compras → Remisiones)
+        /// la sección del panel lateral (Ventas / Compras)
         /// y es la única forma de elegirlo: ya no hay combo "Movimiento" en pantalla.
         /// Vacío = la pantalla lista ventas y compras juntas.
         /// </summary>
@@ -221,16 +221,13 @@ namespace SistemaGestion
             TxtCuentaPendientes.Text = lista.Count(f => f.Cuenta == "pendiente"
                                                      || f.Cuenta == "pendiente parcial").ToString();
 
-            // ── Título: con el movimiento fijado por la sección usa el nombre del
-            //    panel lateral (Remisiones); sin fijar, el título histórico. ───────
-            LblTipoMovimiento.Text = !string.IsNullOrEmpty(TipoMovimiento)
-                ? (TipoMovimiento == "compra" ? "Remisiones de Compras" : "Remisiones de Ventas")
-                : tipoMov switch
-                {
-                    "venta"  => "Ventas de Productos",
-                    "compra" => "Compras de Productos",
-                    _        => "Pedidos (Ventas y Compras)"
-                };
+            // ── Título correcto según VBA ─────────────────────────────────────
+            LblTipoMovimiento.Text = tipoMov switch
+            {
+                "venta"  => "Ventas de Productos",
+                "compra" => "Compras de Productos",
+                _        => "Pedidos (Ventas y Compras)"
+            };
             int año = AppState.DataFechaFinal.Year > 2000
                 ? AppState.DataFechaFinal.Year
                 : DateTime.Now.Year;
