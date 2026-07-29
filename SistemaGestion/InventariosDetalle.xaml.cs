@@ -119,9 +119,7 @@ namespace SistemaGestion
         private void CargarParaNuevo()
         {
             Box_DocumentoI.IsEnabled = false;
-            string signo  = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
-            int    numero = Sql.DocumentosIObj.SiguienteNumeroDoc(signo, "sucursal", AppState.SucursalActiva);
-            _codigoDocI          = $"{signo.ToUpper()}{numero}";
+            _codigoDocI = CodigoDocumento.SiguienteInventario(AppState.EmpresaActiva);
             Box_DocumentoI.Text  = _codigoDocI;
             Box_Fecha.SelectedDate = DateTime.Today;
             Box_Hora.Text          = DateTime.Now.ToString("HH:mm:ss");
@@ -652,12 +650,33 @@ namespace SistemaGestion
             }
         }
 
+        // ─── Revisión del código al guardar ───────────────────────────────────
+        // El código se calculó al abrir el formulario: entre ese momento y el
+        // guardado, otro usuario (u otra sucursal de la misma empresa) pudo haberse
+        // quedado con el número. Si ya está tomado se avisa y se usa el siguiente
+        // libre, en vez de guardar un código duplicado.
+        private void VerificarCodigo()
+        {
+            string nuevo = CodigoDocumento.VerificarInventario(_codigoDocI, AppState.EmpresaActiva);
+            if (nuevo != _codigoDocI)
+            {
+                MessageBox.Show(
+                    $"El código {_codigoDocI} ya estaba en uso. El documento se guardará " +
+                    $"con el código {nuevo}.",
+                    "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+                _codigoDocI = nuevo;
+                Box_DocumentoI.Text = _codigoDocI;
+            }
+        }
+
         private bool GuardarNuevo()
         {
             try
             {
                 string docId = Guid.NewGuid().ToString();
                 DateTime fecha = CombinarFechaHora();
+
+                VerificarCodigo();
 
                 Sql.DocumentosIObj.Nuevo(docId);
                 Sql.DocumentosIObj.EstablecerItem("codigo",      docId, _codigoDocI);

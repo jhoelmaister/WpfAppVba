@@ -139,9 +139,7 @@ namespace VisorEmpresa
         private void CargarParaNuevo()
         {
             Box_DocumentoL.IsEnabled = false;
-            string signo  = Sql.EmpresasObj.ObtenerItem("signo", AppState.EmpresaActiva)?.ToString() ?? "";
-            int    numero = Sql.DocumentosLObj.SiguienteNumeroDocPorRegion(signo, AppState.EmpresaActiva);
-            _codigoDocL          = $"{signo.ToUpper()}{numero}";
+            _codigoDocL = CodigoDocumento.SiguientePrecio(AppState.EmpresaActiva);
             Box_DocumentoL.Text  = _codigoDocL;
             Box_Fecha.SelectedDate = DateTime.Today;
             Box_Hora.Text          = DateTime.Now.ToString("HH:mm:ss");
@@ -692,6 +690,25 @@ namespace VisorEmpresa
             return true;
         }
 
+        // ─── Revisión del código al guardar ───────────────────────────────────
+        // El código se calculó al abrir el formulario: entre ese momento y el
+        // guardado, otro usuario (u otra sucursal de la misma empresa) pudo haberse
+        // quedado con el número. Si ya está tomado se avisa y se usa el siguiente
+        // libre, en vez de guardar un código duplicado.
+        private void VerificarCodigo()
+        {
+            string nuevo = CodigoDocumento.VerificarPrecio(_codigoDocL, AppState.EmpresaActiva);
+            if (nuevo != _codigoDocL)
+            {
+                MessageBox.Show(
+                    $"El código {_codigoDocL} ya estaba en uso. El documento se guardará " +
+                    $"con el código {nuevo}.",
+                    "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+                _codigoDocL = nuevo;
+                Box_DocumentoL.Text = _codigoDocL;
+            }
+        }
+
         private async Task<bool> GuardarNuevoAsync()
         {
             if (!ValidarCabecera()) return false;
@@ -701,6 +718,8 @@ namespace VisorEmpresa
             {
                 string docId = Guid.NewGuid().ToString();
                 DateTime fecha = CombinarFechaHora();
+
+                VerificarCodigo();
 
                 Sql.DocumentosLObj.Nuevo(docId);
                 Sql.DocumentosLObj.EstablecerItem("codigo",      docId, _codigoDocL);

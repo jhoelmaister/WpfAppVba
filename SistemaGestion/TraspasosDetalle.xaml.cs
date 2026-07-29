@@ -185,9 +185,7 @@ namespace SistemaGestion
         {
             _editarFormulario = true;
             Box_DocumentoT.IsEnabled = false;
-            string signo  = Sql.EmpresasObj.ObtenerItem("signo", AppState.EmpresaActiva)?.ToString() ?? "";
-            int    numero = Sql.DocumentosTObj.SiguienteNumeroDocPorEmpresa(signo, AppState.EmpresaActiva);
-            _codigoDocT          = $"{signo.ToUpper()}{numero}";
+            _codigoDocT = CodigoDocumento.SiguienteTraspaso(AppState.EmpresaActiva);
             Box_DocumentoT.Text      = _codigoDocT;
 
             DateTime ahora = DateTime.Now;
@@ -719,6 +717,25 @@ namespace SistemaGestion
             return AppState.EventoFormularioM == "editar" ? GuardarEditar() : GuardarNuevo();
         }
 
+        // ─── Revisión del código al guardar ───────────────────────────────────
+        // El código se calculó al abrir el formulario: entre ese momento y el
+        // guardado, otro usuario (u otra sucursal de la misma empresa) pudo haberse
+        // quedado con el número. Si ya está tomado se avisa y se usa el siguiente
+        // libre, en vez de guardar un código duplicado.
+        private void VerificarCodigo()
+        {
+            string nuevo = CodigoDocumento.VerificarTraspaso(_codigoDocT, AppState.EmpresaActiva);
+            if (nuevo != _codigoDocT)
+            {
+                MessageBox.Show(
+                    $"El código {_codigoDocT} ya estaba en uso. El documento se guardará " +
+                    $"con el código {nuevo}.",
+                    "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+                _codigoDocT = nuevo;
+                Box_DocumentoT.Text = _codigoDocT;
+            }
+        }
+
         private bool GuardarNuevo()
         {
             try
@@ -740,6 +757,8 @@ namespace SistemaGestion
                 string estado    = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "pendiente";
 
                 string id = Guid.NewGuid().ToString();
+
+                VerificarCodigo();
 
                 Sql.DocumentosTObj.Nuevo(id);
                 Sql.DocumentosTObj.EstablecerItem("codigo",      id, _codigoDocT);

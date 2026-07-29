@@ -105,9 +105,7 @@ namespace SistemaGestion
         // ─── Modo nuevo ───────────────────────────────────────────────────────
         private void CargarParaNuevo()
         {
-            string signoN = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
-            int    numN   = Sql.DocumentosPObj.SiguienteNumeroDoc(signoN, "sucursal", AppState.SucursalActiva);
-            _codigoDocP          = $"{signoN.ToUpper()}{numN}";
+            _codigoDocP = CodigoDocumento.SiguientePedido(AppState.EmpresaActiva, AppState.TipoMovimiento);
             Box_DocumentoP.Text      = _codigoDocP;
             Box_DocumentoP.IsEnabled = false;
 
@@ -1421,12 +1419,32 @@ namespace SistemaGestion
                 : GuardarNuevo();
         }
 
+        // ─── Revisión del código al guardar ───────────────────────────────────
+        // El código se calculó al abrir el formulario: entre ese momento y el
+        // guardado, otro usuario (u otra sucursal de la misma empresa) pudo haberse
+        // quedado con el número. Si ya está tomado se avisa y se usa el siguiente
+        // libre, en vez de guardar un código duplicado.
+        private string VerificarCodigo()
+        {
+            string nuevo = CodigoDocumento.VerificarPedido(_codigoDocP, AppState.EmpresaActiva, AppState.TipoMovimiento);
+            if (nuevo != _codigoDocP)
+            {
+                MessageBox.Show(
+                    $"El código {_codigoDocP} ya estaba en uso. El documento se guardará " +
+                    $"con el código {nuevo}.",
+                    "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+                _codigoDocP = nuevo;
+                Box_DocumentoP.Text = _codigoDocP;
+            }
+            return _codigoDocP;
+        }
+
         private bool GuardarNuevo()
         {
             try
             {
                 string id     = Guid.NewGuid().ToString();
-                string codigo = _codigoDocP;
+                string codigo = VerificarCodigo();
 
                 DateTime fechaFinal = CombinarFechaHora(Box_Fecha.SelectedDate ?? DateTime.Today, Box_Hora.Text);
                 string estado  = Box_Estado.Text;

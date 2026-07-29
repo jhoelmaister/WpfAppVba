@@ -182,10 +182,6 @@ namespace SistemaGestion
 
         private void CargarParaNuevo()
         {
-            string signo  = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
-            int    numero = Sql.DocumentosFObj.SiguienteNumeroDoc(signo, "sucursal", AppState.SucursalActiva);
-            _codigoDocF          = $"{signo.ToUpper()}{numero}";
-            Box_DocumentoF.Text  = _codigoDocF;
             Box_Fecha.SelectedDate = DateTime.Today;
             Box_Hora.Text          = DateTime.Now.ToString("HH:mm:ss");
             var ahora = DateTime.Now;
@@ -197,6 +193,11 @@ namespace SistemaGestion
             _pedidoRelacionadoId            = "";
             Box_PedidoRelacionado_Desc.Text = "";
             _movimiento = _movimientoInicial == "egreso" ? "egreso" : "ingreso";
+
+            // El correlativo va por movimiento, así que se calcula recién acá, con
+            // _movimiento ya resuelto (no antes, cuando todavía era el default).
+            _codigoDocF = CodigoDocumento.SiguienteFactura(AppState.EmpresaActiva, MovimientoSeleccionado);
+            Box_DocumentoF.Text = _codigoDocF;
 
             SeleccionarEstado("pendiente");
             _estadoC = "pendiente";
@@ -888,6 +889,25 @@ namespace SistemaGestion
             return true;
         }
 
+        // ─── Revisión del código al guardar ───────────────────────────────────
+        // El código se calculó al abrir el formulario: entre ese momento y el
+        // guardado, otro usuario (u otra sucursal de la misma empresa) pudo haberse
+        // quedado con el número. Si ya está tomado se avisa y se usa el siguiente
+        // libre, en vez de guardar un código duplicado.
+        private void VerificarCodigo()
+        {
+            string nuevo = CodigoDocumento.VerificarFactura(_codigoDocF, AppState.EmpresaActiva, MovimientoSeleccionado);
+            if (nuevo != _codigoDocF)
+            {
+                MessageBox.Show(
+                    $"El código {_codigoDocF} ya estaba en uso. El documento se guardará " +
+                    $"con el código {nuevo}.",
+                    "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+                _codigoDocF = nuevo;
+                Box_DocumentoF.Text = _codigoDocF;
+            }
+        }
+
         private bool GuardarNuevo()
         {
             if (!ValidarCabecera()) return false;
@@ -897,6 +917,8 @@ namespace SistemaGestion
                 string docId = Guid.NewGuid().ToString();
                 DateTime fecha = CombinarFechaHora(Box_Fecha.SelectedDate ?? DateTime.Today, Box_Hora.Text);
                 string estado = (Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "pendiente";
+
+                VerificarCodigo();
 
                 Sql.DocumentosFObj.Nuevo(docId);
                 Sql.DocumentosFObj.EstablecerItem("codigo",      docId, _codigoDocF);

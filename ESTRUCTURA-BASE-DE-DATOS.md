@@ -24,10 +24,17 @@
   VisorEmpresa), que sí hace `DELETE` físico e irreversible de las filas
   `ocultado`/`eliminado` de la empresa activa — ver más abajo.
 - **`codigo`** — presente en la mayoría de las tablas maestras y de documentos.
-  Es el número/código visible para el usuario, regenerable por
-  `CodigoRegenerator.RegenerarTodos()`. Desde la sesión 2026-07-29 el botón
-  exige una **empresa activa** (`AppState.EmpresaActiva`) y ya **no usa signos**
-  en ningún documento:
+  Es el número/código visible para el usuario. Desde la sesión 2026-07-29
+  **ningún documento usa signo**: el código es el correlativo pelado dentro de
+  su ámbito, y hay dos lados que deben coincidir siempre:
+  - `CodigoDocumento` — calcula el código de un documento **nuevo** (MAX + 1) y
+    lo vuelve a revisar al guardar (si otro usuario tomó el número mientras se
+    editaba, avisa y usa el siguiente libre).
+  - `CodigoRegenerator.RegenerarTodos()` — **renumera** lo existente 1..N.
+    Exige una **empresa activa** (`AppState.EmpresaActiva`).
+  Los cubos de movimiento con los que se agrupan los correlativos viven en
+  `MovimientoSql` (única fuente de verdad, compartida por los dos lados).
+  Ámbitos:
   - Tablas maestras (`usuarios`, `familias`, `productos`, `categorias`,
     `industrias`, `terceros`, `sucursales`, `regiones`, `empresas`): `int`,
     numeración 1..N ordenada por `descripcion` (excepto `usuarios`, que no
@@ -199,6 +206,29 @@ de Pedidos. Las facturas vuelven a ser un documento propio.
     la sesión (los `indice` cacheados en memoria podrían haber cambiado).
   - **Irreversible**: no hay forma de recuperar lo borrado. Doble
     confirmación en el botón antes de ejecutar.
+- **La creación de documentos también dejó de usar signos** (antes solo se
+  había cambiado la regeneración, así que un documento nuevo volvía a nacer
+  con signo y numerado por sucursal). Nuevos archivos `MovimientoSql.cs` y
+  `CodigoDocumento.cs` (ambos proyectos):
+  - `MovimientoSql` es la única fuente de verdad de los cubos de movimiento:
+    expone cada criterio dos veces (expresión SQL `CASE` para el servidor y
+    normalizador C# para la app), y `CodigoRegenerator` pasó a usarlo en vez
+    de repetir los `CASE` inline. Así creación y regeneración no pueden
+    divergir.
+  - `CodigoDocumento` calcula el código de un documento nuevo con el **mismo
+    ámbito** que usa el regenerador, y lo **revisa de nuevo al guardar**: si
+    el número ya está tomado avisa al usuario y guarda con el siguiente
+    libre (antes el código se fijaba al abrir el formulario y se guardaba a
+    ciegas). Se llama desde los 10 `GuardarNuevo` de documentos.
+  - `documentosP/C/F` pasan a numerar por (empresa, movimiento);
+    `documentosT/L/I` por empresa, sin signo. **`documentosI` cambia de
+    ámbito**: antes numeraba por sucursal, ahora por empresa, para coincidir
+    con el regenerador.
+  - En `DataConsulta` se eliminaron `SiguienteNumeroDoc`,
+    `SiguienteNumeroDocPorEmpresa` y `SiguienteNumeroDocPorRegion` (sin uso).
+  - `empresas.signo`, `sucursales.signo` y `regiones.signo` **siguen en la
+    base y se siguen editando** en sus pantallas de mantenimiento; ya no
+    intervienen en el código de ningún documento.
 
 ## Tablas
 

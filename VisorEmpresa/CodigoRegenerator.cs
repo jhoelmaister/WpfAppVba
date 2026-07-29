@@ -104,7 +104,7 @@ namespace VisorEmpresa.Data
                 ";WITH cte AS (" +
                 "  SELECT d.codigo AS codigo, " +
                 "         ROW_NUMBER() OVER (" +
-                "           PARTITION BY CASE WHEN LOWER(d.movimiento) = 'compra' THEN 'compra' ELSE 'venta' END " +
+                $"           PARTITION BY {MovimientoSql.CasoPedidos("d")} " +
                 "           ORDER BY d.fecha, d.id" +
                 "         ) AS rn " +
                 "  FROM documentosP AS d " +
@@ -125,8 +125,7 @@ namespace VisorEmpresa.Data
                 ";WITH cte AS (" +
                 "  SELECT d.codigo AS codigo, " +
                 "         ROW_NUMBER() OVER (" +
-                "           PARTITION BY CASE WHEN LOWER(d.movimiento) IN ('repuesta', 'ingreso') " +
-                "                             THEN 'repuesta' ELSE 'retirado' END " +
+                $"           PARTITION BY {MovimientoSql.CasoCorrecciones("d")} " +
                 "           ORDER BY d.fecha, d.id" +
                 "         ) AS rn " +
                 "  FROM documentosC AS d " +
@@ -145,8 +144,7 @@ namespace VisorEmpresa.Data
                 ";WITH cte AS (" +
                 "  SELECT d.codigo AS codigo, " +
                 "         ROW_NUMBER() OVER (" +
-                "           PARTITION BY CASE WHEN LOWER(d.movimiento) IN ('egreso', 'venta') " +
-                "                             THEN 'egreso' ELSE 'ingreso' END " +
+                $"           PARTITION BY {MovimientoSql.CasoFacturas("d")} " +
                 "           ORDER BY d.fecha, d.id" +
                 "         ) AS rn " +
                 "  FROM documentosF AS d " +

@@ -128,10 +128,6 @@ namespace SistemaGestion
         private void CargarParaNuevo()
         {
             Box_DocumentoC.IsEnabled = false;
-            string signo  = Sql.SucursalesObj.ObtenerItem("signo", AppState.SucursalActiva)?.ToString() ?? "";
-            int    numero = Sql.DocumentosCObj.SiguienteNumeroDoc(signo, "sucursal", AppState.SucursalActiva);
-            _codigoDocC          = $"{signo.ToUpper()}{numero}";
-            Box_DocumentoC.Text  = _codigoDocC;
             Box_Fecha.SelectedDate = DateTime.Today;
             Box_Hora.Text          = DateTime.Now.ToString("HH:mm:ss");
             var ahora = DateTime.Now;
@@ -141,6 +137,11 @@ namespace SistemaGestion
             // Preseleccionar el movimiento según la sección (Repuestas / Retirados)
             string tipo = string.IsNullOrEmpty(AppState.TipoCorreccion) ? "retirado" : AppState.TipoCorreccion;
             SeleccionarMovimiento(tipo);   // dispara ActualizarMotivos
+
+            // El correlativo va por movimiento, así que se calcula recién acá, con
+            // el movimiento ya resuelto (no antes, cuando todavía era el default).
+            _codigoDocC = CodigoDocumento.SiguienteCorreccion(AppState.EmpresaActiva, MovimientoSeleccionado);
+            Box_DocumentoC.Text = _codigoDocC;
 
             _items.Clear();
             _itemsOrig.Clear();
@@ -644,6 +645,25 @@ namespace SistemaGestion
         private string MotivoSeleccionado =>
             (Box_Motivo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
 
+        // ─── Revisión del código al guardar ───────────────────────────────────
+        // El código se calculó al abrir el formulario: entre ese momento y el
+        // guardado, otro usuario (u otra sucursal de la misma empresa) pudo haberse
+        // quedado con el número. Si ya está tomado se avisa y se usa el siguiente
+        // libre, en vez de guardar un código duplicado.
+        private void VerificarCodigo()
+        {
+            string nuevo = CodigoDocumento.VerificarCorreccion(_codigoDocC, AppState.EmpresaActiva, MovimientoSeleccionado);
+            if (nuevo != _codigoDocC)
+            {
+                MessageBox.Show(
+                    $"El código {_codigoDocC} ya estaba en uso. El documento se guardará " +
+                    $"con el código {nuevo}.",
+                    "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
+                _codigoDocC = nuevo;
+                Box_DocumentoC.Text = _codigoDocC;
+            }
+        }
+
         private bool GuardarNuevo()
         {
             if (!ValidarCabecera()) return false;
@@ -652,6 +672,8 @@ namespace SistemaGestion
             {
                 string docId = Guid.NewGuid().ToString();
                 DateTime fecha = CombinarFechaHora();
+
+                VerificarCodigo();
 
                 Sql.DocumentosCObj.Nuevo(docId);
                 Sql.DocumentosCObj.EstablecerItem("codigo",      docId, _codigoDocC);
