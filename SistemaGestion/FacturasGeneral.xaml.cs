@@ -436,7 +436,7 @@ namespace SistemaGestion
         private void AbrirNuevaFactura(ConsolaMovimientos consola, string desdePedidoId,
                                        List<FacturaLineaValidada>? lineas)
         {
-            string titulo = "Nueva Factura";
+            string titulo = "Factura";
             string clave  = "nueva-factura";
             var dlg = new FacturasDetalle(this, tituloTab: titulo,
                                           desdePedidoId: desdePedidoId,

@@ -229,7 +229,7 @@ namespace VisorEmpresa
 
                 string sucDesc = Sql.SucursalesObj.ObtenerItem("descripcion", suc)?.ToString() ?? suc;
 
-                // Filtrar por tipo de movimiento (repuesta / descarga)
+                // Filtrar por tipo de movimiento (repuesta / retirado)
                 string movimiento = NormalizarMovimiento(Sql.DocumentosCObj.ObtenerItem("movimiento", id)?.ToString());
                 if (!string.IsNullOrEmpty(tipoMov) &&
                     !string.Equals(movimiento, tipoMov, StringComparison.OrdinalIgnoreCase))
@@ -272,12 +272,12 @@ namespace VisorEmpresa
             TxtTotalCantidad.Text   = totalCant.ToString("N0");
             TxtTotalDocumentos.Text = lista.Count.ToString("N0");
             TxtTotalIngresos.Text   = lista.Count(f => f.Movimiento == "repuesta").ToString();
-            TxtTotalEgresos.Text    = lista.Count(f => f.Movimiento == "descarga").ToString();
+            TxtTotalEgresos.Text    = lista.Count(f => f.Movimiento == "retirado").ToString();
             LblTipoMovimiento.Text = tipoMov switch
             {
-                "descarga" => "Descargas de Stock (pérdida, merma, hurto, consumo interno)",
+                "retirado" => "Retirados de Stock (pérdida, merma, hurto, consumo interno)",
                 "repuesta" => "Repuestas de Stock (error de registro, registros omitidos)",
-                _          => "Correcciones de Stock (Repuestas y Descargas)"
+                _          => "Correcciones de Stock (Repuestas y Retirados)"
             };
             int año = VisorState.AnioActivo;
             LblSubtitulo.Text = string.IsNullOrEmpty(_mesActivo)
@@ -288,14 +288,14 @@ namespace VisorEmpresa
         }
 
         /// <summary>
-        /// Movimiento de una corrección, normalizado a "repuesta"/"descarga". Las
+        /// Movimiento de una corrección, normalizado a "repuesta"/"retirado". Las
         /// correcciones cargadas antes del cambio de vocabulario guardaron
         /// "ingreso"/"egreso": se leen como su equivalente.
         /// </summary>
         private static string NormalizarMovimiento(string? mov) =>
             (mov ?? "").ToLower() switch
             {
-                "descarga" or "egreso"  => "descarga",
+                "retirado" or "descarga" or "egreso" => "retirado",
                 "repuesta" or "ingreso" => "repuesta",
                 _                       => ""
             };
@@ -305,7 +305,7 @@ namespace VisorEmpresa
             return (CboTipoMovimiento?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() switch
             {
                 "repuestas" => "repuesta",
-                "descargas" => "descarga",
+                "retirados" => "retirado",
                 _          => ""
             };
         }

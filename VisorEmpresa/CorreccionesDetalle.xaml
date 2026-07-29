@@ -214,7 +214,7 @@
                         <TextBlock Text="Movimiento" Style="{StaticResource LblMuted}"/>
                         <ComboBox x:Name="Box_Movimiento" Height="28" FontSize="12"
                                   SelectionChanged="Box_Movimiento_SelectionChanged">
-                            <ComboBoxItem Content="descarga"/>
+                            <ComboBoxItem Content="retirado"/>
                             <ComboBoxItem Content="repuesta"/>
                         </ComboBox>
                     </StackPanel>

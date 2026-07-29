@@ -144,7 +144,7 @@
                                   SelectionChanged="CboTipoMovimiento_SelectionChanged">
                             <ComboBoxItem Content="Todos" IsSelected="True"/>
                             <ComboBoxItem Content="Repuestas"/>
-                            <ComboBoxItem Content="Descargas"/>
+                            <ComboBoxItem Content="Retirados"/>
                         </ComboBox>
                     </StackPanel>
                 </Grid>
@@ -197,7 +197,7 @@
 
                 <Border Grid.Column="6" Style="{StaticResource MetricCard}">
                     <StackPanel>
-                        <TextBlock Text="Descargas"
+                        <TextBlock Text="Retirados"
                                    FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
                         <TextBlock x:Name="TxtTotalEgresos"
                                    FontSize="20" FontWeight="SemiBold"

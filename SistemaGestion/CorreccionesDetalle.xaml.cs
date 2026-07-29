@@ -52,14 +52,14 @@ namespace SistemaGestion
             if (AppState.EventoFormularioC == "editar")
             {
                 _movimiento      = NormalizarMovimiento(Sql.DocumentosCObj.ObtenerItem("movimiento", _idEditar)?.ToString());
-                string tipoLabel = _movimiento == "repuesta" ? "Repuesta" : "Descarga";
+                string tipoLabel = _movimiento == "repuesta" ? "Repuesta" : "Retirado";
                 LblTitulo.Text   = $"Editar Corrección de {tipoLabel}";
                 CargarParaEditar();
             }
             else
             {
                 _movimiento      = NormalizarMovimiento(AppState.TipoCorreccion);
-                string tipoLabel = _movimiento == "repuesta" ? "Repuesta" : "Descarga";
+                string tipoLabel = _movimiento == "repuesta" ? "Repuesta" : "Retirado";
                 LblTitulo.Text   = $"Nueva Corrección de {tipoLabel}";
                 CargarParaNuevo();
             }
@@ -138,8 +138,8 @@ namespace SistemaGestion
             Box_Emision.Text = $"{ahora:d} {ahora:HH:mm:ss}";
             Box_Edicion.Text = $"{ahora:d} {ahora:HH:mm:ss}";
 
-            // Preseleccionar el movimiento según la sección (Repuestas / Descargas)
-            string tipo = string.IsNullOrEmpty(AppState.TipoCorreccion) ? "descarga" : AppState.TipoCorreccion;
+            // Preseleccionar el movimiento según la sección (Repuestas / Retirados)
+            string tipo = string.IsNullOrEmpty(AppState.TipoCorreccion) ? "retirado" : AppState.TipoCorreccion;
             SeleccionarMovimiento(tipo);   // dispara ActualizarMotivos
 
             _items.Clear();
@@ -150,14 +150,14 @@ namespace SistemaGestion
         // ─── Movimiento / Motivo ──────────────────────────────────────────────
 
         /// <summary>
-        /// Movimiento del documento ("repuesta"/"descarga"). Ya no es un combo en
-        /// pantalla: al crear lo fija la sección (Repuestas/Descargas) y al editar
+        /// Movimiento del documento ("repuesta"/"retirado"). Ya no es un combo en
+        /// pantalla: al crear lo fija la sección (Repuestas/Retirados) y al editar
         /// se conserva el que tiene guardado el documento.
         /// </summary>
-        private string _movimiento = "descarga";
+        private string _movimiento = "retirado";
 
         /// <summary>
-        /// Movimiento de una corrección, normalizado a "repuesta"/"descarga". Las
+        /// Movimiento de una corrección, normalizado a "repuesta"/"retirado". Las
         /// correcciones cargadas antes del cambio de vocabulario guardaron
         /// "ingreso"/"egreso": se leen como su equivalente.
         /// </summary>
@@ -165,7 +165,7 @@ namespace SistemaGestion
             (mov ?? "").ToLower() switch
             {
                 "repuesta" or "ingreso" => "repuesta",
-                _                       => "descarga"
+                _                       => "retirado"
             };
 
         // ─── Badge + ícono según movimiento ───────────────────────────────────
@@ -177,9 +177,9 @@ namespace SistemaGestion
                 ? (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
                    new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)), "Repuesta")
                 : (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
-                   new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Descarga");
+                   new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Retirado");
 
-            LblIconoTipo.Text       = esIngreso ? "RE" : "DE";
+            LblIconoTipo.Text       = esIngreso ? "RE" : "RT";
             IconoBorde.Background   = esIngreso
                 ? new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5))
                 : new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2));

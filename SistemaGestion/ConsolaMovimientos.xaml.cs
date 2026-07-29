@@ -26,7 +26,7 @@ namespace SistemaGestion
         private TraspasosGeneral    _panelEntradas = new("entrada");
         private TraspasosGeneral    _panelSalidas  = new("salida");
         private CorreccionesGeneral _panelRepuestas   = new("repuesta");
-        private CorreccionesGeneral _panelDescargas   = new("descarga");
+        private CorreccionesGeneral _panelRetirados   = new("retirado");
         private FacturasGeneral     _panelIngresos     = new("ingreso");
         private FacturasGeneral     _panelEgresos      = new("egreso");
         private TercerosGeneral     _panelTerceros     = new();
@@ -49,7 +49,7 @@ namespace SistemaGestion
             ["entradas"] = new List<TabItem>(),
             ["salidas"]  = new List<TabItem>(),
             ["repuestas"]    = new List<TabItem>(),
-            ["descargas"]    = new List<TabItem>(),
+            ["retirados"]    = new List<TabItem>(),
             ["ingresos"]     = new List<TabItem>(),
             ["egresos"]      = new List<TabItem>(),
             ["terceros"]     = new List<TabItem>(),
@@ -70,7 +70,7 @@ namespace SistemaGestion
             ["entradas"] = null,
             ["salidas"]  = null,
             ["repuestas"]    = null,
-            ["descargas"]    = null,
+            ["retirados"]    = null,
             ["ingresos"]     = null,
             ["egresos"]      = null,
             ["terceros"]     = null,
@@ -246,7 +246,7 @@ namespace SistemaGestion
             _panelEntradas = new("entrada");
             _panelSalidas  = new("salida");
             _panelRepuestas   = new("repuesta");
-            _panelDescargas   = new("descarga");
+            _panelRetirados   = new("retirado");
             _panelIngresos     = new("ingreso");
             _panelEgresos      = new("egreso");
             _panelTerceros     = new();
@@ -300,7 +300,7 @@ namespace SistemaGestion
                 case "entradas":     TabFijoContenido.Content = _panelEntradas;     TabFijoTitulo.Text = "Entradas";     break;
                 case "salidas":      TabFijoContenido.Content = _panelSalidas;      TabFijoTitulo.Text = "Salidas";      break;
                 case "repuestas":    TabFijoContenido.Content = _panelRepuestas;    TabFijoTitulo.Text = "Repuestas";    break;
-                case "descargas":    TabFijoContenido.Content = _panelDescargas;    TabFijoTitulo.Text = "Descargas";    break;
+                case "retirados":    TabFijoContenido.Content = _panelRetirados;    TabFijoTitulo.Text = "Retirados";    break;
                 case "ingresos":     TabFijoContenido.Content = _panelIngresos;     TabFijoTitulo.Text = "Ingresos";     break;
                 case "egresos":      TabFijoContenido.Content = _panelEgresos;      TabFijoTitulo.Text = "Egresos";      break;
                 case "terceros":     TabFijoContenido.Content = _panelTerceros;     TabFijoTitulo.Text = "Terceros";     break;
@@ -485,10 +485,10 @@ namespace SistemaGestion
             MarcarActivo(BtnNav_Repuestas);
         }
 
-        private void BtnNav_Descargas_Click(object sender, RoutedEventArgs e)
+        private void BtnNav_Retirados_Click(object sender, RoutedEventArgs e)
         {
-            MostrarPanel("descargas");
-            MarcarActivo(BtnNav_Descargas);
+            MostrarPanel("retirados");
+            MarcarActivo(BtnNav_Retirados);
         }
 
         private void BtnNav_Ingresos_Click(object sender, RoutedEventArgs e)

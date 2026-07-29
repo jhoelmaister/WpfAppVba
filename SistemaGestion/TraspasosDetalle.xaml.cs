@@ -62,8 +62,8 @@ namespace SistemaGestion
 
             string tipo = AppState.TipoMovimiento.ToLower();
             LblTitulo.Text = tipo == "salida"
-                ? "Salida de Productos Detalle"
-                : "Entrada de Productos Detalle";
+                ? "Salida de Productos"
+                : "Entrada de Productos";
 
             CargarComboSucursales();
 

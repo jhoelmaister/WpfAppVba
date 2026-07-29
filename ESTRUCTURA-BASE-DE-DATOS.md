@@ -228,8 +228,9 @@ Cabecera de correcciones de stock.
 | usuario     | uniqueidentifier    | sí   | creó (fijo, no se toca al editar) — determina quién puede eliminar/ocultar el documento además del admin |
 | usuarioE    | uniqueidentifier    | sí   | editó por última vez |
 
-`movimiento`: "repuesta" suma stock y "descarga" lo resta. Antes eran
-"ingreso"/"egreso"; la app sigue leyendo los valores viejos como su equivalente.
+`movimiento`: "repuesta" suma stock y "retirado" lo resta. Antes fueron
+"ingreso"/"egreso" y después "repuesta"/"descarga"; la app sigue leyendo los
+valores viejos como su equivalente.
 
 ### `documentosF`
 Cabecera de facturas.
