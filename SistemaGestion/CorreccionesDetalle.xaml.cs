@@ -51,15 +51,15 @@ namespace SistemaGestion
 
             if (AppState.EventoFormularioC == "editar")
             {
-                string movEdit   = NormalizarMovimiento(Sql.DocumentosCObj.ObtenerItem("movimiento", _idEditar)?.ToString());
-                string tipoLabel = movEdit == "repuesta" ? "Repuesta" : "Descarga";
+                _movimiento      = NormalizarMovimiento(Sql.DocumentosCObj.ObtenerItem("movimiento", _idEditar)?.ToString());
+                string tipoLabel = _movimiento == "repuesta" ? "Repuesta" : "Descarga";
                 LblTitulo.Text   = $"Editar Corrección de {tipoLabel}";
                 CargarParaEditar();
             }
             else
             {
-                string tipo      = string.IsNullOrEmpty(AppState.TipoCorreccion) ? "descarga" : AppState.TipoCorreccion;
-                string tipoLabel = tipo == "repuesta" ? "Repuesta" : "Descarga";
+                _movimiento      = NormalizarMovimiento(AppState.TipoCorreccion);
+                string tipoLabel = _movimiento == "repuesta" ? "Repuesta" : "Descarga";
                 LblTitulo.Text   = $"Nueva Corrección de {tipoLabel}";
                 CargarParaNuevo();
             }
@@ -148,19 +148,13 @@ namespace SistemaGestion
         }
 
         // ─── Movimiento / Motivo ──────────────────────────────────────────────
-        private void Box_Movimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            ActualizarMotivos();
-            if (!_cargando)
-            {
-                string mov = (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "descarga";
-                string tipoLabel = mov == "repuesta" ? "Repuesta" : "Descarga";
-                string prefijo = AppState.EventoFormularioC == "editar" ? "Editar" : "Nueva";
-                LblTitulo.Text = $"{prefijo} Corrección de {tipoLabel}";
-                _hayCambios = true;
-            }
-            ActualizarBadge();
-        }
+
+        /// <summary>
+        /// Movimiento del documento ("repuesta"/"descarga"). Ya no es un combo en
+        /// pantalla: al crear lo fija la sección (Repuestas/Descargas) y al editar
+        /// se conserva el que tiene guardado el documento.
+        /// </summary>
+        private string _movimiento = "descarga";
 
         /// <summary>
         /// Movimiento de una corrección, normalizado a "repuesta"/"descarga". Las
@@ -177,8 +171,7 @@ namespace SistemaGestion
         // ─── Badge + ícono según movimiento ───────────────────────────────────
         private void ActualizarBadge()
         {
-            string mov     = (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "descarga";
-            bool esIngreso = mov == "repuesta";
+            bool esIngreso = _movimiento == "repuesta";
 
             (BadgeEstado.Background, TxtBadgeEstado.Foreground, TxtBadgeEstado.Text) = esIngreso
                 ? (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
@@ -202,9 +195,7 @@ namespace SistemaGestion
         {
             if (Box_Motivo == null) return;
 
-            string mov = (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "";
-
-            string[] motivos = mov == "repuesta"
+            string[] motivos = _movimiento == "repuesta"
                 ? new[] { "error de registro", "registros omitidos" }
                 : new[] { "pérdida", "merma", "hurto", "consumo interno" };
 
@@ -220,15 +211,8 @@ namespace SistemaGestion
 
         private void SeleccionarMovimiento(string valor)
         {
-            foreach (ComboBoxItem item in Box_Movimiento.Items)
-            {
-                if (string.Equals(item.Content?.ToString(), valor, StringComparison.OrdinalIgnoreCase))
-                {
-                    Box_Movimiento.SelectedItem = item;
-                    return;
-                }
-            }
-            if (Box_Movimiento.Items.Count > 0) Box_Movimiento.SelectedIndex = 0;
+            _movimiento = NormalizarMovimiento(valor);
+            ActualizarMotivos();
         }
 
         private void SeleccionarMotivo(string valor)
@@ -640,12 +624,6 @@ namespace SistemaGestion
 
         private bool ValidarCabecera()
         {
-            if (Box_Movimiento.SelectedItem == null)
-            {
-                MessageBox.Show("Seleccione un movimiento.", "Consola",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return false;
-            }
             if (Box_Motivo.SelectedItem == null)
             {
                 MessageBox.Show("Seleccione un motivo.", "Consola",
@@ -661,8 +639,7 @@ namespace SistemaGestion
             return true;
         }
 
-        private string MovimientoSeleccionado =>
-            (Box_Movimiento.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "descarga";
+        private string MovimientoSeleccionado => _movimiento;
 
         private string MotivoSeleccionado =>
             (Box_Motivo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
