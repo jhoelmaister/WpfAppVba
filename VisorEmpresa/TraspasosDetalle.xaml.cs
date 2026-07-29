@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -56,7 +56,6 @@ namespace VisorEmpresa
         public void CambiarTipoMovimiento(string tipo)
         {
             AppState.TipoMovimiento = tipo.ToLower();
-            CboMovimiento.SelectedIndex = tipo.ToLower() == "salida" ? 1 : 0;
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
@@ -64,11 +63,7 @@ namespace VisorEmpresa
         {
             _cargando = true;
 
-            string tipo = AppState.TipoMovimiento.ToLower();
-            LblTitulo.Text = tipo == "salida"
-                ? "Salida de Productos Detalle"
-                : "Entrada de Productos Detalle";
-            CboMovimiento.SelectedIndex = tipo == "salida" ? 1 : 0;
+            LblTitulo.Text = "Traspasos de Producto";
 
             if (AppState.EventoFormularioM == "editar")
                 CargarParaEditar();
@@ -211,16 +206,9 @@ namespace VisorEmpresa
                                         new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E)), "Pendiente")
             };
 
-            // Ícono y color según tipo (entrada/salida)
-            string tipo    = AppState.TipoMovimiento.ToLower();
-            bool esSalida  = tipo == "salida";
-            LblIconoTipo.Text       = esSalida ? "SA" : "EN";
-            IconoBorde.Background   = esSalida
-                ? new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7))
-                : new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5));
-            LblIconoTipo.Foreground = esSalida
-                ? new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E))
-                : new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46));
+            // Ícono fijo: "TR" con relleno blanco (entrada/salida se distinguen por
+            // la sección del panel lateral, ya no acá).
+            LblIconoTipo.Text = "TR";
 
             LblDocNum.Text       = Box_DocumentoT.Text;
         }
@@ -371,17 +359,6 @@ namespace VisorEmpresa
                         "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
-        }
-
-        // ─── Cambio de tipo de movimiento (ComboBox superior) ────────────────
-        private void CboMovimiento_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (_cargando) return;
-            string tipo = (CboMovimiento.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "entrada";
-            AppState.TipoMovimiento = tipo;
-            LblTitulo.Text = tipo == "salida" ? "Salida de Productos Detalle" : "Entrada de Productos Detalle";
-            _hayCambios = true;
-            ActualizarBadgeEstado();
         }
 
         // ─── Eventos de campos ────────────────────────────────────────────────

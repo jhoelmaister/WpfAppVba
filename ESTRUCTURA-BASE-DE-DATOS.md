@@ -21,17 +21,28 @@
   `estadof` (ver `DataConsulta.ExportarItemsInterno`).
 - **`codigo`** — presente en la mayoría de las tablas maestras y de documentos.
   Es el número/código visible para el usuario, regenerable por
-  `CodigoRegenerator.RegenerarTodos()`:
+  `CodigoRegenerator.RegenerarTodos()`. Desde la sesión 2026-07-29 el botón
+  exige una **empresa activa** (`AppState.EmpresaActiva`) y ya **no usa signos**
+  en ningún documento:
   - Tablas maestras (`usuarios`, `familias`, `productos`, `categorias`,
     `industrias`, `terceros`, `sucursales`, `regiones`, `empresas`): `int`,
     numeración 1..N ordenada por `descripcion` (excepto `usuarios`, que no
-    tiene esa columna y se ordena por `apellidos, nombres`).
-  - Tablas de documentos (`documentosI/P/C`): `nvarchar`, signo de la
-    sucursal + correlativo por sucursal.
-  - `documentosT`: signo de la **empresa** (cascada `emitido` → `sucursales` →
-    `empresas`) + correlativo por empresa.
-  - `documentosL`: signo de la empresa (columna `empresa` directa) +
-    correlativo por empresa.
+    tiene esa columna y se ordena por `apellidos, nombres`). Son catálogos
+    globales de toda la base: no se filtran por empresa.
+  - `documentosP`/`documentosC`/`documentosF`: `nvarchar`, correlativo 1..N
+    **partido por tipo de movimiento** (`documentosP`: venta/compra;
+    `documentosC`: repuesta/retirado; `documentosF`: ingreso/egreso —
+    normalizando vocabulario viejo al nuevo, mismo criterio que
+    `NormalizarMovimiento` en cada `*General`), ordenado por fecha, filtrado
+    a la empresa activa vía cascada `sucursal` → `sucursales.empresa`.
+  - `documentosI`: `nvarchar`, correlativo 1..N sin partición, ordenado por
+    fecha, filtrado a la empresa activa vía `sucursal` → `sucursales.empresa`.
+  - `documentosT`: `nvarchar`, correlativo 1..N sin partición, ordenado por
+    fecha, filtrado a la empresa activa vía cascada `emitido` → `sucursales` →
+    `empresas`.
+  - `documentosL`: `nvarchar`, correlativo 1..N sin partición, ordenado por
+    fecha, filtrado a la empresa activa (columna `empresa` directa,
+    comparación de texto contra el id).
 - **Columnas `uniqueidentifier` que no son `id`** son claves foráneas
   (apuntan al `id` de otra tabla) — no hay `FOREIGN KEY` declaradas en el
   script, la integridad se maneja desde la app.
@@ -142,6 +153,32 @@ de Pedidos. Las facturas vuelven a ser un documento propio.
   2026-07-24; borrarlas es opcional.
 - **`usuarios.temaC`**: ya no está en el script — el `DROP COLUMN` pendiente de
   la sesión anterior efectivamente se corrió.
+
+## Cambios respecto a la versión anterior de este documento (sesión 2026-07-29)
+
+- **`CodigoRegenerator.RegenerarTodos()` — se eliminaron todos los signos y se
+  agregó el filtro por empresa activa.** Antes `documentosI/P/C` usaban signo
+  de sucursal + correlativo por sucursal, `documentosT`/`documentosL` signo de
+  empresa + correlativo por empresa, y ninguno distinguía tipo de movimiento.
+  Ahora, dentro de una única transacción y exigiendo
+  `AppState.EmpresaActiva` no vacía (si no hay empresa activa, lanza
+  `InvalidOperationException` antes de tocar la conexión):
+  - `documentosP`/`documentosC`/`documentosF` — correlativo 1..N **partido por
+    movimiento** (venta/compra, repuesta/retirado, ingreso/egreso
+    respectivamente), filtrado a la empresa activa.
+  - `documentosI`/`documentosT`/`documentosL` — correlativo 1..N sin
+    partición, filtrado a la empresa activa. No se toca el resto de la base
+    (otras empresas conservan su numeración).
+  - Ver el bloque de comentarios en `CodigoRegenerator.cs` (ambos proyectos)
+    para el detalle exacto de cada tabla. El texto de confirmación del botón
+    en `VisorEmpresa/ConsolaVisor.xaml.cs` (`BtnRegenerarCodigos_Click`) se
+    actualizó para reflejar esto y para mencionar `documentosF` (antes faltaba
+    en la lista, aunque el código ya la procesaba).
+- **`VisorEmpresa/TraspasosDetalle`**: se sacó el combo "Movimiento" del
+  encabezado (entrada/salida ahora se elige solo desde la sección del panel
+  lateral, como en el resto de módulos ya divididos). `LblTitulo` pasa a decir
+  siempre "Traspasos de Producto" y el ícono de cabecera queda fijo en "TR"
+  con relleno blanco, en vez de cambiar de texto/color según el tipo.
 
 ## Tablas
 

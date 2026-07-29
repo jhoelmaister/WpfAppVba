@@ -5,24 +5,33 @@ using Microsoft.Data.SqlClient;
 namespace VisorEmpresa.Data
 {
     /// <summary>
-    /// Regenera la columna <c>codigo</c> de las tablas del sistema:
-    ///   • Maestras  → numeración secuencial 1..N, ordenada por 'descripcion'
-    ///     (excepto 'usuarios', que no tiene esa columna y usa 'apellidos, nombres').
-    ///   • documentosI/P/C → signo de la sucursal + correlativo por sucursal,
-    ///     ordenado por fecha dentro de cada sucursal.
-    ///   • documentosT (traspasos) → signo de la empresa + correlativo por empresa
-    ///     (la empresa se obtiene por la cascada emitido → sucursales → empresas),
-    ///     ordenado por fecha dentro de cada empresa.
-    ///   • documentosL (listas de precios) → signo de la empresa + correlativo por
-    ///     empresa (columna 'empresa' directa, igual criterio que documentosT),
-    ///     ordenado por fecha dentro de cada empresa.
-    /// Trabaja directamente sobre SQL Server y reescribe TODAS las filas.
+    /// Regenera la columna <c>codigo</c> de las tablas del sistema, para la
+    /// EMPRESA ACTIVA (<see cref="AppState.EmpresaActiva"/>) — nunca toca
+    /// documentos de otra empresa aunque compartan la misma base:
+    ///   • Maestras → numeración secuencial 1..N, ordenada por 'descripcion'
+    ///     (excepto 'usuarios', que usa 'apellidos, nombres'). Son catálogos
+    ///     globales de toda la base: no se filtran por empresa.
+    ///   • documentosP/documentosC/documentosF (pedidos/correcciones/facturas)
+    ///     → sin signo: codigo = correlativo 1..N, agrupado por tipo de
+    ///     movimiento (venta/compra, repuesta/retirado, ingreso/egreso
+    ///     respectivamente — normalizando el vocabulario viejo al nuevo),
+    ///     ordenado por fecha, filtrado a la empresa activa (cascada
+    ///     sucursal → sucursales.empresa). Antes usaban signo de sucursal +
+    ///     correlativo por sucursal, sin distinguir movimiento.
+    ///   • documentosT/documentosL/documentosI (traspasos/precios/inventarios)
+    ///     → sin signo: codigo = correlativo 1..N dentro de la empresa activa,
+    ///     ordenado por fecha. Antes usaban signo de empresa (traspasos,
+    ///     precios) o signo de sucursal (inventarios).
+    /// Trabaja directamente sobre SQL Server y reescribe las filas de la
+    /// empresa activa en una única transacción.
     /// </summary>
     public static class CodigoRegenerator
     {
         // Tablas maestras → código entero secuencial, ordenadas por 'descripcion'.
         // "usuarios" es la única sin columna 'descripcion' (tiene nombres/apellidos
-        // en su lugar) así que se ordena por "apellidos, nombres".
+        // en su lugar) así que se ordena por "apellidos, nombres". Catálogos
+        // globales: no se filtran por empresa aunque varias tengan columna
+        // 'empresa' propia.
         private static readonly (string tabla, string colOrden)[] Maestras =
         {
             ("usuarios",   "apellidos, nombres"),
@@ -36,22 +45,17 @@ namespace VisorEmpresa.Data
             ("empresas",   "descripcion"),
         };
 
-        // Documentos con columna 'sucursal' → signo de la sucursal + correlativo
-        // por sucursal. (documentosT se trata aparte: signo/correlativo por empresa.)
-        private static readonly (string tabla, string colSucursal)[] Documentos =
-        {
-            ("documentosI", "sucursal"),
-            ("documentosP", "sucursal"),
-            ("documentosC", "sucursal"),
-            ("documentosF", "sucursal")
-        };
-
         /// <summary>
-        /// Regenera todos los códigos en una única transacción.
-        /// Devuelve un resumen (tabla → filas afectadas).
+        /// Regenera todos los códigos de la empresa activa en una única
+        /// transacción. Devuelve un resumen (tabla → filas afectadas).
         /// </summary>
         public static string RegenerarTodos()
         {
+            string empresaId = AppState.EmpresaActiva;
+            if (string.IsNullOrEmpty(empresaId))
+                throw new InvalidOperationException(
+                    "No hay una empresa activa: inicia sesión antes de regenerar códigos.");
+
             var conn = DatabaseConnection.ObtenerConexion();
             var resumen = new StringBuilder();
 
@@ -61,12 +65,12 @@ namespace VisorEmpresa.Data
                 foreach (var (t, colOrden) in Maestras)
                     resumen.AppendLine($"{t}: {RenumerarMaestra(conn, tx, t, colOrden)}");
 
-                foreach (var (tabla, colSucursal) in Documentos)
-                    resumen.AppendLine($"{tabla}: {RenumerarDocumentoPorSucursal(conn, tx, tabla, colSucursal)}");
-
-                resumen.AppendLine($"documentosT: {RenumerarTraspasosPorEmpresa(conn, tx)}");
-
-                resumen.AppendLine($"documentosL: {RenumerarDocumentosLPorEmpresa(conn, tx)}");
+                resumen.AppendLine($"documentosP: {RenumerarPedidos(conn, tx, empresaId)}");
+                resumen.AppendLine($"documentosC: {RenumerarCorrecciones(conn, tx, empresaId)}");
+                resumen.AppendLine($"documentosF: {RenumerarFacturas(conn, tx, empresaId)}");
+                resumen.AppendLine($"documentosI: {RenumerarInventarios(conn, tx, empresaId)}");
+                resumen.AppendLine($"documentosT: {RenumerarTraspasos(conn, tx, empresaId)}");
+                resumen.AppendLine($"documentosL: {RenumerarPrecios(conn, tx, empresaId)}");
 
                 tx.Commit();
             }
@@ -81,7 +85,7 @@ namespace VisorEmpresa.Data
 
         // ─── Maestras: codigo = 1..N (orden por colOrden) ─────────────────────
         // codigo es INT en las tablas maestras (a diferencia de los documentos,
-        // donde es NVARCHAR por el prefijo de signo) — el CAST castea al tipo real.
+        // donde es NVARCHAR) — el CAST castea al tipo real.
         private static int RenumerarMaestra(SqlConnection conn, SqlTransaction tx, string tabla, string colOrden)
         {
             string sql =
@@ -92,54 +96,117 @@ namespace VisorEmpresa.Data
             return Ejecutar(conn, tx, sql);
         }
 
-        // ─── Documentos: codigo = signo + correlativo por sucursal ───────────
-        // <paramref name="colSucursal"/> es la columna del documento que apunta
-        // al id de la sucursal (p. ej. 'sucursal' o 'emitido').
-        private static int RenumerarDocumentoPorSucursal(SqlConnection conn, SqlTransaction tx,
-                                                         string tabla, string colSucursal)
-        {
-            string sql =
-                $";WITH cte AS (" +
-                $"  SELECT d.codigo AS codigo, ISNULL(UPPER(s.signo), '') AS signo, " +
-                $"         ROW_NUMBER() OVER (PARTITION BY d.{colSucursal} ORDER BY d.fecha, d.id) AS rn " +
-                $"  FROM {tabla} AS d " +
-                $"  LEFT JOIN sucursales AS s ON s.id = d.{colSucursal} " +
-                $") UPDATE cte SET codigo = signo + CAST(rn AS NVARCHAR(50));";
-            return Ejecutar(conn, tx, sql);
-        }
-
-        // ─── Traspasos: codigo = signo empresa + correlativo por empresa ─────
-        // La empresa se obtiene por la cascada: documentosT.emitido (sucursal) →
-        // sucursales.empresa → empresas.signo. Se numera por empresa.
-        private static int RenumerarTraspasosPorEmpresa(SqlConnection conn, SqlTransaction tx)
+        // ─── Pedidos: codigo = correlativo 1..N por movimiento (venta/compra) ─
+        // Sin signo. Filtrado a la empresa activa vía sucursal → sucursales.empresa.
+        private static int RenumerarPedidos(SqlConnection conn, SqlTransaction tx, string empresaId)
         {
             string sql =
                 ";WITH cte AS (" +
-                "  SELECT d.codigo AS codigo, ISNULL(UPPER(e.signo), '') AS signo, " +
-                "         ROW_NUMBER() OVER (PARTITION BY e.id ORDER BY d.fecha, d.id) AS rn " +
+                "  SELECT d.codigo AS codigo, " +
+                "         ROW_NUMBER() OVER (" +
+                "           PARTITION BY CASE WHEN LOWER(d.movimiento) = 'compra' THEN 'compra' ELSE 'venta' END " +
+                "           ORDER BY d.fecha, d.id" +
+                "         ) AS rn " +
+                "  FROM documentosP AS d " +
+                "  INNER JOIN sucursales AS s ON s.id = d.sucursal " +
+                "  WHERE s.empresa = @emp" +
+                ") UPDATE cte SET codigo = CAST(rn AS NVARCHAR(50));";
+            return Ejecutar(conn, tx, sql, empresaId);
+        }
+
+        // ─── Correcciones: codigo = correlativo 1..N por movimiento ──────────
+        // (repuesta/retirado). "ingreso" cuenta como repuesta y "descarga"/
+        // "egreso" como retirado — mismo criterio que NormalizarMovimiento en
+        // CorreccionesGeneral, para no separar documentos viejos y nuevos del
+        // mismo tipo real en dos correlativos distintos.
+        private static int RenumerarCorrecciones(SqlConnection conn, SqlTransaction tx, string empresaId)
+        {
+            string sql =
+                ";WITH cte AS (" +
+                "  SELECT d.codigo AS codigo, " +
+                "         ROW_NUMBER() OVER (" +
+                "           PARTITION BY CASE WHEN LOWER(d.movimiento) IN ('repuesta', 'ingreso') " +
+                "                             THEN 'repuesta' ELSE 'retirado' END " +
+                "           ORDER BY d.fecha, d.id" +
+                "         ) AS rn " +
+                "  FROM documentosC AS d " +
+                "  INNER JOIN sucursales AS s ON s.id = d.sucursal " +
+                "  WHERE s.empresa = @emp" +
+                ") UPDATE cte SET codigo = CAST(rn AS NVARCHAR(50));";
+            return Ejecutar(conn, tx, sql, empresaId);
+        }
+
+        // ─── Facturas: codigo = correlativo 1..N por movimiento ──────────────
+        // (ingreso/egreso). "venta" cuenta como egreso y "compra" como ingreso —
+        // mismo criterio que NormalizarMovimiento en FacturasGeneral.
+        private static int RenumerarFacturas(SqlConnection conn, SqlTransaction tx, string empresaId)
+        {
+            string sql =
+                ";WITH cte AS (" +
+                "  SELECT d.codigo AS codigo, " +
+                "         ROW_NUMBER() OVER (" +
+                "           PARTITION BY CASE WHEN LOWER(d.movimiento) IN ('egreso', 'venta') " +
+                "                             THEN 'egreso' ELSE 'ingreso' END " +
+                "           ORDER BY d.fecha, d.id" +
+                "         ) AS rn " +
+                "  FROM documentosF AS d " +
+                "  INNER JOIN sucursales AS s ON s.id = d.sucursal " +
+                "  WHERE s.empresa = @emp" +
+                ") UPDATE cte SET codigo = CAST(rn AS NVARCHAR(50));";
+            return Ejecutar(conn, tx, sql, empresaId);
+        }
+
+        // ─── Inventarios: codigo = correlativo 1..N dentro de la empresa ─────
+        // Sin signo (antes usaba signo de sucursal + correlativo por sucursal).
+        private static int RenumerarInventarios(SqlConnection conn, SqlTransaction tx, string empresaId)
+        {
+            string sql =
+                ";WITH cte AS (" +
+                "  SELECT d.codigo AS codigo, " +
+                "         ROW_NUMBER() OVER (ORDER BY d.fecha, d.id) AS rn " +
+                "  FROM documentosI AS d " +
+                "  INNER JOIN sucursales AS s ON s.id = d.sucursal " +
+                "  WHERE s.empresa = @emp" +
+                ") UPDATE cte SET codigo = CAST(rn AS NVARCHAR(50));";
+            return Ejecutar(conn, tx, sql, empresaId);
+        }
+
+        // ─── Traspasos: codigo = correlativo 1..N dentro de la empresa ───────
+        // Sin signo (antes signo de empresa + correlativo por empresa). La
+        // empresa se obtiene por la cascada emitido (sucursal) → sucursales.empresa.
+        private static int RenumerarTraspasos(SqlConnection conn, SqlTransaction tx, string empresaId)
+        {
+            string sql =
+                ";WITH cte AS (" +
+                "  SELECT d.codigo AS codigo, " +
+                "         ROW_NUMBER() OVER (ORDER BY d.fecha, d.id) AS rn " +
                 "  FROM documentosT AS d " +
-                "  LEFT JOIN sucursales AS s ON s.id = d.emitido " +
-                "  LEFT JOIN empresas   AS e ON e.id = s.empresa " +
-                ") UPDATE cte SET codigo = signo + CAST(rn AS NVARCHAR(50));";
-            return Ejecutar(conn, tx, sql);
+                "  INNER JOIN sucursales AS s ON s.id = d.emitido " +
+                "  WHERE s.empresa = @emp" +
+                ") UPDATE cte SET codigo = CAST(rn AS NVARCHAR(50));";
+            return Ejecutar(conn, tx, sql, empresaId);
         }
 
-        // ─── DocumentosL: codigo = signo empresa + correlativo por empresa ───
-        private static int RenumerarDocumentosLPorEmpresa(SqlConnection conn, SqlTransaction tx)
+        // ─── Precios (documentosL): codigo = correlativo 1..N por empresa ────
+        // Sin signo (antes signo de empresa + correlativo por empresa).
+        // documentosL.empresa es nvarchar (no uniqueidentifier) pero guarda el id
+        // como texto, así que compara directo contra @emp.
+        private static int RenumerarPrecios(SqlConnection conn, SqlTransaction tx, string empresaId)
         {
             string sql =
                 ";WITH cte AS (" +
-                "  SELECT d.codigo AS codigo, ISNULL(UPPER(e.signo), '') AS signo, " +
-                "         ROW_NUMBER() OVER (PARTITION BY d.empresa ORDER BY d.fecha, d.id) AS rn " +
+                "  SELECT d.codigo AS codigo, " +
+                "         ROW_NUMBER() OVER (ORDER BY d.fecha, d.id) AS rn " +
                 "  FROM documentosL AS d " +
-                "  LEFT JOIN empresas AS e ON e.id = d.empresa " +
-                ") UPDATE cte SET codigo = signo + CAST(rn AS NVARCHAR(50));";
-            return Ejecutar(conn, tx, sql);
+                "  WHERE d.empresa = @emp" +
+                ") UPDATE cte SET codigo = CAST(rn AS NVARCHAR(50));";
+            return Ejecutar(conn, tx, sql, empresaId);
         }
 
-        private static int Ejecutar(SqlConnection conn, SqlTransaction tx, string sql)
+        private static int Ejecutar(SqlConnection conn, SqlTransaction tx, string sql, string? empresaId = null)
         {
             using var cmd = new SqlCommand(sql, conn, tx) { CommandTimeout = 300 };
+            if (empresaId != null) cmd.Parameters.AddWithValue("@emp", empresaId);
             return cmd.ExecuteNonQuery();
         }
     }

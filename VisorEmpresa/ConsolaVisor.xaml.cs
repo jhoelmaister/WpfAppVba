@@ -758,11 +758,13 @@ namespace SistemaGestion
         //     AppState.EsAdmin: toda cuenta que logra entrar al visor ya es admin
         //     (el login solo deja pasar tipo "admin"). Mismas confirmaciones y
         //     mismos textos que la app principal: son operaciones que SOBRESCRIBEN
-        //     datos de TODA la empresa (todas las sucursales) y no son reversibles. ─
+        //     datos de TODA la empresa activa (todas sus sucursales) y no son
+        //     reversibles — ver CodigoRegenerator para el detalle por tabla. ─
         private async void BtnRegenerarCodigos_Click(object sender, RoutedEventArgs e)
         {
             var r = MessageBox.Show(
-                "Se regenerarán los códigos (desde 1) de las tablas maestras y de documentosT/I/P/C/L. " +
+                "Se regenerarán los códigos (desde 1) de las tablas maestras (globales, toda la base) " +
+                "y de documentosT/I/P/C/F/L de la EMPRESA ACTIVA — no toca documentos de otras empresas. " +
                 "Al finalizar se cerrará la sesión.\n\nEsta acción SOBRESCRIBE los códigos existentes " +
                 "en el servidor activo. ¿Continuar?",
                 "Regenerar códigos", MessageBoxButton.YesNo, MessageBoxImage.Warning);
