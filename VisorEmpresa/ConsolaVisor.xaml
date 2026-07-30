@@ -130,7 +130,7 @@
                     <TextBlock Text="Empresa:" FontSize="11"
                                Foreground="{DynamicResource ThemeTextoSec}"
                                VerticalAlignment="Center" Margin="0,0,6,0"/>
-                    <ComboBox x:Name="CmbEmpresaTop" Width="200" Height="30"
+                    <ComboBox x:Name="CmbEmpresaTop" Width="100" Height="30"
                               VerticalAlignment="Center"
                               SelectionChanged="CmbEmpresaTop_SelectionChanged"/>
 
