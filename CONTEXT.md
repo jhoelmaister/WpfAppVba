@@ -23,14 +23,29 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 - Tema visual dinámico (recursos `ThemeBgPrincipal`, `ThemeBtnSecBg`, etc.) configurable desde Configuración.
 
 ### Secciones del sidebar (orden visual)
+
+> **Reestructurado en sesión 2026-07-28/29**: los 4 módulos de documentos se
+> partieron en dos entradas cada uno, bajo un encabezado de sección
+> (estilo `NavSeccion`). Cada entrada abre el MISMO panel `*General`, pero
+> construido con su `tipoMovimiento` fijo, así que el filtro de movimiento
+> dejó de ser un combo en pantalla.
+
 | Botón | Panel fijo | Detalle en pestaña | Selector en pestaña |
 |-------|-----------|-------------------|---------------------|
 | 📊 Dashboard | `DashboardGeneral` | — | — |
 | 📋 Artículos | `ArticulosGeneral` | `ArticulosDetalle` (pestaña) | — |
-| 📑 Pedidos | `PedidosGeneral` | `PedidosDetalle` (pestaña) | TercerosGeneral, ArticulosGeneral |
-| 🔄 Traspasos | `TraspasosGeneral` | `TraspasosDetalle` (pestaña) | SucursalesGeneral, ArticulosGeneral |
-| 🔧 Correcciones | `CorreccionesGeneral` | `CorreccionesDetalle` (pestaña) | ArticulosGeneral (pestaña) |
-| 🧾 Facturas | `FacturasGeneral` | `FacturasDetalle` (pestaña) | TercerosGeneral (pestaña-selector) |
+| *PEDIDOS* | | | |
+| 🛒 Ventas | `PedidosGeneral("venta")` | `PedidosDetalle` (pestaña) | TercerosGeneral, ArticulosGeneral |
+| 📥 Compras | `PedidosGeneral("compra")` | `PedidosDetalle` (pestaña) | TercerosGeneral, ArticulosGeneral |
+| *TRASPASOS* | | | |
+| 📦 Entradas | `TraspasosGeneral("entrada")` | `TraspasosDetalle` (pestaña) | SucursalesGeneral, ArticulosGeneral |
+| 📤 Salidas | `TraspasosGeneral("salida")` | `TraspasosDetalle` (pestaña) | SucursalesGeneral, ArticulosGeneral |
+| *CORRECCIONES* | | | |
+| 🔧 Repuestas | `CorreccionesGeneral("repuesta")` | `CorreccionesDetalle` (pestaña) | ArticulosGeneral (pestaña) |
+| 🔧 Retirados | `CorreccionesGeneral("retirado")` | `CorreccionesDetalle` (pestaña) | ArticulosGeneral (pestaña) |
+| *FACTURAS* | | | |
+| 🧾 Ingresos | `FacturasGeneral("ingreso")` | `FacturasDetalle` (pestaña) | TercerosGeneral (pestaña-selector) |
+| 🧾 Egresos | `FacturasGeneral("egreso")` | `FacturasDetalle` (pestaña) | TercerosGeneral (pestaña-selector) |
 | *(separador)* | | | |
 | 👥 Terceros | `TercerosGeneral` | `TercerosDetalle` (pestaña) | — |
 | 🏢 Sucursales | `SucursalesGeneral` | `SucursalesDetalle` (pestaña) | RegionesGeneral (pestaña-selector) |
@@ -48,10 +63,16 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 ### Paneles declarados en ConsolaMovimientos
 ```csharp
 private readonly ArticulosGeneral    _panelArticulos     = new();
-private readonly PedidosGeneral      _panelPedidos       = new();
-private readonly TraspasosGeneral    _panelTraspasos     = new();
-private readonly CorreccionesGeneral _panelCorrecciones  = new();
-private          FacturasGeneral     _panelFacturas      = new();
+// Documentos: dos instancias por módulo, cada una fijada a su movimiento
+// (sesión 2026-07-28/29 — antes era un panel único con combo "Movimiento").
+private          PedidosGeneral      _panelVentas        = new("venta");
+private          PedidosGeneral      _panelCompras       = new("compra");
+private          TraspasosGeneral    _panelEntradas      = new("entrada");
+private          TraspasosGeneral    _panelSalidas       = new("salida");
+private          CorreccionesGeneral _panelRepuestas     = new("repuesta");
+private          CorreccionesGeneral _panelRetirados     = new("retirado");
+private          FacturasGeneral     _panelIngresos      = new("ingreso");
+private          FacturasGeneral     _panelEgresos       = new("egreso");
 private readonly TercerosGeneral     _panelTerceros      = new();
 private readonly SucursalesGeneral   _panelSucursales    = new();
 private readonly FamiliasGeneral     _panelFamilias      = new();
@@ -150,9 +171,38 @@ Todos los `XxxGeneral.xaml` usan etiquetas que incluyen el nombre de la entidad:
 - Actualizar (secundario, siempre visible)
 - Seleccionar (visible solo en modo selector)
 
+## Códigos de documento: sin signo, por empresa y movimiento — desde sesión 2026-07-28/29
+
+El `codigo` visible de un documento dejó de ser `signo + correlativo por sucursal`.
+Ahora es el **correlativo pelado dentro de su ámbito**, y hay **tres piezas que
+tienen que coincidir siempre** — si una se cambia sola, los códigos se mueven de
+lugar en cuanto se regenera:
+
+| Pieza | Archivo (copia propia en cada proyecto) | Qué hace |
+|-------|------------------------------------------|----------|
+| Cubos de movimiento | `MovimientoSql.cs` | Única fuente de verdad. Expone cada criterio **dos veces**: `Caso*(alias)` → expresión SQL `CASE` (para el servidor) y `Normalizar*(mov)` → el mismo criterio en C# (para la app). Normaliza además el vocabulario viejo al nuevo. |
+| Documento nuevo | `CodigoDocumento.cs` | Calcula el código al crear (MAX + 1) y lo **vuelve a revisar al guardar**. |
+| Renumerado masivo | `CodigoRegenerator.cs` | Botón "🔢 Regenerar códigos" de VisorEmpresa: renumera 1..N lo existente. |
+
+**Ámbitos (idénticos en las tres piezas):**
+- `documentosP` / `documentosC` / `documentosF` → correlativo por **(empresa activa, movimiento)**: venta/compra, repuesta/retirado, ingreso/egreso. Cada cubo lleva su propio 1..N.
+- `documentosI` / `documentosT` / `documentosL` → correlativo por **empresa activa**, sin partir por movimiento.
+- La empresa se resuelve por cascada: `sucursal → sucursales.empresa` (P/C/F/I), `emitido → sucursales.empresa` (T), o la columna `empresa` directa (L, que es `nvarchar` y guarda el id como texto).
+- Las **tablas maestras** siguen con numeración global 1..N por `descripcion` — no se filtran por empresa.
+
+**Detalles que no son obvios:**
+- **Criterio de mercadería, no de plata**: en facturas una *compra* es **ingreso** (la mercadería entra) y una *venta* es **egreso** (sale). Corregido explícitamente por el usuario en esta sesión — es al revés de lo que sugiere el flujo de dinero.
+- **Revisión al guardar**: el código se fija al abrir el formulario, así que entre ese momento y el guardado otro usuario (u otra sucursal de la misma empresa) puede haberse quedado con el número. Los 10 `GuardarNuevo` de documentos llaman a un `VerificarCodigo()` propio que, si el número ya está tomado, avisa y guarda con el siguiente libre.
+- **En Correcciones y Facturas el código se calcula recién cuando `_movimiento` ya está resuelto**, no al principio de `CargarParaNuevo` — el correlativo depende del cubo, y al principio todavía tiene el valor default.
+- **Tolerancia a códigos viejos**: `CodigoDocumento` lee los dígitos finales (`"A12"` → 12), así que el correlativo no se reinicia en 1 mientras queden códigos con signo sin regenerar.
+- `empresas.signo`, `sucursales.signo` y `regiones.signo` **siguen existiendo y se siguen editando** en sus pantallas de mantenimiento; ya no intervienen en el código de ningún documento.
+- En `DataConsulta` se eliminaron `SiguienteNumeroDoc`, `SiguienteNumeroDocPorEmpresa` y `SiguienteNumeroDocPorRegion` (reemplazados por `CodigoDocumento`).
+
 ## VisorEmpresa (app compañera)
 
 App WPF separada (`VisorEmpresa/VisorEmpresa.csproj`, símbolo de compilación `VISOR`) que visualiza la **empresa completa** (todas las sucursales a la vez), a diferencia de la app principal que siempre trabaja filtrada por `AppState.SucursalActiva`. Login propio (`LoginVisorWindow`), ventana propia (`ConsolaVisor.xaml`), tema propio (`TemaVisor`).
+
+Desde la sesión 2026-07-28/29 su sidebar espeja el de la app principal para documentos: Pedidos partido en **Ventas/Compras**, Correcciones en **Repuestas/Retirados**, Facturas en **Ingresos/Egresos**, y Traspasos en **Entradas/Salidas** (este último se hizo después, en un pedido aparte).
 
 De solo lectura únicamente para los documentos transaccionales (**Pedidos, Traspasos, Correcciones, Facturas** — "ver documento" desde la grilla, sin Nuevo/Editar/Eliminar/Guardar). Todo el resto del catálogo permite Nuevo/Editar/Eliminar (gateado por `AppState.EsAdmin`, igual que la app principal): **Precios, Empresas, Sucursales, Usuarios, Regiones** (desde antes), y desde la sesión 2026-07-20 también **Artículos, Familias, Productos, Industrias, Categorías** — catálogo completo editable, ver detalle en el historial de esa sesión.
 
@@ -209,6 +259,9 @@ Servicio server-side mínimo (`ConexionBroker/`, ASP.NET Core Minimal API, `.NET
 - [x] ~~Migrar la conexión a SQL Server a Application Roles + token de sesión (en vez de credencial fija cifrada por DPAPI)~~ — dirección elegida en sesión 2026-07-20, pero en sesión 2026-07-27 se resolvió el mismo problema por otra vía: **`ConexionBroker`** (ver sección propia arriba). Ya no hay ninguna credencial de SQL Server guardada en las PCs (ni DPAPI ni ningún otro cifrado) — el broker la entrega en memoria tras loguear. Application Roles queda descartado, no hace falta.
 - [ ] Verificar en máquina local (compilación real) los cambios de la sesión 2026-07-27: el flujo completo de `ConexionBroker`/`AuthBrokerClient` en ambas apps, el fix de `UsuariosDetalle`/`DataConsulta.EstablecerItem`, la reorganización del panel lateral de `ConsolaVisor` (VisorEmpresa), y el nuevo "Informe PDF" + filtro Condición + resumen de categorías de `ArticulosGeneral` (Excel/PDF, los 4 archivos) — nada de esto se compiló en el entorno cloud (sin SDK de .NET). Prestar especial atención a que las fórmulas `SUMIF`/`SUM` del Excel calculen bien al abrirlo.
 - [ ] Agregar límite de intentos fallidos de login en `ConexionBroker` (ver sección propia arriba).
+- [ ] **Verificar en máquina local los cambios de la sesión 2026-07-28/29** — es la sesión con más superficie sin compilar. Prioridad: (1) crear un documento nuevo de cada tipo y confirmar que el código sale sin signo y con el correlativo correcto por empresa+movimiento; (2) correr "Regenerar códigos" y confirmar que los cambios se ven al reingresar (fix de cachés); (3) "Validar pedido" de punta a punta; (4) las 8 entradas nuevas del sidebar en los dos proyectos.
+- [ ] **Correr "🗑️ Eliminar ocultos" primero en una base de prueba** — hace `DELETE` físico irreversible sobre 26 tablas. Nunca se ejecutó todavía contra datos reales.
+- [ ] Correr "Regenerar códigos" una vez tras desplegar, para pasar los códigos viejos con signo al esquema nuevo (mientras tanto conviven: `CodigoDocumento` los tolera leyendo los dígitos finales).
 
 ### Baja prioridad / Futuro
 - [ ] Reportes adicionales en Excel
@@ -217,10 +270,67 @@ Servicio server-side mínimo (`ConexionBroker/`, ASP.NET Core Minimal API, `.NET
 ## Problemas Conocidos o Pendientes
 
 - **Sin herramientas de build en el entorno cloud**: todos los cambios se aplican siguiendo patrones existentes, pero no pueden compilarse ni ejecutarse remotamente. Siempre verificar localmente antes de merge a producción.
-- **`AppState.TipoPedido` y `AppState.TipoMovimiento` son globales**: en `PedidosGeneral.AbrirEditar` se leen del DB antes de abrir la pestaña para garantizar el valor correcto. Si se abrieran dos pestañas de edición simultáneas muy rápido, podría haber condición de carrera (actualmente no es un problema práctico).
+- **`AppState.TipoPedido` y `AppState.TipoMovimiento` son globales**: en `PedidosGeneral.AbrirEditar` se leen del DB antes de abrir la pestaña para garantizar el valor correcto. Si se abrieran dos pestañas de edición simultáneas muy rápido, podría haber condición de carrera (actualmente no es un problema práctico). Desde la sesión 2026-07-28/29 esto pesa más, porque hay **dos paneles vivos a la vez** por módulo (Ventas y Compras, Entradas y Salidas, etc.) compartiendo esos mismos campos globales.
+- **Las cachés de `ConsultasEmpresa` son `static` y sobreviven al cierre de sesión**: cualquier herramienta que reescriba datos en el servidor tiene que invalidarlas o los cambios no se ven al reingresar. Ya hay un `LimpiarCaches()` llamado desde `CerrarSesionInterno()` (sesión 2026-07-28/29) — si se agrega otra herramienta de este tipo, asegurarse de que pase por ahí.
+- **Los tres lados del `codigo` tienen que moverse juntos**: `MovimientoSql` (cubos), `CodigoDocumento` (creación) y `CodigoRegenerator` (renumerado). Cambiar el ámbito en uno solo hace que los códigos se muevan de lugar al regenerar — fue exactamente el bug de esta sesión, ver la sección "Códigos de documento".
 - **`CorreccionesDetalle` ya es pestaña**: usa `OpenAsTab` de ArticulosGeneral para buscar artículos, igual que Pedidos/Traspasos.
 
 ## Historial de Cambios por Sesión
+
+### Sesión 2026-07-28/29 — Facturas restaurada como documento propio + "Validar pedido"; los 4 módulos de documentos partidos en dos entradas de sidebar (Ventas/Compras, Entradas/Salidas, Repuestas/Retirados, Ingresos/Egresos); códigos sin signo por empresa+movimiento en creación Y regeneración; botón "Eliminar ocultos" (rama `master`)
+
+> Sesión muy larga, con pedidos numerados turno a turno ("problema1", "problema2", "problema3"). Dos correcciones importantes del usuario reorientaron el trabajo a mitad de camino (ver más abajo: el revert de Facturas y el criterio ingreso/egreso). El usuario además pusheó un commit propio (`a79b0bf`) mientras la sesión estaba en curso, que hubo que integrar por merge. 21 commits, todos a `master`.
+
+#### Revert: Facturas vuelve a ser un documento propio (`4a260ff`)
+- Arranque: el usuario pidió eliminar de Pedidos todo lo referido a facturas. Se hizo — pero acto seguido avisó que había sido un error suyo haber borrado `FacturasGeneral`/`FacturasDetalle`, `documentosF` y `transaccionesF` en una sesión anterior, y pidió revertir esas eliminaciones.
+- Se restauraron las pantallas `FacturasGeneral`/`FacturasDetalle` (los dos proyectos) y las tablas `documentosF`/`transaccionesF`, con `facturas.documentoF` (había quedado como `facturas.documentoP`).
+- **Columna nueva `documentosF.relacion`** (FK → `documentosP`): el conector pedido-factura. Se preguntó explícitamente si iba en `documentosP.relacion` o `documentosF.relacion` y el usuario eligió que apunte al pedido desde la factura.
+- `transacciones` renombrada a `transaccionesP` (contraparte de `transaccionesF`).
+- Pedidos quedó sin saber nada de facturas: se eliminó la pestaña "Facturas del pedido", el badge de estado de factura, la columna "Factura" y el filtro lateral por factura.
+
+#### "Validar pedido" — armar una factura desde un pedido (`cc2cdca`, `92c2d07`)
+- Pantalla nueva `ValidarPedido.xaml(.cs)`: buscador + grid de pedidos, grid de detalle debajo con checkboxes, y botones Validar/Cancelar. Búsqueda por código, cliente/proveedor y referencia (elegido por el usuario).
+- **Las líneas NO se copian una por una**: se **suman agrupadas por categoría** (dos ítems de la misma categoría con importe 200 → una línea de 400). Pedido explícito del usuario. Las categorías que suman cero se saltean.
+- El botón se movió de `FacturasDetalle` a `FacturasGeneral`: crea una factura NUEVA copiando fecha/hora/tercero/referencia del pedido. Dentro de `FacturasDetalle` quedaron botones "Validar"/"Actualizar" (visibles solo si la factura está vinculada a un pedido) para re-elegir o re-sincronizar.
+
+#### Los 4 módulos de documentos partidos en dos entradas de sidebar
+- Pedidos → **Ventas / Compras**; Traspasos → **Entradas / Salidas**; Correcciones → **Repuestas / Retirados**; Facturas → **Ingresos / Egresos**. Cada `*General` toma ahora un parámetro `tipoMovimiento` en el constructor y se instancia dos veces (ver "Paneles declarados" arriba).
+- En consecuencia se eliminaron de TODOS los formularios correspondientes: la columna "Movimiento" de `Grid1` y los combos `Box_Movimiento`/`CboMovimiento`. El movimiento ya no se elige en pantalla: lo fija la sección del sidebar.
+- **Espejado completo en VisorEmpresa** para Pedidos/Correcciones/Facturas (confirmado por el usuario). Traspasos quedó fuera en ese momento por decisión suya ("dejarlo como está"), y se hizo después en un pedido aparte.
+- **Iteración de diseño del sidebar**: primero se agruparon las entradas bajo encabezados de sección; el usuario lo rechazó ("no me gusta, solo pon las pestañas... como estaban") y se aplanó. Más tarde el usuario pusheó él mismo el commit `a79b0bf` **volviendo a poner los encabezados** de sección — se integró por merge (conflicto en `ConsolaMovimientos.xaml`, resuelto conservando su estructura y aplicando encima el rename Descargas→Retirados). El estado final del sidebar es el de él, con encabezados.
+- Renames pedidos en el camino: Albaranes → Remisiones → (revertido), Descargas → **Retirados**.
+
+#### ⚠️ Corrección importante del usuario: ingreso/egreso va por mercadería, no por dinero (`82697a1`)
+- La primera implementación mapeaba ingresos→ventas y egresos→compras. El usuario lo corrigió: **es al revés**. Una **compra** hace ENTRAR mercadería → **ingreso**; una **venta** la hace SALIR → **egreso**.
+- Todos los helpers (`NormalizarMovimiento`/`EsEgreso`, y hoy `MovimientoSql`) implementan ese criterio, aceptando los valores viejos como equivalentes (`venta`→egreso, `compra`→ingreso) para no romper documentos ya guardados.
+
+#### Códigos de documento sin signo (`6826b3b`, `ee4631b`)
+- Se rehízo el esquema completo de `codigo` en **las dos puntas** — ver la sección propia "Códigos de documento" más arriba para el detalle de ámbitos y piezas.
+- Primero (`6826b3b`) se cambió solo la **regeneración** (`CodigoRegenerator`): fuera los signos, correlativo por (empresa, movimiento) en P/C/F y por empresa en T/L/I, exigiendo empresa activa.
+- Después (`ee4631b`) se descubrió que faltaba la otra punta: **la creación seguía poniendo signo y numerando por sucursal**, así que un documento nuevo nacía con el esquema viejo y los códigos se movían de lugar apenas se regeneraba. Se crearon `MovimientoSql.cs` (fuente de verdad única de los cubos, que `CodigoRegenerator` también pasó a usar) y `CodigoDocumento.cs` (cálculo al crear + **revisión al guardar**, que avisa y corrige si el número ya está tomado), conectados en los 10 `GuardarNuevo` de documentos de los dos proyectos.
+- **`documentosI` cambió de ámbito, no solo de signo**: numeraba por sucursal y pasó a numerar por empresa, para coincidir con el regenerador (si no, dos sucursales podían generar el mismo número). Se avisó explícitamente al usuario porque va más allá de "solo sacale el signo".
+- `documentosL` también cambió de cascada: al crear usaba `region → regiones.empresa` y pasó a la columna `empresa` directa, igual que el regenerador.
+
+#### Botón "🗑️ Eliminar ocultos" — único DELETE físico de la app (`22452d1`)
+- Nueva herramienta `RegistrosOcultosPurgador` (ambos proyectos), con botón solo en `VisorEmpresa/ConsolaVisor`, al lado de "Regenerar códigos"/"Recalcular precios".
+- Borra **físicamente** (`DELETE` real, no `estadof`) las filas con `estadof` en `('ocultado','eliminado')` de la **empresa activa** (alcance elegido por el usuario ante la pregunta), en las 26 tablas: líneas de documentos primero, cabeceras después, maestras al final.
+- Luego **renumera 1..N sin huecos** la columna `indice` de las tablas que la tienen (`articulos` por familia; `correcciones`/`entregas`/`facturas`/`pedidos`/`traspasos`/`transaccionesF`/`transaccionesP` por su documento dueño).
+- Todo en una única transacción con rollback. Doble confirmación antes de ejecutar; cierra la sesión al terminar. **Es la única excepción a la regla de "la app nunca hace DELETE físico"** — documentado como tal en `ESTRUCTURA-BASE-DE-DATOS.md`.
+
+#### Bug real encontrado: "Regenerar códigos no cambia nada" era caché, no SQL (`7b276b5`)
+- El usuario reportó que el botón no cambiaba los códigos. El dato que destrabó el diagnóstico lo dio él: *"luego de cerrar sesión yo mismo y volver a entrar, noto los cambios"* — o sea el `UPDATE` **sí** se aplicaba.
+- **Causa raíz**: las cachés de `ConsultasEmpresa` son `static` y sobreviven al cierre de sesión. Al reingresar con la misma empresa+año, las claves memoizadas (`_pedidosCacheCargada` y compañía) coincidían, `ConectarCache*` salía por su early-return y se seguía mostrando lo que había quedado en memoria en vez de releer SQL.
+- **Fix**: nuevo `ConsultasEmpresa.LimpiarCaches()` (descarta dashboard, stock y las 4 memoizaciones empresa+año), llamado desde `ConsolaVisor.CerrarSesionInterno()` — cubre el cierre manual y también el forzado de "Regenerar códigos" y "Eliminar ocultos".
+
+#### Otros arreglos puntuales
+- `PedidosGeneral` (ambos proyectos): la columna Artículo de `Lista2` mostraba el `id` (GUID) en vez del `codigo` del artículo (`ec7a207`).
+- `VisorEmpresa/TraspasosDetalle`: fuera el combo "Movimiento"; `LblTitulo` fijo en "Traspasos de Producto"; ícono fijo "TR" con relleno blanco (`6826b3b`). El `Foreground` había quedado en `ThemeTexto`, que en tema oscuro es `#E8EAED` sobre relleno blanco → la "TR" quedaba **invisible**; se pasó a negro fijo (`7b276b5`).
+- Correcciones de títulos, incluida una autocorrección del usuario: el "sacar la palabra Nueva" no era de Factura sino de `CorreccionesDetalle` — se restauró "Nueva Factura" y se cambió el de Correcciones (`6464667`).
+- **Cambios revertidos a pedido**: se habían hecho ajustes de tamaño del instalador al explicar un error de disco de Velopack (captura de WhatsApp). El usuario aclaró *"no quiero cambios que dañaran mi aplicación, solo quería saber el motivo"* → se revirtieron, dejando solo la explicación en documentación (`65a92c8`).
+
+#### Notas / pendientes de esta sesión
+- **Sin SDK de .NET en el entorno remoto** (igual que siempre): todo se verificó por lectura de código, grep, scripts de conteo de llaves/paréntesis fuera de strings y comentarios, validación de XAML bien formado, y cross-checks de que cada handler de XAML tenga método en el `.cs` y cada `x:Name` usado exista. **Nada se compiló.** Es la sesión con más superficie de cambio sin compilar de todas — conviene probar en Visual Studio antes de publicar versión.
+- Los 4 pares de archivos compartidos tocados (`CodigoRegenerator`, `CodigoDocumento`, `MovimientoSql`, `DataConsulta`) se verificaron con `diff` para confirmar que difieren **solo** en la línea del `namespace`.
 
 ### Sesión 2026-07-27 — ConexionBroker: nueva arquitectura de login + despliegue real en producción; VisorEmpresa: fix de usuario nuevo que no llegaba a SQL Server y panel lateral separado en "nivel empresa"/"superiores"; ArticulosGeneral: nuevo Informe PDF, filtro Condición y resumen de categorías (Excel/PDF) ajustado a diseño real de InventariosGeneral (rama `master`)
 
