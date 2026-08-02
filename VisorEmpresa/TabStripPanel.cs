@@ -10,10 +10,9 @@ namespace VisorEmpresa
     /// El <see cref="TabPanel"/> por defecto de WPF apila las pestañas en varias
     /// filas cuando no entran a lo ancho, y esas filas le comen alto al contenido.
     /// Acá siempre hay UNA sola fila: cuando no entran todas, se ocultan las más
-    /// ANTIGUAS para que se vean las más recientes. Las nuevas se insertan justo
-    /// ANTES de la fija (ver AbrirPestaña), así que la fila va de la más vieja a la
-    /// más nueva, con la fija cerrando a la derecha, y las que se caen del borde
-    /// izquierdo son las viejas.
+    /// ANTIGUAS para que se vean las más recientes. Las nuevas entran como PRIMERAS
+    /// de la barra (ver AbrirPestaña), así que la fila va de la más nueva a la más
+    /// vieja, con la fija cerrando a la derecha, y las que se caen son las viejas.
     ///
     /// Quedan siempre visibles:
     ///   • la pestaña marcada con <see cref="FijaProperty"/> (la de la sección), y
@@ -99,11 +98,11 @@ namespace VisorEmpresa
                 usado       += InternalChildren[sel].DesiredSize.Width;
             }
 
-            // 3. El resto se llena de derecha a izquierda. Las pestañas nuevas se
-            //    insertan justo ANTES de la fija (ver AbrirPestaña), así que ese
-            //    recorrido va de la MÁS RECIENTE a la MÁS ANTIGUA: en cuanto una no
-            //    entra se corta, y las que quedan afuera son siempre las viejas.
-            for (int i = total - 1; i >= 0; i--)
+            // 3. El resto se llena de izquierda a derecha. Las pestañas nuevas entran
+            //    como PRIMERAS de la barra (ver AbrirPestaña), así que ese recorrido
+            //    va de la MÁS RECIENTE a la MÁS ANTIGUA: en cuanto una no entra se
+            //    corta, y las que quedan afuera son siempre las viejas.
+            for (int i = 0; i < total; i++)
             {
                 if (visible[i]) continue;
                 double ancho = InternalChildren[i].DesiredSize.Width;

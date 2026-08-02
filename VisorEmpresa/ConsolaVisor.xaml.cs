@@ -563,11 +563,10 @@ namespace SistemaGestion
                 else CerrarPestaña(contenido);
             };
 
-            // Justo antes de la pestaña fija: la nueva queda pegada a ella y las más
-            // viejas se van corriendo hacia la izquierda. La fija siempre queda al
-            // final de la barra, y ese es el orden que espera TabStripPanel para
-            // ocultar primero las más antiguas.
-            TabContenido.Items.Insert(IndicePestañaFija(), tab);
+            // La nueva entra siempre como PRIMERA pestaña de la barra: las anteriores
+            // se corren hacia la derecha y la fija queda cerrando al final. Ese es el
+            // orden que espera TabStripPanel para ocultar primero las más antiguas.
+            TabContenido.Items.Insert(0, tab);
             TabContenido.SelectedItem = tab;
         }
 
