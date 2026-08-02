@@ -401,6 +401,49 @@ namespace SistemaGestion
                 TabContenido.SelectedIndex = Math.Max(0, idx - 1);
         }
 
+        // ─── Lista completa de pestañas (botón "▾" de la barra) ───────────────
+        // La barra muestra una sola fila: si no entran todas, se ocultan las más
+        // antiguas (ver TabStripPanel). Este menú las lista TODAS —visibles y
+        // ocultas— y salta a la elegida, igual que el botón de pestañas de Chrome.
+        private void BtnPestanasTodas_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn) return;
+
+            var menu = new ContextMenu
+            {
+                PlacementTarget = btn,
+                Placement       = System.Windows.Controls.Primitives.PlacementMode.Bottom
+            };
+            menu.SetResourceReference(Control.BackgroundProperty, "ThemeBgSidebar");
+
+            foreach (TabItem t in TabContenido.Items)
+            {
+                bool actual = ReferenceEquals(t, TabContenido.SelectedItem);
+                var item = new MenuItem
+                {
+                    Header     = TituloPestaña(t),
+                    FontWeight = actual ? FontWeights.Bold : FontWeights.Normal,
+                    // Punto azul (el acento de la app) en la pestaña que se está viendo.
+                    Icon       = actual
+                                 ? new TextBlock
+                                   {
+                                       Text              = "●",
+                                       FontSize          = 10,
+                                       VerticalAlignment = VerticalAlignment.Center,
+                                       Foreground        = new SolidColorBrush(Color.FromRgb(0x4A, 0x6F, 0xE3))
+                                   }
+                                 : null
+                };
+                item.SetResourceReference(Control.ForegroundProperty, "ThemeTexto");
+                var destino = t;
+                item.Click += (_, _) => TabContenido.SelectedItem = destino;
+                menu.Items.Add(item);
+            }
+
+            btn.ContextMenu = menu;
+            menu.IsOpen = true;
+        }
+
         // ─── Verificar y cerrar pestañas vinculadas antes de guardar/cerrar ─────
         // Devuelve true si se puede continuar (no hay pestañas o el usuario aceptó cerrarlas).
         public bool ConfirmarCierrePestañasRelacionadas(string contexto)
@@ -629,13 +672,15 @@ namespace SistemaGestion
             return res;
         }
 
-        // Extrae el texto del título de una pestaña (el Header es un StackPanel con un
-        // TextBlock de título seguido del botón de cierre).
+        // Extrae el texto del título de una pestaña: en las dinámicas el Header es un
+        // StackPanel con un TextBlock de título seguido del botón de cierre; en la
+        // pestaña fija es un TextBlock suelto (TabFijoTitulo).
         private static string TituloPestaña(TabItem t)
         {
             if (t.Header is System.Windows.Controls.StackPanel sp)
                 foreach (var hijo in sp.Children)
                     if (hijo is System.Windows.Controls.TextBlock tb) return tb.Text;
+            if (t.Header is System.Windows.Controls.TextBlock titulo) return titulo.Text;
             return t.Header?.ToString() ?? "(pestaña)";
         }
 

@@ -13,6 +13,10 @@ namespace SistemaGestion
     /// abajo las líneas del pedido elegido con un check por línea, y al pie
     /// "Validar pedido" / "Cancelar".
     ///
+    /// Solo se listan los pedidos SIN factura todavía: un pedido ya apuntado por
+    /// algún `documentosF.relacion` no vuelve a aparecer (salvo el propio pedido
+    /// de la factura desde la que se abrió la pestaña, para poder re-validarlo).
+    ///
     /// Al validar deja el resultado en <see cref="PedidoValidado"/> (id del
     /// documentosP, que va a `documentosF.relacion`) y en
     /// <see cref="LineasValidadas"/>: las líneas tildadas ya sumadas **por
@@ -89,7 +93,13 @@ namespace SistemaGestion
         {
             string busqueda = TxtBuscar.Text.Trim().ToLower();
 
-            var facturadoPorPedido = CalcularFacturadoPorPedido();
+            // Solo se listan los pedidos que todavía NO tienen factura: los que ya
+            // están apuntados por algún documentosF.relacion quedan fuera. La única
+            // excepción es el pedido que ya trae la factura desde la que se abrió
+            // esta pestaña (si no, no se podría re-validar ni ver el propio pedido).
+            var relacionPorFactura = CalcularRelacionPorFactura();
+            var pedidosConFactura  = new HashSet<string>(relacionPorFactura.Values);
+            var facturadoPorPedido = CalcularFacturadoPorPedido(relacionPorFactura);
 
             _pedidos.Clear();
             int linea = 1;
@@ -101,6 +111,8 @@ namespace SistemaGestion
                 string id = idObj.ToString()!;
 
                 if (Sql.DocumentosPObj.ObtenerItem("sucursal", id)?.ToString() != AppState.SucursalActiva) continue;
+
+                if (pedidosConFactura.Contains(id) && id != _pedidoPreseleccionado) continue;
 
                 string movDoc = Sql.DocumentosPObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
                 if (!string.IsNullOrEmpty(_movimiento) &&
@@ -140,11 +152,13 @@ namespace SistemaGestion
         }
 
         /// <summary>
-        /// Importe ya facturado de cada pedido: suma de las líneas de las facturas
-        /// cuyo documentosF.relacion apunta a ese pedido. Se arma de una sola
-        /// pasada (documentosF → relacion, después facturas → documentoF).
+        /// Vínculo factura → pedido de una sola pasada por documentosF: la clave es
+        /// el id de la factura y el valor el del pedido que factura
+        /// (documentosF.relacion). Sirve para las dos cosas que necesita la grilla:
+        /// saber qué pedidos ya están facturados (los valores) y cuánto se les
+        /// facturó (ver <see cref="CalcularFacturadoPorPedido"/>).
         /// </summary>
-        private static Dictionary<string, double> CalcularFacturadoPorPedido()
+        private static Dictionary<string, string> CalcularRelacionPorFactura()
         {
             var relacionPorFactura = new Dictionary<string, string>();
             int ufD = Sql.DocumentosFObj.ContarFilas;
@@ -156,7 +170,16 @@ namespace SistemaGestion
                 string relacion = Sql.DocumentosFObj.ObtenerItem("relacion", id)?.ToString() ?? "";
                 if (relacion != "") relacionPorFactura[id] = relacion;
             }
+            return relacionPorFactura;
+        }
 
+        /// <summary>
+        /// Importe ya facturado de cada pedido: suma de las líneas de las facturas
+        /// cuyo documentosF.relacion apunta a ese pedido.
+        /// </summary>
+        private static Dictionary<string, double> CalcularFacturadoPorPedido(
+            Dictionary<string, string> relacionPorFactura)
+        {
             var total = new Dictionary<string, double>();
             int ufF = Sql.FacturasObj.ContarFilas;
             for (int i = 1; i <= ufF; i++)

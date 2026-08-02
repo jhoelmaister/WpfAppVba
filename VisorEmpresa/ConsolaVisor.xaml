@@ -1,6 +1,7 @@
 ﻿<Window x:Class="SistemaGestion.ConsolaMovimientos"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:VisorEmpresa"
         Title="Visor Empresa"
         WindowState="Maximized"
         MinWidth="700" MinHeight="620"
@@ -58,6 +59,97 @@
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextoMuted}"/>
             <Setter Property="Margin" Value="14,10,0,4"/>
+        </Style>
+
+        <!-- ── Botón "▾" de la barra de pestañas (lista completa) ─────── -->
+        <Style x:Key="TabListaBtn" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextoSec}"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Borde"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Borde" Property="Background" Value="{DynamicResource ThemeTabHoverBg}"/>
+                                <Setter Property="Foreground" Value="#4A6FE3"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── TabControl de la consola: una sola fila de pestañas ─────────
+             Reemplaza el TabPanel por defecto (que apila las pestañas en varias
+             filas cuando no entran) por TabStripPanel: fila única, se ocultan las
+             más antiguas y se ven las más recientes. El botón "▾" de la derecha
+             abre la lista completa, incluidas las ocultas (estilo Chrome). -->
+        <Style x:Key="TabsConDesborde" TargetType="TabControl">
+            <Setter Property="ItemsPanel">
+                <Setter.Value>
+                    <ItemsPanelTemplate>
+                        <local:TabStripPanel/>
+                    </ItemsPanelTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabControl">
+                        <Grid ClipToBounds="True" SnapsToDevicePixels="True"
+                              KeyboardNavigation.TabNavigation="Local">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Encabezados de pestaña (una sola fila) -->
+                            <ItemsPresenter x:Name="HeaderPanel"
+                                            Grid.Row="0" Grid.Column="0"
+                                            Margin="2,2,0,0"
+                                            KeyboardNavigation.TabIndex="1"
+                                            Panel.ZIndex="1"/>
+
+                            <!-- Lista completa de pestañas (incluye las ocultas) -->
+                            <Button x:Name="BtnPestanasTodas"
+                                    Grid.Row="0" Grid.Column="1"
+                                    Content="▾" Width="26"
+                                    Margin="4,2,6,2"
+                                    VerticalAlignment="Stretch"
+                                    Style="{StaticResource TabListaBtn}"
+                                    ToolTip="Ver todas las pestañas"
+                                    Click="BtnPestanasTodas_Click"/>
+
+                            <Border x:Name="ContentPanel"
+                                    Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    KeyboardNavigation.DirectionalNavigation="Contained"
+                                    KeyboardNavigation.TabIndex="2"
+                                    KeyboardNavigation.TabNavigation="Local">
+                                <ContentPresenter x:Name="PART_SelectedContentHost"
+                                                  ContentSource="SelectedContent"
+                                                  Margin="{TemplateBinding Padding}"
+                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
     </Window.Resources>
@@ -345,6 +437,7 @@
 
             <!-- ── ÁREA DE CONTENIDO ──────────────────── -->
             <TabControl x:Name="TabContenido" Grid.Column="1"
+                        Style="{StaticResource TabsConDesborde}"
                         Background="{DynamicResource ThemeBgContenido}"
                         BorderThickness="0" Padding="0">
                 <!-- Pestaña fija: título y contenido cambian según el menú lateral -->

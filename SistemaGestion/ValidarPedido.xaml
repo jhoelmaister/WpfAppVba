@@ -82,7 +82,7 @@
             </Grid.ColumnDefinitions>
             <TextBox x:Name="TxtBuscar" Grid.Column="0"
                      Style="{StaticResource SearchInput}" Margin="0,0,6,0"
-                     ToolTip="Busca por código de documento, cliente/proveedor o referencia"
+                     ToolTip="Busca por código de documento, cliente/proveedor o referencia — solo se listan los pedidos que todavía no tienen factura"
                      TextChanged="TxtBuscar_TextChanged"/>
             <Button Content="Actualizar" Grid.Column="1"
                     Style="{StaticResource Btn}"
