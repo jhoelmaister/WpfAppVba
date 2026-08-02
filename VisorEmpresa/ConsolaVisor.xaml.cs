@@ -627,6 +627,10 @@ namespace SistemaGestion
             var estiloItem = (Style)FindResource("TabListaItem");
             foreach (TabItem t in TabContenido.Items)
             {
+                // La fija ya no se dibuja en la barra, así que tampoco se lista: se
+                // vuelve a su panel desde el menú lateral o cerrando las pestañas.
+                if (ReferenceEquals(t, TabFijo)) continue;
+
                 bool actual = ReferenceEquals(t, TabContenido.SelectedItem);
                 var item = new MenuItem
                 {
@@ -637,6 +641,14 @@ namespace SistemaGestion
                 item.Click += (_, _) => TabContenido.SelectedItem = destino;
                 menu.Items.Add(item);
             }
+
+            if (menu.Items.Count == 0)
+                menu.Items.Add(new MenuItem
+                {
+                    Header    = FilaListaPestaña("No hay pestañas abiertas", false),
+                    Style     = estiloItem,
+                    IsEnabled = false
+                });
 
             btn.ContextMenu = menu;
             menu.IsOpen = true;

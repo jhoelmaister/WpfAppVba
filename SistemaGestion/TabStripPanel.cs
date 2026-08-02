@@ -12,15 +12,20 @@ namespace SistemaGestion
     /// Acá siempre hay UNA sola fila: cuando no entran todas, se ocultan las más
     /// ANTIGUAS para que se vean las más recientes. Las nuevas entran como PRIMERAS
     /// de la barra (ver AbrirPestaña), así que la fila va de la más nueva a la más
-    /// vieja, con la fija cerrando a la derecha, y las que se caen son las viejas.
+    /// vieja y las que se caen son las viejas.
     ///
-    /// Quedan siempre visibles:
-    ///   • la pestaña marcada con <see cref="FijaProperty"/> (la de la sección), y
-    ///   • la pestaña seleccionada (si se elige una oculta desde el botón "▾",
-    ///     entra a la vista sola).
+    /// La pestaña marcada con <see cref="FijaProperty"/> (la del panel de la
+    /// sección) NO se dibuja en la barra: su encabezado no ocupa lugar y toda la
+    /// fila queda para las pestañas de documentos. Igual se sigue midiendo, así la
+    /// barra conserva su alto de siempre —aunque no haya ninguna pestaña abierta— y
+    /// el área de contenido no cambia de tamaño ni se mueve. Su contenido se ve
+    /// igual que antes cuando está seleccionada: se vuelve a ella haciendo clic en
+    /// la sección del menú lateral o cerrando las pestañas abiertas.
     ///
-    /// Las ocultas no desaparecen: se llegan por el botón "▾" de la barra, que
-    /// abre la lista completa (ver ConsolaMovimientos.BtnPestanasTodas_Click).
+    /// La seleccionada siempre se ve, aunque sea una vieja: si se elige una oculta
+    /// desde el botón "▾", entra a la vista sola. Las ocultas no desaparecen: se
+    /// llegan por ese botón, que abre la lista completa (ver
+    /// ConsolaMovimientos.BtnPestanasTodas_Click).
     /// </summary>
     public class TabStripPanel : Panel
     {
@@ -64,6 +69,9 @@ namespace SistemaGestion
             var libre = new Size(double.PositiveInfinity, double.PositiveInfinity);
             double alto = 0, anchoTotal = 0;
 
+            // Se miden TODAS, incluida la fija (que después no se dibuja): así el
+            // alto de la barra es siempre el mismo, con pestañas abiertas o sin
+            // ninguna, y el área de contenido de abajo no se mueve.
             foreach (UIElement hijo in InternalChildren)
             {
                 hijo.Measure(libre);
@@ -85,14 +93,14 @@ namespace SistemaGestion
             var visible   = new bool[total];
             double usado  = 0;
 
-            // 1. La pestaña fija nunca se oculta.
+            // 1. La pestaña fija no se dibuja: la barra es solo para las de
+            //    documentos. Su ancho no se descuenta del espacio disponible.
             int fija = IndiceFija();
-            visible[fija] = true;
-            usado        += InternalChildren[fija].DesiredSize.Width;
 
-            // 2. La seleccionada tampoco, esté donde esté.
+            // 2. La seleccionada siempre se ve, esté donde esté (salvo la fija,
+            //    que justamente no tiene encabezado).
             int sel = IndiceSeleccionado();
-            if (sel >= 0 && !visible[sel])
+            if (sel >= 0 && sel != fija)
             {
                 visible[sel] = true;
                 usado       += InternalChildren[sel].DesiredSize.Width;
@@ -104,15 +112,17 @@ namespace SistemaGestion
             //    corta, y las que quedan afuera son siempre las viejas.
             for (int i = 0; i < total; i++)
             {
-                if (visible[i]) continue;
+                if (i == fija || visible[i]) continue;
                 double ancho = InternalChildren[i].DesiredSize.Width;
                 if (usado + ancho > finalSize.Width) break;
                 visible[i] = true;
                 usado     += ancho;
             }
 
-            // 4. Arreglo final, en orden. Las ocultas se mandan fuera de pantalla con
-            //    tamaño cero: no se ven ni reciben clics, pero siguen en el TabControl.
+            // 4. Arreglo final, en orden. Las que no se muestran —la fija y las que
+            //    no entraron— se mandan fuera de pantalla con tamaño cero: no se ven
+            //    ni reciben clics, pero siguen en el TabControl y su contenido se
+            //    sigue mostrando si están seleccionadas.
             double x = 0;
             for (int i = 0; i < total; i++)
             {
