@@ -538,8 +538,10 @@
                         Style="{StaticResource TabsConDesborde}"
                         Background="{DynamicResource ThemeBgContenido}"
                         BorderThickness="0" Padding="0">
-                <!-- Pestaña fija: título y contenido cambian según el menú lateral -->
-                <TabItem x:Name="TabFijo">
+                <!-- Pestaña fija: título y contenido cambian según el menú lateral.
+                     Fija=True → TabStripPanel nunca la oculta, y las pestañas nuevas
+                     se insertan siempre antes que ella. -->
+                <TabItem x:Name="TabFijo" local:TabStripPanel.Fija="True">
                     <TabItem.Header>
                         <TextBlock x:Name="TabFijoTitulo" Text="Artículos"
                                    VerticalAlignment="Center"/>

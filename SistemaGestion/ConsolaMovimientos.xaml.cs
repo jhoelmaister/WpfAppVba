@@ -314,11 +314,13 @@ namespace SistemaGestion
                 case "dashboard":    TabFijoContenido.Content = _panelDashboard;    TabFijoTitulo.Text = "Dashboard";    break;
             }
 
-            // 3. Restaurar las pestañas propias de la nueva sección
+            // 3. Restaurar las pestañas propias de la nueva sección, en su mismo
+            //    orden y siempre ANTES de la fija (que queda al final de la barra).
             _seccionActiva = nombre;
             var restaurar = _pestañasPorSeccion[nombre];
+            int pos = IndicePestañaFija();
             foreach (var t in restaurar)
-                TabContenido.Items.Add(t);
+                TabContenido.Items.Insert(pos++, t);
             restaurar.Clear();
 
             // 4. Restaurar la pestaña que estaba activa al salir de esta sección
@@ -366,11 +368,20 @@ namespace SistemaGestion
                 else CerrarPestaña(contenido);
             };
 
-            // Justo después de la pestaña fija (índice 0): las nuevas quedan a la
-            // izquierda y las más viejas se van corriendo hacia la derecha, que es el
-            // orden que espera TabStripPanel para ocultar primero las más antiguas.
-            TabContenido.Items.Insert(Math.Min(1, TabContenido.Items.Count), tab);
+            // Justo antes de la pestaña fija: la nueva queda pegada a ella y las más
+            // viejas se van corriendo hacia la izquierda. La fija siempre queda al
+            // final de la barra, y ese es el orden que espera TabStripPanel para
+            // ocultar primero las más antiguas.
+            TabContenido.Items.Insert(IndicePestañaFija(), tab);
             TabContenido.SelectedItem = tab;
+        }
+
+        // Posición de la pestaña fija dentro de la barra: es el punto de inserción de
+        // toda pestaña nueva. Si no estuviera (no debería pasar), se inserta al final.
+        private int IndicePestañaFija()
+        {
+            int i = TabContenido.Items.IndexOf(TabFijo);
+            return i < 0 ? TabContenido.Items.Count : i;
         }
 
         public void CerrarPestaña(UIElement contenido)

@@ -11,11 +11,12 @@ namespace VisorEmpresa
     /// filas cuando no entran a lo ancho, y esas filas le comen alto al contenido.
     /// Acá siempre hay UNA sola fila: cuando no entran todas, se ocultan las más
     /// ANTIGUAS para que se vean las más recientes. Las nuevas se insertan justo
-    /// después de la fija (ver AbrirPestaña), así que la fila va de la más nueva a
-    /// la más vieja y las que se caen del borde derecho son las viejas.
+    /// ANTES de la fija (ver AbrirPestaña), así que la fila va de la más vieja a la
+    /// más nueva, con la fija cerrando a la derecha, y las que se caen del borde
+    /// izquierdo son las viejas.
     ///
     /// Quedan siempre visibles:
-    ///   • la primera pestaña (la fija de la sección — es el "home" del panel), y
+    ///   • la pestaña marcada con <see cref="FijaProperty"/> (la de la sección), y
     ///   • la pestaña seleccionada (si se elige una oculta desde el botón "▾",
     ///     entra a la vista sola).
     ///
@@ -85,23 +86,24 @@ namespace VisorEmpresa
             var visible   = new bool[total];
             double usado  = 0;
 
-            // 1. La pestaña fija (la primera) siempre se ve.
-            visible[0] = true;
-            usado     += InternalChildren[0].DesiredSize.Width;
+            // 1. La pestaña fija nunca se oculta.
+            int fija = IndiceFija();
+            visible[fija] = true;
+            usado        += InternalChildren[fija].DesiredSize.Width;
 
-            // 2. La seleccionada también, esté donde esté.
+            // 2. La seleccionada tampoco, esté donde esté.
             int sel = IndiceSeleccionado();
-            if (sel > 0)
+            if (sel >= 0 && !visible[sel])
             {
                 visible[sel] = true;
                 usado       += InternalChildren[sel].DesiredSize.Width;
             }
 
-            // 3. El resto se llena de izquierda a derecha. Las pestañas nuevas se
-            //    insertan justo después de la fija (ver AbrirPestaña), así que ese
+            // 3. El resto se llena de derecha a izquierda. Las pestañas nuevas se
+            //    insertan justo ANTES de la fija (ver AbrirPestaña), así que ese
             //    recorrido va de la MÁS RECIENTE a la MÁS ANTIGUA: en cuanto una no
             //    entra se corta, y las que quedan afuera son siempre las viejas.
-            for (int i = 1; i < total; i++)
+            for (int i = total - 1; i >= 0; i--)
             {
                 if (visible[i]) continue;
                 double ancho = InternalChildren[i].DesiredSize.Width;
@@ -131,5 +133,32 @@ namespace VisorEmpresa
                 if (InternalChildren[i] is TabItem t && t.IsSelected) return i;
             return -1;
         }
+
+        /// <summary>
+        /// Posición de la pestaña marcada con <c>TabStripPanel.Fija</c>. Si ninguna
+        /// lo está, se toma la última: es donde vive la fija, porque las nuevas se
+        /// insertan siempre antes de ella.
+        /// </summary>
+        private int IndiceFija()
+        {
+            for (int i = InternalChildren.Count - 1; i >= 0; i--)
+                if (GetFija(InternalChildren[i])) return i;
+            return InternalChildren.Count - 1;
+        }
+
+        // ─── Fija (attached) ──────────────────────────────────────────────────
+        // Marca la pestaña que nunca se oculta, aunque no entre por ancho. La pone
+        // la consola sobre su TabItem fijo (el del panel de la sección).
+
+        public static readonly DependencyProperty FijaProperty =
+            DependencyProperty.RegisterAttached(
+                "Fija", typeof(bool), typeof(TabStripPanel),
+                new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsParentArrange));
+
+        public static void SetFija(DependencyObject elemento, bool valor)
+            => elemento.SetValue(FijaProperty, valor);
+
+        public static bool GetFija(DependencyObject elemento)
+            => (bool)elemento.GetValue(FijaProperty);
     }
 }
