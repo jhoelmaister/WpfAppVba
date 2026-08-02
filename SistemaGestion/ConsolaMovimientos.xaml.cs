@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using SistemaGestion.Data;
 
 namespace SistemaGestion
@@ -314,13 +315,11 @@ namespace SistemaGestion
                 case "dashboard":    TabFijoContenido.Content = _panelDashboard;    TabFijoTitulo.Text = "Dashboard";    break;
             }
 
-            // 3. Restaurar las pestañas propias de la nueva sección, en su mismo
-            //    orden y siempre ANTES de la fija (que queda al final de la barra).
+            // 3. Restaurar las pestañas propias de la nueva sección
             _seccionActiva = nombre;
             var restaurar = _pestañasPorSeccion[nombre];
-            int pos = IndicePestañaFija();
             foreach (var t in restaurar)
-                TabContenido.Items.Insert(pos++, t);
+                TabContenido.Items.Add(t);
             restaurar.Clear();
 
             // 4. Restaurar la pestaña que estaba activa al salir de esta sección
@@ -368,20 +367,17 @@ namespace SistemaGestion
                 else CerrarPestaña(contenido);
             };
 
-            // La nueva entra siempre como PRIMERA pestaña de la barra: las anteriores
-            // se corren hacia la derecha y la fija queda cerrando al final. Ese es el
-            // orden que espera TabStripPanel para ocultar primero las más antiguas.
-            TabContenido.Items.Insert(0, tab);
+            TabContenido.Items.Add(tab);
             TabContenido.SelectedItem = tab;
+            MostrarPestañaEnBarra(tab);
         }
 
-        // Posición de la pestaña fija dentro de la barra: es el punto de inserción de
-        // toda pestaña nueva. Si no estuviera (no debería pasar), se inserta al final.
-        private int IndicePestañaFija()
-        {
-            int i = TabContenido.Items.IndexOf(TabFijo);
-            return i < 0 ? TabContenido.Items.Count : i;
-        }
+        // Trae la pestaña al área visible de la barra. Con muchas abiertas, las más
+        // antiguas quedan fuera de vista (a la izquierda) y solo se llega a ellas con
+        // el scroll horizontal: sin esto, abrir o elegir una pestaña la dejaría
+        // seleccionada pero fuera de la vista.
+        private void MostrarPestañaEnBarra(TabItem tab)
+            => Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(tab.BringIntoView));
 
         public void CerrarPestaña(UIElement contenido)
         {
@@ -415,9 +411,9 @@ namespace SistemaGestion
         }
 
         // ─── Lista completa de pestañas (botón "▾" de la barra) ───────────────
-        // La barra muestra una sola fila: si no entran todas, se ocultan las más
-        // antiguas (ver TabStripPanel). Este menú las lista TODAS —visibles y
-        // ocultas— y salta a la elegida, igual que el botón de pestañas de Chrome.
+        // La barra es una sola fila con scroll horizontal: si no entran todas, las
+        // más antiguas quedan fuera de vista. Este menú las lista TODAS y salta a la
+        // elegida trayéndola a la vista, igual que el botón de pestañas de Chrome.
         private void BtnPestanasTodas_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not Button btn) return;
@@ -432,10 +428,6 @@ namespace SistemaGestion
             var estiloItem = (Style)FindResource("TabListaItem");
             foreach (TabItem t in TabContenido.Items)
             {
-                // La fija ya no se dibuja en la barra, así que tampoco se lista: se
-                // vuelve a su panel desde el menú lateral o cerrando las pestañas.
-                if (ReferenceEquals(t, TabFijo)) continue;
-
                 bool actual = ReferenceEquals(t, TabContenido.SelectedItem);
                 var item = new MenuItem
                 {
@@ -443,20 +435,25 @@ namespace SistemaGestion
                     Style  = estiloItem
                 };
                 var destino = t;
-                item.Click += (_, _) => TabContenido.SelectedItem = destino;
+                item.Click += (_, _) =>
+                {
+                    TabContenido.SelectedItem = destino;
+                    MostrarPestañaEnBarra(destino);
+                };
                 menu.Items.Add(item);
             }
 
-            if (menu.Items.Count == 0)
-                menu.Items.Add(new MenuItem
-                {
-                    Header    = FilaListaPestaña("No hay pestañas abiertas", false),
-                    Style     = estiloItem,
-                    IsEnabled = false
-                });
-
             btn.ContextMenu = menu;
             menu.IsOpen = true;
+        }
+
+        // La barra de pestañas no tiene scroll vertical, así que la rueda del mouse
+        // sobre ella se usa para moverla a lo ancho.
+        private void BarraPestanas_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (sender is not ScrollViewer barra) return;
+            barra.ScrollToHorizontalOffset(barra.HorizontalOffset - e.Delta);
+            e.Handled = true;
         }
 
         // Fila de la lista: un punto azul (el acento de la app) delante de la pestaña

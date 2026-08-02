@@ -1,7 +1,6 @@
 ﻿<Window x:Class="SistemaGestion.ConsolaMovimientos"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:VisorEmpresa"
         Title="Visor Empresa"
         WindowState="Maximized"
         MinWidth="700" MinHeight="620"
@@ -137,10 +136,6 @@
                             <Trigger Property="IsHighlighted" Value="True">
                                 <Setter TargetName="Borde" Property="Background" Value="{DynamicResource ThemeTabHoverBg}"/>
                             </Trigger>
-                            <!-- Único ítem deshabilitado: el aviso de "no hay pestañas" -->
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.55"/>
-                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -149,14 +144,16 @@
 
         <!-- ── TabControl de la consola: una sola fila de pestañas ─────────
              Reemplaza el TabPanel por defecto (que apila las pestañas en varias
-             filas cuando no entran) por TabStripPanel: fila única, se ocultan las
-             más antiguas y se ven las más recientes. El botón "▾" de la derecha
-             abre la lista completa, incluidas las ocultas (estilo Chrome). -->
+             filas cuando no entran) por un StackPanel horizontal dentro de un
+             ScrollViewer: las pestañas siguen todas en una fila y, cuando no
+             entran, las más antiguas (la fija y las que le siguen) quedan fuera
+             de vista y se llega a ellas con el scroll horizontal. El botón "▾"
+             de la derecha abre la lista completa (estilo Chrome). -->
         <Style x:Key="TabsConDesborde" TargetType="TabControl">
             <Setter Property="ItemsPanel">
                 <Setter.Value>
                     <ItemsPanelTemplate>
-                        <local:TabStripPanel/>
+                        <StackPanel Orientation="Horizontal"/>
                     </ItemsPanelTemplate>
                 </Setter.Value>
             </Setter>
@@ -174,14 +171,21 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <!-- Encabezados de pestaña (una sola fila) -->
-                            <ItemsPresenter x:Name="HeaderPanel"
-                                            Grid.Row="0" Grid.Column="0"
-                                            Margin="2,2,0,0"
-                                            KeyboardNavigation.TabIndex="1"
-                                            Panel.ZIndex="1"/>
+                            <!-- Encabezados de pestaña: una sola fila con scroll
+                                 horizontal cuando no entran todas -->
+                            <ScrollViewer x:Name="BarraPestanas"
+                                          Grid.Row="0" Grid.Column="0"
+                                          HorizontalScrollBarVisibility="Auto"
+                                          VerticalScrollBarVisibility="Disabled"
+                                          Focusable="False"
+                                          Panel.ZIndex="1"
+                                          PreviewMouseWheel="BarraPestanas_PreviewMouseWheel">
+                                <ItemsPresenter x:Name="HeaderPanel"
+                                                Margin="2,2,0,0"
+                                                KeyboardNavigation.TabIndex="1"/>
+                            </ScrollViewer>
 
-                            <!-- Lista completa de pestañas (incluye las ocultas) -->
+                            <!-- Lista completa de pestañas (incluidas las que quedaron fuera de vista) -->
                             <Button x:Name="BtnPestanasTodas"
                                     Grid.Row="0" Grid.Column="1"
                                     Content="▾" Width="26"
@@ -498,10 +502,8 @@
                         Style="{StaticResource TabsConDesborde}"
                         Background="{DynamicResource ThemeBgContenido}"
                         BorderThickness="0" Padding="0">
-                <!-- Pestaña fija: título y contenido cambian según el menú lateral.
-                     Fija=True → TabStripPanel nunca la oculta, y las pestañas nuevas
-                     se insertan siempre antes que ella. -->
-                <TabItem x:Name="TabFijo" local:TabStripPanel.Fija="True">
+                <!-- Pestaña fija: título y contenido cambian según el menú lateral -->
+                <TabItem x:Name="TabFijo">
                     <TabItem.Header>
                         <TextBlock x:Name="TabFijoTitulo" Text="Dashboard"
                                    VerticalAlignment="Center"/>
