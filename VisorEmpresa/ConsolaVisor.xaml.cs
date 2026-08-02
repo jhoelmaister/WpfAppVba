@@ -561,7 +561,10 @@ namespace SistemaGestion
                 else CerrarPestaña(contenido);
             };
 
-            TabContenido.Items.Add(tab);
+            // Justo después de la pestaña fija (índice 0): las nuevas quedan a la
+            // izquierda y las más viejas se van corriendo hacia la derecha, que es el
+            // orden que espera TabStripPanel para ocultar primero las más antiguas.
+            TabContenido.Items.Insert(Math.Min(1, TabContenido.Items.Count), tab);
             TabContenido.SelectedItem = tab;
         }
 
@@ -607,29 +610,19 @@ namespace SistemaGestion
             var menu = new ContextMenu
             {
                 PlacementTarget = btn,
-                Placement       = System.Windows.Controls.Primitives.PlacementMode.Bottom
+                Placement       = System.Windows.Controls.Primitives.PlacementMode.Bottom,
+                Style           = (Style)FindResource("TabListaMenu")
             };
-            menu.SetResourceReference(Control.BackgroundProperty, "ThemeBgSidebar");
 
+            var estiloItem = (Style)FindResource("TabListaItem");
             foreach (TabItem t in TabContenido.Items)
             {
                 bool actual = ReferenceEquals(t, TabContenido.SelectedItem);
                 var item = new MenuItem
                 {
-                    Header     = TituloPestaña(t),
-                    FontWeight = actual ? FontWeights.Bold : FontWeights.Normal,
-                    // Punto azul (el acento de la app) en la pestaña que se está viendo.
-                    Icon       = actual
-                                 ? new TextBlock
-                                   {
-                                       Text              = "●",
-                                       FontSize          = 10,
-                                       VerticalAlignment = VerticalAlignment.Center,
-                                       Foreground        = new SolidColorBrush(Color.FromRgb(0x4A, 0x6F, 0xE3))
-                                   }
-                                 : null
+                    Header = FilaListaPestaña(TituloPestaña(t), actual),
+                    Style  = estiloItem
                 };
-                item.SetResourceReference(Control.ForegroundProperty, "ThemeTexto");
                 var destino = t;
                 item.Click += (_, _) => TabContenido.SelectedItem = destino;
                 menu.Items.Add(item);
@@ -637,6 +630,29 @@ namespace SistemaGestion
 
             btn.ContextMenu = menu;
             menu.IsOpen = true;
+        }
+
+        // Fila de la lista: un punto azul (el acento de la app) delante de la pestaña
+        // que se está viendo, y el título al lado. El hueco del punto se reserva
+        // siempre para que todos los títulos queden alineados.
+        private static StackPanel FilaListaPestaña(string titulo, bool actual)
+        {
+            var fila = new StackPanel { Orientation = Orientation.Horizontal };
+            fila.Children.Add(new TextBlock
+            {
+                Text              = actual ? "●" : "",
+                Width             = 14,
+                FontSize          = 10,
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground        = new SolidColorBrush(Color.FromRgb(0x4A, 0x6F, 0xE3))
+            });
+            fila.Children.Add(new TextBlock
+            {
+                Text              = titulo,
+                VerticalAlignment = VerticalAlignment.Center,
+                FontWeight        = actual ? FontWeights.Bold : FontWeights.Normal
+            });
+            return fila;
         }
 
         // ─── Verificar y cerrar pestañas vinculadas antes de guardar/cerrar ─────

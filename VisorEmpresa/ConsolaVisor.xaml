@@ -89,6 +89,60 @@
             </Setter>
         </Style>
 
+        <!-- ── Lista de pestañas del botón "▾" ─────────────────────────────
+             Plantilla propia de ContextMenu/MenuItem: la de Windows trae su
+             franja blanca de íconos y su fondo de sistema, que en tema oscuro
+             se ven como una barra blanca. Acá todo sale de los recursos de tema. -->
+        <Style x:Key="TabListaMenu" TargetType="ContextMenu">
+            <Setter Property="Background" Value="{DynamicResource ThemeBgSidebar}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorde}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="MinWidth" Value="220"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContextMenu">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="4" MaxHeight="440">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled">
+                                <ItemsPresenter/>
+                            </ScrollViewer>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TabListaItem" TargetType="MenuItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTexto}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border x:Name="Borde"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter ContentSource="Header"
+                                              RecognizesAccessKey="False"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Borde" Property="Background" Value="{DynamicResource ThemeTabHoverBg}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- ── TabControl de la consola: una sola fila de pestañas ─────────
              Reemplaza el TabPanel por defecto (que apila las pestañas en varias
              filas cuando no entran) por TabStripPanel: fila única, se ocultan las

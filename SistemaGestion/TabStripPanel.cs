@@ -10,7 +10,9 @@ namespace SistemaGestion
     /// El <see cref="TabPanel"/> por defecto de WPF apila las pestañas en varias
     /// filas cuando no entran a lo ancho, y esas filas le comen alto al contenido.
     /// Acá siempre hay UNA sola fila: cuando no entran todas, se ocultan las más
-    /// ANTIGUAS (las de la izquierda) para que se vean las más recientes.
+    /// ANTIGUAS para que se vean las más recientes. Las nuevas se insertan justo
+    /// después de la fija (ver AbrirPestaña), así que la fila va de la más nueva a
+    /// la más vieja y las que se caen del borde derecho son las viejas.
     ///
     /// Quedan siempre visibles:
     ///   • la primera pestaña (la fija de la sección — es el "home" del panel), y
@@ -95,10 +97,11 @@ namespace SistemaGestion
                 usado       += InternalChildren[sel].DesiredSize.Width;
             }
 
-            // 3. El resto se llena desde la MÁS RECIENTE hacia atrás; en cuanto una
-            //    no entra se corta, así las que quedan son siempre las últimas
-            //    (las antiguas son las que se ocultan).
-            for (int i = total - 1; i >= 1; i--)
+            // 3. El resto se llena de izquierda a derecha. Las pestañas nuevas se
+            //    insertan justo después de la fija (ver AbrirPestaña), así que ese
+            //    recorrido va de la MÁS RECIENTE a la MÁS ANTIGUA: en cuanto una no
+            //    entra se corta, y las que quedan afuera son siempre las viejas.
+            for (int i = 1; i < total; i++)
             {
                 if (visible[i]) continue;
                 double ancho = InternalChildren[i].DesiredSize.Width;

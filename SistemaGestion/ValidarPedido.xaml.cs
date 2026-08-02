@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Data.SqlClient;
 using SistemaGestion.Data;
 
 namespace SistemaGestion
@@ -49,6 +50,11 @@ namespace SistemaGestion
         // Pedido que ya trae la factura: se deja seleccionado al abrir.
         private readonly string _pedidoPreseleccionado;
 
+        // Vínculo pedido ↔ factura, recalculado al abrir y con "Actualizar" (no en
+        // cada tecla del buscador: PedidosYaFacturados consulta SQL).
+        private HashSet<string>            _pedidosYaFacturados = new(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, double> _facturadoPorPedido  = new();
+
         public ValidarPedido() : this("") { }
 
         public ValidarPedido(string movimiento, string pedidoPreseleccionado = "")
@@ -56,7 +62,26 @@ namespace SistemaGestion
             InitializeComponent();
             _movimiento = (movimiento ?? "").ToLower();
             _pedidoPreseleccionado = pedidoPreseleccionado ?? "";
-            Loaded += (_, _) => { if (_iniciado) return; _iniciado = true; CargarPedidos(); Preseleccionar(); };
+            Loaded += (_, _) =>
+            {
+                if (_iniciado) return;
+                _iniciado = true;
+                RecargarVinculosFactura();
+                CargarPedidos();
+                Preseleccionar();
+            };
+        }
+
+        /// <summary>
+        /// Rehace el vínculo pedido ↔ factura: qué pedidos ya fueron validados y
+        /// cuánto se les facturó. Una sola pasada por documentosF más la consulta
+        /// a SQL, así el buscador después solo filtra en memoria.
+        /// </summary>
+        private void RecargarVinculosFactura()
+        {
+            var relacionPorFactura = CalcularRelacionPorFactura();
+            _pedidosYaFacturados   = PedidosYaFacturados(relacionPorFactura);
+            _facturadoPorPedido    = CalcularFacturadoPorPedido(relacionPorFactura);
         }
 
         private void Preseleccionar()
@@ -93,14 +118,10 @@ namespace SistemaGestion
         {
             string busqueda = TxtBuscar.Text.Trim().ToLower();
 
-            // Solo se listan los pedidos que todavía NO tienen factura: los que ya
+            // Solo se listan los pedidos que todavía NO fueron validados: los que ya
             // están apuntados por algún documentosF.relacion quedan fuera. La única
             // excepción es el pedido que ya trae la factura desde la que se abrió
             // esta pestaña (si no, no se podría re-validar ni ver el propio pedido).
-            var relacionPorFactura = CalcularRelacionPorFactura();
-            var pedidosConFactura  = new HashSet<string>(relacionPorFactura.Values);
-            var facturadoPorPedido = CalcularFacturadoPorPedido(relacionPorFactura);
-
             _pedidos.Clear();
             int linea = 1;
             int uf = Sql.DocumentosPObj.ContarFilas;
@@ -112,7 +133,8 @@ namespace SistemaGestion
 
                 if (Sql.DocumentosPObj.ObtenerItem("sucursal", id)?.ToString() != AppState.SucursalActiva) continue;
 
-                if (pedidosConFactura.Contains(id) && id != _pedidoPreseleccionado) continue;
+                if (_pedidosYaFacturados.Contains(id) &&
+                    !string.Equals(id, _pedidoPreseleccionado, StringComparison.OrdinalIgnoreCase)) continue;
 
                 string movDoc = Sql.DocumentosPObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
                 if (!string.IsNullOrEmpty(_movimiento) &&
@@ -142,13 +164,50 @@ namespace SistemaGestion
                     TerceroDesc = terceroDesc,
                     Referencia  = referencia,
                     Importe     = CalcularImportePedido(id),
-                    Facturado   = facturadoPorPedido.TryGetValue(id, out double fac) ? fac : 0
+                    Facturado   = _facturadoPorPedido.TryGetValue(id, out double fac) ? fac : 0
                 });
             }
 
             GridPedidos.ItemsSource = null;
             GridPedidos.ItemsSource = _pedidos;
             OcultarDetalle();
+        }
+
+        /// <summary>
+        /// Pedidos que YA fueron validados en alguna factura: el conjunto de
+        /// `documentosF.relacion` de todas las facturas vivas.
+        ///
+        /// Se consulta a SQL directo, sin filtro de sucursal ni de período, porque
+        /// la caché `DocumentosFObj` solo trae las facturas de la sucursal activa
+        /// dentro del período abierto: un pedido validado en una factura de otra
+        /// sucursal o de otro período no aparecería y se podría volver a facturar.
+        /// A eso se le suma lo que haya en la caché (incluye lo recién guardado en
+        /// esta sesión), y si la consulta falla —sin conexión— queda solo la caché.
+        /// </summary>
+        private static HashSet<string> PedidosYaFacturados(Dictionary<string, string> relacionPorFactura)
+        {
+            var res = new HashSet<string>(relacionPorFactura.Values, StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                SqlRetry.Ejecutar(() =>
+                {
+                    var conn = DatabaseConnection.ObtenerConexion();
+                    using var cmd = new SqlCommand(
+                        "SELECT relacion FROM documentosF " +
+                        "WHERE estadof = 'normal' AND relacion IS NOT NULL", conn);
+                    using var rd = cmd.ExecuteReader();
+                    while (rd.Read())
+                    {
+                        string rel = rd[0]?.ToString() ?? "";
+                        if (rel != "") res.Add(rel);
+                    }
+                });
+            }
+            catch
+            {
+                // Sin conexión: queda lo de la caché, que es lo que se usaba antes.
+            }
+            return res;
         }
 
         /// <summary>
@@ -319,6 +378,7 @@ namespace SistemaGestion
             Sql.PedidosObj.Actualizar();
             Sql.DocumentosFObj.Actualizar();
             Sql.FacturasObj.Actualizar();
+            RecargarVinculosFactura();
             CargarPedidos();
         }
 
