@@ -213,7 +213,7 @@ namespace VisorEmpresa
         /// solo trae los 'normal'— no lo tiene). Esas líneas siguen registradas en
         /// `precios` con su importe: antes desaparecían del formulario, así que su
         /// precio quedaba invisible pero vivo en la base. Acá se recuperan sus datos
-        /// de SQL y se marcan como eliminadas, para verlas bajo "Sin categoría →
+        /// de SQL y se marcan como eliminadas, para verlas bajo "Sin producto →
         /// Eliminados" (ver <see cref="CargarArbol"/>).
         /// </summary>
         private void AgregarEliminadosRegistrados(
@@ -326,7 +326,7 @@ namespace VisorEmpresa
 
         // Tags del nodo final del árbol: los dos muestran lo mismo (los artículos
         // eliminados que siguen registrados), porque "Eliminados" es su único hijo.
-        private const string TagSinCategoria = "sincategoria";
+        private const string TagSinProducto = "sinproducto";
         private const string TagEliminados   = "eliminados";
 
         // ─── Árbol de productos/familias (mismo patrón que ArticulosGeneral) ──
@@ -364,10 +364,10 @@ namespace VisorEmpresa
             // Último nodo, para lo que no cuelga del catálogo: los artículos que se
             // eliminaron/ocultaron de `articulos` pero siguen registrados en esta
             // lista de precios (ver AgregarEliminadosRegistrados).
-            var nodoSinCategoria = new TreeViewItem { Header = "Sin categoría", Tag = TagSinCategoria };
-            nodoSinCategoria.Items.Add(new TreeViewItem { Header = "Eliminados", Tag = TagEliminados });
-            nodoSinCategoria.IsExpanded = true;
-            nodoTodos.Items.Add(nodoSinCategoria);
+            var nodoSinProducto = new TreeViewItem { Header = "Sin producto", Tag = TagSinProducto };
+            nodoSinProducto.Items.Add(new TreeViewItem { Header = "Eliminados", Tag = TagEliminados });
+            nodoSinProducto.IsExpanded = true;
+            nodoTodos.Items.Add(nodoSinProducto);
 
             Tree1.Items.Add(nodoTodos);
             nodoTodos.IsExpanded = true;
@@ -392,9 +392,9 @@ namespace VisorEmpresa
             string busqueda  = _modoFiltro == "busqueda" ? TxtBuscar.Text.Trim().ToLower() : "";
             string tagFiltro = _modoFiltro == "familia"  ? ObtenerTagFiltro()              : "";
 
-            // "Sin categoría" / "Eliminados": solo los artículos que se borraron del
+            // "Sin producto" / "Eliminados": solo los artículos que se borraron del
             // catálogo pero siguen registrados en esta lista de precios.
-            bool soloEliminados = tagFiltro == TagEliminados || tagFiltro == TagSinCategoria;
+            bool soloEliminados = tagFiltro == TagEliminados || tagFiltro == TagSinProducto;
 
             var visibles = new List<PrecioItemFila>();
             foreach (var item in _items)
@@ -994,7 +994,7 @@ namespace VisorEmpresa
         public double Disponible  { get; set; }
         public double Precio      { get; set; }
         // true = el artículo ya no está en el catálogo (se ocultó o eliminó) pero la
-        // línea sigue registrada en `precios`. Se listan bajo "Sin categoría →
+        // línea sigue registrada en `precios`. Se listan bajo "Sin producto →
         // Eliminados" y la grilla los pinta en rojo.
         public bool   Eliminado   { get; set; }
     }
