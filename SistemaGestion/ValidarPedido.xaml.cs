@@ -409,7 +409,9 @@ namespace SistemaGestion
                 .Select(g => new FacturaLineaValidada
                 {
                     CategoriaId = g.Key,
-                    Concepto    = DescripcionCategoria(g.Key),
+                    // Concepto en blanco a propósito: la línea llega con su categoría
+                    // y su importe, y el texto lo escribe el usuario en la factura.
+                    Concepto    = "",
                     Importe     = g.Sum(i => i.Importe)
                 })
                 // Una categoría que suma cero no se factura: no aporta nada a la
@@ -464,16 +466,11 @@ namespace SistemaGestion
                 .Select(kv => new FacturaLineaValidada
                 {
                     CategoriaId = kv.Key,
-                    Concepto    = DescripcionCategoria(kv.Key),
+                    Concepto    = "",   // en blanco, igual que al validar
                     Importe     = kv.Value
                 })
                 .ToList();
         }
-
-        private static string DescripcionCategoria(string categoriaId)
-            => string.IsNullOrEmpty(categoriaId)
-               ? "Sin categoría"
-               : Sql.CategoriasObj.ObtenerItem("descripcion", categoriaId)?.ToString() ?? "Sin categoría";
     }
 
     // ─── Modelos ──────────────────────────────────────────────────────────────
@@ -509,7 +506,8 @@ namespace SistemaGestion
 
     /// <summary>
     /// Línea de factura resultante de validar un pedido: una por categoría, con
-    /// el importe ya sumado.
+    /// el importe ya sumado. El concepto llega SIEMPRE en blanco: lo escribe el
+    /// usuario en la factura (antes se rellenaba con el nombre de la categoría).
     /// </summary>
     public class FacturaLineaValidada
     {

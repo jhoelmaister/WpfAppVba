@@ -396,6 +396,11 @@ namespace SistemaGestion
             if (AppState.TipoMovimiento.ToLower() != "salida") return;
             if (AppState.EventoFormularioM != "nuevo") return;
 
+            // Un solo aviso con todos los artículos sin stock (mismo criterio que
+            // PedidosDetalle.VerificarStockVenta): al importar varios artículos de una
+            // vez, avisar uno por uno obligaba a cerrar un cartel por cada línea.
+            var faltantes = new List<string>();
+
             foreach (var item in _items)
             {
                 if (string.IsNullOrEmpty(item.ArticuloId)) continue;
@@ -408,9 +413,14 @@ namespace SistemaGestion
                 if (stock < totalCant)
                 {
                     _articulosAlertados.Add(item.ArticuloId);
-                    MessageBox.Show($"{item.Descripcion}: stock insuficiente (disponible: {stock:F0}, solicitado: {totalCant:F0}).",
-                        "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    faltantes.Add($"{item.Descripcion}: disponible {stock:F0}, solicitado {totalCant:F0}");
                 }
+            }
+
+            if (faltantes.Count > 0)
+            {
+                MessageBox.Show("Stock insuficiente:\n\n" + string.Join("\n", faltantes),
+                    "Consola", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 

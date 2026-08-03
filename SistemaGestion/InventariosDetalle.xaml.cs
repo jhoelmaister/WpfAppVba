@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using Microsoft.Data.SqlClient;
 using Microsoft.Win32;
 using SistemaGestion.Data;
 
@@ -168,6 +169,98 @@ namespace SistemaGestion
                     Cantidad     = ex.Cantidad
                 });
             }
+
+            AgregarEliminadosRegistrados(existentes);
+        }
+
+        /// <summary>
+        /// Suma al listado las líneas del documento cuyo artículo YA NO está en el
+        /// catálogo (se ocultó o eliminó de `articulos`, así que ArticulosObj —que
+        /// solo trae los 'normal'— no lo tiene). Esas líneas siguen registradas en
+        /// `inventarios` con su cantidad: antes desaparecían del formulario y en el
+        /// informe salían como una fila con cantidad pero sin código ni descripción.
+        /// Acá se recuperan sus datos de SQL y se marcan como eliminadas, para verlas
+        /// bajo "Sin categoría → Eliminados" (ver <see cref="CargarArbol"/>).
+        /// </summary>
+        private void AgregarEliminadosRegistrados(
+            Dictionary<string, (string InventarioId, double Cantidad)> existentes)
+        {
+            var enCatalogo = new HashSet<string>(_items.Select(x => x.ArticuloId),
+                                                 StringComparer.OrdinalIgnoreCase);
+            var faltantes = existentes.Keys
+                .Where(id => !string.IsNullOrEmpty(id) && !enCatalogo.Contains(id))
+                .ToList();
+            if (faltantes.Count == 0) return;
+
+            var datos = LeerArticulosFueraDeCatalogo(faltantes);
+            foreach (string artId in faltantes)
+            {
+                datos.TryGetValue(artId, out var d);
+                _items.Add(new InventarioItemFila
+                {
+                    InventarioId = existentes[artId].InventarioId,
+                    ArticuloId   = artId,
+                    Codigo       = d.Codigo ?? "",
+                    Categoria    = d.Categoria ?? "",
+                    Descripcion  = string.IsNullOrWhiteSpace(d.Descripcion)
+                                   ? "(artículo eliminado)"
+                                   : d.Descripcion,
+                    Cantidad     = existentes[artId].Cantidad,
+                    Eliminado    = true
+                });
+            }
+        }
+
+        /// <summary>
+        /// Código, descripción y categoría de artículos que ya no están en el
+        /// catálogo en memoria: se leen directo de SQL, sin filtrar por `estadof`.
+        /// Si la fila tampoco está en la base (se corrió "Eliminar ocultos") el
+        /// artículo no vuelve en el resultado y la línea queda solo con su cantidad.
+        /// </summary>
+        private static Dictionary<string, (string Codigo, string Descripcion, string Categoria)>
+            LeerArticulosFueraDeCatalogo(List<string> ids)
+        {
+            var res = new Dictionary<string, (string Codigo, string Descripcion, string Categoria)>(
+                StringComparer.OrdinalIgnoreCase);
+            if (ids.Count == 0) return res;
+
+            try
+            {
+                SqlRetry.Ejecutar(() =>
+                {
+                    var conn = DatabaseConnection.ObtenerConexion();
+                    string parametros = string.Join(", ", ids.Select((_, i) => "@id" + i));
+                    using var cmd = new SqlCommand(
+                        "SELECT a.id, a.codigo, a.descripcion, a.modelo, " +
+                        "       ISNULL(f.descripcion, '') AS familia, " +
+                        "       ISNULL(c.descripcion, '') AS categoria " +
+                        "FROM articulos AS a " +
+                        "LEFT JOIN familias   AS f ON f.id = a.familia " +
+                        "LEFT JOIN categorias AS c ON c.id = a.categoria " +
+                        $"WHERE a.id IN ({parametros})", conn);
+                    for (int i = 0; i < ids.Count; i++)
+                        cmd.Parameters.AddWithValue("@id" + i, ids[i]);
+
+                    using var rd = cmd.ExecuteReader();
+                    while (rd.Read())
+                    {
+                        string id = rd["id"]?.ToString() ?? "";
+                        if (id == "") continue;
+                        res[id] = (
+                            rd["codigo"]?.ToString() ?? "",
+                            FuncionesComunes.UnirVariables(
+                                rd["descripcion"]?.ToString() ?? "",
+                                rd["familia"]?.ToString()     ?? "",
+                                rd["modelo"]?.ToString()      ?? ""),
+                            rd["categoria"]?.ToString() ?? "");
+                    }
+                });
+            }
+            catch
+            {
+                // Sin conexión: las líneas se muestran igual, sin código ni descripción.
+            }
+            return res;
         }
 
         // ─── Descripción de artículo ──────────────────────────────────────────
@@ -189,6 +282,11 @@ namespace SistemaGestion
             if (string.IsNullOrEmpty(catId)) return "";
             return Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "";
         }
+
+        // Tags del nodo final del árbol: los dos muestran lo mismo (los artículos
+        // eliminados que siguen registrados), porque "Eliminados" es su único hijo.
+        private const string TagSinCategoria = "sincategoria";
+        private const string TagEliminados   = "eliminados";
 
         // ─── Árbol de productos/familias (mismo patrón que ArticulosGeneral) ──
         private void CargarArbol()
@@ -222,6 +320,14 @@ namespace SistemaGestion
                 nodoTodos.Items.Add(nodoProd);
             }
 
+            // Último nodo, para lo que no cuelga del catálogo: los artículos que se
+            // eliminaron/ocultaron de `articulos` pero siguen registrados en este
+            // inventario con su cantidad (ver AgregarEliminadosRegistrados).
+            var nodoSinCategoria = new TreeViewItem { Header = "Sin categoría", Tag = TagSinCategoria };
+            nodoSinCategoria.Items.Add(new TreeViewItem { Header = "Eliminados", Tag = TagEliminados });
+            nodoSinCategoria.IsExpanded = true;
+            nodoTodos.Items.Add(nodoSinCategoria);
+
             Tree1.Items.Add(nodoTodos);
             nodoTodos.IsExpanded = true;
             nodoTodos.IsSelected = true;
@@ -245,12 +351,20 @@ namespace SistemaGestion
             string busqueda  = _modoFiltro == "busqueda" ? TxtBuscar.Text.Trim().ToLower() : "";
             string tagFiltro = _modoFiltro == "familia"  ? ObtenerTagFiltro()              : "";
 
+            // "Sin categoría" / "Eliminados": solo los artículos que se borraron del
+            // catálogo pero siguen registrados en este inventario.
+            bool soloEliminados = tagFiltro == TagEliminados || tagFiltro == TagSinCategoria;
+
             var visibles = new List<InventarioItemFila>();
             foreach (var item in _items)
             {
                 string famId = Sql.ArticulosObj.ObtenerItem("familia", item.ArticuloId)?.ToString() ?? "";
 
-                if (!string.IsNullOrEmpty(tagFiltro))
+                if (soloEliminados)
+                {
+                    if (!item.Eliminado) continue;
+                }
+                else if (!string.IsNullOrEmpty(tagFiltro))
                 {
                     if (tagFiltro.StartsWith("familia:"))
                     {
@@ -426,7 +540,10 @@ namespace SistemaGestion
                 if (porArticulo.TryGetValue(artId, out var existente))
                 {
                     existente.Codigo      = Sql.ArticulosObj.ObtenerItem("codigo", artId)?.ToString() ?? "";
+                    existente.Categoria   = ObtenerCategoriaArticulo(artId);
                     existente.Descripcion = ObtenerDescripcionArticulo(artId);
+                    // Si el artículo volvió al catálogo, deja de estar eliminado.
+                    existente.Eliminado   = false;
                     actualizados.Add(existente);
                 }
                 else
@@ -436,11 +553,20 @@ namespace SistemaGestion
                         InventarioId = "",
                         ArticuloId   = artId,
                         Codigo       = Sql.ArticulosObj.ObtenerItem("codigo", artId)?.ToString() ?? "",
+                        Categoria    = ObtenerCategoriaArticulo(artId),
                         Descripcion  = ObtenerDescripcionArticulo(artId),
                         Cantidad     = 0
                     });
                 }
             }
+
+            // Los artículos eliminados que siguen registrados en el inventario no
+            // están en el catálogo: si no se re-agregan acá, desaparecerían al
+            // actualizar y volvería el problema de la línea sin datos en el informe.
+            var yaEstan = new HashSet<string>(actualizados.Select(x => x.ArticuloId),
+                                              StringComparer.OrdinalIgnoreCase);
+            actualizados.AddRange(_items.Where(x => x.Eliminado && !yaEstan.Contains(x.ArticuloId)));
+
             _items = actualizados;
 
             CargarArbol();
@@ -518,7 +644,14 @@ namespace SistemaGestion
 
             var (colCodigo, colCantidad) = DetectarColumnas(ws);
 
-            var porCodigoCatalogo  = _items.ToDictionary(x => x.Codigo, x => x, StringComparer.OrdinalIgnoreCase);
+            // Solo el catálogo vivo: los artículos eliminados no están en la plantilla,
+            // y su código puede estar en blanco (fila purgada) o haber sido reasignado
+            // a un artículo nuevo — con ToDictionary directo eso reventaba por clave
+            // duplicada.
+            var porCodigoCatalogo = _items
+                .Where(x => !x.Eliminado && !string.IsNullOrEmpty(x.Codigo))
+                .GroupBy(x => x.Codigo, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
             var cantidadesDelExcel = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
             var noEncontrados      = new List<string>();
 
@@ -538,7 +671,9 @@ namespace SistemaGestion
             int importados = 0;
             foreach (var item in _items)
             {
-                if (cantidadesDelExcel.TryGetValue(item.Codigo, out double cantidad))
+                // Los eliminados nunca están en la plantilla: quedan en 0, igual que
+                // cualquier artículo del catálogo ausente del Excel.
+                if (!item.Eliminado && cantidadesDelExcel.TryGetValue(item.Codigo, out double cantidad))
                 {
                     item.Cantidad = cantidad;
                     importados++;
@@ -759,5 +894,9 @@ namespace SistemaGestion
         public string Categoria    { get; set; } = "";
         public string Descripcion  { get; set; } = "";
         public double Cantidad     { get; set; }
+        // true = el artículo ya no está en el catálogo (se ocultó o eliminó) pero la
+        // línea sigue registrada en `inventarios`. Se listan bajo "Sin categoría →
+        // Eliminados" y la grilla los pinta en rojo.
+        public bool   Eliminado    { get; set; }
     }
 }
