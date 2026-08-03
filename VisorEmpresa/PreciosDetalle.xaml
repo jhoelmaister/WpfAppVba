@@ -355,6 +355,20 @@
                         </Style>
                     </DataGrid.ColumnHeaderStyle>
 
+                    <!-- Artículo borrado del catálogo que sigue registrado en esta
+                         lista: se pinta en rojo para no confundirlo con uno vivo -->
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Eliminado}" Value="True">
+                                    <Setter Property="Foreground" Value="#D93025"/>
+                                    <Setter Property="ToolTip"
+                                            Value="Artículo eliminado del catálogo; su precio sigue registrado en esta lista"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Código"      Binding="{Binding Codigo}"      Width="100" IsReadOnly="True"/>
                         <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"   IsReadOnly="True"/>
