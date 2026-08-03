@@ -180,7 +180,7 @@ namespace SistemaGestion
         /// `inventarios` con su cantidad: antes desaparecían del formulario y en el
         /// informe salían como una fila con cantidad pero sin código ni descripción.
         /// Acá se recuperan sus datos de SQL y se marcan como eliminadas, para verlas
-        /// bajo "Sin producto → Eliminados" (ver <see cref="CargarArbol"/>).
+        /// bajo el nodo "Eliminados" (ver <see cref="CargarArbol"/>).
         /// </summary>
         private void AgregarEliminadosRegistrados(
             Dictionary<string, (string InventarioId, double Cantidad)> existentes)
@@ -283,10 +283,9 @@ namespace SistemaGestion
             return Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "";
         }
 
-        // Tags del nodo final del árbol: los dos muestran lo mismo (los artículos
-        // eliminados que siguen registrados), porque "Eliminados" es su único hijo.
-        private const string TagSinProducto = "sinproducto";
-        private const string TagEliminados   = "eliminados";
+        // Tag del nodo final del árbol: los artículos que ya no están en el catálogo
+        // pero siguen registrados en el documento.
+        private const string TagEliminados = "eliminados";
 
         // ─── Árbol de productos/familias (mismo patrón que ArticulosGeneral) ──
         private void CargarArbol()
@@ -323,10 +322,7 @@ namespace SistemaGestion
             // Último nodo, para lo que no cuelga del catálogo: los artículos que se
             // eliminaron/ocultaron de `articulos` pero siguen registrados en este
             // inventario con su cantidad (ver AgregarEliminadosRegistrados).
-            var nodoSinProducto = new TreeViewItem { Header = "Sin producto", Tag = TagSinProducto };
-            nodoSinProducto.Items.Add(new TreeViewItem { Header = "Eliminados", Tag = TagEliminados });
-            nodoSinProducto.IsExpanded = true;
-            nodoTodos.Items.Add(nodoSinProducto);
+            nodoTodos.Items.Add(new TreeViewItem { Header = "Eliminados", Tag = TagEliminados });
 
             Tree1.Items.Add(nodoTodos);
             nodoTodos.IsExpanded = true;
@@ -351,9 +347,9 @@ namespace SistemaGestion
             string busqueda  = _modoFiltro == "busqueda" ? TxtBuscar.Text.Trim().ToLower() : "";
             string tagFiltro = _modoFiltro == "familia"  ? ObtenerTagFiltro()              : "";
 
-            // "Sin producto" / "Eliminados": solo los artículos que se borraron del
+            // "Eliminados": solo los artículos que se borraron del
             // catálogo pero siguen registrados en este inventario.
-            bool soloEliminados = tagFiltro == TagEliminados || tagFiltro == TagSinProducto;
+            bool soloEliminados = tagFiltro == TagEliminados;
 
             var visibles = new List<InventarioItemFila>();
             foreach (var item in _items)
@@ -895,8 +891,8 @@ namespace SistemaGestion
         public string Descripcion  { get; set; } = "";
         public double Cantidad     { get; set; }
         // true = el artículo ya no está en el catálogo (se ocultó o eliminó) pero la
-        // línea sigue registrada en `inventarios`. Se listan bajo "Sin producto →
-        // Eliminados" y la grilla los pinta en rojo.
+        // línea sigue registrada en `inventarios`. Se listan bajo el nodo
+        // "Eliminados" y la grilla los pinta en rojo.
         public bool   Eliminado    { get; set; }
     }
 }
