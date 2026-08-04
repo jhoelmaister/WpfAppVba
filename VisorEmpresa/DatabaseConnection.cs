@@ -13,9 +13,27 @@ namespace VisorEmpresa.Data
         private static string _password = "";
         private static string _database = "";
 
+        // ─── Seguridad del canal TLS hacia SQL Server ─────────────────────────
+        // La app se conecta DIRECTO a SQL Server por internet, así que este canal
+        // es el que hay que proteger contra intercepción (man-in-the-middle).
+        //   • Encrypt=True  → el tráfico siempre viaja cifrado (siempre activo).
+        //   • TrustServerCertificate → si es False se VALIDA además el certificado
+        //     del servidor, lo que cierra el MITM. Eso exige que SQL Server presente
+        //     un certificado de confianza para esta PC (uno emitido por una CA, o el
+        //     .cer del servidor instalado en el almacén de confianza del cliente).
+        //
+        // Mientras SQL Server siga con un certificado autofirmado sin instalar,
+        // dejar esta constante en FALSE: si se pone en true sin ese cert, la app
+        // NO conecta. Para cerrar el MITM: instalar un cert válido en SQL Server,
+        // poner ValidarCertificadoServidor = true y publicar una versión nueva.
+        private const bool ValidarCertificadoServidor = false;
+
+        private static string SeguridadCanal =>
+            $"Encrypt=True;TrustServerCertificate={(ValidarCertificadoServidor ? "False" : "True")};";
+
         private static string ConnectionString =>
             $"Server={_server};Database={_database};User Id={_user};Password={_password};" +
-            $"Application Name=edber;Connect Timeout=10;Command Timeout=10;TrustServerCertificate=True;" +
+            $"Application Name=edber;Connect Timeout=10;Command Timeout=10;{SeguridadCanal}" +
             // Resiliencia ante red inestable: reconecta de forma transparente una
             // conexión idle que se rompió por un microcorte (idle connection resiliency).
             $"Connect Retry Count=3;Connect Retry Interval=10;Pooling=true;";
@@ -71,7 +89,7 @@ namespace VisorEmpresa.Data
 
             string cs = $"Server={_server};Database={_database};User Id={_user};Password={_password};" +
                         $"Application Name=edber;Connect Timeout={timeoutSeg};Command Timeout={timeoutSeg};" +
-                        $"TrustServerCertificate=True;";
+                        SeguridadCanal;
             try
             {
                 using var conn = new SqlConnection(cs);
