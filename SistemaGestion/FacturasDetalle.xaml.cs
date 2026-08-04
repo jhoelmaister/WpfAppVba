@@ -144,7 +144,8 @@ namespace SistemaGestion
                     Linea       = linea++,
                     Concepto    = Sql.FacturasObj.ObtenerItem("concepto", id)?.ToString() ?? "",
                     CategoriaId = Sql.FacturasObj.ObtenerItem("categoria", id)?.ToString() ?? "",
-                    Importe     = Convert.ToDouble(Sql.FacturasObj.ObtenerItem("importe", id) ?? 0)
+                    Importe     = Convert.ToDouble(Sql.FacturasObj.ObtenerItem("importe", id) ?? 0),
+                    Monto       = Convert.ToDouble(Sql.FacturasObj.ObtenerItem("monto",   id) ?? 0)
                 });
             }
             _itemsOrig = new HashSet<string>(_items.Select(x => x.FacturaId));
@@ -234,7 +235,9 @@ namespace SistemaGestion
                     FacturaId   = "",   // línea nueva, todavía sin guardar
                     Concepto    = linea.Concepto,
                     CategoriaId = string.IsNullOrEmpty(linea.CategoriaId) ? PrimeraCategoriaId() : linea.CategoriaId,
-                    Importe     = linea.Importe
+                    // La suma por categoría del pedido va a "monto" (lo facturado).
+                    // "importe" (lo que se debe cobrar) queda en 0: se llena por otra vía.
+                    Monto       = linea.Importe
                 });
         }
 
@@ -398,7 +401,8 @@ namespace SistemaGestion
                     FacturaId   = "",   // línea nueva, todavía sin guardar
                     Concepto    = linea.Concepto,
                     CategoriaId = string.IsNullOrEmpty(linea.CategoriaId) ? PrimeraCategoriaId() : linea.CategoriaId,
-                    Importe     = linea.Importe
+                    // La suma por categoría del pedido va a "monto" (lo facturado).
+                    Monto       = linea.Importe
                 });
 
             _hayCambios = true;
@@ -607,7 +611,7 @@ namespace SistemaGestion
         // ─── Nueva línea vacía (líneas de la factura) ─────────────────────────
         private void BtnNuevaLinea_Click(object sender, RoutedEventArgs e)
         {
-            _items.Add(new FacturaItemFila { FacturaId = "", Concepto = "", CategoriaId = PrimeraCategoriaId(), Importe = 0 });
+            _items.Add(new FacturaItemFila { FacturaId = "", Concepto = "", CategoriaId = PrimeraCategoriaId(), Monto = 0 });
             _hayCambios = true;
             RefrescarGrid();
             ActualizarTotales();
@@ -628,7 +632,7 @@ namespace SistemaGestion
             var copia = new FacturaItemFila
             {
                 FacturaId = "", Concepto = fila.Concepto, CategoriaId = fila.CategoriaId,
-                Importe = fila.Importe
+                Importe = fila.Importe, Monto = fila.Monto
             };
             _items.Add(copia);
             _hayCambios = true;
@@ -672,7 +676,7 @@ namespace SistemaGestion
                       : _items.Count;
             if (idx < 0) idx = _items.Count;
 
-            var nueva = new FacturaItemFila { FacturaId = "", Concepto = "", CategoriaId = PrimeraCategoriaId(), Importe = 0 };
+            var nueva = new FacturaItemFila { FacturaId = "", Concepto = "", CategoriaId = PrimeraCategoriaId(), Monto = 0 };
             _items.Insert(idx, nueva);
             _hayCambios = true;
             RefrescarGrid();
@@ -693,10 +697,10 @@ namespace SistemaGestion
             {
                 string col = e.Column.Header?.ToString() ?? "";
 
-                if (col == "Importe" && e.EditingElement is TextBox tbImp)
+                if (col == "Monto" && e.EditingElement is TextBox tbImp)
                 {
-                    if (double.TryParse(tbImp.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double importe))
-                        fila.Importe = importe;
+                    if (double.TryParse(tbImp.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double monto))
+                        fila.Monto = monto;
                 }
                 else if (col == "Concepto" && e.EditingElement is TextBox tbConcepto)
                 {
@@ -718,7 +722,7 @@ namespace SistemaGestion
         private void GridItems_PreparingCellForEdit(object? sender, DataGridPreparingCellForEditEventArgs e)
         {
             string col = e.Column.Header?.ToString() ?? "";
-            if (col != "Importe") return;
+            if (col != "Monto") return;
             GridFocusHelper.SeleccionarTodoEnEdicion(e.EditingElement);
             if (e.EditingElement is TextBox tb)
                 FuncionesComunes.RestringirACantidad(tb);
@@ -1021,6 +1025,7 @@ namespace SistemaGestion
                 Sql.FacturasObj.EstablecerItem("concepto",  id, item.Concepto);
                 Sql.FacturasObj.EstablecerItem("categoria", id, item.CategoriaId);
                 Sql.FacturasObj.EstablecerItem("importe",   id, item.Importe);
+                Sql.FacturasObj.EstablecerItem("monto",     id, item.Monto);
             }
             _itemsOrig = new HashSet<string>(_items.Select(x => x.FacturaId));
         }
@@ -1095,7 +1100,11 @@ namespace SistemaGestion
             string.IsNullOrEmpty(CategoriaId)
                 ? ""
                 : SqlData.Instance.CategoriasObj.ObtenerItem("descripcion", CategoriaId)?.ToString() ?? "";
+        // Importe = lo que se tiene que cobrar (se llena por otra vía, no en este grid).
         public double Importe { get; set; }
+        // Monto = lo que se factura (columna visible/editable; al validar un pedido
+        // se carga con la suma por categoría del pedido).
+        public double Monto   { get; set; }
     }
 
     // ─── Ítem del ComboBox de categoría en GridItems ───────────────────────────

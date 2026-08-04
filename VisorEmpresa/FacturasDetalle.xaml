@@ -392,8 +392,8 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellEditingTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="Importe"
-                                                Binding="{Binding Importe, StringFormat=#\,##0.##}"
+                            <DataGridTextColumn Header="Monto"
+                                                Binding="{Binding Monto, StringFormat=#\,##0.##}"
                                                 Width="100"
                                                 ElementStyle="{StaticResource CeldaNumero}"
                                                 EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
