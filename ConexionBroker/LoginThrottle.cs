@@ -64,11 +64,15 @@ namespace ConexionBroker
             return 0;
         }
 
-        /// <summary>Registra un intento fallido para la clave y, si corresponde, la bloquea.</summary>
-        public void RegistrarFallo(string clave)
+        /// <summary>
+        /// Registra un intento fallido para la clave y, si corresponde, la bloquea.
+        /// Devuelve cuántos intentos quedan antes del bloqueo (0 = recién bloqueada).
+        /// </summary>
+        public int RegistrarFallo(string clave)
         {
             var ahora = DateTime.UtcNow;
             var c = _porClave.GetOrAdd(clave, _ => new Contador { PrimerFallo = ahora });
+            int restantes;
             lock (c)
             {
                 // Reiniciar el conteo si el bloqueo previo ya venció, o si la ventana
@@ -85,8 +89,11 @@ namespace ConexionBroker
                 c.Fallos++;
                 if (c.Fallos >= _maxFallos)
                     c.BloqueadoHasta = ahora + _bloqueo;
+
+                restantes = Math.Max(0, _maxFallos - c.Fallos);
             }
             LimpiarSiCorresponde(ahora);
+            return restantes;
         }
 
         /// <summary>Login correcto: se olvida cualquier historial de fallos de la clave.</summary>

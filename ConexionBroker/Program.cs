@@ -79,21 +79,37 @@ app.MapPost("/login", async (LoginRequest req, HttpContext ctx) =>
 
     // ── Anti fuerza bruta: si la cuenta o la IP están bloqueadas por demasiados
     // intentos fallidos, cortar acá — sin tocar la base ni revelar si la cuenta
-    // existe. 429 + Retry-After con los segundos que faltan.
+    // existe. 429 + Retry-After con los segundos que faltan, y el mismo dato en
+    // el cuerpo para que la app pueda avisar "esperá X".
     int espera = Math.Max(throttleCuenta.SegundosBloqueo(claveCuenta),
                           throttleIp.SegundosBloqueo(claveIp));
     if (espera > 0)
     {
         ctx.Response.Headers.RetryAfter = espera.ToString();
-        return Results.StatusCode(StatusCodes.Status429TooManyRequests);
+        return Results.Json(new LoginError { SegundosBloqueo = espera },
+                            statusCode: StatusCodes.Status429TooManyRequests);
     }
 
-    // Un login inválido cuenta como fallo para la cuenta Y para la IP.
+    // Un login inválido cuenta como fallo para la cuenta Y para la IP. Si ese
+    // fallo dispara el bloqueo, se responde 429 con el tiempo de espera; si no,
+    // 401 con cuántos intentos quedan (el menor entre cuenta e IP) para que la
+    // app pueda avisar al usuario.
     Microsoft.AspNetCore.Http.IResult Rechazar()
     {
-        throttleCuenta.RegistrarFallo(claveCuenta);
-        throttleIp.RegistrarFallo(claveIp);
-        return Results.Unauthorized();
+        int restantesIp     = throttleIp.RegistrarFallo(claveIp);
+        int restantesCuenta = throttleCuenta.RegistrarFallo(claveCuenta);
+
+        int esperaAhora = Math.Max(throttleCuenta.SegundosBloqueo(claveCuenta),
+                                   throttleIp.SegundosBloqueo(claveIp));
+        if (esperaAhora > 0)
+        {
+            ctx.Response.Headers.RetryAfter = esperaAhora.ToString();
+            return Results.Json(new LoginError { SegundosBloqueo = esperaAhora },
+                                statusCode: StatusCodes.Status429TooManyRequests);
+        }
+
+        return Results.Json(new LoginError { IntentosRestantes = Math.Min(restantesCuenta, restantesIp) },
+                            statusCode: StatusCodes.Status401Unauthorized);
     }
 
     try
@@ -166,4 +182,13 @@ class LoginResponse
     public string BaseDatos  { get; set; } = "";
     public string Usuario    { get; set; } = "";
     public string Contrasena { get; set; } = "";
+}
+
+// Cuerpo de las respuestas de fallo de /login, para que la app avise al usuario:
+//   • 401 → IntentosRestantes: cuántos intentos quedan antes del bloqueo.
+//   • 429 → SegundosBloqueo: segundos que faltan para poder reintentar.
+class LoginError
+{
+    public int IntentosRestantes { get; set; }
+    public int SegundosBloqueo   { get; set; }
 }

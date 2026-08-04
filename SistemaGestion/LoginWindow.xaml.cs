@@ -240,19 +240,19 @@ namespace SistemaGestion
             // contra "usuarios" del lado del servidor y, si es correcto, devuelve
             // la conexión real de SQL Server SOLO para esta sesión (en memoria,
             // nunca a disco).
-            LoginBrokerResponse? resp;
-            try
-            {
-                resp = await AuthBrokerClient.LoginAsync(AuthBrokerClient.BrokerUrl, cuenta, contrasena);
-            }
-            catch
-            {
-                resp = null;
-            }
+            var login = await AuthBrokerClient.LoginAsync(AuthBrokerClient.BrokerUrl, cuenta, contrasena);
 
-            if (resp == null)
+            if (!login.EsExito)
             {
-                MostrarEstado("Cuenta o contraseña incorrecta", Colors.Red);
+                if (login.Bloqueado)
+                    MostrarEstado($"Demasiados intentos fallidos. Esperá {FormatearEspera(login.SegundosBloqueo)} antes de reintentar.", Colors.Red);
+                else if (login.SinConexion)
+                    MostrarEstado("No se pudo conectar con el servidor. Reintentá en unos segundos.", Colors.Orange);
+                else if (login.IntentosRestantes is int n && n > 0)
+                    MostrarEstado($"Cuenta o contraseña incorrecta. Te queda{(n == 1 ? "" : "n")} {n} intento{(n == 1 ? "" : "s")} antes del bloqueo.", Colors.Red);
+                else
+                    MostrarEstado("Cuenta o contraseña incorrecta", Colors.Red);
+
                 HabilitarControles(true);
 
                 TxtContrasena.Clear();
@@ -263,6 +263,8 @@ namespace SistemaGestion
                     TxtContrasenaVisible.Focus();
                 return;
             }
+
+            LoginBrokerResponse resp = login.Credenciales!;
 
             try
             {
@@ -342,6 +344,15 @@ namespace SistemaGestion
         {
             LblEstado.Text       = mensaje;
             LblEstado.Foreground = new SolidColorBrush(color);
+        }
+
+        // Segundos de bloqueo → texto amigable ("2 minutos", "1 minuto", "45 segundos").
+        private static string FormatearEspera(int segundos)
+        {
+            if (segundos <= 0) return "un momento";
+            if (segundos < 60) return $"{segundos} segundo{(segundos == 1 ? "" : "s")}";
+            int minutos = (segundos + 59) / 60; // redondea hacia arriba
+            return $"{minutos} minuto{(minutos == 1 ? "" : "s")}";
         }
     }
 }
