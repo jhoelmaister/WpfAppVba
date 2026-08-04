@@ -321,6 +321,11 @@ namespace SistemaGestion
             CardCobrado.Visibility = ocultarCobros;
             CardSaldo.Visibility   = ocultarCobros;
 
+            // Columna "Importe" (lo que se tiene que cobrar): oculta cuando se validó
+            // un pedido (ahí el importe lo lleva el pedido), visible y editable (default
+            // 0) en una factura manual.
+            ColImporteFactura.Visibility = ocultarCobros;
+
             if (_vinculadoAPedido && ReferenceEquals(TabControl1.SelectedItem, TabCobros))
                 TabControl1.SelectedIndex = 0;
 
@@ -702,6 +707,11 @@ namespace SistemaGestion
                     if (double.TryParse(tbImp.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double monto))
                         fila.Monto = monto;
                 }
+                else if (col == "Importe" && e.EditingElement is TextBox tbImporte)
+                {
+                    if (double.TryParse(tbImporte.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double importe))
+                        fila.Importe = importe;
+                }
                 else if (col == "Concepto" && e.EditingElement is TextBox tbConcepto)
                 {
                     fila.Concepto = tbConcepto.Text;
@@ -722,7 +732,7 @@ namespace SistemaGestion
         private void GridItems_PreparingCellForEdit(object? sender, DataGridPreparingCellForEditEventArgs e)
         {
             string col = e.Column.Header?.ToString() ?? "";
-            if (col != "Monto") return;
+            if (col != "Monto" && col != "Importe") return;
             GridFocusHelper.SeleccionarTodoEnEdicion(e.EditingElement);
             if (e.EditingElement is TextBox tb)
                 FuncionesComunes.RestringirACantidad(tb);

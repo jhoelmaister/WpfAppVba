@@ -444,6 +444,10 @@ namespace VisorEmpresa
             CardCobrado.Visibility = visible;
             CardSaldo.Visibility   = visible;
 
+            // Columna "Importe" (lo que se tiene que cobrar): oculta cuando la factura
+            // está vinculada a un pedido, visible en una factura manual.
+            ColImporteFactura.Visibility = visible;
+
             if (_vinculadoAPedido && ReferenceEquals(TabControl1.SelectedItem, TabCobros))
                 TabControl1.SelectedIndex = 0;
 
@@ -548,6 +552,11 @@ namespace VisorEmpresa
                     if (double.TryParse(tbImp.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double monto))
                         fila.Monto = monto;
                 }
+                else if (col == "Importe" && e.EditingElement is TextBox tbImporte)
+                {
+                    if (double.TryParse(tbImporte.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out double importe))
+                        fila.Importe = importe;
+                }
                 else if (col == "Concepto" && e.EditingElement is TextBox tbConcepto)
                 {
                     fila.Concepto = tbConcepto.Text;
@@ -568,7 +577,7 @@ namespace VisorEmpresa
         private void GridItems_PreparingCellForEdit(object? sender, DataGridPreparingCellForEditEventArgs e)
         {
             string col = e.Column.Header?.ToString() ?? "";
-            if (col != "Monto") return;
+            if (col != "Monto" && col != "Importe") return;
             GridFocusHelper.SeleccionarTodoEnEdicion(e.EditingElement);
             if (e.EditingElement is TextBox tb)
                 FuncionesComunes.RestringirACantidad(tb);

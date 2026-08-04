@@ -290,7 +290,7 @@
 
                 <Border Grid.Column="0" Style="{StaticResource MetricCard}">
                     <StackPanel>
-                        <TextBlock Text="Total importe"
+                        <TextBlock Text="Total monto"
                                    FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
                         <TextBlock x:Name="TxtTotalImporte"
                                    FontSize="20" FontWeight="SemiBold"
@@ -478,8 +478,8 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTextColumn Header="Importe"
-                                        Binding="{Binding ImporteTotal, StringFormat=#\,##0.00}"
+                    <DataGridTextColumn Header="Monto"
+                                        Binding="{Binding MontoTotal, StringFormat=#\,##0.00}"
                                         Width="100"
                                         ElementStyle="{StaticResource CeldaNumero}"/>
                 </DataGrid.Columns>

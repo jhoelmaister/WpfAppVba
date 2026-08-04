@@ -397,6 +397,13 @@
                                                 Width="100"
                                                 ElementStyle="{StaticResource CeldaNumero}"
                                                 EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
+                            <!-- Importe = lo que se tiene que cobrar. Se oculta cuando la
+                                 factura está vinculada a un pedido (ver AplicarVinculoPedido). -->
+                            <DataGridTextColumn x:Name="ColImporteFactura" Header="Importe"
+                                                Binding="{Binding Importe, StringFormat=#\,##0.##}"
+                                                Width="100"
+                                                ElementStyle="{StaticResource CeldaNumero}"
+                                                EditingElementStyle="{StaticResource CeldaNumeroEditar}"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>

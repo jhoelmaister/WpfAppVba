@@ -132,7 +132,7 @@ namespace SistemaGestion
 
             var lista = new List<FacturaFila>();
             int linea = 1;
-            double totalImporte = 0;
+            double totalMonto = 0;
             string busqueda  = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
             string mesFiltro = _modoFiltro == "filtros"   ? _mesActivo : "";
             string filtroEstado = ObtenerFiltroEstado();
@@ -188,7 +188,7 @@ namespace SistemaGestion
                         && !terceroDesc.ToLower().Contains(busqueda))
                         continue;
 
-                double importe = CalcularImporte(id);
+                double monto = CalcularMonto(id);
 
                 // Pedido de origen: documentosF.relacion apunta al documentosP facturado.
                 string relacion  = Sql.DocumentosFObj.ObtenerItem("relacion", id)?.ToString() ?? "";
@@ -207,15 +207,15 @@ namespace SistemaGestion
                     PedidoCodigo = pedidoCod,
                     TerceroDesc  = terceroDesc,
                     Movimiento   = movDoc,
-                    ImporteTotal = importe,
+                    MontoTotal   = monto,
                     Estado       = estado,
                     EstadoC      = estadoC
                 });
-                totalImporte += importe;
+                totalMonto += monto;
             }
 
             Grid1.ItemsSource        = lista;
-            TxtTotalImporte.Text     = totalImporte.ToString("N2");
+            TxtTotalImporte.Text     = totalMonto.ToString("N2");
             TxtTotalDocumentos.Text  = lista.Count.ToString("N0");
             TxtEstadosPendientes.Text = lista.Count(f => f.Estado == "pendiente").ToString();
             TxtCuentasPendientes.Text = lista.Count(f => f.EstadoC == "pendiente" || f.EstadoC == "pendiente parcial").ToString();
@@ -279,10 +279,10 @@ namespace SistemaGestion
         private List<FacturaFila> FilasGrid =>
             Grid1.ItemsSource as List<FacturaFila> ?? new List<FacturaFila>();
 
-        // ─── Suma el importe total de las líneas de un documento ──────────────
-        private static double CalcularImporte(string documentoF)
+        // ─── Suma el monto total de las líneas de un documento ────────────────
+        private static double CalcularMonto(string documentoF)
         {
-            double importe = 0;
+            double monto = 0;
             int uf = Sql.FacturasObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
             {
@@ -290,9 +290,9 @@ namespace SistemaGestion
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
                 if (Sql.FacturasObj.ObtenerItem("documentoF", id)?.ToString() != documentoF) continue;
-                importe += Convert.ToDouble(Sql.FacturasObj.ObtenerItem("importe", id) ?? 0);
+                monto += Convert.ToDouble(Sql.FacturasObj.ObtenerItem("monto", id) ?? 0);
             }
-            return importe;
+            return monto;
         }
 
         // ─── Panel de detalle de líneas (Lista2) ──────────────────────────────
@@ -565,7 +565,7 @@ namespace SistemaGestion
         public string   TerceroDesc  { get; set; } = "";
         public string   PedidoCodigo { get; set; } = "";
         public string   Movimiento   { get; set; } = "ingreso";
-        public double   ImporteTotal { get; set; }
+        public double   MontoTotal   { get; set; }
         public string   Estado       { get; set; } = "pendiente";
         public string   EstadoC      { get; set; } = "pendiente";
     }
