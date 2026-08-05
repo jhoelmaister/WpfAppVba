@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
-    <PackageReference Include="Google.Apis.Drive.v3" Version="1.68.0.3601" />
   </ItemGroup>
 
 </Project>
