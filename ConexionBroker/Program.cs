@@ -33,16 +33,32 @@ var throttleCuenta = new LoginThrottle(maxCuenta, TimeSpan.FromMinutes(ventanaMi
 var throttleIp     = new LoginThrottle(maxIp,     TimeSpan.FromMinutes(ventanaMin), TimeSpan.FromMinutes(bloqueoMin));
 
 // ─── Almacenamiento de documentos (idea #1: el broker es la nube) ──────────
-// Los archivos se guardan por hash (content-addressed) en una carpeta del VPS.
-// La referencia (el hash) se guarda en la base (documentosF.archivo); acá solo
-// viven los bytes. Configurable por appsettings o variables Documentos__*.
+// Los archivos se guardan por hash (content-addressed); ese hash es la referencia
+// que la app guarda en documentosF.archivo — acá solo viven los bytes. El backend
+// se elige por config (Documentos:Backend = "local" | "drive"); cambiarlo NO toca
+// ni la app ni el esquema, solo dónde el broker lee/escribe.
 var docCfg     = app.Configuration.GetSection("Documentos");
-string docDir  = docCfg["Carpeta"] ?? "/opt/documentos";
 long   docMax  = docCfg.GetValue<long>("MaxBytes", 26_214_400); // 25 MB por archivo
+string backend = (docCfg["Backend"] ?? "local").Trim().ToLowerInvariant();
 int    tokenHoras = app.Configuration.GetValue("Login:TokenHoras", 12);
 var tokens     = new TokenStore(TimeSpan.FromHours(tokenHoras));
-try { Directory.CreateDirectory(docDir); }
-catch (Exception ex) { app.Logger.LogError(ex, "No se pudo crear la carpeta de documentos {dir}.", docDir); }
+
+IAlmacenDocumentos almacen;
+if (backend == "drive")
+{
+    var dCfg = app.Configuration.GetSection("Drive");
+    almacen = new AlmacenDrive(
+        dCfg["ClientId"]     ?? throw new InvalidOperationException("Falta Drive:ClientId."),
+        dCfg["ClientSecret"] ?? throw new InvalidOperationException("Falta Drive:ClientSecret."),
+        dCfg["RefreshToken"] ?? throw new InvalidOperationException("Falta Drive:RefreshToken."),
+        dCfg["Carpeta"] ?? "ConexionBroker-Documentos");
+    app.Logger.LogInformation("Almacén de documentos: Google Drive.");
+}
+else
+{
+    almacen = new AlmacenLocal(docCfg["Carpeta"] ?? "/opt/documentos");
+    app.Logger.LogInformation("Almacén de documentos: disco local.");
+}
 
 // Credenciales REALES de SQL Server: viven únicamente acá (appsettings.json
 // local sin commitear, o variables de entorno Sql__Servidor/Sql__BaseDatos/
@@ -209,13 +225,13 @@ app.MapPost("/upload", async (HttpContext ctx) =>
     if (archivo.Length > docMax)
         return Results.StatusCode(StatusCodes.Status413PayloadTooLarge);
 
-    // Se escribe a un temporal calculando el SHA-256 al vuelo y luego se mueve a
-    // {hash}: si dos facturas adjuntan el mismo archivo, se guarda una sola vez.
-    string temp = Path.Combine(docDir, Path.GetRandomFileName());
+    // Se escribe a un temporal calculando el SHA-256 al vuelo; el almacén decide
+    // dónde quedan los bytes (disco del VPS o Drive). Content-addressed: si el
+    // hash ya existe, no se vuelve a guardar (dedup).
+    string temp = Path.Combine(almacen.CarpetaTemporal(), Path.GetRandomFileName());
     string hash;
     try
     {
-        Directory.CreateDirectory(docDir);
         using (var sha = SHA256.Create())
         using (var fs = new FileStream(temp, FileMode.CreateNew, FileAccess.Write))
         using (var crypto = new CryptoStream(fs, sha, CryptoStreamMode.Write))
@@ -225,24 +241,19 @@ app.MapPost("/upload", async (HttpContext ctx) =>
             hash = Convert.ToHexString(sha.Hash!).ToLowerInvariant();
         }
 
-        string destino = Path.Combine(docDir, hash);
-        if (File.Exists(destino))
-        {
-            File.Delete(temp); // ya estaba (dedup): descartar el temporal
-        }
-        else
-        {
-            // Carrera: si otro subió el mismo archivo nuevo en el mismo instante,
-            // el Move choca contra un destino ya creado → tratarlo como dedup.
-            try { File.Move(temp, destino); }
-            catch (IOException) when (File.Exists(destino)) { File.Delete(temp); }
-        }
+        if (!await almacen.ExisteAsync(hash))
+            await almacen.GuardarAsync(hash, temp);
     }
     catch (Exception ex)
     {
-        try { if (File.Exists(temp)) File.Delete(temp); } catch { /* nada más que hacer */ }
         app.Logger.LogError(ex, "Fallo /upload.");
         return Results.StatusCode(StatusCodes.Status500InternalServerError);
+    }
+    finally
+    {
+        // GuardarAsync del almacén local ya movió el temp (acá queda no-op); el de
+        // Drive lo deja y se borra acá.
+        try { if (File.Exists(temp)) File.Delete(temp); } catch { /* nada más que hacer */ }
     }
 
     return Results.Ok(new UploadResponse
@@ -255,18 +266,18 @@ app.MapPost("/upload", async (HttpContext ctx) =>
 
 // ─── /download/{hash}: descarga un archivo por su hash ─────────────────────
 // Requiere token. El nombre original lo pone la app (lo tiene en documentosF).
-app.MapGet("/download/{hash}", (string hash, HttpContext ctx) =>
+app.MapGet("/download/{hash}", async (string hash, HttpContext ctx) =>
 {
     if (UsuarioDeToken(ctx) is null) return Results.Unauthorized();
 
-    // El hash es hex de 64 chars: valida el formato y evita path traversal
-    // (nada de '/', '..', etc. puede colarse en la ruta).
+    // El hash es hex de 64 chars: valida el formato y evita cualquier inyección
+    // en la ruta local o en la query de Drive.
     hash = hash.ToLowerInvariant();
     if (hash.Length != 64 || !hash.All(Uri.IsHexDigit)) return Results.BadRequest();
 
-    string ruta = Path.Combine(docDir, hash);
-    if (!File.Exists(ruta)) return Results.NotFound();
-    return Results.File(ruta, "application/octet-stream");
+    var contenido = await almacen.AbrirLecturaAsync(hash);
+    if (contenido is null) return Results.NotFound();
+    return Results.Stream(contenido, "application/octet-stream");
 });
 
 app.Run();
