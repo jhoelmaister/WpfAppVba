@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Data.SqlClient;
 using ConexionBroker;
@@ -30,6 +31,18 @@ int ventanaMin  = loginCfg.GetValue("VentanaMinutos", 15);
 int bloqueoMin  = loginCfg.GetValue("BloqueoMinutos", 15);
 var throttleCuenta = new LoginThrottle(maxCuenta, TimeSpan.FromMinutes(ventanaMin), TimeSpan.FromMinutes(bloqueoMin));
 var throttleIp     = new LoginThrottle(maxIp,     TimeSpan.FromMinutes(ventanaMin), TimeSpan.FromMinutes(bloqueoMin));
+
+// ─── Almacenamiento de documentos (idea #1: el broker es la nube) ──────────
+// Los archivos se guardan por hash (content-addressed) en una carpeta del VPS.
+// La referencia (el hash) se guarda en la base (documentosF.archivo); acá solo
+// viven los bytes. Configurable por appsettings o variables Documentos__*.
+var docCfg     = app.Configuration.GetSection("Documentos");
+string docDir  = docCfg["Carpeta"] ?? "/opt/documentos";
+long   docMax  = docCfg.GetValue<long>("MaxBytes", 26_214_400); // 25 MB por archivo
+int    tokenHoras = app.Configuration.GetValue("Login:TokenHoras", 12);
+var tokens     = new TokenStore(TimeSpan.FromHours(tokenHoras));
+try { Directory.CreateDirectory(docDir); }
+catch (Exception ex) { app.Logger.LogError(ex, "No se pudo crear la carpeta de documentos {dir}.", docDir); }
 
 // Credenciales REALES de SQL Server: viven únicamente acá (appsettings.json
 // local sin commitear, o variables de entorno Sql__Servidor/Sql__BaseDatos/
@@ -159,7 +172,9 @@ app.MapPost("/login", async (LoginRequest req, HttpContext ctx) =>
             Servidor   = cfg["Sql:Servidor"]   ?? "",
             BaseDatos  = cfg["Sql:BaseDatos"]  ?? "",
             Usuario    = cfg["Sql:Usuario"]    ?? "",
-            Contrasena = cfg["Sql:Contrasena"] ?? ""
+            Contrasena = cfg["Sql:Contrasena"] ?? "",
+            // Token de sesión para los endpoints de archivos (/upload, /download).
+            Token      = tokens.Emitir(id)
         });
     }
     catch (Exception ex)
@@ -169,6 +184,89 @@ app.MapPost("/login", async (LoginRequest req, HttpContext ctx) =>
         app.Logger.LogError(ex, "Fallo /login: no se pudo conectar a SQL Server.");
         return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
     }
+});
+
+// ─── Autenticación de los endpoints de archivos ───────────────────────────
+// Devuelve el id de usuario del token (Authorization: Bearer <token>) o null.
+string? UsuarioDeToken(HttpContext ctx)
+{
+    string auth = ctx.Request.Headers.Authorization.ToString();
+    if (!auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)) return null;
+    return tokens.Validar(auth["Bearer ".Length..].Trim());
+}
+
+// ─── /upload: sube un archivo (multipart, campo "file") y lo guarda por hash ─
+// Requiere token. Devuelve { hash, nombre, tamaño }. La app guarda ese hash en
+// documentosF.archivo y el nombre original en documentosF.archivoNombre.
+app.MapPost("/upload", async (HttpContext ctx) =>
+{
+    if (UsuarioDeToken(ctx) is null) return Results.Unauthorized();
+    if (!ctx.Request.HasFormContentType) return Results.BadRequest();
+
+    var form = await ctx.Request.ReadFormAsync();
+    var archivo = form.Files.GetFile("file");
+    if (archivo is null || archivo.Length == 0) return Results.BadRequest();
+    if (archivo.Length > docMax)
+        return Results.StatusCode(StatusCodes.Status413PayloadTooLarge);
+
+    // Se escribe a un temporal calculando el SHA-256 al vuelo y luego se mueve a
+    // {hash}: si dos facturas adjuntan el mismo archivo, se guarda una sola vez.
+    string temp = Path.Combine(docDir, Path.GetRandomFileName());
+    string hash;
+    try
+    {
+        Directory.CreateDirectory(docDir);
+        using (var sha = SHA256.Create())
+        using (var fs = new FileStream(temp, FileMode.CreateNew, FileAccess.Write))
+        using (var crypto = new CryptoStream(fs, sha, CryptoStreamMode.Write))
+        {
+            await archivo.CopyToAsync(crypto);
+            crypto.FlushFinalBlock();
+            hash = Convert.ToHexString(sha.Hash!).ToLowerInvariant();
+        }
+
+        string destino = Path.Combine(docDir, hash);
+        if (File.Exists(destino))
+        {
+            File.Delete(temp); // ya estaba (dedup): descartar el temporal
+        }
+        else
+        {
+            // Carrera: si otro subió el mismo archivo nuevo en el mismo instante,
+            // el Move choca contra un destino ya creado → tratarlo como dedup.
+            try { File.Move(temp, destino); }
+            catch (IOException) when (File.Exists(destino)) { File.Delete(temp); }
+        }
+    }
+    catch (Exception ex)
+    {
+        try { if (File.Exists(temp)) File.Delete(temp); } catch { /* nada más que hacer */ }
+        app.Logger.LogError(ex, "Fallo /upload.");
+        return Results.StatusCode(StatusCodes.Status500InternalServerError);
+    }
+
+    return Results.Ok(new UploadResponse
+    {
+        Hash   = hash,
+        Nombre = Path.GetFileName(archivo.FileName),
+        Tamano = archivo.Length
+    });
+});
+
+// ─── /download/{hash}: descarga un archivo por su hash ─────────────────────
+// Requiere token. El nombre original lo pone la app (lo tiene en documentosF).
+app.MapGet("/download/{hash}", (string hash, HttpContext ctx) =>
+{
+    if (UsuarioDeToken(ctx) is null) return Results.Unauthorized();
+
+    // El hash es hex de 64 chars: valida el formato y evita path traversal
+    // (nada de '/', '..', etc. puede colarse en la ruta).
+    hash = hash.ToLowerInvariant();
+    if (hash.Length != 64 || !hash.All(Uri.IsHexDigit)) return Results.BadRequest();
+
+    string ruta = Path.Combine(docDir, hash);
+    if (!File.Exists(ruta)) return Results.NotFound();
+    return Results.File(ruta, "application/octet-stream");
 });
 
 app.Run();
@@ -182,6 +280,17 @@ class LoginResponse
     public string BaseDatos  { get; set; } = "";
     public string Usuario    { get; set; } = "";
     public string Contrasena { get; set; } = "";
+    // Token de sesión para /upload y /download (la app vieja sin archivos lo ignora).
+    public string Token      { get; set; } = "";
+}
+
+// Respuesta de /upload: el hash con el que se guardó el archivo (referencia que
+// va a documentosF.archivo), su nombre original y su tamaño en bytes.
+class UploadResponse
+{
+    public string Hash   { get; set; } = "";
+    public string Nombre { get; set; } = "";
+    public long   Tamano { get; set; }
 }
 
 // Cuerpo de las respuestas de fallo de /login, para que la app avise al usuario:
